@@ -11,7 +11,7 @@ describe('Nav.svelte', () => {
 		await expect.element(myListLink).toBeInTheDocument();
 		await expect.element(myListLink).toHaveAttribute('href', '/');
 
-		const saveLink = page.getByRole('link', { name: 'Save new' });
+		const saveLink = page.getByRole('link', { name: 'New' });
 		await expect.element(saveLink).toBeInTheDocument();
 		await expect.element(saveLink).toHaveAttribute('href', '/new');
 

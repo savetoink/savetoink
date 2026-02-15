@@ -6,7 +6,7 @@ import type { Article as ArticleType } from '$lib/server/types';
 
 describe('ArticleMeta.svelte', () => {
 	describe('mode="card"', () => {
-		it('should render card with all fields', async () => {
+		it('should render card with (almost) all fields', async () => {
 			const article: ArticleType = {
 				account: 'test-account',
 				id: '1',
@@ -32,35 +32,27 @@ describe('ArticleMeta.svelte', () => {
 			const titleLink = page.getByRole('link', { name: 'Test Article' });
 			await expect.element(titleLink).toBeInTheDocument();
 
+			const image = page.getByRole('img');
+			await expect.element(image).toBeInTheDocument();
+
 			const excerpt = page.getByText('Test excerpt');
 			await expect.element(excerpt).toBeInTheDocument();
+
+			const originalLink = page.getByRole('link', { name: 'https://example.com/article' });
+			await expect.element(originalLink).toHaveAttribute('target', '_blank');
+			await expect.element(originalLink).toHaveAttribute('rel', 'external');
 
 			const author = page.getByText('by Test Author');
 			await expect.element(author).toBeInTheDocument();
 
-			const source = page.getByText('source: Example Site');
-			await expect.element(source).toBeInTheDocument();
-
-			const domain = page.getByText('domain: example.com');
-			await expect.element(domain).toBeInTheDocument();
-
 			const published = page.getByText('published:');
 			await expect.element(published).toBeInTheDocument();
-
-			const wordCount = page.getByText('500 words');
-			await expect.element(wordCount).toBeInTheDocument();
 
 			const readingTime = page.getByText('2 min read');
 			await expect.element(readingTime).toBeInTheDocument();
 
 			const status = page.getByText('status: pending');
 			await expect.element(status).toBeInTheDocument();
-
-			const deliveredFrom = page.getByText('delivered from: test@example.com');
-			await expect.element(deliveredFrom).toBeInTheDocument();
-
-			const deliveredTo = page.getByText('delivered to: kindle@kindle.com');
-			await expect.element(deliveredTo).toBeInTheDocument();
 		});
 
 		it('should render card with minimal fields', async () => {

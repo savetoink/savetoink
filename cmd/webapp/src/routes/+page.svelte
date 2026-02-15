@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ArticleCard from '$lib/components/ArticleCard.svelte';
+	import ArticleMeta from '$lib/components/ArticleMeta.svelte';
 	import Navigator from '$lib/components/Navigator.svelte';
 	import type { PageData } from './$types';
 	let { data }: { data: PageData } = $props();
@@ -10,7 +10,7 @@
 <ul>
 	{#each data.articles as article (article.id)}
 		<li>
-			<ArticleCard {article} />
+			<ArticleMeta {article} mode="card" />
 		</li>
 	{/each}
 </ul>
