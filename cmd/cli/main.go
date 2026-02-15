@@ -45,9 +45,8 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number",
 	Long:  `Print the version number of the savetoink application.`,
-	RunE: func(_ *cobra.Command, _ []string) error {
-		fmt.Println(consts.Version())
-		return nil
+	Run: func(_ *cobra.Command, _ []string) {
+		fmt.Println(*consts.Version())
 	},
 }
 

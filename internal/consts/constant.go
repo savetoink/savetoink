@@ -3,11 +3,11 @@ package consts
 
 import "time"
 
-// Version is the current version of the savetoink application, to be overridden by the build process.
 var version = "0.0.0"
 
-func Version() string {
-	return version
+// Version returns the current version of the savetoink application, to be overridden by the build process.
+func Version() *string {
+	return &version
 }
 
 // RunMode defines the application execution mode.

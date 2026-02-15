@@ -89,10 +89,12 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			slog.String("user_agent", userAgent),
 			slog.String("method", r.Method),
 			slog.String("path", r.URL.Path),
-			slog.String("version", version),
 		)
 		if requestID != nil {
 			record.AddAttrs(slog.String("request_id", *requestID))
+		}
+		if version != nil {
+			record.AddAttrs(slog.String("version", *version))
 		}
 		if accountID != "" {
 			record.AddAttrs(slog.String("account_id", accountID))
