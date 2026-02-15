@@ -1,6 +1,7 @@
-import { redirect } from '@sveltejs/kit';
+import { redirect, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireApiKey } from '$lib/server/auth';
+import { ApiError } from '$lib/server/apiClient';
 
 export const load: PageServerLoad = async ({ locals, fetch, params }) => {
 	const apiClient = requireApiKey(locals);
@@ -19,7 +20,16 @@ export const actions: Actions = {
 
 		const id = params.id;
 
-		await apiClient.deleteArticle(id, fetch);
-		throw redirect(303, '/');
+		try {
+			await apiClient.deleteArticle(id, fetch);
+			throw redirect(303, '/');
+		} catch (err) {
+			if (err instanceof Response && err.status === 303) {
+				throw err;
+			}
+			const status = err instanceof ApiError ? err.status : 500;
+			const message = err instanceof Error ? err.message : 'failed to delete article';
+			return fail(status, { error: message });
+		}
 	}
 };

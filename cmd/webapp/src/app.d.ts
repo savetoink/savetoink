@@ -13,6 +13,10 @@ declare global {
 				error?: string;
 			};
 		}
+
+		interface Error {
+			message: string;
+		}
 	}
 }
 

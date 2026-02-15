@@ -11,8 +11,7 @@ describe('/+page.svelte', () => {
 				total: 0,
 				page: 1,
 				page_size: 10,
-				has_more: false,
-				error: undefined
+				has_more: false
 			}
 		});
 
@@ -35,8 +34,7 @@ describe('/+page.svelte', () => {
 				total: 25,
 				page: 1,
 				page_size: 10,
-				has_more: true,
-				error: undefined
+				has_more: true
 			}
 		});
 
@@ -59,8 +57,7 @@ describe('/+page.svelte', () => {
 				total: 25,
 				page: 2,
 				page_size: 10,
-				has_more: false,
-				error: undefined
+				has_more: false
 			}
 		});
 

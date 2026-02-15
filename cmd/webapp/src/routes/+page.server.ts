@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireApiKey } from '$lib/server/auth';
+import { ApiError } from '$lib/server/apiClient';
 
 export const load: PageServerLoad = async ({ locals, fetch, url }) => {
 	const apiClient = requireApiKey(locals);
@@ -11,26 +12,14 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
 	const page = pageParam ? parseInt(pageParam, 10) : 1;
 	const pageSize = pageSizeParam ? parseInt(pageSizeParam, 10) : 10;
 
-	try {
-		const response = await apiClient.getArticles(fetch, page, pageSize);
-		return {
-			articles: response.articles,
-			total: response.total,
-			page: response.page,
-			page_size: response.page_size,
-			has_more: response.has_more,
-			error: undefined
-		};
-	} catch (err) {
-		return {
-			articles: [],
-			total: 0,
-			page: 1,
-			page_size: 10,
-			has_more: false,
-			error: err instanceof Error ? err.message : 'failed to load articles'
-		};
-	}
+	const response = await apiClient.getArticles(fetch, page, pageSize);
+	return {
+		articles: response.articles,
+		total: response.total,
+		page: response.page,
+		page_size: response.page_size,
+		has_more: response.has_more
+	};
 };
 
 export const actions: Actions = {
@@ -48,7 +37,9 @@ export const actions: Actions = {
 			await apiClient.deleteArticle(id, fetch);
 			return { success: true };
 		} catch (err) {
-			return fail(500, { error: err instanceof Error ? err.message : 'failed to delete article' });
+			const status = err instanceof ApiError ? err.status : 500;
+			const message = err instanceof Error ? err.message : 'failed to delete article';
+			return fail(status, { error: message });
 		}
 	}
 };
