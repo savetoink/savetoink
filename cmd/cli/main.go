@@ -41,6 +41,16 @@ var convertCmd = &cobra.Command{
 	RunE: runConvert,
 }
 
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number",
+	Long:  `Print the version number of the savetoink application.`,
+	RunE: func(_ *cobra.Command, _ []string) error {
+		fmt.Println(consts.Version())
+		return nil
+	},
+}
+
 func runConvert(_ *cobra.Command, args []string) error {
 	url := args[0]
 
@@ -113,6 +123,7 @@ func main() {
 	convertCmd.Flags().StringVar(&emailSubject, "email-subject", "", "Email subject (defaults to article title)")
 
 	rootCmd.AddCommand(convertCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

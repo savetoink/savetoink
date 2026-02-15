@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/shaftoe/savetoink/internal/auth"
+	"github.com/shaftoe/savetoink/internal/consts"
 )
 
 type responseStatusRecorder struct {
@@ -80,6 +81,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			requestID = getRequestIDFromContext(r.Context())
 			userAgent = userAgent(r)
 			clientIP  = remoteAddr(r)
+			version   = consts.Version()
 		)
 
 		record.AddAttrs(
@@ -87,6 +89,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			slog.String("user_agent", userAgent),
 			slog.String("method", r.Method),
 			slog.String("path", r.URL.Path),
+			slog.String("version", version),
 		)
 		if requestID != nil {
 			record.AddAttrs(slog.String("request_id", *requestID))

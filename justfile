@@ -3,10 +3,11 @@ set dotenv-load := true
 project_name := 'savetoink'
 lambda_archive := 'lambda-source.zip'
 bucket_name := 'savetoink-lambda-source'
+build_flags := "-X github.com/shaftoe/savetoink/internal/consts.version"
 
 # Build CLI binary
 build-cli:
-    go build -o bin/savetoink ./cmd/cli
+    go build -ldflags "{{ build_flags }}=$(just version)" -o bin/savetoink ./cmd/cli
 
 # Build CLI and convert URL into EPUB
 run *ARGS: build-cli
@@ -24,7 +25,7 @@ test-go:
 
 # Build Lambda binary for Linux
 build-lambda:
-    GOOS=linux GOARCH=amd64 go build -o bin/bootstrap ./cmd/lambda
+    GOOS=linux GOARCH=amd64 go build -ldflags "{{ build_flags }}=$(just version)" -o bin/bootstrap ./cmd/lambda
 
 # Build Lambda zip for deployment
 [working-directory('bin')]
@@ -158,7 +159,7 @@ deploy-lambda: build-lambda-zip upload-zip
         --publish
 
 server-http:
-    reflex -r '\.(env|go)$' -s -- go run ./cmd/http/main.go
+    reflex -r '\.(env|go)$' -s -- go run -ldflags "{{ build_flags }}=$(just version)" ./cmd/http/main.go
 
 [working-directory('cmd/webapp')]
 server-web:
@@ -185,3 +186,6 @@ auth0-create-api:
 
 auth0-destroy-api:
     auth0 apis delete --force "$SAVETOINK_AUTH0_AUDIENCE"
+
+version:
+    @echo "$(cat VERSION)-$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)"
