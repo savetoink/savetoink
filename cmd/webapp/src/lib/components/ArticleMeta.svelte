@@ -25,38 +25,17 @@
 		{#if article.author}
 			<p>by {article.author}</p>
 		{/if}
-		{#if article.siteName}
-			<p>source: {article.siteName}</p>
+		{#if article.readingTimeMinutes}
+			<p>{article.readingTimeMinutes} min read</p>
 		{/if}
-		{#if article.sourceDomain}
-			<p>domain: {article.sourceDomain}</p>
+		{#if article.createdAt}
+			<p>added: {formatDate(article.createdAt)}</p>
 		{/if}
 		{#if article.publishedAt}
 			<p>published: {formatDate(article.publishedAt)}</p>
 		{/if}
-		{#if article.wordCount}
-			<p>{article.wordCount} words</p>
-		{/if}
-		{#if article.readingTimeMinutes}
-			<p>{article.readingTimeMinutes} min read</p>
-		{/if}
 		{#if article.deliveryStatus}
 			<p>status: {article.deliveryStatus}</p>
-		{/if}
-		{#if article.deliveredFrom}
-			<p>delivered from: {article.deliveredFrom}</p>
-		{/if}
-		{#if article.deliveredTo}
-			<p>delivered to: {article.deliveredTo}</p>
-		{/if}
-		{#if article.deliveredBy}
-			<p>delivered by: {article.deliveredBy}</p>
-		{/if}
-		{#if article.deliveredEmailUUID}
-			<p>email id: {article.deliveredEmailUUID}</p>
-		{/if}
-		{#if article.createdAt}
-			<p>added: {formatDate(article.createdAt)}</p>
 		{/if}
 		{#if article.error}
 			<p class="error">error: {article.error}</p>
@@ -68,7 +47,7 @@
 		{#if article.title}
 			<h1>{article.title}</h1>
 		{:else}
-			<h1>article</h1>
+			<h1>{article.url}</h1>
 		{/if}
 		{#if article.author}
 			<p>by {article.author}</p>
