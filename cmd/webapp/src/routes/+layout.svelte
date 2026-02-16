@@ -21,3 +21,9 @@
 {:else}
 	{@render children()}
 {/if}
+
+<hr />
+
+<footer>
+	<p>{title}</p>
+</footer>
