@@ -23,6 +23,6 @@ export const actions: Actions = {
 	},
 	clean: async ({ cookies }) => {
 		cookies.delete(jwtKey, { path: '/' });
-		redirect(303, '/settings');
+		redirect(303, '/login');
 	}
 };
