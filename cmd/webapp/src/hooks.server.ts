@@ -1,32 +1,8 @@
 import type { Handle } from '@sveltejs/kit';
-import { error as kitError } from '@sveltejs/kit';
-import { createApiClient, ApiError } from '$lib/server/apiClient';
-
-async function getHealthStatus(fetch: typeof globalThis.fetch): Promise<void> {
-	const client = createApiClient('placeholder');
-	await client.healthCheck(fetch);
-}
 
 export const handle: Handle = async ({ event, resolve }) => {
-	if (event.url.pathname !== '/settings') {
-		const apiKey = event.cookies.get('api_key');
-
-		if (!apiKey) {
-			event.locals.apiClient = null;
-			return resolve(event);
-		}
-
-		try {
-			event.locals.apiClient = createApiClient(apiKey);
-			await getHealthStatus(event.fetch);
-		} catch (error) {
-			event.locals.apiClient = null;
-			if (error instanceof ApiError) {
-				throw kitError(error.status, `ApiError: ${error.message}`);
-			}
-			throw error;
-		}
-	}
+	const jwt = event.cookies.get('jwt');
+	event.locals.jwt = jwt;
 
 	return resolve(event);
 };

@@ -5,7 +5,7 @@
 	let { page, has_more }: { page: number; has_more: boolean } = $props();
 
 	function navigateTo(newPage: number) {
-		goto(resolve(`/?page=${newPage}` as unknown as '/'), { replaceState: true, noScroll: true });
+		goto(resolve(`/?page=${newPage}` as unknown as '/'));
 	}
 </script>
 

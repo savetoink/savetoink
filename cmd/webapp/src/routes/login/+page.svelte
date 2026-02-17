@@ -3,7 +3,7 @@
 	let { form }: PageProps = $props();
 </script>
 
-<h1>Settings</h1>
+<h1>Login</h1>
 <p>Enter your API key to access the article management system.</p>
 
 {#if form?.error}
@@ -13,7 +13,7 @@
 <form method="POST" action="?/save">
 	<label>
 		API Key
-		<input type="password" name="apiKey" required autocomplete="current-password" />
+		<input type="password" name="jwt" required autocomplete="current-password" />
 	</label>
 	<button type="submit">Save</button>
 </form>

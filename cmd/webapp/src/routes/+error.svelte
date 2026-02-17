@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 </script>
 
 <h1>error</h1>
@@ -8,5 +9,4 @@
 	<p>{page.error.message}</p>
 {/if}
 
-<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-<a href="/">go home</a>
+<a href={resolve('/')}>go home</a>

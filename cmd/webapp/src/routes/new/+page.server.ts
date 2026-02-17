@@ -1,24 +1,17 @@
-import { redirect, fail } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
-import { requireApiKey } from '$lib/server/auth';
+import type { Actions } from './$types';
+import { redirect } from '@sveltejs/kit';
+import { POST } from '$lib/server/apiClient';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	requireApiKey(locals);
-	return {};
-};
-
-export const actions: Actions = {
-	default: async ({ locals, request, fetch }) => {
-		const apiClient = requireApiKey(locals);
-
+export const actions = {
+	new: async ({ locals, request }) => {
 		const data = await request.formData();
-		const url = data.get('url');
+		const txt = data.get('url') || 'sfda';
 
-		if (!url || typeof url !== 'string' || url.trim() === '') {
-			return fail(400, { error: 'url is required' });
+		try {
+			await POST(fetch, `/v1/articles`, { url: txt }, locals.jwt);
+			redirect(303, '/');
+		} catch {
+			redirect(302, '/');
 		}
-
-		await apiClient.createArticle({ url: url.trim() }, fetch);
-		redirect(303, '/articles');
 	}
-};
+} satisfies Actions;

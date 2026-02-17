@@ -6,6 +6,6 @@
 	<ul>
 		<li><a href={resolve('/')}>My List</a></li>
 		<li><a href={resolve('/new')}>New</a></li>
-		<li><a href={resolve('/settings')}>Settings</a></li>
+		<li><a href={resolve('/login')}>Login</a></li>
 	</ul>
 </nav>

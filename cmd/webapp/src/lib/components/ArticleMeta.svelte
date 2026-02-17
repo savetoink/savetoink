@@ -2,8 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { formatDate } from '$lib/utils/date';
 	import ArticleControls from './ArticleControls.svelte';
-	import type { Article } from '$lib/server/types';
-	let { article, mode = 'header' }: { article: Article; mode?: 'card' | 'header' } = $props();
+	let { article, mode = 'header' } = $props();
 </script>
 
 {#if mode === 'card'}
@@ -85,6 +84,9 @@
 		{#if article.createdAt}
 			<p>added: {formatDate(article.createdAt)}</p>
 		{/if}
+		<p>
+			Original link: <a href={article.url} target="_blank" rel="external">{article.url}</a>
+		</p>
 		{#if article.error}
 			<p class="error">error: {article.error}</p>
 		{/if}
