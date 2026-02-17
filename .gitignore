@@ -44,6 +44,3 @@ cmd/webapp/build
 cmd/webapp/node_modules
 cmd/webapp/package-lock.json
 cmd/webapp/.env
-
-# Local Netlify folder
-.netlify
