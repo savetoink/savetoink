@@ -151,6 +151,15 @@ test-delete-article *ID:
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer $SAVETOINK_API_KEY"
 
+test-auth-token-exchange *CODE:
+    curl \
+        -X POST \
+        --data '{"code":"{{ CODE }}", "redirect_uri": "http://localhost:5173/login"}' \
+        http://localhost:8080/v1/auth/token
+
+test-auth-browser-login:
+    open "https://${SAVETOINK_AUTH0_DOMAIN}/authorize?response_type=code&client_id=${SAVETOINK_AUTH0_CLIENT_ID}&redirect_uri=http://localhost:5173/login&scope=openid%20profile%20email&state=test123&audience=${SAVETOINK_AUTH0_AUDIENCE}"
+
 deploy-lambda: build-lambda-zip upload-zip
     aws lambda update-function-code \
         --function-name {{ project_name }}-api \

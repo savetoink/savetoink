@@ -52,6 +52,12 @@ const (
 	IdleTimeout = 15 * time.Second
 )
 
+// Auth0 client timeout constants.
+const (
+	// Auth0ClientTimeout is the timeout for Auth0 API calls.
+	Auth0ClientTimeout = 10 * time.Second
+)
+
 // EmailProvider defines the email provider type.
 type EmailProvider string
 

@@ -110,7 +110,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		authErr := auth.GetAuthError(r.Context())
 
 		if authErr != nil {
-			record.AddAttrs(slog.String("auth_error", authErr.Error()))
+			record.AddAttrs(slog.String("auth_result", authErr.Error()))
 		}
 
 		if statusCode >= http.StatusInternalServerError {

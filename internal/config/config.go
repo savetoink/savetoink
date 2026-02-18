@@ -13,20 +13,26 @@ import (
 
 // Config holds configuration settings for application.
 type Config struct {
+	Debug         bool
+	DynamoDBTable string
+	Mode          consts.RunMode
+
+	// Auth
+	APIKeySecret      string
+	AWSConfig         *aws.Config
+	Auth0Audience     string
+	Auth0ClientID     string
+	Auth0ClientSecret string
+	Auth0Domain       string
+	AuthBackend       consts.AuthBackend
+
+	// Email
 	DestEmail        string
-	SenderEmail      string
+	EmailProvider    consts.EmailProvider
 	MailjetAPIKey    string
 	MailjetAPISecret string
-	APIKeySecret     string
-	Auth0Domain      string
-	Auth0Audience    string
-	Debug            bool
 	SendEnabled      bool
-	DynamoDBTable    string
-	Mode             consts.RunMode
-	AWSConfig        *aws.Config
-	EmailProvider    consts.EmailProvider
-	AuthBackend      consts.AuthBackend
+	SenderEmail      string
 }
 
 // Load reads configuration from environment variables and returns a Config instance.
@@ -61,6 +67,8 @@ func bindEnvVars() error {
 		{"api-secret", "SAVETOINK_MAILJET_API_SECRET"},
 		{"auth-backend", "SAVETOINK_AUTH_BACKEND"},
 		{"auth0-audience", "SAVETOINK_AUTH0_AUDIENCE"},
+		{"auth0-client-id", "SAVETOINK_AUTH0_CLIENT_ID"},
+		{"auth0-client-secret", "SAVETOINK_AUTH0_CLIENT_SECRET"},
 		{"auth0-domain", "SAVETOINK_AUTH0_DOMAIN"},
 		{"debug", "SAVETOINK_DEBUG"},
 		{"destination-email", "SAVETOINK_DEST_EMAIL"},
@@ -79,18 +87,20 @@ func bindEnvVars() error {
 
 func loadConfig(mode consts.RunMode) *Config {
 	cfg := &Config{
-		APIKeySecret:     viper.GetString("api-key-secret"),
-		Auth0Audience:    viper.GetString("auth0-audience"),
-		Auth0Domain:      viper.GetString("auth0-domain"),
-		AuthBackend:      consts.AuthBackend(viper.GetString("auth-backend")),
-		Debug:            viper.GetBool("debug"),
-		DestEmail:        viper.GetString("destination-email"),
-		DynamoDBTable:    viper.GetString("dynamodb-table"),
-		MailjetAPIKey:    viper.GetString("api-key"),
-		MailjetAPISecret: viper.GetString("api-secret"),
-		Mode:             mode,
-		SendEnabled:      viper.GetBool("send-enabled"),
-		SenderEmail:      viper.GetString("sender-email"),
+		APIKeySecret:      viper.GetString("api-key-secret"),
+		Auth0Audience:     viper.GetString("auth0-audience"),
+		Auth0ClientID:     viper.GetString("auth0-client-id"),
+		Auth0ClientSecret: viper.GetString("auth0-client-secret"),
+		Auth0Domain:       viper.GetString("auth0-domain"),
+		AuthBackend:       consts.AuthBackend(viper.GetString("auth-backend")),
+		Debug:             viper.GetBool("debug"),
+		DestEmail:         viper.GetString("destination-email"),
+		DynamoDBTable:     viper.GetString("dynamodb-table"),
+		MailjetAPIKey:     viper.GetString("api-key"),
+		MailjetAPISecret:  viper.GetString("api-secret"),
+		Mode:              mode,
+		SendEnabled:       viper.GetBool("send-enabled"),
+		SenderEmail:       viper.GetString("sender-email"),
 	}
 
 	return cfg
@@ -129,6 +139,12 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 		}
 		if c.Auth0Audience == "" {
 			*missing = append(*missing, "SAVETOINK_AUTH0_AUDIENCE")
+		}
+		if c.Auth0ClientID == "" {
+			*missing = append(*missing, "SAVETOINK_AUTH0_CLIENT_ID")
+		}
+		if c.Auth0ClientSecret == "" {
+			*missing = append(*missing, "SAVETOINK_AUTH0_CLIENT_SECRET")
 		}
 	default:
 		return fmt.Errorf("unsupported auth backend: %s", c.AuthBackend)

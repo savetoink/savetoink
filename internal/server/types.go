@@ -2,6 +2,7 @@ package server
 
 import (
 	"log/slog"
+	"net/http"
 
 	"github.com/shaftoe/savetoink/internal/config"
 	"github.com/shaftoe/savetoink/internal/model"
@@ -36,9 +37,24 @@ type deleteArticleResponse struct {
 	Deleted int `json:"deleted"`
 }
 
+type authTokenExchangeRequest struct {
+	Code        string `json:"code"`
+	RedirectURI string `json:"redirect_uri"`
+	GrantType   string `json:"grant_type"`
+}
+
+type authTokenExchangeResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	IDToken      string `json:"id_token,omitempty"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+}
+
 type handlers struct {
 	cfg     *config.Config
 	service service.Interface
+	client  *http.Client
 }
 
 type contextKey string

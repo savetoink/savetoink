@@ -10,8 +10,6 @@ import (
 	"github.com/go-shiori/go-epub"
 	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 const (

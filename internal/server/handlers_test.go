@@ -136,7 +136,7 @@ func (m *MockService) DeleteAllArticles(
 }
 
 func TestHandleHealth(t *testing.T) {
-	h := newHandlers(nil, nil)
+	h := newHandlers(nil, nil, nil)
 
 	req := httptest.NewRequest("GET", "/health", http.NoBody)
 	w := httptest.NewRecorder()
@@ -180,7 +180,7 @@ func TestHandleCreateArticleSuccessWithEmail(t *testing.T) {
 			},
 		}, nil
 	})
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	body := articleRequest{URL: "https://example.com/article"}
 	bodyBytes, _ := json.Marshal(body)
@@ -225,7 +225,7 @@ func TestHandleCreateArticleSuccessWithoutEmail(t *testing.T) {
 			EmailResp: nil,
 		}, nil
 	})
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	body := articleRequest{URL: "https://example.com/article"}
 	bodyBytes, _ := json.Marshal(body)
@@ -256,7 +256,7 @@ func TestHandleCreateArticleInvalidJSON(t *testing.T) {
 	cfg := &config.Config{
 		SendEnabled: false,
 	}
-	h := newHandlers(cfg, nil)
+	h := newHandlers(cfg, nil, http.DefaultClient)
 
 	req := httptest.NewRequest("POST", "/v1/articles", bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
@@ -283,7 +283,7 @@ func TestHandleCreateArticleMissingURL(t *testing.T) {
 	cfg := &config.Config{
 		SendEnabled: false,
 	}
-	h := newHandlers(cfg, nil)
+	h := newHandlers(cfg, nil, http.DefaultClient)
 
 	body := articleRequest{URL: ""}
 	bodyBytes, _ := json.Marshal(body)
@@ -314,7 +314,7 @@ func TestHandleCreateArticleServiceError(t *testing.T) {
 	svc := newMockService(func(_ context.Context, _ string, _ string) (*service.CreateArticleResult, error) {
 		return nil, &serviceError{msg: "extraction failed"}
 	})
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	body := articleRequest{URL: "https://example.com/article"}
 	bodyBytes, _ := json.Marshal(body)
@@ -363,7 +363,7 @@ func TestHandleGetArticlesSuccess(t *testing.T) {
 			HasMore:  true,
 		}, nil
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	req := httptest.NewRequest("GET", "/v1/articles?page=1&page_size=2", http.NoBody)
 	w := httptest.NewRecorder()
@@ -408,7 +408,7 @@ func TestHandleGetArticlesDefaultParams(t *testing.T) {
 			HasMore:  false,
 		}, nil
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	req := httptest.NewRequest("GET", "/v1/articles", http.NoBody)
 	w := httptest.NewRecorder()
@@ -444,7 +444,7 @@ func TestHandleGetArticlesInvalidParams(t *testing.T) {
 			HasMore:  false,
 		}, nil
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	testCases := []struct {
 		name         string
@@ -493,7 +493,7 @@ func TestHandleGetArticlesServiceError(t *testing.T) {
 	svc.getArticlesMetadata = func(_ context.Context, _ string, _ int, _ int) (*service.GetArticlesResult, error) {
 		return nil, &serviceError{msg: "database error"}
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	req := httptest.NewRequest("GET", "/v1/articles", http.NoBody)
 	w := httptest.NewRecorder()
@@ -525,7 +525,7 @@ func TestHandleGetArticleSuccess(t *testing.T) {
 			Content: "<p>Test content</p>",
 		}, nil
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	req := httptest.NewRequest("GET", "/v1/articles/test-id", http.NoBody)
 	w := httptest.NewRecorder()
@@ -558,7 +558,7 @@ func TestHandleGetArticleNotFound(t *testing.T) {
 	svc.getArticle = func(_ context.Context, _ string, _ string) (*model.Article, error) {
 		return nil, &serviceError{msg: testArticleNotFoundError}
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	req := httptest.NewRequest("GET", "/v1/articles/test-id", http.NoBody)
 	w := httptest.NewRecorder()
@@ -617,7 +617,7 @@ func TestHandleDeleteArticle(t *testing.T) {
 			svc.deleteArticle = func(_ context.Context, _, _ string) (*service.DeleteArticleResult, error) {
 				return tt.deleteResult, tt.deleteErr
 			}
-			h := newHandlers(cfg, svc)
+			h := newHandlers(cfg, svc, nil)
 
 			req := httptest.NewRequest("DELETE", "/v1/articles/123", http.NoBody)
 			w := httptest.NewRecorder()
@@ -681,7 +681,7 @@ func TestHandleDeleteAllArticles(t *testing.T) {
 			svc.deleteAllArticles = func(_ context.Context, _ string) (*service.DeleteArticleResult, error) {
 				return tt.deleteResult, tt.deleteErr
 			}
-			h := newHandlers(cfg, svc)
+			h := newHandlers(cfg, svc, nil)
 
 			req := httptest.NewRequest("DELETE", "/v1/articles", http.NoBody)
 			w := httptest.NewRecorder()
@@ -758,7 +758,7 @@ func TestHandleGetArticlesLogsDBError(t *testing.T) {
 	svc.getArticlesMetadata = func(_ context.Context, _ string, _ int, _ int) (*service.GetArticlesResult, error) {
 		return nil, &serviceError{msg: testDatabaseError}
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	req := httptest.NewRequest("GET", "/v1/articles", http.NoBody)
 	ctx := context.WithValue(req.Context(), logRecordKey, logRec)
@@ -798,7 +798,7 @@ func TestHandleGetArticleLogsDBError(t *testing.T) {
 	svc.getArticle = func(_ context.Context, _ string, _ string) (*model.Article, error) {
 		return nil, &serviceError{msg: testDatabaseError}
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	req := httptest.NewRequest("GET", "/v1/articles/test-id", http.NoBody)
 	ctx := context.WithValue(req.Context(), logRecordKey, logRec)
@@ -838,7 +838,7 @@ func TestHandleDeleteArticleLogsDBError(t *testing.T) {
 	svc.deleteArticle = func(_ context.Context, _ string, _ string) (*service.DeleteArticleResult, error) {
 		return nil, &serviceError{msg: testDatabaseError}
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	req := httptest.NewRequest("DELETE", "/v1/articles/test-id", http.NoBody)
 	ctx := context.WithValue(req.Context(), logRecordKey, logRec)
@@ -878,7 +878,7 @@ func TestHandleDeleteAllArticlesLogsDBError(t *testing.T) {
 	svc.deleteAllArticles = func(_ context.Context, _ string) (*service.DeleteArticleResult, error) {
 		return nil, &serviceError{msg: testDatabaseError}
 	}
-	h := newHandlers(cfg, svc)
+	h := newHandlers(cfg, svc, nil)
 
 	req := httptest.NewRequest("DELETE", "/v1/articles", http.NoBody)
 	ctx := context.WithValue(req.Context(), logRecordKey, logRec)

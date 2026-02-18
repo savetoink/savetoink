@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/shaftoe/savetoink/internal/auth"
 	"github.com/shaftoe/savetoink/internal/config"
+	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
 	"github.com/shaftoe/savetoink/internal/service"
 )
@@ -24,13 +25,21 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 
 // NewRouter creates and configures a new chi router with all middleware and routes.
 func NewRouter(cfg *config.Config) *chi.Mux {
+	return newRouterWithClient(cfg, &http.Client{
+		Timeout: consts.Auth0ClientTimeout,
+	})
+}
+
+func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 	setupLogging(cfg)
 
 	r := chi.NewRouter()
 	srv := service.New(cfg)
+
 	handlers := newHandlers(
 		cfg,
 		srv,
+		client,
 	)
 
 	r.Use(middleware.Recoverer)
@@ -61,6 +70,10 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 			r.Get("/{id}", handlers.handleGetArticle)
 			r.Delete("/{id}", handlers.handleDeleteArticle)
 		})
+
+		if cfg.AuthBackend == consts.AuthBackendAuth0 {
+			r.Post("/auth/token", handlers.handleAuthTokenExchange)
+		}
 	})
 
 	return r

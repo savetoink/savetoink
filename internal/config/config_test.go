@@ -75,11 +75,13 @@ func TestConfigValidate(t *testing.T) {
 		{
 			name: "server config with auth0 backend valid",
 			config: &Config{
-				Mode:          consts.ModeServer,
-				AuthBackend:   consts.AuthBackendAuth0,
-				Auth0Domain:   "example.auth0.com",
-				Auth0Audience: "test-audience",
-				DynamoDBTable: "test-table",
+				Mode:              consts.ModeServer,
+				AuthBackend:       consts.AuthBackendAuth0,
+				Auth0Domain:       "example.auth0.com",
+				Auth0Audience:     "test-audience",
+				Auth0ClientID:     "test-client-id",
+				Auth0ClientSecret: "test-client-secret",
+				DynamoDBTable:     "test-table",
 			},
 			wantErr: false,
 		},
@@ -171,6 +173,8 @@ func TestLoad(t *testing.T) {
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_ID")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_SECRET")
 
 	_ = os.Setenv("SAVETOINK_DEST_EMAIL", "test@kindle.com")
 	_ = os.Setenv("SAVETOINK_SENDER_EMAIL", "sender@example.com")
@@ -208,6 +212,8 @@ func TestLoadDefaultsToCLI(t *testing.T) {
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_ID")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_SECRET")
 
 	cfg, err := Load(consts.ModeCLI)
 	assert.NoError(t, err)
@@ -238,15 +244,21 @@ func TestLoadServerModeAuth0(t *testing.T) {
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_ID")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_SECRET")
 
 	_ = os.Setenv("SAVETOINK_AUTH_BACKEND", "auth0")
 	_ = os.Setenv("SAVETOINK_AUTH0_DOMAIN", "example.auth0.com")
 	_ = os.Setenv("SAVETOINK_AUTH0_AUDIENCE", "test-audience")
+	_ = os.Setenv("SAVETOINK_AUTH0_CLIENT_ID", "test-client-id")
+	_ = os.Setenv("SAVETOINK_AUTH0_CLIENT_SECRET", "test-client-secret")
 	_ = os.Setenv("SAVETOINK_DYNAMODB_TABLE_NAME", "test-table")
 	defer func() {
 		_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 		_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 		_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
+		_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_ID")
+		_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_SECRET")
 		_ = os.Unsetenv("SAVETOINK_DYNAMODB_TABLE_NAME")
 	}()
 
@@ -256,4 +268,6 @@ func TestLoadServerModeAuth0(t *testing.T) {
 	assert.Equal(t, consts.AuthBackendAuth0, cfg.AuthBackend)
 	assert.Equal(t, "example.auth0.com", cfg.Auth0Domain)
 	assert.Equal(t, "test-audience", cfg.Auth0Audience)
+	assert.Equal(t, "test-client-id", cfg.Auth0ClientID)
+	assert.Equal(t, "test-client-secret", cfg.Auth0ClientSecret)
 }

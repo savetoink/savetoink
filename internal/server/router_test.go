@@ -69,7 +69,7 @@ func createTestHandlerWithMock(
 			EmailResp: emailResp,
 		}, nil
 	})
-	return newHandlers(cfg, svc)
+	return newHandlers(cfg, svc, http.DefaultClient)
 }
 
 func TestNewRouter_RouteRegistration(t *testing.T) {
