@@ -59,11 +59,6 @@ func buildMetadataHeader(article *model.Article) string {
 			fmt.Sprintf("<p><strong>Added:</strong> %s</p>", article.CreatedAt.Format("2006-01-02")))
 	}
 
-	if article.ContentType != "" {
-		contentType := cases.Title(language.English).String(article.ContentType)
-		metaLines = append(metaLines, fmt.Sprintf("<p><strong>Type:</strong> %s</p>", contentType))
-	}
-
 	if len(metaLines) == 0 {
 		return ""
 	}
