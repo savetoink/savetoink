@@ -16,7 +16,7 @@ export const GET: RequestHandler = async ({ fetch, url, cookies, locals }) => {
 			code: code,
 			redirect_uri: `${url.origin}/auth/callback`
 		},
-		locals.jwt
+		locals.jwt // remove and check
 	);
 
 	if (!response.access_token) {
@@ -24,6 +24,7 @@ export const GET: RequestHandler = async ({ fetch, url, cookies, locals }) => {
 		error(500, 'Auth0 exchange_failed');
 	}
 
+ // create a set cookie shared util
 	// Store the JWT in an HTTP-only cookie
 	cookies.set('jwt', response.access_token, {
 		path: '/',
