@@ -3,5 +3,5 @@ package model
 // UserProfile represents user-specific configuration including Kindle email.
 type UserProfile struct {
 	Account     string `json:"account" dynamodbav:"account"`
-	KindleEmail string `json:"kindleEmail" dynamodbav:"kindleEmail"`
+	KindleEmail string `json:"kindle_email" dynamodbav:"kindleEmail"`
 }

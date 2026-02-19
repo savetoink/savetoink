@@ -45,3 +45,12 @@ export async function POST(
 ) {
 	return send(fetch, 'POST', path, data, token);
 }
+
+export async function PUT(
+	fetch: typeof globalThis.fetch,
+	path: string,
+	data?: unknown,
+	token?: string
+) {
+	return send(fetch, 'PUT', path, data, token);
+}

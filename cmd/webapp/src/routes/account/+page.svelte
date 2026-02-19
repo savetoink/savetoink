@@ -9,8 +9,20 @@
 	let { form }: PageProps = $props();
 </script>
 
-{#if PUBLIC_AUTH_BACKEND === Auth0}
-	<Auth0Login />
-{:else if PUBLIC_AUTH_BACKEND === SharedKey}
-	<SharedKeyLogin {form} />
-{/if}
+<section>
+	{#if PUBLIC_AUTH_BACKEND === Auth0}
+		<Auth0Login />
+	{:else if PUBLIC_AUTH_BACKEND === SharedKey}
+		<SharedKeyLogin {form} />
+	{/if}
+</section>
+
+<section>
+	<form method="POST" action="?/profile">
+		<label>
+			Kindle Email
+			<input type="email" name="kindleEmail" required autocomplete="email" />
+		</label>
+		<button type="submit">Save</button>
+	</form>
+</section>

@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { JWT_KEY, setJwtCookie, deleteJwtCookie } from '$lib/server/cookies';
+import { PUT } from '$lib/server/apiClient';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
@@ -18,5 +19,22 @@ export const actions: Actions = {
 	clean: async ({ cookies }) => {
 		deleteJwtCookie(cookies);
 		redirect(303, '/account');
+	},
+	profile: async ({ locals, request }) => {
+		const data = await request.formData();
+		const kindleEmail = data.get('kindleEmail');
+
+		if (!kindleEmail || typeof kindleEmail !== 'string' || kindleEmail.trim() === '') {
+			return fail(400, { error: 'kindle email is required' });
+		}
+
+		await PUT(
+			fetch,
+			'/v1/user/profile',
+			{
+				kindle_email: kindleEmail
+			},
+			locals.jwt
+		);
 	}
 } satisfies Actions;

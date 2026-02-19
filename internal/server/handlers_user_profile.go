@@ -10,12 +10,12 @@ import (
 )
 
 type userProfileRequest struct {
-	KindleEmail string `json:"kindleEmail"`
+	KindleEmail string `json:"kindle_email"`
 }
 
 type userProfileResponse struct {
 	Account     string `json:"account"`
-	KindleEmail string `json:"kindleEmail"`
+	KindleEmail string `json:"kindle_email"`
 }
 
 func (h *handlers) handleGetUserProfile(w http.ResponseWriter, r *http.Request) {
