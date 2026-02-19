@@ -21,8 +21,7 @@ export const GET: RequestHandler = async ({ fetch, url, cookies }) => {
 	}
 
 	setJwtCookie(cookies, response.access_token, {
-		secure: true,
-		maxAge: 60 * 60 * 24
+		maxAge: response?.expires_in
 	});
 
 	redirect(303, '/');
