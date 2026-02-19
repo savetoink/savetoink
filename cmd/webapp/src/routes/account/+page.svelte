@@ -20,8 +20,7 @@
 <section>
 	<form method="POST" action="?/updateProfile">
 		<label>
-			Save your Amazon Kindle Email to enable sending articles to your device
-			<br />
+			<h2>Save your Amazon Kindle Email to enable sending articles to your device</h2>
 
 			<input
 				type="email"

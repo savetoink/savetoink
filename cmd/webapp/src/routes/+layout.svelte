@@ -16,11 +16,13 @@
 
 <Nav />
 
-{#if navigating.to}
-	<p>loading...</p>
-{:else}
-	{@render children()}
-{/if}
+<main>
+	{#if navigating.to}
+		<p>loading...</p>
+	{:else}
+		{@render children()}
+	{/if}
+</main>
 
 <hr />
 
