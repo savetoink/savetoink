@@ -1,7 +1,13 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { JWT_KEY, setJwtCookie, deleteJwtCookie } from '$lib/server/cookies';
-import { PUT } from '$lib/server/apiClient';
-import type { Actions } from './$types';
+import { GET, PUT } from '$lib/server/apiClient';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ fetch, locals }) => {
+	if (locals.jwt) {
+		return await GET(fetch, '/v1/user/profile', locals.jwt);
+	}
+};
 
 export const actions: Actions = {
 	save: async ({ cookies, request }) => {

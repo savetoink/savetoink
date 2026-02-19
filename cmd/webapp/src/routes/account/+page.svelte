@@ -6,7 +6,7 @@
 
 	import type { PageProps } from './$types';
 
-	let { form }: PageProps = $props();
+	let { form, data }: PageProps = $props();
 </script>
 
 <section>
@@ -20,8 +20,16 @@
 <section>
 	<form method="POST" action="?/profile">
 		<label>
-			Kindle Email
-			<input type="email" name="kindleEmail" required autocomplete="email" />
+			Save your Amazon Kindle Email to enable sending articles to your device
+			<br />
+
+			<input
+				type="email"
+				name="kindleEmail"
+				required
+				autocomplete="email"
+				value={data?.kindle_email}
+			/>
 		</label>
 		<button type="submit">Save</button>
 	</form>
