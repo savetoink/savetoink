@@ -9,6 +9,7 @@ import {
 } from '$env/static/public';
 import { getJwtCookie } from '$lib/server/cookies';
 
+// refactor validation into its own server function
 export const handle: Handle = async ({ event, resolve }) => {
 	const requiredEnvVars = [
 		{ name: 'PUBLIC_API_URL', value: PUBLIC_API_URL },
