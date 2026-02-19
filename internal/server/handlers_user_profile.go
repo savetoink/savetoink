@@ -66,3 +66,17 @@ func (h *handlers) handleSetUserProfile(w http.ResponseWriter, r *http.Request) 
 		KindleEmail: req.KindleEmail,
 	})
 }
+
+func (h *handlers) handleDeleteProfile(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountID(r.Context())
+
+	err := h.service.DeleteUserProfile(r.Context(), accountID)
+	if err != nil {
+		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

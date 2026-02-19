@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { JWT_KEY, setJwtCookie, deleteJwtCookie } from '$lib/server/cookies';
-import { GET, PUT } from '$lib/server/apiClient';
+import { GET, PUT, DELETE } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ fetch, locals }) => {
@@ -26,7 +26,7 @@ export const actions: Actions = {
 		deleteJwtCookie(cookies);
 		redirect(303, '/account');
 	},
-	profile: async ({ locals, request }) => {
+	updateProfile: async ({ locals, request }) => {
 		const data = await request.formData();
 		const kindleEmail = data.get('kindleEmail');
 
@@ -42,5 +42,8 @@ export const actions: Actions = {
 			},
 			locals.jwt
 		);
+	},
+	deleteProfile: async ({ locals }) => {
+		await DELETE(fetch, '/v1/user/profile', locals.jwt);
 	}
 } satisfies Actions;

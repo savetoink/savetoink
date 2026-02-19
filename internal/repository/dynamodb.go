@@ -348,3 +348,22 @@ func (d *DynamoDB) PutUserProfile(ctx context.Context, profile *model.UserProfil
 
 	return nil
 }
+
+// DeleteUserProfile implements UserProfileRepository.DeleteUserProfile.
+func (d *DynamoDB) DeleteUserProfile(ctx context.Context, account string) error {
+	if d.profileTableName == "" {
+		return errors.New("user profile table not configured")
+	}
+
+	_, err := d.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+		TableName: aws.String(d.profileTableName),
+		Key: map[string]types.AttributeValue{
+			attributeNameAccount: &types.AttributeValueMemberS{Value: account},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete user profile: %w", err)
+	}
+
+	return nil
+}

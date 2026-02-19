@@ -18,7 +18,7 @@
 </section>
 
 <section>
-	<form method="POST" action="?/profile">
+	<form method="POST" action="?/updateProfile">
 		<label>
 			Save your Amazon Kindle Email to enable sending articles to your device
 			<br />
@@ -32,5 +32,8 @@
 			/>
 		</label>
 		<button type="submit">Save</button>
+	</form>
+	<form method="POST" action="?/deleteProfile">
+		<button type="submit">Delete</button>
 	</form>
 </section>

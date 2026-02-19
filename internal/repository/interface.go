@@ -24,4 +24,5 @@ type ArticlesRepository interface {
 type UserProfileRepository interface {
 	GetUserProfile(ctx context.Context, account string) (*model.UserProfile, error)
 	PutUserProfile(ctx context.Context, profile *model.UserProfile) error
+	DeleteUserProfile(ctx context.Context, account string) error
 }

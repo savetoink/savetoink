@@ -31,6 +31,7 @@ type Interface interface {
 	GetDBError() error
 	GetUserKindleEmail(ctx context.Context, accountID string) (string, error)
 	SetUserKindleEmail(ctx context.Context, accountID, kindleEmail string) error
+	DeleteUserProfile(ctx context.Context, accountID string) error
 }
 
 // Service holds the stateless dependencies and provides methods to process articles.
@@ -492,6 +493,19 @@ func (s *Service) SetUserKindleEmail(ctx context.Context, accountID, kindleEmail
 
 	if err := s.userProfileRepo.PutUserProfile(ctx, profile); err != nil {
 		return fmt.Errorf("failed to set user profile: %w", err)
+	}
+
+	return nil
+}
+
+// DeleteUserProfile deletes the user profile for a given account ID.
+func (s *Service) DeleteUserProfile(ctx context.Context, accountID string) error {
+	if s.userProfileRepo == nil {
+		return errors.New("user profile repository not configured")
+	}
+
+	if err := s.userProfileRepo.DeleteUserProfile(ctx, accountID); err != nil {
+		return fmt.Errorf("failed to delete user profile: %w", err)
 	}
 
 	return nil

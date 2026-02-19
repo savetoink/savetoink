@@ -76,6 +76,7 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 			r.Route("/profile", func(r chi.Router) {
 				r.Get("/", handlers.handleGetUserProfile)
 				r.Put("/", handlers.handleSetUserProfile)
+				r.Delete("/", handlers.handleDeleteProfile)
 			})
 		})
 

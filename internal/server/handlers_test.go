@@ -32,6 +32,7 @@ type MockService struct {
 	deleteAllArticles   func(context.Context, string) (*service.DeleteArticleResult, error)
 	getUserKindleEmail  func(context.Context, string) (string, error)
 	setUserKindleEmail  func(context.Context, string, string) error
+	deleteUserProfile   func(context.Context, string) error
 	dbError             error
 }
 
@@ -86,6 +87,13 @@ func (m *MockService) GetUserKindleEmail(ctx context.Context, accountID string) 
 func (m *MockService) SetUserKindleEmail(ctx context.Context, accountID, kindleEmail string) error {
 	if m.setUserKindleEmail != nil {
 		return m.setUserKindleEmail(ctx, accountID, kindleEmail)
+	}
+	return nil
+}
+
+func (m *MockService) DeleteUserProfile(ctx context.Context, accountID string) error {
+	if m.deleteUserProfile != nil {
+		return m.deleteUserProfile(ctx, accountID)
 	}
 	return nil
 }
@@ -901,6 +909,98 @@ func TestHandleDeleteAllArticlesLogsDBError(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	h.handleDeleteAllArticles(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
+	}
+
+	foundDBError := false
+	logRec.Attrs(func(a slog.Attr) bool {
+		if a.Key == dbErrorLogKey {
+			foundDBError = true
+			if a.Value.String() != testDatabaseError {
+				t.Errorf("expected db_error '%s', got '%s'", testDatabaseError, a.Value.String())
+			}
+		}
+		return true
+	})
+
+	if !foundDBError {
+		t.Error("expected to find db_error attribute in log record")
+	}
+}
+
+func TestHandleDeleteProfile(t *testing.T) {
+	tests := []struct {
+		name         string
+		deleteErr    error
+		expectedCode int
+		expectedErr  string
+	}{
+		{
+			name:         "success",
+			deleteErr:    nil,
+			expectedCode: http.StatusOK,
+			expectedErr:  "",
+		},
+		{
+			name:         "service error",
+			deleteErr:    &serviceError{msg: testDatabaseError},
+			expectedCode: http.StatusInternalServerError,
+			expectedErr:  testDatabaseError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.Config{}
+			svc := newMockService(nil)
+			svc.deleteUserProfile = func(_ context.Context, _ string) error {
+				return tt.deleteErr
+			}
+			h := newHandlers(cfg, svc, nil)
+
+			req := httptest.NewRequest("DELETE", "/v1/user/profile", http.NoBody)
+			w := httptest.NewRecorder()
+
+			h.handleDeleteProfile(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("expected status %d, got %d", tt.expectedCode, w.Code)
+			}
+
+			if tt.deleteErr != nil {
+				var resp model.ErrorResponse
+				if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+					t.Fatalf("failed to decode response: %v", err)
+				}
+				if resp.Error != tt.expectedErr {
+					t.Errorf("expected error '%s', got '%s'", tt.expectedErr, resp.Error)
+				}
+			}
+		})
+	}
+}
+
+func TestHandleDeleteProfileLogsDBError(t *testing.T) {
+	setupLogCapture()
+	record := slog.NewRecord(time.Now(), slog.LevelInfo, "request completed", 0)
+	logRec := &logRecord{Record: &record}
+
+	cfg := &config.Config{}
+	svc := newMockService(nil)
+	testDatabaseError := "failed to delete user profile"
+	svc.deleteUserProfile = func(_ context.Context, _ string) error {
+		return &serviceError{msg: testDatabaseError}
+	}
+	h := newHandlers(cfg, svc, nil)
+
+	req := httptest.NewRequest("DELETE", "/v1/user/profile", http.NoBody)
+	ctx := context.WithValue(req.Context(), logRecordKey, logRec)
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.handleDeleteProfile(w, req)
 
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
