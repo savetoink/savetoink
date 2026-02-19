@@ -773,6 +773,111 @@ func TestDynamoDB_Store_PreservesUTC(t *testing.T) {
 	assert.Equal(t, time.UTC, retrieved.CreatedAt.Location(), "timestamp location should be UTC")
 }
 
+func TestDynamoDB_GetUserProfile_NotSet(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	repo := setupTestDynamoDB(t)
+	ctx := context.Background()
+
+	profile, err := repo.GetUserProfile(ctx, testAccount)
+	skipIfTableNotFound(t, err)
+	require.NoError(t, err)
+	assert.Nil(t, profile)
+}
+
+func TestDynamoDB_PutUserProfile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	repo := setupTestDynamoDB(t)
+	ctx := context.Background()
+
+	profile := &model.UserProfile{
+		Account:     testAccount,
+		KindleEmail: "user@kindle.com",
+	}
+
+	err := repo.PutUserProfile(ctx, profile)
+	skipIfTableNotFound(t, err)
+	require.NoError(t, err)
+}
+
+func TestDynamoDB_GetUserProfile_AfterPut(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	repo := setupTestDynamoDB(t)
+	ctx := context.Background()
+
+	expected := &model.UserProfile{
+		Account:     testAccount,
+		KindleEmail: "user@kindle.com",
+	}
+
+	err := repo.PutUserProfile(ctx, expected)
+	skipIfTableNotFound(t, err)
+	require.NoError(t, err)
+
+	actual, err := repo.GetUserProfile(ctx, testAccount)
+	skipIfTableNotFound(t, err)
+	require.NoError(t, err)
+	assert.Equal(t, expected.Account, actual.Account)
+	assert.Equal(t, expected.KindleEmail, actual.KindleEmail)
+}
+
+func TestDynamoDB_PutUserProfile_UpdatesExisting(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	repo := setupTestDynamoDB(t)
+	ctx := context.Background()
+
+	profile1 := &model.UserProfile{
+		Account:     testAccount,
+		KindleEmail: "user@kindle.com",
+	}
+
+	err := repo.PutUserProfile(ctx, profile1)
+	skipIfTableNotFound(t, err)
+	require.NoError(t, err)
+
+	profile2 := &model.UserProfile{
+		Account:     testAccount,
+		KindleEmail: "updated@kindle.com",
+	}
+
+	err = repo.PutUserProfile(ctx, profile2)
+	skipIfTableNotFound(t, err)
+	require.NoError(t, err)
+
+	actual, err := repo.GetUserProfile(ctx, testAccount)
+	skipIfTableNotFound(t, err)
+	require.NoError(t, err)
+	assert.Equal(t, "updated@kindle.com", actual.KindleEmail)
+}
+
+func TestDynamoDB_PutUserProfile_RequiresAccount(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	repo := setupTestDynamoDB(t)
+	ctx := context.Background()
+
+	profile := &model.UserProfile{
+		KindleEmail: "user@kindle.com",
+	}
+
+	err := repo.PutUserProfile(ctx, profile)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "account field is required")
+}
+
 func stringPtr(s string) *string {
 	return &s
 }
@@ -780,8 +885,9 @@ func stringPtr(s string) *string {
 func setupTestDynamoDB(t *testing.T) *DynamoDB {
 	t.Helper()
 
-	tableName := "test-savetoink-articles"
-	repo := NewDynamoDB(nil, tableName)
+	articlesTableName := "test-savetoink-articles"
+	profileTableName := "test-savetoink-user-profiles"
+	repo := NewDynamoDB(nil, articlesTableName, profileTableName)
 
 	t.Cleanup(func() {
 		ctx := context.Background()

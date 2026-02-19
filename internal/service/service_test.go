@@ -426,7 +426,7 @@ func TestSend_NilResult(t *testing.T) {
 	}
 	svc := New(cfg)
 
-	_, err := svc.Send(context.Background(), nil, "")
+	_, err := svc.Send(context.Background(), nil, "", "test@kindle.com")
 
 	if err == nil {
 		t.Error("expected error for nil result, got nil")
@@ -441,7 +441,7 @@ func TestSend_NilArticle(t *testing.T) {
 
 	result := NewProcessResult(nil, []byte("test"), "https://example.com")
 
-	_, err := svc.Send(context.Background(), result, "")
+	_, err := svc.Send(context.Background(), result, "", "test@kindle.com")
 
 	if err == nil {
 		t.Error("expected error for nil article, got nil")
@@ -460,7 +460,7 @@ func TestSend_NoSenderConfigured(t *testing.T) {
 	}
 	result := NewProcessResult(article, []byte("test"), "https://example.com")
 
-	_, err := svc.Send(context.Background(), result, "")
+	_, err := svc.Send(context.Background(), result, "", "test@kindle.com")
 
 	if err == nil {
 		t.Error("expected error when sender not configured, got nil")

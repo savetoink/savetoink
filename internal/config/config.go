@@ -13,9 +13,10 @@ import (
 
 // Config holds configuration settings for application.
 type Config struct {
-	Debug         bool
-	DynamoDBTable string
-	Mode          consts.RunMode
+	Debug            bool
+	ArticlesTable    string
+	UserProfileTable string
+	Mode             consts.RunMode
 
 	// Auth
 	APIKeySecret      string
@@ -27,7 +28,6 @@ type Config struct {
 	AuthBackend       consts.AuthBackend
 
 	// Email
-	DestEmail        string
 	EmailProvider    consts.EmailProvider
 	MailjetAPIKey    string
 	MailjetAPISecret string
@@ -57,6 +57,19 @@ func Load(mode consts.RunMode) (*Config, error) {
 	return cfg, nil
 }
 
+// EnableEmailSending forces email sending to be enabled.
+// This is useful for CLI mode when the --send flag is used.
+func (c *Config) EnableEmailSending() error {
+	c.SendEnabled = true
+	c.EmailProvider = consts.EmailBackendMailjet
+	var missing []string
+	c.validateSendEnabledConfig(&missing)
+	if len(missing) > 0 {
+		return fmt.Errorf("required environment variables for email sending are missing: %v", missing)
+	}
+	return nil
+}
+
 func bindEnvVars() error {
 	envVars := []struct {
 		key    string
@@ -71,10 +84,10 @@ func bindEnvVars() error {
 		{"auth0-client-secret", "SAVETOINK_AUTH0_CLIENT_SECRET"},
 		{"auth0-domain", "SAVETOINK_AUTH0_DOMAIN"},
 		{"debug", "SAVETOINK_DEBUG"},
-		{"destination-email", "SAVETOINK_DEST_EMAIL"},
-		{"dynamodb-table", "SAVETOINK_DYNAMODB_TABLE_NAME"},
+		{"dynamodb-table", "SAVETOINK_ARTICLE_TABLE_NAME"},
 		{"send-enabled", "SAVETOINK_SEND_ENABLED"},
 		{"sender-email", "SAVETOINK_SENDER_EMAIL"},
+		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
 	}
 
 	for _, ev := range envVars {
@@ -94,13 +107,13 @@ func loadConfig(mode consts.RunMode) *Config {
 		Auth0Domain:       viper.GetString("auth0-domain"),
 		AuthBackend:       consts.AuthBackend(viper.GetString("auth-backend")),
 		Debug:             viper.GetBool("debug"),
-		DestEmail:         viper.GetString("destination-email"),
-		DynamoDBTable:     viper.GetString("dynamodb-table"),
+		ArticlesTable:     viper.GetString("dynamodb-table"),
 		MailjetAPIKey:     viper.GetString("api-key"),
 		MailjetAPISecret:  viper.GetString("api-secret"),
 		Mode:              mode,
 		SendEnabled:       viper.GetBool("send-enabled"),
 		SenderEmail:       viper.GetString("sender-email"),
+		UserProfileTable:  viper.GetString("user-profile-table"),
 	}
 
 	return cfg
@@ -149,8 +162,8 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 	default:
 		return fmt.Errorf("unsupported auth backend: %s", c.AuthBackend)
 	}
-	if c.DynamoDBTable == "" {
-		*missing = append(*missing, "SAVETOINK_DYNAMODB_TABLE_NAME")
+	if c.ArticlesTable == "" {
+		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.Background())
@@ -162,9 +175,6 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 }
 
 func (c *Config) validateSendEnabledConfig(missing *[]string) {
-	if c.DestEmail == "" {
-		*missing = append(*missing, "SAVETOINK_DEST_EMAIL")
-	}
 	if c.SenderEmail == "" {
 		*missing = append(*missing, "SAVETOINK_SENDER_EMAIL")
 	}

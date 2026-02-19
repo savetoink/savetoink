@@ -21,7 +21,7 @@ import (
 // Interface defines the contract for service operations.
 type Interface interface {
 	Process(ctx context.Context, url string) (*ProcessResult, error)
-	Send(ctx context.Context, result *ProcessResult, subject string) (*email.SendEmailResponse, error)
+	Send(ctx context.Context, result *ProcessResult, subject, destEmail string) (*email.SendEmailResponse, error)
 	WriteToFile(result *ProcessResult, outputPath string) error
 	CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error)
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
@@ -29,16 +29,19 @@ type Interface interface {
 	DeleteArticle(ctx context.Context, accountID, articleID string) (*DeleteArticleResult, error)
 	DeleteAllArticles(ctx context.Context, accountID string) (*DeleteArticleResult, error)
 	GetDBError() error
+	GetUserKindleEmail(ctx context.Context, accountID string) (string, error)
+	SetUserKindleEmail(ctx context.Context, accountID, kindleEmail string) error
 }
 
 // Service holds the stateless dependencies and provides methods to process articles.
 type Service struct {
-	extractor *content.Extractor
-	generator *epub.Generator
-	sender    email.Sender
-	repo      repository.Repository
-	cfg       *config.Config
-	dbErrors  error
+	extractor       *content.Extractor
+	generator       *epub.Generator
+	sender          email.Sender
+	repo            repository.ArticlesRepository
+	userProfileRepo repository.UserProfileRepository
+	cfg             *config.Config
+	dbErrors        error
 }
 
 // New creates a new Service instance with the given config.
@@ -55,17 +58,20 @@ func New(cfg *config.Config) *Service {
 		}
 	}
 
-	var repo repository.Repository
-	if cfg.DynamoDBTable != "" && cfg.AWSConfig != nil {
-		repo = repository.NewDynamoDB(cfg.AWSConfig, cfg.DynamoDBTable)
+	var repo repository.ArticlesRepository
+	var userProfileRepo repository.UserProfileRepository
+	if cfg.ArticlesTable != "" && cfg.AWSConfig != nil {
+		repo = repository.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable)
+		userProfileRepo = repo.(repository.UserProfileRepository)
 	}
 
 	return &Service{
-		extractor: content.NewExtractor(),
-		generator: epub.NewGenerator(),
-		sender:    sender,
-		repo:      repo,
-		cfg:       cfg,
+		extractor:       content.NewExtractor(),
+		generator:       epub.NewGenerator(),
+		sender:          sender,
+		repo:            repo,
+		userProfileRepo: userProfileRepo,
+		cfg:             cfg,
 	}
 }
 
@@ -152,7 +158,7 @@ func (s *Service) Process(ctx context.Context, url string) (*ProcessResult, erro
 func (s *Service) Send(
 	ctx context.Context,
 	result *ProcessResult,
-	subject string,
+	subject, destEmail string,
 ) (*email.SendEmailResponse, error) {
 	if result == nil {
 		return nil, errors.New("result is nil, must call Process first")
@@ -166,10 +172,14 @@ func (s *Service) Send(
 		return nil, errors.New("email sender is not configured")
 	}
 
+	if destEmail == "" {
+		return nil, errors.New("destination email is required")
+	}
+
 	emailReq := &email.Request{
 		Article:   result.article,
 		EPUBData:  result.epubData,
-		DestEmail: s.cfg.DestEmail,
+		DestEmail: destEmail,
 		Subject:   email.GenerateSubject(result.article.Title, subject),
 	}
 
@@ -250,17 +260,14 @@ func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string) (
 		return nil, articleErr
 	}
 
-	var emailResp *email.SendEmailResponse
-	if s.cfg.SendEnabled {
-		emailResp, err = s.Send(ctx, result, "")
-		if err != nil {
-			article.Error = err.Error()
-			articlesChan <- article
-			return nil, err
-		}
+	emailResp, destEmail, err := s.sendArticle(ctx, result, accountID)
+	if err != nil {
+		article.Error = err.Error()
+		articlesChan <- article
+		return nil, err
 	}
 
-	s.enrichArticle(result.Article(), &articleID, emailResp, accountID)
+	s.enrichArticle(result.Article(), &articleID, emailResp, accountID, destEmail)
 	articlesChan <- result.Article()
 
 	return &CreateArticleResult{
@@ -268,6 +275,31 @@ func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string) (
 		Message:   s.getMessage(result.Article(), emailResp),
 		EmailResp: emailResp,
 	}, nil
+}
+
+func (s *Service) sendArticle(
+	ctx context.Context,
+	result *ProcessResult,
+	accountID string,
+) (*email.SendEmailResponse, string, error) {
+	if !s.cfg.SendEnabled {
+		return nil, "", nil
+	}
+
+	destEmail, err := s.GetUserKindleEmail(ctx, accountID)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get user kindle email: %w", err)
+	}
+	if destEmail == "" {
+		return nil, "", errors.New("kindle email not configured for user")
+	}
+
+	emailResp, err := s.Send(ctx, result, "", destEmail)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return emailResp, destEmail, nil
 }
 
 // GetDBError returns any accumulated database errors from background operations.
@@ -343,7 +375,7 @@ func (s *Service) enrichArticle(
 	article *model.Article,
 	id *string,
 	emailResp *email.SendEmailResponse,
-	accountID string,
+	accountID, destEmail string,
 ) {
 	article.Account = accountID
 	article.ID = *id
@@ -359,7 +391,7 @@ func (s *Service) enrichArticle(
 
 	article.DeliveryStatus = consts.StatusDelivered
 	article.DeliveredFrom = &s.cfg.SenderEmail
-	article.DeliveredTo = &s.cfg.DestEmail
+	article.DeliveredTo = &destEmail
 	article.DeliveredEmailUUID = &emailResp.EmailUUID
 	article.DeliveredBy = s.cfg.EmailProvider
 }
@@ -427,4 +459,40 @@ func (s *Service) GetArticlesMetadata(
 		Total:    total,
 		HasMore:  lastEvaluatedKey != nil,
 	}, nil
+}
+
+// GetUserKindleEmail retrieves the kindle email for a given account ID.
+func (s *Service) GetUserKindleEmail(ctx context.Context, accountID string) (string, error) {
+	if s.userProfileRepo == nil {
+		return "", errors.New("user profile repository not configured")
+	}
+
+	profile, err := s.userProfileRepo.GetUserProfile(ctx, accountID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get user profile: %w", err)
+	}
+
+	if profile == nil {
+		return "", nil
+	}
+
+	return profile.KindleEmail, nil
+}
+
+// SetUserKindleEmail sets the kindle email for a given account ID.
+func (s *Service) SetUserKindleEmail(ctx context.Context, accountID, kindleEmail string) error {
+	if s.userProfileRepo == nil {
+		return errors.New("user profile repository not configured")
+	}
+
+	profile := &model.UserProfile{
+		Account:     accountID,
+		KindleEmail: kindleEmail,
+	}
+
+	if err := s.userProfileRepo.PutUserProfile(ctx, profile); err != nil {
+		return fmt.Errorf("failed to set user profile: %w", err)
+	}
+
+	return nil
 }

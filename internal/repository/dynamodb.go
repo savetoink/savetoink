@@ -23,19 +23,21 @@ const (
 
 // DynamoDB implements Repository interface using AWS DynamoDB.
 type DynamoDB struct {
-	client    *dynamodb.Client
-	tableName string
+	client           *dynamodb.Client
+	articleTableName string
+	profileTableName string
 }
 
 // NewDynamoDB creates a new DynamoDB repository instance.
-func NewDynamoDB(awsConfig *aws.Config, tableName string) *DynamoDB {
+func NewDynamoDB(awsConfig *aws.Config, articlesTableName, profileTableName string) *DynamoDB {
 	cfg, _ := config.LoadDefaultConfig(context.TODO())
 	if awsConfig != nil && awsConfig.Region == "" {
 		cfg.Region = awsConfig.Region
 	}
 	return &DynamoDB{
-		client:    dynamodb.NewFromConfig(cfg),
-		tableName: tableName,
+		client:           dynamodb.NewFromConfig(cfg),
+		articleTableName: articlesTableName,
+		profileTableName: profileTableName,
 	}
 }
 
@@ -57,7 +59,7 @@ func (d *DynamoDB) Store(ctx context.Context, article *model.Article) error {
 	}
 
 	_, err = d.client.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String(d.tableName),
+		TableName: aws.String(d.articleTableName),
 		Item:      item,
 	})
 	if err != nil {
@@ -70,7 +72,7 @@ func (d *DynamoDB) Store(ctx context.Context, article *model.Article) error {
 // GetByAccountAndID implements Repository.GetByAccountAndID.
 func (d *DynamoDB) GetByAccountAndID(ctx context.Context, account, id string) (*model.Article, error) {
 	resp, err := d.client.GetItem(ctx, &dynamodb.GetItemInput{
-		TableName: aws.String(d.tableName),
+		TableName: aws.String(d.articleTableName),
 		Key: map[string]types.AttributeValue{
 			attributeNameAccount: &types.AttributeValueMemberS{Value: account},
 			attributeNameID:      &types.AttributeValueMemberS{Value: id},
@@ -121,7 +123,7 @@ func (d *DynamoDB) getProjectionAttributeNames() map[string]string {
 
 func (d *DynamoDB) totalCountByAccount(ctx context.Context, account string) (int, error) {
 	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
-		TableName:              aws.String(d.tableName),
+		TableName:              aws.String(d.articleTableName),
 		IndexName:              aws.String(consts.DynamoDBGSIName),
 		KeyConditionExpression: aws.String("#account = :account"),
 		ExpressionAttributeNames: map[string]string{
@@ -198,7 +200,7 @@ func (d *DynamoDB) queryArticlesByAccount(
 	exclusiveStartKey map[string]types.AttributeValue,
 ) (*dynamodb.QueryOutput, error) {
 	queryInput := &dynamodb.QueryInput{
-		TableName:              aws.String(d.tableName),
+		TableName:              aws.String(d.articleTableName),
 		IndexName:              aws.String(consts.DynamoDBGSIName),
 		KeyConditionExpression: aws.String("#account = :account"),
 		ProjectionExpression: aws.String(
@@ -238,7 +240,7 @@ func (d *DynamoDB) unmarshalArticles(items []map[string]types.AttributeValue) ([
 // DeleteByAccountAndID implements Repository.DeleteByAccountAndID.
 func (d *DynamoDB) DeleteByAccountAndID(ctx context.Context, account, id string) error {
 	_, err := d.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
-		TableName: aws.String(d.tableName),
+		TableName: aws.String(d.articleTableName),
 		Key: map[string]types.AttributeValue{
 			attributeNameAccount: &types.AttributeValueMemberS{Value: account},
 			attributeNameID:      &types.AttributeValueMemberS{Value: id},
@@ -279,7 +281,7 @@ func (d *DynamoDB) DeleteByAccount(ctx context.Context, account string) (int, er
 
 		_, err = d.client.BatchWriteItem(ctx, &dynamodb.BatchWriteItemInput{
 			RequestItems: map[string][]types.WriteRequest{
-				d.tableName: writeReqs,
+				d.articleTableName: writeReqs,
 			},
 		})
 		if err != nil {
@@ -292,3 +294,57 @@ func (d *DynamoDB) DeleteByAccount(ctx context.Context, account string) (int, er
 
 // ErrNotFound is returned when an article is not found.
 var ErrNotFound = errors.New("article not found")
+
+// GetUserProfile implements UserProfileRepository.GetUserProfile.
+func (d *DynamoDB) GetUserProfile(ctx context.Context, account string) (*model.UserProfile, error) {
+	if d.profileTableName == "" {
+		return nil, errors.New("user profile table not configured")
+	}
+
+	resp, err := d.client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(d.profileTableName),
+		Key: map[string]types.AttributeValue{
+			attributeNameAccount: &types.AttributeValueMemberS{Value: account},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user profile: %w", err)
+	}
+
+	if resp.Item == nil {
+		return nil, nil
+	}
+
+	var profile model.UserProfile
+	if unmarshalErr := attributevalue.UnmarshalMap(resp.Item, &profile); unmarshalErr != nil {
+		return nil, fmt.Errorf("failed to unmarshal user profile: %w", unmarshalErr)
+	}
+
+	return &profile, nil
+}
+
+// PutUserProfile implements UserProfileRepository.PutUserProfile.
+func (d *DynamoDB) PutUserProfile(ctx context.Context, profile *model.UserProfile) error {
+	if d.profileTableName == "" {
+		return errors.New("user profile table not configured")
+	}
+
+	if profile.Account == "" {
+		return errors.New("account field is required")
+	}
+
+	item, err := attributevalue.MarshalMap(profile)
+	if err != nil {
+		return fmt.Errorf("failed to marshal user profile: %w", err)
+	}
+
+	_, err = d.client.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(d.profileTableName),
+		Item:      item,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to store user profile: %w", err)
+	}
+
+	return nil
+}

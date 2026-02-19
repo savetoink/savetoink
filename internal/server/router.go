@@ -71,6 +71,14 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 			r.Delete("/{id}", handlers.handleDeleteArticle)
 		})
 
+		r.Route("/user", func(r chi.Router) {
+			r.Use(auth.EnsureAutheticatedMiddleware)
+			r.Route("/profile", func(r chi.Router) {
+				r.Get("/", handlers.handleGetUserProfile)
+				r.Put("/", handlers.handleSetUserProfile)
+			})
+		})
+
 		if cfg.AuthBackend == consts.AuthBackendAuth0 {
 			r.Post("/auth/token", handlers.handleAuthTokenExchange)
 		}

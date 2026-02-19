@@ -24,12 +24,14 @@ const (
 type MockService struct {
 	createFunc          func(context.Context, string, string) (*service.CreateArticleResult, error)
 	processFunc         func(context.Context, string) (*service.ProcessResult, error)
-	sendFunc            func(context.Context, *service.ProcessResult, string) (*email.SendEmailResponse, error)
+	sendFunc            func(context.Context, *service.ProcessResult, string, string) (*email.SendEmailResponse, error)
 	writeFunc           func(*service.ProcessResult, string) error
 	getArticle          func(context.Context, string, string) (*model.Article, error)
 	getArticlesMetadata func(context.Context, string, int, int) (*service.GetArticlesResult, error)
 	deleteArticle       func(context.Context, string, string) (*service.DeleteArticleResult, error)
 	deleteAllArticles   func(context.Context, string) (*service.DeleteArticleResult, error)
+	getUserKindleEmail  func(context.Context, string) (string, error)
+	setUserKindleEmail  func(context.Context, string, string) error
 	dbError             error
 }
 
@@ -62,16 +64,30 @@ func (m *MockService) Process(ctx context.Context, url string) (*service.Process
 func (m *MockService) Send(
 	ctx context.Context,
 	result *service.ProcessResult,
-	subject string,
+	subject, destEmail string,
 ) (*email.SendEmailResponse, error) {
 	if m.sendFunc != nil {
-		return m.sendFunc(ctx, result, subject)
+		return m.sendFunc(ctx, result, subject, destEmail)
 	}
 	return &email.SendEmailResponse{
 		Status:    "success",
 		Message:   "sent",
 		EmailUUID: "test-uuid",
 	}, nil
+}
+
+func (m *MockService) GetUserKindleEmail(ctx context.Context, accountID string) (string, error) {
+	if m.getUserKindleEmail != nil {
+		return m.getUserKindleEmail(ctx, accountID)
+	}
+	return "", nil
+}
+
+func (m *MockService) SetUserKindleEmail(ctx context.Context, accountID, kindleEmail string) error {
+	if m.setUserKindleEmail != nil {
+		return m.setUserKindleEmail(ctx, accountID, kindleEmail)
+	}
+	return nil
 }
 
 func (m *MockService) WriteToFile(result *service.ProcessResult, outputPath string) error {
@@ -159,7 +175,6 @@ func TestHandleHealth(t *testing.T) {
 
 func TestHandleCreateArticleSuccessWithEmail(t *testing.T) {
 	cfg := &config.Config{
-		DestEmail:        "test@example.com",
 		SenderEmail:      "sender@example.com",
 		MailjetAPIKey:    "test-key",
 		MailjetAPISecret: "test-secret",

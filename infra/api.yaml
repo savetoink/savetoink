@@ -29,10 +29,6 @@ Parameters:
     NoEcho: true
     Description: Secret API key for authentication
 
-  DestEmail:
-    Type: String
-    Description: Kindle email address
-
   SenderEmail:
     Type: String
     Description: Verified sender email address
@@ -129,12 +125,12 @@ Resources:
           SAVETOINK_AUTH0_CLIENT_SECRET: !Ref Auth0ClientSecret
           SAVETOINK_AUTH_BACKEND: !Ref AuthBackend
           SAVETOINK_DEBUG: !Ref Debug
-          SAVETOINK_DEST_EMAIL: !Ref DestEmail
-          SAVETOINK_DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          SAVETOINK_ARTICLE_TABLE_NAME: !Ref DynamoDBTable
           SAVETOINK_MAILJET_API_KEY: !Ref MailjetAPIKey
           SAVETOINK_MAILJET_API_SECRET: !Ref MailjetAPISecret
           SAVETOINK_SENDER_EMAIL: !Ref SenderEmail
           SAVETOINK_SEND_ENABLED: !Ref SendEnabled
+          SAVETOINK_USER_PROFILE_TABLE_NAME: !Ref UserProfileTable
       TracingConfig:
         Mode: PassThrough
 
@@ -291,6 +287,18 @@ Resources:
               - deliveredBy
       BillingMode: PAY_PER_REQUEST
 
+  UserProfileTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-user-profiles"
+      AttributeDefinitions:
+        - AttributeName: account
+          AttributeType: S
+      KeySchema:
+        - AttributeName: account
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
   DynamoDBTableAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -308,6 +316,13 @@ Resources:
               - dynamodb:UpdateItem
               - dynamodb:DeleteItem
             Resource: !GetAtt DynamoDBTable.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Resource: !GetAtt UserProfileTable.Arn
 
   GitHubOIDCProvider:
     Type: AWS::IAM::OIDCProvider
@@ -380,6 +395,18 @@ Outputs:
     Value: !GetAtt DynamoDBTable.Arn
     Export:
       Name: !Sub "${ProjectName}-dynamodb-table-arn"
+
+  UserProfileTableName:
+    Description: Name of the DynamoDB table for storing user profiles
+    Value: !Ref UserProfileTable
+    Export:
+      Name: !Sub "${ProjectName}-user-profile-table-name"
+
+  UserProfileTableArn:
+    Description: ARN of the user profile DynamoDB table
+    Value: !GetAtt UserProfileTable.Arn
+    Export:
+      Name: !Sub "${ProjectName}-user-profile-table-arn"
 
   CloudFrontDistributionId:
     Description: CloudFront distribution ID

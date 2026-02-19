@@ -24,6 +24,7 @@ var (
 
 	sendEmail    bool
 	emailSubject string
+	destEmail    string
 )
 
 var rootCmd = &cobra.Command{
@@ -58,6 +59,12 @@ func runConvert(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
+	if sendEmail {
+		if sendErr := cfg.EnableEmailSending(); sendErr != nil {
+			return fmt.Errorf("failed to enable email sending: %w", sendErr)
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -76,7 +83,7 @@ func runConvert(_ *cobra.Command, args []string) error {
 
 	var resp *email.SendEmailResponse
 	if sendEmail {
-		resp, err = svc.Send(ctx, result, emailSubject)
+		resp, err = svc.Send(ctx, result, emailSubject, destEmail)
 		if err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}
@@ -119,6 +126,7 @@ func main() {
 	convertCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show extracted HTML content")
 
 	convertCmd.Flags().BoolVar(&sendEmail, "send", false, "Send EPUB to Kindle via email instead of saving locally")
+	convertCmd.Flags().StringVar(&destEmail, "dest-email", "", "Destination Kindle email address")
 	convertCmd.Flags().StringVar(&emailSubject, "email-subject", "", "Email subject (defaults to article title)")
 
 	rootCmd.AddCommand(convertCmd)

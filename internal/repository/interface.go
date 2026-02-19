@@ -7,8 +7,8 @@ import (
 	"github.com/shaftoe/savetoink/internal/model"
 )
 
-// Repository defines the interface for article persistence.
-type Repository interface {
+// ArticlesRepository defines the interface for article persistence.
+type ArticlesRepository interface {
 	Store(ctx context.Context, article *model.Article) error
 	GetByAccountAndID(ctx context.Context, account, id string) (*model.Article, error)
 	GetMetadataByAccount(
@@ -18,4 +18,10 @@ type Repository interface {
 	) ([]*model.Article, map[string]types.AttributeValue, int, error)
 	DeleteByAccountAndID(ctx context.Context, account, id string) error
 	DeleteByAccount(ctx context.Context, account string) (int, error)
+}
+
+// UserProfileRepository defines the interface for user profile persistence.
+type UserProfileRepository interface {
+	GetUserProfile(ctx context.Context, account string) (*model.UserProfile, error)
+	PutUserProfile(ctx context.Context, profile *model.UserProfile) error
 }
