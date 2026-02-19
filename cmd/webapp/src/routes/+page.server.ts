@@ -13,6 +13,6 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
 		// TODO: return typed response: https://svelte.dev/docs/kit/types
 		return await GET(fetch, `/v1/articles?page=${page}&page_size=${pageSize}`, locals.jwt);
 	} catch {
-		redirect(302, '/login');
+		redirect(302, '/account');
 	}
 };

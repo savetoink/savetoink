@@ -17,6 +17,6 @@ export const actions: Actions = {
 	},
 	clean: async ({ cookies }) => {
 		deleteJwtCookie(cookies);
-		redirect(303, '/login');
+		redirect(303, '/account');
 	}
 } satisfies Actions;

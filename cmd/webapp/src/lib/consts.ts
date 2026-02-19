@@ -1,4 +1,4 @@
-const unauthenticatedPaths = ['/login', '/auth/callback'];
+const unauthenticatedPaths = ['/account', '/auth/callback'];
 export const isAuthenticatedPath = (path: string) => !unauthenticatedPaths.includes(path);
 
 type authBackend = 'auth0' | 'sharedKey';

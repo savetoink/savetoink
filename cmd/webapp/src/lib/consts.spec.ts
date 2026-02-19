@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 describe('isAuthenticatedPath', () => {
-	it('should return false for /login path', async () => {
+	it('should return false for /account path', async () => {
 		const { isAuthenticatedPath } = await import('./consts');
-		expect(isAuthenticatedPath('/login')).toBe(false);
+		expect(isAuthenticatedPath('/account')).toBe(false);
 	});
 
 	it('should return false for /auth/callback path', async () => {
@@ -36,9 +36,9 @@ describe('isAuthenticatedPath', () => {
 		expect(isAuthenticatedPath('/dashboard/')).toBe(true);
 	});
 
-	it('should return true for /login/ with trailing slash', async () => {
+	it('should return true for /account/ with trailing slash', async () => {
 		const { isAuthenticatedPath } = await import('./consts');
-		expect(isAuthenticatedPath('/login/')).toBe(true);
+		expect(isAuthenticatedPath('/account/')).toBe(true);
 	});
 
 	it('should return true for /auth/callback with query params', async () => {
@@ -46,9 +46,9 @@ describe('isAuthenticatedPath', () => {
 		expect(isAuthenticatedPath('/auth/callback?code=abc123')).toBe(true);
 	});
 
-	it('should return true for /login with extra segments', async () => {
+	it('should return true for /account with extra segments', async () => {
 		const { isAuthenticatedPath } = await import('./consts');
-		expect(isAuthenticatedPath('/login/extra')).toBe(true);
+		expect(isAuthenticatedPath('/account/extra')).toBe(true);
 	});
 
 	it('should be case sensitive', async () => {

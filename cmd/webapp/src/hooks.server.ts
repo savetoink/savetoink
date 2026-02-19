@@ -11,7 +11,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.jwt = getJwtCookie(event.cookies);
 
 	if (isAuthenticatedPath(event.url.pathname) && !event.locals?.jwt) {
-		return redirect(303, '/login');
+		return redirect(303, '/account');
 	}
 
 	return resolve(event);
