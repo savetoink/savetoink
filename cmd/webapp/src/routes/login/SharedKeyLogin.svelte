@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { PageProps } from './$types';
-	let { form }: PageProps = $props();
+	import type { ActionData } from './$types';
+	let { form }: { form: ActionData } = $props();
 </script>
 
 <h1>Login</h1>

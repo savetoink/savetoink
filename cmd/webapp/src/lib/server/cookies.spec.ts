@@ -1,12 +1,19 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
+import type { Cookies } from '@sveltejs/kit';
 
 const mockSet = vi.fn();
 const mockDelete = vi.fn();
+const mockGet = vi.fn();
+const mockGetAll = vi.fn();
+const mockSerialize = vi.fn();
 
 const mockCookies = {
 	set: mockSet,
-	delete: mockDelete
-} as any;
+	delete: mockDelete,
+	get: mockGet,
+	getAll: mockGetAll,
+	serialize: mockSerialize
+} as unknown as Cookies;
 
 vi.mock('@sveltejs/kit', async () => {
 	const actual = await vi.importActual('@sveltejs/kit');
@@ -52,9 +59,13 @@ describe('cookies', () => {
 
 			setJwtCookie(mockCookies, testToken, { maxAge: customMaxAge });
 
-			expect(mockSet).toHaveBeenCalledWith('jwt', testToken, expect.objectContaining({
-				maxAge: customMaxAge
-			}));
+			expect(mockSet).toHaveBeenCalledWith(
+				'jwt',
+				testToken,
+				expect.objectContaining({
+					maxAge: customMaxAge
+				})
+			);
 		});
 
 		it('should use custom secure option', async () => {
@@ -63,9 +74,13 @@ describe('cookies', () => {
 
 			setJwtCookie(mockCookies, testToken, { secure: true });
 
-			expect(mockSet).toHaveBeenCalledWith('jwt', testToken, expect.objectContaining({
-				secure: true
-			}));
+			expect(mockSet).toHaveBeenCalledWith(
+				'jwt',
+				testToken,
+				expect.objectContaining({
+					secure: true
+				})
+			);
 		});
 	});
 
