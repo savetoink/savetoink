@@ -1,7 +1,3 @@
-<!-- <script lang="ts">
-	import { enhance } from '$app/forms';
-</script> -->
-
 <h1>Add Article</h1>
 
 <form method="POST" action="?/new">
