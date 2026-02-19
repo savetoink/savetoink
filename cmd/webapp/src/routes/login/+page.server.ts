@@ -19,4 +19,4 @@ export const actions: Actions = {
 		deleteJwtCookie(cookies);
 		redirect(303, '/login');
 	}
-};
+} satisfies Actions;

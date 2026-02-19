@@ -35,4 +35,35 @@ describe('isAuthenticatedPath', () => {
 		const { isAuthenticatedPath } = await import('./consts');
 		expect(isAuthenticatedPath('/dashboard/')).toBe(true);
 	});
+
+	it('should return true for /login/ with trailing slash', async () => {
+		const { isAuthenticatedPath } = await import('./consts');
+		expect(isAuthenticatedPath('/login/')).toBe(true);
+	});
+
+	it('should return true for /auth/callback with query params', async () => {
+		const { isAuthenticatedPath } = await import('./consts');
+		expect(isAuthenticatedPath('/auth/callback?code=abc123')).toBe(true);
+	});
+
+	it('should return true for /login with extra segments', async () => {
+		const { isAuthenticatedPath } = await import('./consts');
+		expect(isAuthenticatedPath('/login/extra')).toBe(true);
+	});
+
+	it('should be case sensitive', async () => {
+		const { isAuthenticatedPath } = await import('./consts');
+		expect(isAuthenticatedPath('/Login')).toBe(true);
+		expect(isAuthenticatedPath('/LOGIN')).toBe(true);
+	});
+
+	it('should export Auth0 constant', async () => {
+		const { Auth0 } = await import('./consts');
+		expect(Auth0).toBe('auth0');
+	});
+
+	it('should export SharedKey constant', async () => {
+		const { SharedKey } = await import('./consts');
+		expect(SharedKey).toBe('sharedKey');
+	});
 });

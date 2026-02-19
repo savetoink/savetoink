@@ -1,23 +1,17 @@
-import type { Actions } from './$types';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { POST } from '$lib/server/apiClient';
+import type { Actions } from './$types';
 
-export const load = async ({ locals }) => {
-	if (!locals.jwt) {
-		throw redirect(302, '/login');
-	}
-};
-
-export const actions = {
+export const actions: Actions = {
 	new: async ({ locals, request }) => {
 		const data = await request.formData();
-		const txt = data.get('url') || 'sfda';
+		const txt = data.get('url');
 
-		try {
-			await POST(fetch, `/v1/articles`, { url: txt }, locals.jwt);
-			redirect(303, '/');
-		} catch {
-			redirect(302, '/');
+		if (!txt) {
+			error(400, 'URL is required');
 		}
+
+		await POST(fetch, `/v1/articles`, { url: txt }, locals.jwt);
+		redirect(303, '/');
 	}
 } satisfies Actions;
