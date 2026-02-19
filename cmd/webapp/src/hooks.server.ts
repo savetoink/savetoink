@@ -7,6 +7,7 @@ import {
 	PUBLIC_AUTH0_DOMAIN,
 	PUBLIC_AUTH0_AUDIENCE
 } from '$env/static/public';
+import { getJwtCookie } from '$lib/server/cookies';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const requiredEnvVars = [
@@ -22,16 +23,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	const missing = requiredEnvVars
-		.filter(({ value }) => !value)
-		.map(({ name }) => name);
+	const missing = requiredEnvVars.filter(({ value }) => !value).map(({ name }) => name);
 
 	if (missing.length > 0) {
 		error(500, `Required environment variables are not defined: ${missing.join(', ')}`);
 	}
 
-	const jwt = event.cookies.get('jwt');
-	event.locals.jwt = jwt;
+	event.locals.jwt = getJwtCookie(event.cookies);
 
 	return resolve(event);
 };

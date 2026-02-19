@@ -4,7 +4,7 @@
 	import SharedKeyLogin from './SharedKeyLogin.svelte';
 	import type { PageProps } from './$types';
 
-	let { form }: PageProps = $props();
+	let { form }: { form: PageProps['form'] } = $props();
 </script>
 
 {#if PUBLIC_AUTH_BACKEND === 'auth0'}

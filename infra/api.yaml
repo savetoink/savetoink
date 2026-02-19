@@ -52,6 +52,17 @@ Parameters:
     Description: Auth0 audience
     Default: ""
 
+  Auth0ClientId:
+    Type: String
+    Description: Auth0 client ID
+    Default: ""
+
+  Auth0ClientSecret:
+    Type: String
+    NoEcho: true
+    Description: Auth0 client secret
+    Default: ""
+
   AuthBackend:
     Type: String
     Description: Auth backend
@@ -114,6 +125,8 @@ Resources:
           SAVETOINK_API_KEY: !Ref APIKeySecret
           SAVETOINK_AUTH0_AUDIENCE: !Ref Auth0Audience
           SAVETOINK_AUTH0_DOMAIN: !Ref Auth0Domain
+          SAVETOINK_AUTH0_CLIENT_ID: !Ref Auth0ClientId
+          SAVETOINK_AUTH0_CLIENT_SECRET: !Ref Auth0ClientSecret
           SAVETOINK_AUTH_BACKEND: !Ref AuthBackend
           SAVETOINK_DEBUG: !Ref Debug
           SAVETOINK_DEST_EMAIL: !Ref DestEmail

@@ -70,6 +70,8 @@ deploy-api:
             APIKeySecret="$SAVETOINK_API_KEY" \
             Auth0Audience="$SAVETOINK_AUTH0_AUDIENCE" \
             Auth0Domain="$SAVETOINK_AUTH0_DOMAIN" \
+            Auth0ClientId="$SAVETOINK_AUTH0_CLIENT_ID" \
+            Auth0ClientSecret="$SAVETOINK_AUTH0_CLIENT_SECRET" \
             AuthBackend="$SAVETOINK_AUTH_BACKEND" \
             CertificateArn=$(just get-cert-arn) \
             DestEmail="$SAVETOINK_DEST_EMAIL" \

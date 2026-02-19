@@ -1,28 +1,22 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { JWT_KEY, setJwtCookie, deleteJwtCookie } from '$lib/server/cookies';
 import type { Actions } from './$types';
-const jwtKey = 'jwt';
 
 export const actions: Actions = {
 	save: async ({ cookies, request }) => {
 		const data = await request.formData();
-		const token = data.get(jwtKey);
+		const token = data.get(JWT_KEY);
 
 		if (!token || typeof token !== 'string' || token.trim() === '') {
 			return fail(400, { error: 'api key is required' });
 		}
 
-		cookies.set(jwtKey, token.trim(), {
-			path: '/',
-			httpOnly: true,
-			secure: import.meta.env.PROD,
-			sameSite: 'lax',
-			maxAge: 60 * 60 * 24 * 365
-		});
+		setJwtCookie(cookies, token, { trim: true });
 
 		redirect(303, '/');
 	},
 	clean: async ({ cookies }) => {
-		cookies.delete(jwtKey, { path: '/' });
+		deleteJwtCookie(cookies);
 		redirect(303, '/login');
 	}
 };
