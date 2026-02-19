@@ -59,12 +59,6 @@ func runConvert(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	if sendEmail {
-		if sendErr := cfg.EnableEmailSending(); sendErr != nil {
-			return fmt.Errorf("failed to enable email sending: %w", sendErr)
-		}
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

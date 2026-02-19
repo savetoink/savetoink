@@ -186,7 +186,6 @@ func TestHandleCreateArticleSuccessWithEmail(t *testing.T) {
 		SenderEmail:      "sender@example.com",
 		MailjetAPIKey:    "test-key",
 		MailjetAPISecret: "test-secret",
-		SendEnabled:      true,
 	}
 	svc := newMockService(func(_ context.Context, _ string, _ string) (*service.CreateArticleResult, error) {
 		return &service.CreateArticleResult{
@@ -234,9 +233,7 @@ func TestHandleCreateArticleSuccessWithEmail(t *testing.T) {
 }
 
 func TestHandleCreateArticleSuccessWithoutEmail(t *testing.T) {
-	cfg := &config.Config{
-		SendEnabled: false,
-	}
+	cfg := &config.Config{}
 	svc := newMockService(func(_ context.Context, _ string, _ string) (*service.CreateArticleResult, error) {
 		return &service.CreateArticleResult{
 			Article: &model.Article{
@@ -244,7 +241,7 @@ func TestHandleCreateArticleSuccessWithoutEmail(t *testing.T) {
 				Title: testArticleTitle,
 				URL:   "https://example.com/article",
 			},
-			Message:   "article processed successfully (email sending disabled)",
+			Message:   "kindle email not configured for user",
 			EmailResp: nil,
 		}, nil
 	})
@@ -270,15 +267,13 @@ func TestHandleCreateArticleSuccessWithoutEmail(t *testing.T) {
 	if resp.Title != testArticleTitle {
 		t.Errorf("expected title '%s', got '%s'", testArticleTitle, resp.Title)
 	}
-	if resp.Message != "article processed successfully (email sending disabled)" {
-		t.Errorf("expected message 'article processed successfully (email sending disabled)', got '%s'", resp.Message)
+	if resp.Message != "kindle email not configured for user" {
+		t.Errorf("expected message 'kindle email not configured for user', got '%s'", resp.Message)
 	}
 }
 
 func TestHandleCreateArticleInvalidJSON(t *testing.T) {
-	cfg := &config.Config{
-		SendEnabled: false,
-	}
+	cfg := &config.Config{}
 	h := newHandlers(cfg, nil, http.DefaultClient)
 
 	req := httptest.NewRequest("POST", "/v1/articles", bytes.NewReader([]byte("invalid json")))
@@ -303,9 +298,7 @@ func TestHandleCreateArticleInvalidJSON(t *testing.T) {
 }
 
 func TestHandleCreateArticleMissingURL(t *testing.T) {
-	cfg := &config.Config{
-		SendEnabled: false,
-	}
+	cfg := &config.Config{}
 	h := newHandlers(cfg, nil, http.DefaultClient)
 
 	body := articleRequest{URL: ""}
@@ -331,9 +324,7 @@ func TestHandleCreateArticleMissingURL(t *testing.T) {
 }
 
 func TestHandleCreateArticleServiceError(t *testing.T) {
-	cfg := &config.Config{
-		SendEnabled: false,
-	}
+	cfg := &config.Config{}
 	svc := newMockService(func(_ context.Context, _ string, _ string) (*service.CreateArticleResult, error) {
 		return nil, &serviceError{msg: "extraction failed"}
 	})

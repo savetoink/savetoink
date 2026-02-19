@@ -422,7 +422,9 @@ func TestDeleteAllArticles_NoRepo(t *testing.T) {
 
 func TestSend_NilResult(t *testing.T) {
 	cfg := &config.Config{
-		SendEnabled: true,
+		SenderEmail:      "sender@example.com",
+		MailjetAPIKey:    "api-key",
+		MailjetAPISecret: "api-secret",
 	}
 	svc := New(cfg)
 
@@ -435,7 +437,9 @@ func TestSend_NilResult(t *testing.T) {
 
 func TestSend_NilArticle(t *testing.T) {
 	cfg := &config.Config{
-		SendEnabled: true,
+		SenderEmail:      "sender@example.com",
+		MailjetAPIKey:    "api-key",
+		MailjetAPISecret: "api-secret",
 	}
 	svc := New(cfg)
 
@@ -449,9 +453,7 @@ func TestSend_NilArticle(t *testing.T) {
 }
 
 func TestSend_NoSenderConfigured(t *testing.T) {
-	cfg := &config.Config{
-		SendEnabled: false,
-	}
+	cfg := &config.Config{}
 	svc := New(cfg)
 
 	article := &model.Article{

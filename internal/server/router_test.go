@@ -23,7 +23,7 @@ const (
 	testOrigin           = "https://example.com"
 	statusOk             = "ok"
 	statusCreatedMessage = "article sent to Kindle successfully"
-	statusEmailDisabled  = "article processed successfully (email sending disabled)"
+	statusEmailDisabled  = "kindle email not configured for user"
 	methodsAllowed       = "POST, GET, OPTIONS"
 	testDatabaseError    = "database error"
 )
@@ -75,7 +75,6 @@ func createTestHandlerWithMock(
 func TestNewRouter_RouteRegistration(t *testing.T) {
 	cfg := &config.Config{
 		APIKeySecret: "test-key",
-		SendEnabled:  false,
 	}
 	r := NewRouter(cfg)
 
@@ -174,7 +173,6 @@ func TestNewRouter_405Handler(t *testing.T) {
 func TestNewRouter_MiddlewareChain(t *testing.T) {
 	cfg := &config.Config{
 		APIKeySecret: "test-key",
-		SendEnabled:  false,
 	}
 
 	h := createTestHandlerWithMock(cfg, false)
@@ -230,7 +228,6 @@ func TestHealthCheckFlow(t *testing.T) {
 func TestArticleCreationFlow_Authenticated(t *testing.T) {
 	cfg := &config.Config{
 		APIKeySecret: testAPIKey,
-		SendEnabled:  true,
 	}
 
 	h := createTestHandlerWithMock(cfg, true)
@@ -265,7 +262,6 @@ func TestArticleCreationFlow_Authenticated(t *testing.T) {
 func TestArticleCreationFlow_Unauthenticated(t *testing.T) {
 	cfg := &config.Config{
 		APIKeySecret: testAPIKey,
-		SendEnabled:  false,
 	}
 
 	h := createTestHandlerWithMock(cfg, false)
@@ -295,7 +291,6 @@ func TestArticleCreationFlow_Unauthenticated(t *testing.T) {
 func TestArticleCreationFlow_EmailDisabled(t *testing.T) {
 	cfg := &config.Config{
 		APIKeySecret: testAPIKey,
-		SendEnabled:  false,
 	}
 
 	h := createTestHandlerWithMock(cfg, false)

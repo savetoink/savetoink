@@ -33,11 +33,6 @@ Parameters:
     Type: String
     Description: Verified sender email address
 
-  SendEnabled:
-    Type: String
-    Description: Enable email sending
-    Default: "false"
-
   Auth0Domain:
     Type: String
     Description: Auth0 domain
@@ -129,7 +124,6 @@ Resources:
           SAVETOINK_MAILJET_API_KEY: !Ref MailjetAPIKey
           SAVETOINK_MAILJET_API_SECRET: !Ref MailjetAPISecret
           SAVETOINK_SENDER_EMAIL: !Ref SenderEmail
-          SAVETOINK_SEND_ENABLED: !Ref SendEnabled
           SAVETOINK_USER_PROFILE_TABLE_NAME: !Ref UserProfileTable
       TracingConfig:
         Mode: PassThrough

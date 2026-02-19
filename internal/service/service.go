@@ -50,13 +50,9 @@ type Service struct {
 // DynamoDB repository is wired only if both DynamoDBTable and AWSConfig are available.
 func New(cfg *config.Config) *Service {
 	var sender email.Sender
-	if cfg.SendEnabled {
-		switch cfg.EmailProvider {
-		case consts.EmailBackendMailjet:
-			sender = mailjet.NewSender(cfg.MailjetAPIKey, cfg.MailjetAPISecret, cfg.SenderEmail)
-		default:
-			sender = mailjet.NewSender(cfg.MailjetAPIKey, cfg.MailjetAPISecret, cfg.SenderEmail)
-		}
+	if cfg.MailjetAPIKey != "" && cfg.MailjetAPISecret != "" && cfg.SenderEmail != "" {
+		cfg.EmailProvider = consts.EmailBackendMailjet
+		sender = mailjet.NewSender(cfg.MailjetAPIKey, cfg.MailjetAPISecret, cfg.SenderEmail)
 	}
 
 	var repo repository.ArticlesRepository
@@ -283,10 +279,6 @@ func (s *Service) sendArticle(
 	result *ProcessResult,
 	accountID string,
 ) (*email.SendEmailResponse, string, error) {
-	if !s.cfg.SendEnabled {
-		return nil, "", nil
-	}
-
 	destEmail, err := s.GetUserKindleEmail(ctx, accountID)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to get user kindle email: %w", err)
@@ -381,10 +373,6 @@ func (s *Service) enrichArticle(
 	article.Account = accountID
 	article.ID = *id
 
-	if !s.cfg.SendEnabled {
-		return
-	}
-
 	if emailResp == nil {
 		article.DeliveryStatus = consts.StatusFailed
 		return
@@ -397,9 +385,9 @@ func (s *Service) enrichArticle(
 	article.DeliveredBy = s.cfg.EmailProvider
 }
 
-func (s *Service) getMessage(_ *model.Article, _ *email.SendEmailResponse) string {
-	if !s.cfg.SendEnabled {
-		return "article processed successfully (email sending disabled)"
+func (s *Service) getMessage(_ *model.Article, emailResp *email.SendEmailResponse) string {
+	if emailResp == nil {
+		return "kindle email not configured for user"
 	}
 	return "article sent to Kindle successfully"
 }

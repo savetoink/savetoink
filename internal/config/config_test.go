@@ -15,21 +15,19 @@ func TestConfigValidate(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid CLI config with send enabled",
+			name: "valid CLI config with email configured",
 			config: &Config{
 				Mode:             consts.ModeCLI,
 				SenderEmail:      "sender@example.com",
 				MailjetAPIKey:    "api-key",
 				MailjetAPISecret: "api-secret",
-				SendEnabled:      true,
 			},
 			wantErr: false,
 		},
 		{
-			name: "valid CLI config with send disabled",
+			name: "valid CLI config without email",
 			config: &Config{
-				Mode:        consts.ModeCLI,
-				SendEnabled: false,
+				Mode: consts.ModeCLI,
 			},
 			wantErr: false,
 		},
@@ -101,36 +99,6 @@ func TestConfigValidate(t *testing.T) {
 				AuthBackend:   consts.AuthBackendAuth0,
 				Auth0Domain:   "example.auth0.com",
 				ArticlesTable: "test-table",
-			},
-			wantErr: true,
-		},
-		{
-			name: "CLI config missing sender email with send enabled",
-			config: &Config{
-				Mode:             consts.ModeCLI,
-				MailjetAPIKey:    "api-key",
-				MailjetAPISecret: "api-secret",
-				SendEnabled:      true,
-			},
-			wantErr: true,
-		},
-		{
-			name: "CLI config missing mailjet api key with send enabled",
-			config: &Config{
-				Mode:             consts.ModeCLI,
-				SenderEmail:      "sender@example.com",
-				MailjetAPISecret: "api-secret",
-				SendEnabled:      true,
-			},
-			wantErr: true,
-		},
-		{
-			name: "CLI config missing mailjet api secret with send enabled",
-			config: &Config{
-				Mode:          consts.ModeCLI,
-				SenderEmail:   "sender@example.com",
-				MailjetAPIKey: "api-key",
-				SendEnabled:   true,
 			},
 			wantErr: true,
 		},
