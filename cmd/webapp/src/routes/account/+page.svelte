@@ -7,11 +7,6 @@
 	import type { PageProps } from './$types';
 
 	let { form, data }: PageProps = $props();
-	let msg = $derived(
-		data?.kindle_email
-			? 'Email address associated with your Kindle device'
-			: 'Add your Amazon Kindle Email to enable sending articles to your device. Remember to add first `no-reply@saveto.ink` to your Amazon Kindle whitelist'
-	);
 </script>
 
 <section>
