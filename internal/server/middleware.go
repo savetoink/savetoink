@@ -154,6 +154,9 @@ func remoteAddr(r *http.Request) string {
 }
 
 func userAgent(r *http.Request) string {
+	if ua := r.Header.Get("CloudFront-Viewer-User-Agent"); ua != "" {
+		return ua
+	}
 	if ua := r.Header.Get("User-Agent"); ua != "" {
 		return ua
 	}
