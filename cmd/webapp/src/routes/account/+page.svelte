@@ -10,7 +10,7 @@
 	let msg = $derived(
 		data?.kindle_email
 			? 'Email address associated with your Kindle device'
-			: 'Add your Amazon Kindle Email to enable sending articles to your device'
+			: 'Add your Amazon Kindle Email to enable sending articles to your device. Remember to add first `no-reply@saveto.ink` to your Amazon Kindle whitelist'
 	);
 </script>
 
@@ -27,7 +27,18 @@
 	<h2>Kindle delivery</h2>
 	<form method="POST" action="?/updateProfile">
 		<fieldset>
-			<legend>{msg}</legend>
+			{#if data?.kindle_email}
+				<legend>Email address associated with your Kindle device</legend>
+			{:else}
+				<legend>
+					<p>Add your Amazon Kindle Email to enable sending articles to your device</p>
+					<p>
+						Remember to add first <code>no-reply@saveto.ink</code> to
+						<a href="https://www.amazon.com/gp/sendtokindle/email/">your Amazon Kindle whitelist</a>
+					</p>
+				</legend>
+			{/if}
+
 			<input
 				type="email"
 				name="kindleEmail"
