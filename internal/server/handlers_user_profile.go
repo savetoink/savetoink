@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/shaftoe/savetoink/internal/auth"
 	"github.com/shaftoe/savetoink/internal/model"
+	"github.com/shaftoe/savetoink/internal/server/auth"
 )
 
 type userProfileRequest struct {

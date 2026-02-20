@@ -8,9 +8,9 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/shaftoe/savetoink/internal/auth"
 	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
+	"github.com/shaftoe/savetoink/internal/server/auth"
 )
 
 func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {

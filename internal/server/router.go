@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/shaftoe/savetoink/internal/auth"
 	"github.com/shaftoe/savetoink/internal/config"
 	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
+	"github.com/shaftoe/savetoink/internal/server/auth"
 	"github.com/shaftoe/savetoink/internal/service"
 )
 
