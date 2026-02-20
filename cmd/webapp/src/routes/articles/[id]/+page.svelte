@@ -6,7 +6,11 @@
 	let { data }: { data: PageData } = $props();
 </script>
 
-<ArticleControls article={data} />
-<ArticleMeta article={data} mode="header" />
-<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-{@html data.content}
+<article>
+	<ArticleControls article={data} />
+	<ArticleMeta article={data} mode="header" />
+	<section>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html data.content}
+	</section>
+</article>

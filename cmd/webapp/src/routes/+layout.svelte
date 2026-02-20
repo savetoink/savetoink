@@ -14,18 +14,18 @@
 	<title>{title}</title>
 </svelte:head>
 
-<Nav />
+<header>
+	<Nav />
+</header>
 
 <main>
 	{#if navigating.to}
-		<p>loading...</p>
+		<p role="status" aria-live="polite">Loading...</p>
 	{:else}
 		{@render children()}
 	{/if}
 </main>
 
-<hr />
-
 <footer>
-	<p>{title}</p>
+	<small>{title}</small>
 </footer>

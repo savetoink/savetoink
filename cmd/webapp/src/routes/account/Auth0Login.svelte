@@ -23,7 +23,13 @@
 			`client_id=${PUBLIC_AUTH0_CLIENT_ID}&` +
 			`returnTo=${encodeURIComponent(origin)}`;
 	};
+
+	let { data } = $props();
 </script>
+
+{#if data?.account}
+	<p>Account ID: {data.account}</p>
+{/if}
 
 <button onclick={login}>Login with Auth0</button>
 <button onclick={logout}>Logout</button>

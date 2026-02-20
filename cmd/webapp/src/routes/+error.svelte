@@ -3,10 +3,12 @@
 	import { resolve } from '$app/paths';
 </script>
 
-<h1>error</h1>
-
-{#if page.error}
-	<p>{page.error.message}</p>
-{/if}
-
-<a href={resolve('/')}>go home</a>
+<article>
+	<h1>Error</h1>
+	{#if page.error}
+		<p role="alert">{page.error.message}</p>
+	{/if}
+	<nav>
+		<a href={resolve('/')}>Go home</a>
+	</nav>
+</article>

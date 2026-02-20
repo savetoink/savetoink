@@ -5,18 +5,25 @@
 	let { data }: { data: PageData } = $props();
 </script>
 
-<h1>My List (<span>{data.total} articles</span>)</h1>
+<section aria-labelledby="my-list-heading">
+	<hgroup>
+		<h1 id="my-list-heading">My List</h1>
+		<p>{data.total} articles</p>
+	</hgroup>
 
-<ul>
-	{#each data.articles as article (article.id)}
-		<li>
-			<ArticleMeta {article} mode="card" />
-		</li>
-	{/each}
-</ul>
+	<ul>
+		{#each data.articles as article (article.id)}
+			<li>
+				<ArticleMeta {article} mode="card" />
+			</li>
+		{/each}
+	</ul>
 
-<p>total: {data.total}</p>
+	<footer>
+		<small>total: {data.total}</small>
+	</footer>
 
-{#if data.articles.length > 0}
-	<Navigator page={data.page} has_more={data.has_more} />
-{/if}
+	{#if data.articles.length > 0}
+		<Navigator page={data.page} has_more={data.has_more} />
+	{/if}
+</section>

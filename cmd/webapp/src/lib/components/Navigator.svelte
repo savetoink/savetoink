@@ -9,7 +9,7 @@
 	}
 </script>
 
-<nav>
+<nav aria-label="Pagination">
 	{#if page > 1}
 		<button onclick={() => navigateTo(page - 1)}>Previous</button>
 	{/if}

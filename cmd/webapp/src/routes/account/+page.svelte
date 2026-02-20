@@ -7,32 +7,45 @@
 	import type { PageProps } from './$types';
 
 	let { form, data }: PageProps = $props();
+	let msg = $derived(
+		data?.kindle_email
+			? 'Email address associated with your Kindle device'
+			: 'Add your Amazon Kindle Email to enable sending articles to your device'
+	);
 </script>
 
 <section>
+	<h2>Login</h2>
 	{#if PUBLIC_AUTH_BACKEND === Auth0}
-		<Auth0Login />
+		<Auth0Login {data} />
 	{:else if PUBLIC_AUTH_BACKEND === SharedKey}
 		<SharedKeyLogin {form} />
 	{/if}
 </section>
 
 <section>
+	<h2>Kindle delivery</h2>
 	<form method="POST" action="?/updateProfile">
-		<label>
-			<h2>Save your Amazon Kindle Email to enable sending articles to your device</h2>
-
+		<fieldset>
+			<legend>{msg}</legend>
 			<input
 				type="email"
 				name="kindleEmail"
 				required
 				autocomplete="email"
 				value={data?.kindle_email}
+				disabled={data?.kindle_email}
+				placeholder="yourname@kindle.com"
 			/>
-		</label>
-		<button type="submit">Save</button>
+		</fieldset>
+		{#if !data?.kindle_email}
+			<button type="submit">Enable Kindle delivey</button>
+		{/if}
 	</form>
-	<form method="POST" action="?/deleteProfile">
-		<button type="submit">Delete</button>
-	</form>
+
+	{#if data?.kindle_email}
+		<form method="POST" action="?/deleteProfile">
+			<button type="submit">Disable Kindle delivery</button>
+		</form>
+	{/if}
 </section>
