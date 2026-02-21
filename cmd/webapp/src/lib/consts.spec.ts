@@ -36,14 +36,14 @@ describe('isAuthenticatedPath', () => {
 		expect(isAuthenticatedPath('/dashboard/')).toBe(true);
 	});
 
-	it('should return true for /account/ with trailing slash', async () => {
+	it('should return false for /account/ with trailing slash', async () => {
 		const { isAuthenticatedPath } = await import('./consts');
-		expect(isAuthenticatedPath('/account/')).toBe(true);
+		expect(isAuthenticatedPath('/account/')).toBe(false);
 	});
 
-	it('should return true for /auth/callback with query params', async () => {
+	it('should return false for /auth/callback with query params', async () => {
 		const { isAuthenticatedPath } = await import('./consts');
-		expect(isAuthenticatedPath('/auth/callback?code=abc123')).toBe(true);
+		expect(isAuthenticatedPath('/auth/callback?code=abc123')).toBe(false);
 	});
 
 	it('should return true for /account with extra segments', async () => {

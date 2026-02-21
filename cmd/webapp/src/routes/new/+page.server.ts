@@ -1,6 +1,11 @@
 import { error, redirect } from '@sveltejs/kit';
 import { POST } from '$lib/server/apiClient';
+import type { PageServerLoad } from './$types';
 import type { Actions } from './$types';
+
+export const load: PageServerLoad = async () => {
+	return {};
+};
 
 export const actions: Actions = {
 	new: async ({ locals, request }) => {
