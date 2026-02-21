@@ -72,14 +72,13 @@ deploy-api:
             Auth0Domain="$SAVETOINK_AUTH0_DOMAIN" \
             Auth0ClientId="$SAVETOINK_AUTH0_CLIENT_ID" \
             Auth0ClientSecret="$SAVETOINK_AUTH0_CLIENT_SECRET" \
-            AuthBackend="$SAVETOINK_AUTH_BACKEND" \
+            AuthBackend="auth0" \
             CertificateArn=$(just get-cert-arn) \
             DestEmail="$SAVETOINK_DEST_EMAIL" \
             DomainName="$SAVETOINK_DOMAIN" \
             MailjetAPIKey="$SAVETOINK_MAILJET_API_KEY" \
             MailjetAPISecret="$SAVETOINK_MAILJET_API_SECRET" \
             ProjectName={{ project_name }} \
-            SendEnabled="true" \
             SenderEmail="$SAVETOINK_SENDER_EMAIL" \
             SourceBucketKey={{ lambda_archive }} \
             SourceBucketName={{ bucket_name }} \
