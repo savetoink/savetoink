@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/shaftoe/savetoink/internal/consts"
@@ -29,7 +30,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	addLogAttr(r.Context(), slog.String("url", req.URL))
 
-	result, err := h.service.CreateArticle(r.Context(), req.URL, auth.GetAccountID(r.Context()))
+	result, err := h.service.CreateArticle(r.Context(), req.URL, auth.GetAccountID(r.Context()), req.Tags)
 	if err != nil {
 		addLogAttr(r.Context(), slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -59,6 +60,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		ID:             result.Article.ID,
 		Title:          result.Article.Title,
 		URL:            result.Article.URL,
+		Tags:           result.Article.Tags,
 		Message:        result.Message,
 		DeliveryStatus: string(result.Article.DeliveryStatus),
 	})
@@ -80,9 +82,20 @@ func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var tags []string
+	if tagsParam := r.URL.Query().Get("tags"); tagsParam != "" {
+		parts := strings.Split(tagsParam, ",")
+		for _, tag := range parts {
+			trimmed := strings.TrimSpace(tag)
+			if trimmed != "" {
+				tags = append(tags, trimmed)
+			}
+		}
+	}
+
 	accountID := auth.GetAccountID(r.Context())
 
-	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize)
+	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, tags)
 	if err != nil {
 		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -159,4 +172,57 @@ func (h *handlers) handleDeleteAllArticles(w http.ResponseWriter, r *http.Reques
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(deleteArticleResponse{Deleted: result.Deleted})
+}
+
+func (h *handlers) handleAddTags(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountID(r.Context())
+	articleID := chi.URLParam(r, "id")
+
+	var req addTagsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "failed to decode request body: " + err.Error()})
+		return
+	}
+
+	if len(req.Tags) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "tags cannot be empty"})
+		return
+	}
+
+	addLogAttr(r.Context(), slog.String("article_id", articleID))
+
+	if err := h.service.AddTags(r.Context(), accountID, articleID, req.Tags); err != nil {
+		addLogAttr(r.Context(), slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *handlers) handleRemoveTag(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountID(r.Context())
+	articleID := chi.URLParam(r, "id")
+	tag := chi.URLParam(r, "tag")
+
+	if tag == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "tag cannot be empty"})
+		return
+	}
+
+	addLogAttr(r.Context(), slog.String("article_id", articleID))
+	addLogAttr(r.Context(), slog.String("tag", tag))
+
+	if err := h.service.RemoveTag(r.Context(), accountID, articleID, tag); err != nil {
+		addLogAttr(r.Context(), slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

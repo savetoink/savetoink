@@ -10,15 +10,21 @@ import (
 )
 
 type articleRequest struct {
-	URL string `json:"url"`
+	URL  string   `json:"url"`
+	Tags []string `json:"tags,omitempty"`
 }
 
 type articleResponse struct {
-	ID             string `json:"id"`
-	Title          string `json:"title"`
-	URL            string `json:"url"`
-	Message        string `json:"message"`
-	DeliveryStatus string `json:"deliveryStatus,omitempty"`
+	ID             string   `json:"id"`
+	Title          string   `json:"title"`
+	URL            string   `json:"url"`
+	Tags           []string `json:"tags,omitempty"`
+	Message        string   `json:"message"`
+	DeliveryStatus string   `json:"deliveryStatus,omitempty"`
+}
+
+type addTagsRequest struct {
+	Tags []string `json:"tags"`
 }
 
 type healthResponse struct {

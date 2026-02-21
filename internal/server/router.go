@@ -69,6 +69,8 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 			r.Delete("/", handlers.handleDeleteAllArticles)
 			r.Get("/{id}", handlers.handleGetArticle)
 			r.Delete("/{id}", handlers.handleDeleteArticle)
+			r.Post("/{id}/tags", handlers.handleAddTags)
+			r.Delete("/{id}/tags/{tag}", handlers.handleRemoveTag)
 		})
 
 		r.Route("/user", func(r chi.Router) {

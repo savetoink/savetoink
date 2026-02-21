@@ -26,3 +26,15 @@ type UserProfileRepository interface {
 	PutUserProfile(ctx context.Context, profile *model.UserProfile) error
 	DeleteUserProfile(ctx context.Context, account string) error
 }
+
+// ArticleTagsRepository defines the interface for article tag index persistence.
+type ArticleTagsRepository interface {
+	AddTagIndex(ctx context.Context, account, articleID, tag string, createdAt string) error
+	RemoveTagIndex(ctx context.Context, account, articleID, tag string, createdAt string) error
+	GetArticleIDsByTag(
+		ctx context.Context,
+		account, tag string,
+		page, pageSize int,
+	) ([]string, map[string]types.AttributeValue, int, error)
+	GetArticlesByTags(ctx context.Context, account string, tags []string, page, pageSize int) ([]string, int, error)
+}

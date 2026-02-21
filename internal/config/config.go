@@ -4,6 +4,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -16,6 +17,7 @@ type Config struct {
 	Debug            bool
 	ArticlesTable    string
 	UserProfileTable string
+	ArticleTagsTable string
 	Mode             consts.RunMode
 
 	// Auth
@@ -53,6 +55,10 @@ func Load(mode consts.RunMode) (*Config, error) {
 		return nil, err
 	}
 
+	if err := cfg.loadAWSConfig(); err != nil {
+		return nil, err
+	}
+
 	return cfg, nil
 }
 
@@ -73,6 +79,7 @@ func bindEnvVars() error {
 		{"dynamodb-table", "SAVETOINK_ARTICLE_TABLE_NAME"},
 		{"sender-email", "SAVETOINK_SENDER_EMAIL"},
 		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
+		{"article-tags-table", "SAVETOINK_ARTICLE_TAGS_TABLE_NAME"},
 	}
 
 	for _, ev := range envVars {
@@ -98,6 +105,7 @@ func loadConfig(mode consts.RunMode) *Config {
 		Mode:              mode,
 		SenderEmail:       viper.GetString("sender-email"),
 		UserProfileTable:  viper.GetString("user-profile-table"),
+		ArticleTagsTable:  viper.GetString("article-tags-table"),
 	}
 
 	return cfg
@@ -144,7 +152,20 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 	if c.ArticlesTable == "" {
 		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
 	}
+	if c.ArticleTagsTable == "" {
+		*missing = append(*missing, "SAVETOINK_ARTICLE_TAGS_TABLE_NAME")
+	}
+	if c.UserProfileTable == "" {
+		*missing = append(*missing, "SAVETOINK_USER_PROFILE_TABLE_NAME")
+	}
 
+	return nil
+}
+
+func (c *Config) loadAWSConfig() error {
+	if testing.Testing() {
+		return nil
+	}
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
