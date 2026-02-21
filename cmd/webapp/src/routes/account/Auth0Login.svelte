@@ -5,6 +5,7 @@
 		PUBLIC_AUTH0_AUDIENCE
 	} from '$env/static/public';
 	import { page } from '$app/state';
+	import { isLoggedIn } from '$lib/auth';
 
 	const origin = page.url.origin;
 	const authUrl =
@@ -25,11 +26,15 @@
 	};
 
 	let { data } = $props();
+	const loggedIn = $isLoggedIn;
 </script>
 
-{#if data?.account}
+{#if loggedIn}
 	<p>Account ID: {data.account}</p>
 {/if}
 
-<button onclick={login}>Login with Auth0</button>
-<button onclick={logout}>Logout</button>
+{#if loggedIn}
+	<button onclick={logout}>Logout</button>
+{:else}
+	<button onclick={login}>Login with Auth0</button>
+{/if}

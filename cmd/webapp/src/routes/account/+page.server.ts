@@ -1,16 +1,18 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { JWT_KEY, setJwtCookie, deleteJwtCookie } from '$lib/server/cookies';
+import { JWT_KEY, setJwtCookie, deleteJwtCookie, getJwtCookie } from '$lib/server/cookies';
 import { GET, PUT, DELETE } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ fetch, locals }) => {
+export const load: PageServerLoad = async ({ fetch, locals, cookies }) => {
 	if (locals.jwt) {
 		try {
-			return await GET(fetch, '/v1/user/profile', locals.jwt);
+			const profile = await GET(fetch, '/v1/user/profile', locals.jwt);
+			return { ...profile, jwt: getJwtCookie(cookies) };
 		} catch (err) {
 			console.error('failed to load user profile', err);
 		}
 	}
+	return { jwt: getJwtCookie(cookies) };
 };
 
 export const actions: Actions = {
