@@ -17,6 +17,17 @@
 				/>
 				<small>Enter the full URL of the article you want to save</small>
 			</label>
+			<label>
+				Tags
+				<input
+					type="text"
+					name="tags"
+					maxlength="200"
+					placeholder="tech, reading, tutorial"
+					autocomplete="off"
+				/>
+				<small>Optional comma-separated tags (e.g., tech, reading, tutorial)</small>
+			</label>
 		</fieldset>
 		<button type="submit">Add</button>
 	</form>

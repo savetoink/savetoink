@@ -44,6 +44,10 @@
 					<dt>Status</dt>
 					<dd>{article.deliveryStatus}</dd>
 				{/if}
+				{#if article.tags}
+					<dt>Tags</dt>
+					<dd>{article.tags.join(', ')}</dd>
+				{/if}
 			</dl>
 			{#if article.error}
 				<p class="error" role="alert">error: {article.error}</p>
@@ -109,6 +113,10 @@
 			{#if article.createdAt}
 				<dt>Added</dt>
 				<dd><time datetime={article.createdAt}>{formatDate(article.createdAt)}</time></dd>
+			{/if}
+			{#if article.tags}
+				<dt>Tags</dt>
+				<dd>{article.tags.join(', ')}</dd>
 			{/if}
 		</dl>
 		<p>
