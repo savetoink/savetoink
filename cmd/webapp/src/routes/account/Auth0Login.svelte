@@ -5,7 +5,7 @@
 		PUBLIC_AUTH0_AUDIENCE
 	} from '$env/static/public';
 	import { page } from '$app/state';
-	import { isLoggedIn } from '$lib/auth';
+	import { checkLoggedIn } from '$lib/auth';
 
 	const origin = page.url.origin;
 	const authUrl =
@@ -26,7 +26,7 @@
 	};
 
 	let { data } = $props();
-	const loggedIn = $isLoggedIn;
+	const loggedIn = $derived(checkLoggedIn(data));
 </script>
 
 {#if loggedIn}
