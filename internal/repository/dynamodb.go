@@ -113,7 +113,6 @@ func (d *DynamoDB) getProjectionAttributeNames() map[string]string {
 		"#wc":      "wordCount",
 		"#rt":      "readingTimeMinutes",
 		"#p":       "publishedAt",
-		"#tags":    "tags",
 		"#dst":     "deliveryStatus",
 		"#df":      "deliveredFrom",
 		"#dt":      "deliveredTo",
@@ -205,7 +204,7 @@ func (d *DynamoDB) queryArticlesByAccount(
 		IndexName:              aws.String(consts.DynamoDBGSIName),
 		KeyConditionExpression: aws.String("#account = :account"),
 		ProjectionExpression: aws.String(
-			"#a, #i, #u, #c, #t, #au, #sn, #sd, #e, #iurl, #ct, #l, #err, #wc, #rt, #p, #tags, #dst, #df, #dt, #deu, #db",
+			"#a, #i, #u, #c, #t, #au, #sn, #sd, #e, #iurl, #ct, #l, #err, #wc, #rt, #p, #dst, #df, #dt, #deu, #db",
 		),
 		ExpressionAttributeNames: d.getProjectionAttributeNames(),
 		ExpressionAttributeValues: map[string]types.AttributeValue{

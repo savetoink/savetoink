@@ -34,45 +34,38 @@ func TestConfigValidate(t *testing.T) {
 		{
 			name: "valid server config",
 			config: &Config{
-				Mode:             consts.ModeServer,
-				APIKeySecret:     "api-key-secret",
-				ArticlesTable:    "test-table",
-				ArticleTagsTable: "test-tags-table",
-				UserProfileTable: "test-profile-table",
-				AuthBackend:      consts.AuthBackendSharedAPIKey,
+				Mode:          consts.ModeServer,
+				APIKeySecret:  "api-key-secret",
+				ArticlesTable: "test-table",
+				AuthBackend:   consts.AuthBackendSharedAPIKey,
 			},
 			wantErr: false,
 		},
 		{
 			name: "server config missing api key",
 			config: &Config{
-				Mode:             consts.ModeServer,
-				ArticlesTable:    "test-table",
-				ArticleTagsTable: "test-tags-table",
-				UserProfileTable: "test-profile-table",
-				AuthBackend:      consts.AuthBackendSharedAPIKey,
+				Mode:          consts.ModeServer,
+				ArticlesTable: "test-table",
+				AuthBackend:   consts.AuthBackendSharedAPIKey,
 			},
 			wantErr: true,
 		},
 		{
 			name: "server config missing dynamodb table",
 			config: &Config{
-				Mode:             consts.ModeServer,
-				APIKeySecret:     "api-key-secret",
-				ArticleTagsTable: "test-tags-table",
-				UserProfileTable: "test-profile-table",
-				AuthBackend:      consts.AuthBackendSharedAPIKey,
+				Mode:         consts.ModeServer,
+				APIKeySecret: "api-key-secret",
+				AuthBackend:  consts.AuthBackendSharedAPIKey,
 			},
 			wantErr: true,
 		},
 		{
 			name: "server config with invalid auth backend",
 			config: &Config{
-				Mode:             consts.ModeServer,
-				APIKeySecret:     "api-key-secret",
-				ArticlesTable:    "test-table",
-				ArticleTagsTable: "test-tags-table",
-				UserProfileTable: "test-profile-table",
+				Mode:          consts.ModeServer,
+				APIKeySecret:  "api-key-secret",
+				ArticlesTable: "test-table",
+				AuthBackend:   "invalid_backend",
 			},
 			wantErr: true,
 		},
@@ -86,32 +79,26 @@ func TestConfigValidate(t *testing.T) {
 				Auth0ClientID:     "test-client-id",
 				Auth0ClientSecret: "test-client-secret",
 				ArticlesTable:     "test-table",
-				ArticleTagsTable:  "test-tags-table",
-				UserProfileTable:  "test-profile-table",
 			},
 			wantErr: false,
 		},
 		{
 			name: "server config with auth0 missing domain",
 			config: &Config{
-				Mode:             consts.ModeServer,
-				AuthBackend:      consts.AuthBackendAuth0,
-				Auth0Audience:    "test-audience",
-				ArticlesTable:    "test-table",
-				ArticleTagsTable: "test-tags-table",
-				UserProfileTable: "test-profile-table",
+				Mode:          consts.ModeServer,
+				AuthBackend:   consts.AuthBackendAuth0,
+				Auth0Audience: "test-audience",
+				ArticlesTable: "test-table",
 			},
 			wantErr: true,
 		},
 		{
 			name: "server config with auth0 missing audience",
 			config: &Config{
-				Mode:             consts.ModeServer,
-				AuthBackend:      consts.AuthBackendAuth0,
-				Auth0Domain:      "example.auth0.com",
-				ArticlesTable:    "test-table",
-				ArticleTagsTable: "test-tags-table",
-				UserProfileTable: "test-profile-table",
+				Mode:          consts.ModeServer,
+				AuthBackend:   consts.AuthBackendAuth0,
+				Auth0Domain:   "example.auth0.com",
+				ArticlesTable: "test-table",
 			},
 			wantErr: true,
 		},
@@ -135,8 +122,6 @@ func TestLoad(t *testing.T) {
 	_ = os.Unsetenv("SAVETOINK_MAILJET_API_SECRET")
 	_ = os.Unsetenv("SAVETOINK_API_KEY")
 	_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
-	_ = os.Unsetenv("SAVETOINK_ARTICLE_TAGS_TABLE_NAME")
-	_ = os.Unsetenv("SAVETOINK_USER_PROFILE_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
@@ -172,8 +157,6 @@ func TestLoadDefaultsToCLI(t *testing.T) {
 	_ = os.Unsetenv("SAVETOINK_MAILJET_API_SECRET")
 	_ = os.Unsetenv("SAVETOINK_API_KEY")
 	_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
-	_ = os.Unsetenv("SAVETOINK_ARTICLE_TAGS_TABLE_NAME")
-	_ = os.Unsetenv("SAVETOINK_USER_PROFILE_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
@@ -188,14 +171,10 @@ func TestLoadDefaultsToCLI(t *testing.T) {
 func TestLoadServerMode(t *testing.T) {
 	_ = os.Setenv("SAVETOINK_API_KEY", "api-key-secret")
 	_ = os.Setenv("SAVETOINK_ARTICLE_TABLE_NAME", "test-table")
-	_ = os.Setenv("SAVETOINK_ARTICLE_TAGS_TABLE_NAME", "test-tags-table")
-	_ = os.Setenv("SAVETOINK_USER_PROFILE_TABLE_NAME", "test-profile-table")
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	defer func() {
 		_ = os.Unsetenv("SAVETOINK_API_KEY")
 		_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
-		_ = os.Unsetenv("SAVETOINK_ARTICLE_TAGS_TABLE_NAME")
-		_ = os.Unsetenv("SAVETOINK_USER_PROFILE_TABLE_NAME")
 	}()
 
 	cfg, err := Load(consts.ModeServer)
@@ -209,8 +188,6 @@ func TestLoadServerModeAuth0(t *testing.T) {
 	_ = os.Unsetenv("SAVETOINK_MAILJET_API_SECRET")
 	_ = os.Unsetenv("SAVETOINK_API_KEY")
 	_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
-	_ = os.Unsetenv("SAVETOINK_ARTICLE_TAGS_TABLE_NAME")
-	_ = os.Unsetenv("SAVETOINK_USER_PROFILE_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
@@ -223,8 +200,6 @@ func TestLoadServerModeAuth0(t *testing.T) {
 	_ = os.Setenv("SAVETOINK_AUTH0_CLIENT_ID", "test-client-id")
 	_ = os.Setenv("SAVETOINK_AUTH0_CLIENT_SECRET", "test-client-secret")
 	_ = os.Setenv("SAVETOINK_ARTICLE_TABLE_NAME", "test-table")
-	_ = os.Setenv("SAVETOINK_ARTICLE_TAGS_TABLE_NAME", "test-tags-table")
-	_ = os.Setenv("SAVETOINK_USER_PROFILE_TABLE_NAME", "test-profile-table")
 	defer func() {
 		_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 		_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
@@ -232,8 +207,6 @@ func TestLoadServerModeAuth0(t *testing.T) {
 		_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_ID")
 		_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_SECRET")
 		_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
-		_ = os.Unsetenv("SAVETOINK_ARTICLE_TAGS_TABLE_NAME")
-		_ = os.Unsetenv("SAVETOINK_USER_PROFILE_TABLE_NAME")
 	}()
 
 	cfg, err := Load(consts.ModeServer)

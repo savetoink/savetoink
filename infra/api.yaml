@@ -114,14 +114,13 @@ Resources:
       Environment:
         Variables:
           SAVETOINK_API_KEY: !Ref APIKeySecret
-          SAVETOINK_ARTICLE_TABLE_NAME: !Ref DynamoDBTable
-          SAVETOINK_ARTICLE_TAGS_TABLE_NAME: !Ref ArticleTagsTable
           SAVETOINK_AUTH0_AUDIENCE: !Ref Auth0Audience
+          SAVETOINK_AUTH0_DOMAIN: !Ref Auth0Domain
           SAVETOINK_AUTH0_CLIENT_ID: !Ref Auth0ClientId
           SAVETOINK_AUTH0_CLIENT_SECRET: !Ref Auth0ClientSecret
-          SAVETOINK_AUTH0_DOMAIN: !Ref Auth0Domain
           SAVETOINK_AUTH_BACKEND: !Ref AuthBackend
           SAVETOINK_DEBUG: !Ref Debug
+          SAVETOINK_ARTICLE_TABLE_NAME: !Ref DynamoDBTable
           SAVETOINK_MAILJET_API_KEY: !Ref MailjetAPIKey
           SAVETOINK_MAILJET_API_SECRET: !Ref MailjetAPISecret
           SAVETOINK_SENDER_EMAIL: !Ref SenderEmail
@@ -280,35 +279,6 @@ Resources:
               - deliveredTo
               - deliveredEmailUUID
               - deliveredBy
-        - IndexName: AccountCreatedAtIndexWithTags
-          KeySchema:
-            - AttributeName: account
-              KeyType: HASH
-            - AttributeName: createdAt
-              KeyType: RANGE
-          Projection:
-            ProjectionType: INCLUDE
-            NonKeyAttributes:
-              - id
-              - url
-              - title
-              - author
-              - siteName
-              - sourceDomain
-              - excerpt
-              - imageUrl
-              - contentType
-              - language
-              - error
-              - wordCount
-              - readingTimeMinutes
-              - publishedAt
-              - tags
-              - deliveryStatus
-              - deliveredFrom
-              - deliveredTo
-              - deliveredEmailUUID
-              - deliveredBy
       BillingMode: PAY_PER_REQUEST
 
   UserProfileTable:
@@ -321,31 +291,6 @@ Resources:
       KeySchema:
         - AttributeName: account
           KeyType: HASH
-      BillingMode: PAY_PER_REQUEST
-
-  ArticleTagsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub "${ProjectName}-article-tags"
-      AttributeDefinitions:
-        - AttributeName: TagAccountKey
-          AttributeType: S
-        - AttributeName: ArticleSortKey
-          AttributeType: S
-      KeySchema:
-        - AttributeName: TagAccountKey
-          KeyType: HASH
-        - AttributeName: ArticleSortKey
-          KeyType: RANGE
-      GlobalSecondaryIndexes:
-        - IndexName: GSI1
-          KeySchema:
-            - AttributeName: TagAccountKey
-              KeyType: HASH
-            - AttributeName: ArticleSortKey
-              KeyType: RANGE
-          Projection:
-            ProjectionType: KEYS_ONLY
       BillingMode: PAY_PER_REQUEST
 
   DynamoDBTableAccessPolicy:
@@ -364,10 +309,14 @@ Resources:
               - dynamodb:Query
               - dynamodb:UpdateItem
               - dynamodb:DeleteItem
-            Resource:
-              - !GetAtt DynamoDBTable.Arn
-              - !GetAtt UserProfileTable.Arn
-              - !GetAtt ArticleTagsTable.Arn
+            Resource: !GetAtt DynamoDBTable.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Resource: !GetAtt UserProfileTable.Arn
 
   GitHubOIDCProvider:
     Type: AWS::IAM::OIDCProvider
@@ -452,18 +401,6 @@ Outputs:
     Value: !GetAtt UserProfileTable.Arn
     Export:
       Name: !Sub "${ProjectName}-user-profile-table-arn"
-
-  ArticleTagsTableName:
-    Description: Name of the DynamoDB table for storing article tags
-    Value: !Ref ArticleTagsTable
-    Export:
-      Name: !Sub "${ProjectName}-article-tags-table-name"
-
-  ArticleTagsTableArn:
-    Description: ARN of the article tags DynamoDB table
-    Value: !GetAtt ArticleTagsTable.Arn
-    Export:
-      Name: !Sub "${ProjectName}-article-tags-table-arn"
 
   CloudFrontDistributionId:
     Description: CloudFront distribution ID

@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/shaftoe/savetoink/internal/config"
@@ -24,17 +23,15 @@ type Interface interface {
 	Process(ctx context.Context, url string) (*ProcessResult, error)
 	Send(ctx context.Context, result *ProcessResult, subject, destEmail string) (*email.SendEmailResponse, error)
 	WriteToFile(result *ProcessResult, outputPath string) error
-	CreateArticle(ctx context.Context, rawURL, accountID string, tags []string) (*CreateArticleResult, error)
+	CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error)
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
-	GetArticlesMetadata(ctx context.Context, accountID string, page, pageSize int, tags []string) (*GetArticlesResult, error)
+	GetArticlesMetadata(ctx context.Context, accountID string, page, pageSize int) (*GetArticlesResult, error)
 	DeleteArticle(ctx context.Context, accountID, articleID string) (*DeleteArticleResult, error)
 	DeleteAllArticles(ctx context.Context, accountID string) (*DeleteArticleResult, error)
 	GetDBError() error
 	GetUserKindleEmail(ctx context.Context, accountID string) (string, error)
 	SetUserKindleEmail(ctx context.Context, accountID, kindleEmail string) error
 	DeleteUserProfile(ctx context.Context, accountID string) error
-	AddTags(ctx context.Context, accountID, articleID string, tags []string) error
-	RemoveTag(ctx context.Context, accountID, articleID, tag string) error
 }
 
 // Service holds the stateless dependencies and provides methods to process articles.
@@ -43,7 +40,6 @@ type Service struct {
 	generator       *epub.Generator
 	sender          email.Sender
 	repo            repository.ArticlesRepository
-	tagRepo         repository.ArticleTagsRepository
 	userProfileRepo repository.UserProfileRepository
 	cfg             *config.Config
 	dbErrors        error
@@ -61,13 +57,9 @@ func New(cfg *config.Config) *Service {
 
 	var repo repository.ArticlesRepository
 	var userProfileRepo repository.UserProfileRepository
-	var tagRepo repository.ArticleTagsRepository
 	if cfg.ArticlesTable != "" && cfg.AWSConfig != nil {
 		repo = repository.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable)
 		userProfileRepo = repo.(repository.UserProfileRepository)
-	}
-	if cfg.ArticleTagsTable != "" && cfg.AWSConfig != nil {
-		tagRepo = repository.NewArticleTags(cfg.AWSConfig, cfg.ArticleTagsTable)
 	}
 
 	return &Service{
@@ -75,7 +67,6 @@ func New(cfg *config.Config) *Service {
 		generator:       epub.NewGenerator(),
 		sender:          sender,
 		repo:            repo,
-		tagRepo:         tagRepo,
 		userProfileRepo: userProfileRepo,
 		cfg:             cfg,
 	}
@@ -226,9 +217,8 @@ func (s *Service) WriteToFile(result *ProcessResult, outputPath string) error {
 // - optionally sends the article to Kindle via email
 // - enriches the article with delivery metadata
 // - stores the article to the database in the background (if repository is configured)
-// - creates tag indexes for specified tags
 // Returns CreateArticleResult with the article and status information.
-func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string, tags []string) (*CreateArticleResult, error) {
+func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error) {
 	cleanURL, err := content.CleanURL(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to clean url: %w", err)
@@ -238,8 +228,6 @@ func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string, t
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate article id: %w", err)
 	}
-
-	normalizedTags := s.normalizeTags(tags)
 
 	eg, articlesChan := s.startBackgroundDBStore(ctx)
 	defer func() {
@@ -252,7 +240,6 @@ func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string, t
 		ID:        articleID,
 		URL:       cleanURL,
 		CreatedAt: time.Now().UTC(),
-		Tags:      normalizedTags,
 	}
 	articlesChan <- article
 
@@ -278,17 +265,7 @@ func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string, t
 	}
 
 	s.enrichArticle(result.Article(), &articleID, emailResp, accountID, destEmail)
-	result.Article().Tags = normalizedTags
 	articlesChan <- result.Article()
-
-	if s.tagRepo != nil {
-		createdAtStr := article.CreatedAt.Format(time.RFC3339)
-		for _, tag := range normalizedTags {
-			if tagErr := s.tagRepo.AddTagIndex(ctx, accountID, articleID, tag, createdAtStr); tagErr != nil {
-				s.dbErrors = errors.Join(s.dbErrors, fmt.Errorf("failed to add tag index for %s: %w", tag, tagErr))
-			}
-		}
-	}
 
 	return &CreateArticleResult{
 		Article:   result.Article(),
@@ -440,12 +417,10 @@ func (s *Service) GetArticle(ctx context.Context, accountID, articleID string) (
 // GetArticlesMetadata retrieves article metadata for a given account with pagination.
 // page starts at 1, pageSize limits the number of articles returned.
 // Content field is excluded from returned articles.
-// If tags are provided, filters to articles that have all specified tags (AND logic).
 func (s *Service) GetArticlesMetadata(
 	ctx context.Context,
 	accountID string,
 	page, pageSize int,
-	tags []string,
 ) (*GetArticlesResult, error) {
 	if s.repo == nil {
 		return &GetArticlesResult{
@@ -457,49 +432,13 @@ func (s *Service) GetArticlesMetadata(
 		}, nil
 	}
 
-	normalizedTags := s.normalizeTags(tags)
-
-	if len(normalizedTags) == 0 || s.tagRepo == nil {
-		articles, lastEvaluatedKey, total, err := s.repo.GetMetadataByAccount(ctx, accountID, page, pageSize)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get articles: %w", err)
-		}
-
-		if articles == nil {
-			articles = []*model.Article{}
-		}
-
-		return &GetArticlesResult{
-			Articles: articles,
-			Page:     page,
-			PageSize: pageSize,
-			Total:    total,
-			HasMore:  lastEvaluatedKey != nil,
-		}, nil
-	}
-
-	articleIDs, total, err := s.tagRepo.GetArticlesByTags(ctx, accountID, normalizedTags, page, pageSize)
+	articles, lastEvaluatedKey, total, err := s.repo.GetMetadataByAccount(ctx, accountID, page, pageSize)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get articles by tags: %w", err)
+		return nil, fmt.Errorf("failed to get articles: %w", err)
 	}
 
-	if len(articleIDs) == 0 {
-		return &GetArticlesResult{
-			Articles: []*model.Article{},
-			Page:     page,
-			PageSize: pageSize,
-			Total:    total,
-			HasMore:  false,
-		}, nil
-	}
-
-	articles := make([]*model.Article, 0, len(articleIDs))
-	for _, articleID := range articleIDs {
-		article, getErr := s.repo.GetByAccountAndID(ctx, accountID, articleID)
-		if getErr != nil {
-			continue
-		}
-		articles = append(articles, article)
+	if articles == nil {
+		articles = []*model.Article{}
 	}
 
 	return &GetArticlesResult{
@@ -507,7 +446,7 @@ func (s *Service) GetArticlesMetadata(
 		Page:     page,
 		PageSize: pageSize,
 		Total:    total,
-		HasMore:  page*pageSize < total,
+		HasMore:  lastEvaluatedKey != nil,
 	}, nil
 }
 
@@ -558,141 +497,4 @@ func (s *Service) DeleteUserProfile(ctx context.Context, accountID string) error
 	}
 
 	return nil
-}
-
-// AddTags adds tags to an existing article.
-func (s *Service) AddTags(ctx context.Context, accountID, articleID string, tags []string) error {
-	if s.repo == nil {
-		return errors.New("repository not configured")
-	}
-
-	article, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
-	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return errors.New("article not found")
-		}
-		return fmt.Errorf("failed to get article: %w", err)
-	}
-
-	normalizedTags := s.normalizeTags(tags)
-	if len(normalizedTags) == 0 {
-		return errors.New("tags cannot be empty")
-	}
-
-	existingTagsMap := make(map[string]bool)
-	for _, tag := range article.Tags {
-		existingTagsMap[tag] = true
-	}
-
-	tagsToAdd := make([]string, 0, len(normalizedTags))
-	for _, tag := range normalizedTags {
-		if !existingTagsMap[tag] {
-			tagsToAdd = append(tagsToAdd, tag)
-		}
-	}
-
-	if len(tagsToAdd) == 0 {
-		return nil
-	}
-
-	article.Tags = append(article.Tags, tagsToAdd...)
-	if storeErr := s.repo.Store(ctx, article); storeErr != nil {
-		return fmt.Errorf("failed to update article: %w", storeErr)
-	}
-
-	if s.tagRepo != nil {
-		createdAtStr := article.CreatedAt.Format(time.RFC3339)
-		for _, tag := range tagsToAdd {
-			if tagErr := s.tagRepo.AddTagIndex(ctx, accountID, articleID, tag, createdAtStr); tagErr != nil {
-				s.dbErrors = errors.Join(s.dbErrors, fmt.Errorf("failed to add tag index for %s: %w", tag, tagErr))
-			}
-		}
-	}
-
-	return nil
-}
-
-// RemoveTag removes a tag from an existing article.
-func (s *Service) RemoveTag(ctx context.Context, accountID, articleID, tag string) error {
-	if s.repo == nil {
-		return errors.New("repository not configured")
-	}
-
-	if tag == "" {
-		return errors.New("tag cannot be empty")
-	}
-
-	normalizedTag := normalizeTag(tag)
-	if normalizedTag == "" {
-		return errors.New("tag cannot be empty or whitespace only")
-	}
-
-	article, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
-	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return errors.New("article not found")
-		}
-		return fmt.Errorf("failed to get article: %w", err)
-	}
-
-	tagFound := false
-	newTags := make([]string, 0, len(article.Tags))
-	for _, t := range article.Tags {
-		if t == normalizedTag {
-			tagFound = true
-			continue
-		}
-		newTags = append(newTags, t)
-	}
-
-	if !tagFound {
-		return errors.New("tag not found on article")
-	}
-
-	article.Tags = newTags
-	if storeErr := s.repo.Store(ctx, article); storeErr != nil {
-		return fmt.Errorf("failed to update article: %w", storeErr)
-	}
-
-	if s.tagRepo != nil {
-		createdAtStr := article.CreatedAt.Format(time.RFC3339)
-		if tagErr := s.tagRepo.RemoveTagIndex(ctx, accountID, articleID, normalizedTag, createdAtStr); tagErr != nil {
-			s.dbErrors = errors.Join(s.dbErrors, fmt.Errorf("failed to remove tag index for %s: %w", tag, tagErr))
-		}
-	}
-
-	return nil
-}
-
-func (s *Service) normalizeTags(tags []string) []string {
-	if tags == nil {
-		return nil
-	}
-
-	tagMap := make(map[string]bool)
-	for _, tag := range tags {
-		normalized := normalizeTag(tag)
-		if normalized != "" {
-			tagMap[normalized] = true
-		}
-	}
-
-	if len(tagMap) == 0 {
-		return nil
-	}
-
-	result := make([]string, 0, len(tagMap))
-	for tag := range tagMap {
-		result = append(result, tag)
-	}
-	return result
-}
-
-func normalizeTag(tag string) string {
-	tag = strings.TrimSpace(tag)
-	tag = strings.ToLower(tag)
-	if len(tag) > 50 {
-		tag = tag[:50]
-	}
-	return tag
 }

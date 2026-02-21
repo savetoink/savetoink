@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
 	"github.com/shaftoe/savetoink/internal/repository"
-	"github.com/stretchr/testify/require"
 )
 
 type MockRepository struct {
@@ -177,7 +175,7 @@ func TestGetArticlesMetadata(t *testing.T) {
 			mockRepo := &MockRepository{articles: articles}
 			svc := &Service{repo: mockRepo}
 
-			result, err := svc.GetArticlesMetadata(context.Background(), tt.accountID, tt.page, tt.pageSize, nil)
+			result, err := svc.GetArticlesMetadata(context.Background(), tt.accountID, tt.page, tt.pageSize)
 
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -209,7 +207,7 @@ func TestGetArticlesMetadata(t *testing.T) {
 func TestGetArticlesMetadataWithNilRepo(t *testing.T) {
 	svc := &Service{repo: nil}
 
-	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10, nil)
+	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -302,7 +300,7 @@ func TestGetArticlesMetadataWithDeliveryStatus(t *testing.T) {
 	mockRepo := &MockRepository{articles: articles}
 	svc := &Service{repo: mockRepo}
 
-	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10, nil)
+	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -505,145 +503,5 @@ func TestWriteToFile_EmptyPath(t *testing.T) {
 
 	if err == nil {
 		t.Error("expected error for empty path, got nil")
-	}
-}
-
-func TestService_AddTags(t *testing.T) {
-	svc := &Service{}
-	article := &model.Article{
-		Account:   "test-account",
-		ID:        "test-id",
-		Tags:      []string{"existing-tag"},
-		CreatedAt: time.Now(),
-	}
-
-	svc.repo = &MockRepository{articles: []*model.Article{article}}
-
-	err := svc.AddTags(context.Background(), "test-account", "test-id", []string{"new-tag1", "new-tag2"})
-	require.NoError(t, err)
-
-	require.Contains(t, article.Tags, "new-tag1")
-	require.Contains(t, article.Tags, "new-tag2")
-}
-
-func TestService_AddTags_EmptyTags(t *testing.T) {
-	svc := &Service{}
-	article := &model.Article{
-		Account:   "test-account",
-		ID:        "test-id",
-		Tags:      []string{"existing-tag"},
-		CreatedAt: time.Now(),
-	}
-
-	svc.repo = &MockRepository{articles: []*model.Article{article}}
-
-	err := svc.AddTags(context.Background(), "test-account", "test-id", []string{})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "tags cannot be empty")
-}
-
-func TestService_AddTags_ArticleNotFound(t *testing.T) {
-	svc := &Service{}
-
-	svc.repo = &MockRepository{articles: []*model.Article{}}
-
-	err := svc.AddTags(context.Background(), "test-account", "test-id", []string{"new-tag"})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "article not found")
-}
-
-func TestService_RemoveTag(t *testing.T) {
-	svc := &Service{}
-	article := &model.Article{
-		Account:   "test-account",
-		ID:        "test-id",
-		Tags:      []string{"tag-to-remove", "keep-tag"},
-		CreatedAt: time.Now(),
-	}
-
-	svc.repo = &MockRepository{articles: []*model.Article{article}}
-
-	err := svc.RemoveTag(context.Background(), "test-account", "test-id", "tag-to-remove")
-	require.NoError(t, err)
-
-	require.NotContains(t, article.Tags, "tag-to-remove")
-	require.Contains(t, article.Tags, "keep-tag")
-}
-
-func TestService_RemoveTag_TagNotFound(t *testing.T) {
-	svc := &Service{}
-	article := &model.Article{
-		Account:   "test-account",
-		ID:        "test-id",
-		Tags:      []string{"tag-to-remove"},
-		CreatedAt: time.Now(),
-	}
-
-	svc.repo = &MockRepository{articles: []*model.Article{article}}
-
-	err := svc.RemoveTag(context.Background(), "test-account", "test-id", "not-found-tag")
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "tag not found on article")
-}
-
-func TestService_RemoveTag_ArticleNotFound(t *testing.T) {
-	svc := &Service{}
-
-	svc.repo = &MockRepository{articles: []*model.Article{}}
-
-	err := svc.RemoveTag(context.Background(), "test-account", "test-id", "tag")
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "article not found")
-}
-
-func TestService_NormalizeTags(t *testing.T) {
-	svc := &Service{}
-
-	tests := []struct {
-		name     string
-		input    []string
-		expected []string
-	}{
-		{
-			name:     "empty slice",
-			input:    []string{},
-			expected: nil,
-		},
-		{
-			name:     "normal tags",
-			input:    []string{"Golang", "AWS"},
-			expected: []string{"golang", "aws"},
-		},
-		{
-			name:     "trim whitespace",
-			input:    []string{"  Golang  ", " AWS "},
-			expected: []string{"golang", "aws"},
-		},
-		{
-			name:     "truncate long tags",
-			input:    []string{strings.Repeat("a", 100)},
-			expected: []string{strings.Repeat("a", 50)},
-		},
-		{
-			name:     "remove duplicates",
-			input:    []string{"golang", "AWS", "golang"},
-			expected: []string{"aws", "golang"},
-		},
-		{
-			name:     "remove empty tags",
-			input:    []string{"  ", "", "golang"},
-			expected: []string{"golang"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := svc.normalizeTags(tt.input)
-			if tt.expected == nil {
-				require.Nil(t, result)
-				return
-			}
-			require.ElementsMatch(t, tt.expected, result)
-		})
 	}
 }
