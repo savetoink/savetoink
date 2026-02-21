@@ -309,14 +309,9 @@ Resources:
               - dynamodb:Query
               - dynamodb:UpdateItem
               - dynamodb:DeleteItem
-            Resource: !GetAtt DynamoDBTable.Arn
-          - Effect: Allow
-            Action:
-              - dynamodb:PutItem
-              - dynamodb:GetItem
-              - dynamodb:UpdateItem
-              - dynamodb:DeleteItem
-            Resource: !GetAtt UserProfileTable.Arn
+            Resource:
+              - !GetAtt DynamoDBTable.Arn
+              - !GetAtt UserProfileTable.Arn
 
   GitHubOIDCProvider:
     Type: AWS::IAM::OIDCProvider
