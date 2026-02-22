@@ -42,30 +42,6 @@ const (
 	StatusFailed Status = "failed"
 )
 
-// HTTP server timeout constants.
-const (
-	// ReadTimeout is the maximum duration for reading the entire request, including the body.
-	ReadTimeout = 5 * time.Second
-	// WriteTimeout is the maximum duration before timing out writes of the response.
-	WriteTimeout = 10 * time.Second
-	// IdleTimeout is the maximum amount of time to wait for the next request when keep-alives are enabled.
-	IdleTimeout = 15 * time.Second
-)
-
-// Auth0 client timeout constants.
-const (
-	// Auth0ClientTimeout is the timeout for Auth0 API calls.
-	Auth0ClientTimeout = 10 * time.Second
-)
-
-// EmailProvider defines the email provider type.
-type EmailProvider string
-
-const (
-	// EmailBackendMailjet indicates MailJet email backend.
-	EmailBackendMailjet EmailProvider = "mailjet"
-)
-
 // Pagination constants.
 const (
 	// MinPage is the minimum valid page number for pagination.
@@ -84,41 +60,14 @@ const (
 	MaxPageSize = 20
 )
 
-// Email constants.
-const (
-	// DefaultSubject is the default email subject.
-	DefaultSubject = "Document"
-
-	// MaxSubjectLength is the maximum length for email subjects.
-	MaxSubjectLength = 100
-)
-
-// DynamoDB constants.
-const (
-	// DynamoDBBatchSize is the maximum number of items in a BatchWriteItem operation.
-	DynamoDBBatchSize = 25
-
-	// DynamoDBGSIName is the name of the Global Secondary Index for sorting articles by creation date.
-	DynamoDBGSIName = "AccountCreatedAtIndex"
-)
-
 // Content extraction constants.
 const (
 	// WordsPerMinute is the average reading speed used to calculate estimated reading time.
 	WordsPerMinute = 250
 )
 
-// EPUB constants.
+// Auth0 client timeout constants.
 const (
-	// DefaultChapterTitle is the default title for single-chapter EPUBs.
-	DefaultChapterTitle = "Chapter 1"
-
-	// DefaultChapterFilename is the default filename for a chapter in single-chapter EPUBs.
-	DefaultChapterFilename = "chapter1.xhtml"
-)
-
-// Error messages.
-const (
-	// ErrInvalidArticleID is the error message for an invalid article ID.
-	ErrInvalidArticleID = "invalid article id"
+	// Auth0ClientTimeout is the timeout for Auth0 API calls.
+	Auth0ClientTimeout = 10 * time.Second
 )

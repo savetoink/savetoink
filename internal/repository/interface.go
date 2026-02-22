@@ -1,3 +1,4 @@
+// Package repository provides article persistence interfaces.
 package repository
 
 import (

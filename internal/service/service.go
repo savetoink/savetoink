@@ -9,12 +9,13 @@ import (
 
 	"github.com/shaftoe/savetoink/internal/config"
 	"github.com/shaftoe/savetoink/internal/consts"
-	"github.com/shaftoe/savetoink/internal/content"
 	"github.com/shaftoe/savetoink/internal/email"
 	"github.com/shaftoe/savetoink/internal/email/mailjet"
-	"github.com/shaftoe/savetoink/internal/epub"
 	"github.com/shaftoe/savetoink/internal/model"
 	"github.com/shaftoe/savetoink/internal/repository"
+	repoimpl "github.com/shaftoe/savetoink/internal/repository/dynamodb"
+	"github.com/shaftoe/savetoink/internal/service/content"
+	"github.com/shaftoe/savetoink/internal/service/epub"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -58,7 +59,7 @@ func New(cfg *config.Config) *Service {
 	var repo repository.ArticlesRepository
 	var userProfileRepo repository.UserProfileRepository
 	if cfg.ArticlesTable != "" && cfg.AWSConfig != nil {
-		repo = repository.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable)
+		repo = repoimpl.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable)
 		userProfileRepo = repo.(repository.UserProfileRepository)
 	}
 
@@ -336,7 +337,7 @@ func (s *Service) DeleteArticle(ctx context.Context, accountID, articleID string
 
 	_, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if errors.Is(err, repoimpl.ErrNotFound) {
 			return &DeleteArticleResult{Deleted: 0}, nil
 		}
 		return nil, fmt.Errorf("failed to get article: %w", err)
@@ -407,7 +408,7 @@ func (s *Service) GetArticle(ctx context.Context, accountID, articleID string) (
 
 	article, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if errors.Is(err, repoimpl.ErrNotFound) {
 			return nil, errors.New("article not found")
 		}
 		return nil, fmt.Errorf("failed to get article: %w", err)

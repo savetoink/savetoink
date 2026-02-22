@@ -73,7 +73,7 @@ func (e *Extractor) fetchURL(ctx context.Context, urlStr string) (*url.URL, io.R
 		return nil, nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	resp, err := e.client.Do(req)
+	resp, err := e.client.Do(req) //nolint:gosec // SSRF is acceptable for fetching article content from user-provided URLs
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch URL: %w", err)
 	}

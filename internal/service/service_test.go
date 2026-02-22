@@ -10,7 +10,7 @@ import (
 	"github.com/shaftoe/savetoink/internal/config"
 	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
-	"github.com/shaftoe/savetoink/internal/repository"
+	repoimpl "github.com/shaftoe/savetoink/internal/repository/dynamodb"
 )
 
 type MockRepository struct {
@@ -28,7 +28,7 @@ func (m *MockRepository) GetByAccountAndID(_ context.Context, account, id string
 			return article, nil
 		}
 	}
-	return nil, repository.ErrNotFound
+	return nil, repoimpl.ErrNotFound
 }
 
 func (m *MockRepository) GetMetadataByAccount(

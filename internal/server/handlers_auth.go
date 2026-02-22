@@ -89,7 +89,7 @@ func (h *handlers) buildTokenRequest(req authTokenExchangeRequest) *http.Request
 }
 
 func (h *handlers) executeTokenExchange(httpReq *http.Request) (*http.Response, []byte, error) {
-	resp, err := h.client.Do(httpReq)
+	resp, err := h.client.Do(httpReq) //nolint:gosec // HTTP request to Auth0 is from config, not user input
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to execute token exchange: %w", err)
 	}
