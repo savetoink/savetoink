@@ -15,3 +15,5 @@ export const isAuthenticatedPath = (path: string) => {
 type authBackend = 'auth0' | 'sharedKey';
 export const Auth0: authBackend = 'auth0';
 export const SharedKey: authBackend = 'sharedKey';
+
+export const KindleDomains = ['@kindle.com', '@free.kindle.com'];

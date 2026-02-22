@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { JWT_KEY, setJwtCookie, deleteJwtCookie, getJwtCookie } from '$lib/server/cookies';
 import { GET, PUT, DELETE } from '$lib/server/apiClient';
+import { KindleDomains } from '$lib/consts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ fetch, locals, cookies }) => {
@@ -38,7 +39,17 @@ export const actions: Actions = {
 		const kindleEmail = data.get('kindleEmail');
 
 		if (!kindleEmail || typeof kindleEmail !== 'string' || kindleEmail.trim() === '') {
-			return fail(400, { error: 'kindle email is required' });
+			return error(400, 'kindle email is required');
+		}
+
+		const parts = kindleEmail.split('@');
+		if (parts.length !== 2 || !parts[1]) {
+			return error(400, 'invalid email format');
+		}
+
+		const domain = '@' + parts[1];
+		if (!KindleDomains.includes(domain)) {
+			return error(400, 'kindle email domain must be ' + KindleDomains.join(' or '));
 		}
 
 		try {
