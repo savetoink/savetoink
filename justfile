@@ -131,32 +131,36 @@ logs:
     aws logs tail /aws/lambda/{{ project_name }}-api --follow
 
 # Test deployed Lambda function with article URL
-test-url *URL:
-    curl -X POST http://localhost:8080/v1/articles \
+test-create-article *URL:
+    curl --silent \
+      -X POST http://localhost:8080/v1/articles \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer $SAVETOINK_API_KEY" \
-      -d "{\"url\": \"{{ URL }}\"}"
+      -d "{\"url\": \"{{ URL }}\", \"tags\":\"test\"}" | jq .
 
 test-get-article *ID:
-    curl -X GET http://localhost:8080/v1/articles/{{ ID }} \
+    curl --silent \
+      -X GET http://localhost:8080/v1/articles/{{ ID }} \
       -H "Content-Type: application/json" \
-      -H "Authorization: Bearer $SAVETOINK_API_KEY"
+      -H "Authorization: Bearer $SAVETOINK_API_KEY" | jq .
 
 test-get-articles *PAGE="1":
-    curl -X GET http://localhost:8080/v1/articles?page={{ PAGE }} \
+    curl --silent \
+      -X GET http://localhost:8080/v1/articles?page={{ PAGE }} \
       -H "Content-Type: application/json" \
-      -H "Authorization: Bearer $SAVETOINK_API_KEY"
+      -H "Authorization: Bearer $SAVETOINK_API_KEY" | jq .
 
 test-delete-article *ID:
-    curl -X DELETE http://localhost:8080/v1/articles/{{ ID }} \
+    curl --silent \
+      -X DELETE http://localhost:8080/v1/articles/{{ ID }} \
       -H "Content-Type: application/json" \
-      -H "Authorization: Bearer $SAVETOINK_API_KEY"
+      -H "Authorization: Bearer $SAVETOINK_API_KEY" | jq .
 
 test-auth-token-exchange *CODE:
-    curl \
+    curl --silent \
         -X POST \
         --data '{"code":"{{ CODE }}", "redirect_uri": "http://localhost:5173"}' \
-        http://localhost:8080/v1/auth/token
+        http://localhost:8080/v1/auth/token | jq .
 
 test-auth-browser-login:
     open "https://${SAVETOINK_AUTH0_DOMAIN}/authorize?response_type=code&client_id=${SAVETOINK_AUTH0_CLIENT_ID}&redirect_uri=http://localhost:5173&scope=openid%20profile%20email&state=test123&audience=${SAVETOINK_AUTH0_AUDIENCE}"
@@ -199,3 +203,12 @@ auth0-destroy-api:
 
 version:
     @echo "$(cat VERSION)-$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)"
+
+upgrade-go-deps:
+    go get -u all
+
+[working-directory('cmd/webapp')]
+upgrade-svelte-deps:
+    npm upgrade
+
+upgrade-deps: upgrade-go-deps upgrade-svelte-deps
