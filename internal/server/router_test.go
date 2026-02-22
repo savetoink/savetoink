@@ -23,7 +23,7 @@ const (
 	testOrigin           = "https://example.com"
 	statusOk             = "ok"
 	statusCreatedMessage = "article sent to Kindle successfully"
-	statusEmailDisabled  = "kindle email not configured for user"
+	statusEmailDisabled  = "article saved (kindle email not configured)"
 	methodsAllowed       = "POST, GET, OPTIONS"
 	testDatabaseError    = "database error"
 )
@@ -49,7 +49,7 @@ func createTestHandlerWithMock(
 	sendEnabled bool,
 ) *handlers {
 	svc := newMockService(func(_ context.Context, _ string, _ string) (*service.CreateArticleResult, error) {
-		message := statusEmailDisabled
+		message := "article saved (kindle email not configured)"
 		var emailResp *email.SendEmailResponse
 		if sendEnabled {
 			message = statusCreatedMessage

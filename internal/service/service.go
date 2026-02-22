@@ -284,7 +284,7 @@ func (s *Service) sendArticle(
 		return nil, "", fmt.Errorf("failed to get user kindle email: %w", err)
 	}
 	if destEmail == "" {
-		return nil, "", errors.New("kindle email not configured for user")
+		return nil, "", nil
 	}
 
 	emailResp, err := s.Send(ctx, result, "", destEmail)
@@ -374,7 +374,9 @@ func (s *Service) enrichArticle(
 	article.ID = *id
 
 	if emailResp == nil {
-		article.DeliveryStatus = consts.StatusFailed
+		if destEmail != "" {
+			article.DeliveryStatus = consts.StatusFailed
+		}
 		return
 	}
 
@@ -387,7 +389,7 @@ func (s *Service) enrichArticle(
 
 func (s *Service) getMessage(_ *model.Article, emailResp *email.SendEmailResponse) string {
 	if emailResp == nil {
-		return "kindle email not configured for user"
+		return "article saved (kindle email not configured)"
 	}
 	return "article sent to Kindle successfully"
 }

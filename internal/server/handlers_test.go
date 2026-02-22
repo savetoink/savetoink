@@ -241,7 +241,7 @@ func TestHandleCreateArticleSuccessWithoutEmail(t *testing.T) {
 				Title: testArticleTitle,
 				URL:   "https://example.com/article",
 			},
-			Message:   "kindle email not configured for user",
+			Message:   "article saved (kindle email not configured)",
 			EmailResp: nil,
 		}, nil
 	})
@@ -267,8 +267,8 @@ func TestHandleCreateArticleSuccessWithoutEmail(t *testing.T) {
 	if resp.Title != testArticleTitle {
 		t.Errorf("expected title '%s', got '%s'", testArticleTitle, resp.Title)
 	}
-	if resp.Message != "kindle email not configured for user" {
-		t.Errorf("expected message 'kindle email not configured for user', got '%s'", resp.Message)
+	if resp.Message != statusEmailDisabled {
+		t.Errorf("expected message '%s', got '%s'", statusEmailDisabled, resp.Message)
 	}
 }
 
