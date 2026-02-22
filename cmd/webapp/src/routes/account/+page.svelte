@@ -13,7 +13,7 @@
 </script>
 
 <section>
-	<h2>Login</h2>
+	<h2>Your account</h2>
 	{#if PUBLIC_AUTH_BACKEND === Auth0}
 		<Auth0Login {data} />
 	{:else if PUBLIC_AUTH_BACKEND === SharedKey}

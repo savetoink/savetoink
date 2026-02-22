@@ -4,15 +4,17 @@
 	import ArticleMetaAccordion from '$lib/components/ArticleMetaAccordion.svelte';
 
 	let { data }: { data: PageData } = $props();
+	const title = $derived(data.title || data.url);
 </script>
 
 <article>
 	<header>
-		{#if data.title}
-			<h1>{data.title}</h1>
-		{:else}
-			<h1>{data.url}</h1>
-		{/if}
+		<h1>
+			<a href={data.url} target="_blank" rel="external noreferrer" title="Open the original link"
+				>{title}</a
+			>
+		</h1>
+
 		<ArticleMetaAccordion article={data} />
 	</header>
 	<section>
