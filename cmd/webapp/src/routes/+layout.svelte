@@ -27,5 +27,5 @@
 </main>
 
 <footer>
-	<small>{title}</small>
+	<small>{title}</small> - Source on <a href="https://github.com/savetoink/savetoink">GitHub</a>
 </footer>

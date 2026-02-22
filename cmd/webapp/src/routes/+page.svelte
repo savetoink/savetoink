@@ -19,10 +19,6 @@
 		{/each}
 	</ul>
 
-	<footer>
-		<small>total: {data.total}</small>
-	</footer>
-
 	{#if data.articles.length > 0}
 		<Navigator page={data.page} has_more={data.has_more} />
 	{/if}
