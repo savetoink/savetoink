@@ -364,7 +364,7 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_MultiplePages(t *testing.T) {
 	account := "pagination@example.com"
 	numArticles := 25
 
-	for i := 0; i < numArticles; i++ { //nolint:modernize // keep traditional loop to access loop variable
+	for i := range numArticles {
 		article := &model.Article{
 			Account:   account,
 			ID:        fmt.Sprintf("pagination-id-%03d", i),
@@ -422,7 +422,7 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_LastPage(t *testing.T) {
 	account := "lastpage@example.com"
 	numArticles := 15
 
-	for i := 0; i < numArticles; i++ { //nolint:modernize // keep traditional loop to access loop variable
+	for i := range numArticles {
 		article := &model.Article{
 			Account:   account,
 			ID:        fmt.Sprintf("lastpage-id-%03d", i),
@@ -462,7 +462,7 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_PageOutOfRange(t *testing.T) {
 	account := "outofrange@example.com"
 	numArticles := 5
 
-	for i := 0; i < numArticles; i++ { //nolint:modernize // keep traditional loop to access loop variable
+	for i := range numArticles {
 		article := &model.Article{
 			Account:   account,
 			ID:        fmt.Sprintf("outofrange-id-%03d", i),
@@ -495,7 +495,7 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_TotalCountAccuracy(t *testing.
 	account := "totalcount@example.com"
 	numArticles := 12
 
-	for i := 0; i < numArticles; i++ { //nolint:modernize // keep traditional loop to access loop variable
+	for i := range numArticles {
 		article := &model.Article{
 			Account:   account,
 			ID:        fmt.Sprintf("totalcount-id-%03d", i),
@@ -542,7 +542,7 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_LargePageSize(t *testing.T) {
 	account := "largepagesize@example.com"
 	numArticles := 15
 
-	for i := 0; i < numArticles; i++ { //nolint:modernize // keep traditional loop to access loop variable
+	for i := range numArticles {
 		article := &model.Article{
 			Account:   account,
 			ID:        fmt.Sprintf("largepagesize-id-%03d", i),
@@ -573,7 +573,7 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_InvalidPageDefaults(t *testing
 
 	account := "invalidpage@example.com"
 
-	for i := 0; i < 5; i++ { //nolint:modernize // keep traditional loop to access loop variable
+	for i := range 5 {
 		article := &model.Article{
 			Account:   account,
 			ID:        fmt.Sprintf("invalidpage-id-%03d", i),
