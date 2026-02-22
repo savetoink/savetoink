@@ -30,10 +30,7 @@
 </script>
 
 {#if loggedIn}
-	<p>Account ID: {data.account}</p>
-{/if}
-
-{#if loggedIn}
+	<p>ID: <code>{data.account}</code></p>
 	<button onclick={logout}>Logout</button>
 {:else}
 	<button onclick={login}>Login with Auth0</button>
