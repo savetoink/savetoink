@@ -26,7 +26,9 @@ async function send(
 		return text ? JSON.parse(text) : {};
 	}
 
-	error(res.status);
+	const text = await res.text();
+	const errorBody = text ? JSON.parse(text) : {};
+	error(res.status, errorBody.error || errorBody.message || text);
 }
 
 export async function GET(fetch: typeof globalThis.fetch, path: string, token?: string) {

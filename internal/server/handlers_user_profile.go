@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"net/mail"
+	"strings"
 
 	"github.com/shaftoe/savetoink/internal/model"
 	"github.com/shaftoe/savetoink/internal/server/auth"
@@ -52,7 +54,24 @@ func (h *handlers) handleSetUserProfile(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err := h.service.SetUserKindleEmail(r.Context(), accountID, req.KindleEmail)
+	addr, err := mail.ParseAddress(req.KindleEmail)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{
+			Error: "invalid kindle email: must be a valid email ending with @kindle.com or @free.kindle.com"})
+		return
+	}
+
+	isKindleDomain := strings.HasSuffix(addr.Address, "@kindle.com") ||
+		strings.HasSuffix(addr.Address, "@free.kindle.com")
+	if !isKindleDomain {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{
+			Error: "invalid kindle email: must be a valid email ending with @kindle.com or @free.kindle.com"})
+		return
+	}
+
+	err = h.service.SetUserKindleEmail(r.Context(), accountID, req.KindleEmail)
 	if err != nil {
 		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)

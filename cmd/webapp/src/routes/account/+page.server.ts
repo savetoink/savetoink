@@ -1,4 +1,4 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { JWT_KEY, setJwtCookie, deleteJwtCookie, getJwtCookie } from '$lib/server/cookies';
 import { GET, PUT, DELETE } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad } from './$types';
@@ -41,14 +41,18 @@ export const actions: Actions = {
 			return fail(400, { error: 'kindle email is required' });
 		}
 
-		await PUT(
-			fetch,
-			'/v1/user/profile',
-			{
-				kindle_email: kindleEmail
-			},
-			locals.jwt
-		);
+		try {
+			await PUT(
+				fetch,
+				'/v1/user/profile',
+				{
+					kindle_email: kindleEmail
+				},
+				locals.jwt
+			);
+		} catch (err) {
+			error(400, `failed to update user profile: ${err}`);
+		}
 	},
 	deleteProfile: async ({ locals }) => {
 		await DELETE(fetch, '/v1/user/profile', locals.jwt);
