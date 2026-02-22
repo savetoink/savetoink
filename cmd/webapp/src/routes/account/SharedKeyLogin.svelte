@@ -4,6 +4,7 @@
 
 	let { form, data }: { form: ActionData; data: PageData } = $props();
 	const loggedIn = $derived(checkLoggedIn(data));
+	const shortJwt = $derived(data.jwt?.slice(0, 8) + '*'.repeat(data.jwt?.length - 8));
 </script>
 
 <section>
@@ -17,12 +18,12 @@
 		<p class="error" role="alert">{form.error}</p>
 	{/if}
 
-	{#if data?.jwt}
+	{#if loggedIn}
 		<form method="POST" action="?/clean">
 			<fieldset>
 				<label>
 					API Key
-					<input type="text" name="jwt" disabled value={data.jwt} />
+					<input type="text" name="jwt" value={shortJwt} />
 				</label>
 			</fieldset>
 			<button type="submit">Logout</button>
