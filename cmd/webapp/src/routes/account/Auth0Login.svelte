@@ -33,5 +33,5 @@
 	<p>ID: <code>{data.account}</code></p>
 	<button onclick={logout}>Logout</button>
 {:else}
-	<button onclick={login}>Login with Auth0</button>
+	<button onclick={login}>Log In / Sign Up</button>
 {/if}
