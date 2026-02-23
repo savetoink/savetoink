@@ -6,10 +6,9 @@
 	let { data }: { data: PageData } = $props();
 </script>
 
-<section aria-labelledby="my-list-heading">
+<section>
 	<hgroup>
-		<h1 id="my-list-heading">My List</h1>
-		<p>{data.total} articles</p>
+		<p>Total: {data.total} articles</p>
 	</hgroup>
 
 	<ul>
@@ -44,3 +43,13 @@
 		<Navigator page={data.page} has_more={data.has_more} />
 	{/if}
 </section>
+
+<style>
+	ul {
+		padding-left: 0;
+
+		li {
+			list-style: none;
+		}
+	}
+</style>

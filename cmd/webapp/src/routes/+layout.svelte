@@ -14,18 +14,26 @@
 	<title>{title}</title>
 </svelte:head>
 
-<header>
+<header class="container">
 	<Nav />
 </header>
 
-<main>
+<main class="container">
 	{#if navigating.to}
-		<p role="status" aria-live="polite">Loading...</p>
+		<progress></progress>
 	{:else}
 		{@render children()}
 	{/if}
 </main>
 
-<footer>
-	<small>{title}</small> - Source on <a href="https://github.com/savetoink/savetoink">GitHub</a>
+<footer class="container">
+	<hr />
+	<small>{title} - Source on <a href="https://github.com/savetoink/savetoink">GitHub</a></small>
 </footer>
+
+<style>
+	footer {
+		text-align: center;
+		margin-bottom: 1rem;
+	}
+</style>
