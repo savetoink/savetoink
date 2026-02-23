@@ -7,10 +7,6 @@
 </script>
 
 <section>
-	<hgroup>
-		<p>Total: {data.total} articles</p>
-	</hgroup>
-
 	<ul>
 		{#each data.articles as article (article.id)}
 			<li>
