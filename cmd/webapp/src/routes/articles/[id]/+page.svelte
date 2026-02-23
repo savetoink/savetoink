@@ -10,8 +10,12 @@
 <article>
 	<header>
 		<h1>
-			<a href={data.url} target="_blank" rel="external noreferrer" title="Open the original link"
-				>{title}</a
+			<a
+				href={data.url}
+				target="_blank"
+				rel="external noreferrer"
+				title="Open the original link"
+				data-tooltip="Open the original link">{title}</a
 			>
 		</h1>
 
