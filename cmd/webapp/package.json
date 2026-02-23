@@ -43,6 +43,7 @@
 		"vitest-browser-svelte": "^2.0.2"
 	},
 	"dependencies": {
+		"@sentry/sveltekit": "^10.39.0",
 		"date-fns": "^4.1.0"
 	}
 }

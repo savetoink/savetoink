@@ -1,3 +1,4 @@
+import { sentrySvelteKit } from '@sentry/sveltekit';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import { sveltekit } from '@sveltejs/kit/vite';
@@ -12,7 +13,14 @@ const gitHash = execSync('git rev-parse --short HEAD', { cwd: path.resolve(__dir
 	.trim();
 
 export default defineConfig({
-	plugins: [sveltekit()],
+	plugins: [
+		sentrySvelteKit({
+			org: process.env.PUBLIC_SENTRY_TEAM,
+			project: process.env.PUBLIC_SENTRY_PROJECT,
+			adapter: 'cloudflare'
+		}),
+		sveltekit()
+	],
 	define: {
 		__APP_VERSION__: JSON.stringify(version),
 		__BUILD_DATE__: JSON.stringify(buildDate),

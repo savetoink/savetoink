@@ -1,3 +1,5 @@
+import { sequence } from '@sveltejs/kit/hooks';
+import { handleErrorWithSentry, sentryHandle } from '@sentry/sveltekit';
 import { redirect } from '@sveltejs/kit';
 import { validateEnv } from '$lib/server/validateEnv';
 import { getJwtCookie } from '$lib/server/cookies';
@@ -5,7 +7,7 @@ import { isAuthenticatedPath } from '$lib/consts';
 
 import type { Handle } from '@sveltejs/kit';
 
-export const handle: Handle = async ({ event, resolve }) => {
+export const handle: Handle = sequence(sentryHandle(), async ({ event, resolve }) => {
 	validateEnv();
 
 	event.locals.jwt = getJwtCookie(event.cookies);
@@ -15,4 +17,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	return resolve(event);
-};
+});
+
+export const handleError = handleErrorWithSentry();
