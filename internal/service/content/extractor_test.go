@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -265,5 +266,34 @@ func TestArticleFields(t *testing.T) {
 	article.ID = id
 	if article.ID == "" {
 		t.Error("Expected ID to be set")
+	}
+}
+
+func TestUserAgentHeader(t *testing.T) {
+	ctx := context.Background()
+	html := "<!DOCTYPE html><html><head><title>Test</title></head>" +
+		"<body><article><h1>Test</h1><p>Content</p></article></body></html>"
+
+	var receivedUA string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedUA = r.Header.Get("User-Agent")
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(html))
+	}))
+	defer server.Close()
+
+	extractor := NewExtractor()
+	_, err := extractor.ExtractFromURL(ctx, server.URL)
+	if err != nil {
+		t.Fatalf("ExtractFromURL() error = %v", err)
+	}
+
+	if receivedUA == "" {
+		t.Error("Expected User-Agent header to be set")
+	}
+
+	if !strings.HasPrefix(receivedUA, "Mozilla/5.0") {
+		t.Errorf("Expected User-Agent to start with 'Mozilla/5.0', got: %s", receivedUA)
 	}
 }
