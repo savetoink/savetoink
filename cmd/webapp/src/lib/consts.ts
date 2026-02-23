@@ -1,4 +1,4 @@
-const unauthenticatedPaths = ['/account', '/auth/callback'];
+const unauthenticatedPaths = ['/account', '/auth/callback', '/sentry/tunnel'];
 export const isAuthenticatedPath = (path: string) => {
 	try {
 		const url = new URL(path, 'http://localhost');
