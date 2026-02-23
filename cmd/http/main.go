@@ -18,10 +18,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	router := server.NewRouter(cfg)
+	var (
+		version = consts.Version()
+		port    = "8080"
+		router  = server.NewRouter(cfg)
+	)
 
-	port := "8080"
-	slog.Info("starting HTTP server", "port", port)
+	slog.Info("starting Save to Ink development HTTP server", "port", port, "version", *version)
 	srv := &http.Server{
 		Addr:         ":" + port,
 		Handler:      router,
