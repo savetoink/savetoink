@@ -261,26 +261,21 @@ Resources:
           Projection:
             ProjectionType: INCLUDE
             NonKeyAttributes:
-              - id
-              - url
-              - title
               - author
+              - error
+              - excerpt
+              - favorite
+              - id
+              - imageUrl
+              - language
+              - publishedAt
+              - readingTimeMinutes
               - siteName
               - sourceDomain
-              - excerpt
-              - imageUrl
-              - contentType
-              - language
-              - error
-              - wordCount
-              - readingTimeMinutes
-              - publishedAt
-              - deliveryStatus
-              - deliveredFrom
-              - deliveredTo
-              - deliveredEmailUUID
-              - deliveredBy
               - tags
+              - title
+              - url
+              - wordCount
       BillingMode: PAY_PER_REQUEST
 
   ArticleTagsTable:

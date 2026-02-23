@@ -67,6 +67,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {
 	page := consts.DefaultPage
 	pageSize := consts.DefaultPageSize
+	var favoriteFilter *bool
 
 	if p := r.URL.Query().Get("page"); p != "" {
 		if parsed, err := strconv.Atoi(p); err == nil && parsed >= consts.MinPage {
@@ -80,9 +81,14 @@ func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if f := r.URL.Query().Get("favorite"); f == "true" {
+		fav := true
+		favoriteFilter = &fav
+	}
+
 	accountID := auth.GetAccountID(r.Context())
 
-	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize)
+	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, favoriteFilter)
 	if err != nil {
 		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -159,4 +165,24 @@ func (h *handlers) handleDeleteAllArticles(w http.ResponseWriter, r *http.Reques
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(deleteArticleResponse{Deleted: result.Deleted})
+}
+
+func (h *handlers) handleToggleFavorite(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountID(r.Context())
+	articleID := chi.URLParam(r, "id")
+
+	addLogAttr(r.Context(), slog.String("article_id", articleID))
+
+	newStatus, err := h.service.ToggleFavorite(r.Context(), accountID, articleID)
+	if err != nil {
+		addLogAttr(r.Context(), slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	addLogAttr(r.Context(), slog.Bool("favorite", newStatus))
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(favoriteResponse{Favorite: newStatus})
 }

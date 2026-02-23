@@ -14,6 +14,10 @@
 			<dt>Author</dt>
 			<dd>{article.author}</dd>
 		{/if}
+		{#if article.favorite}
+			<dt>Favorite</dt>
+			<dd>{article.favorite ? 'Yes' : 'No'}</dd>
+		{/if}
 		{#if article.siteName}
 			<dt>Source</dt>
 			<dd>{article.siteName}</dd>

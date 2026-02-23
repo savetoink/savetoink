@@ -16,9 +16,11 @@ type ArticlesRepository interface {
 		ctx context.Context,
 		account string,
 		page, pageSize int,
+		favoriteFilter *bool,
 	) ([]*model.Article, map[string]types.AttributeValue, int, error)
 	DeleteByAccountAndID(ctx context.Context, account, id string) error
 	DeleteByAccount(ctx context.Context, account string) (int, error)
+	UpdateFavorite(ctx context.Context, account, id string, favorite bool) error
 }
 
 // UserProfileRepository defines the interface for user profile persistence.

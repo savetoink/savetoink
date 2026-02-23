@@ -283,6 +283,7 @@ func (m *mockUserProfileService) GetArticlesMetadata(
 	_ context.Context,
 	_ string,
 	_, _ int,
+	_ *bool,
 ) (*service.GetArticlesResult, error) {
 	return nil, nil
 }
@@ -318,4 +319,8 @@ func (m *mockUserProfileService) DeleteUserProfile(_ context.Context, _ string) 
 		return errors.New("database error")
 	}
 	return nil
+}
+
+func (m *mockUserProfileService) ToggleFavorite(_ context.Context, _, _ string) (bool, error) {
+	return false, nil
 }

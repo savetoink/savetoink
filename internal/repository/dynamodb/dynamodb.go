@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	attributeNameAccount = "account"
-	attributeNameID      = "id"
+	attributeNameAccount  = "account"
+	attributeNameID       = "id"
+	attributeNameFavorite = "favorite"
 )
 
 // DynamoDB implements Repository interface using AWS DynamoDB.

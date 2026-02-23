@@ -17,6 +17,7 @@ const (
 	testClientIP    = "203.0.113.1"
 	testClientIPv6  = "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
 	testUserAgent   = "Mozilla/5.0 (Macintosh)"
+	trueHeaderValue = "true"
 )
 
 func TestCorsMiddleware_GET(t *testing.T) {
@@ -50,7 +51,7 @@ func TestCorsMiddleware_GET(t *testing.T) {
 			allowedMethods, w.Header().Get("Access-Control-Allow-Methods"))
 	}
 
-	if w.Header().Get("Access-Control-Allow-Credentials") != "true" {
+	if w.Header().Get("Access-Control-Allow-Credentials") != trueHeaderValue {
 		t.Errorf("expected Access-Control-Allow-Credentials 'true', got '%s'",
 			w.Header().Get("Access-Control-Allow-Credentials"))
 	}

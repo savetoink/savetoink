@@ -28,6 +28,7 @@ type Article struct {
 	WordCount          int        `json:"wordCount,omitempty" dynamodbav:"wordCount,omitempty"`
 	ReadingTimeMinutes int        `json:"readingTimeMinutes,omitempty" dynamodbav:"readingTimeMinutes,omitempty"`
 	PublishedAt        *time.Time `json:"publishedAt,omitempty" dynamodbav:"publishedAt,omitempty"`
+	Favorite           bool       `json:"favorite,omitempty" dynamodbav:"favorite,omitempty"`
 
 	// email delivery metadata
 	DeliveryStatus     consts.Status        `json:"deliveryStatus,omitempty" dynamodbav:"deliveryStatus,omitempty"`

@@ -37,6 +37,10 @@ type deleteArticleResponse struct {
 	Deleted int `json:"deleted"`
 }
 
+type favoriteResponse struct {
+	Favorite bool `json:"favorite"`
+}
+
 type authTokenExchangeRequest struct {
 	Code        string `json:"code"`
 	RedirectURI string `json:"redirect_uri"`

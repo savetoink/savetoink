@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -25,33 +26,55 @@ func (d *DynamoDB) getProjectionAttributeNames() map[string]string {
 		"#sd":      "sourceDomain",
 		"#e":       "excerpt",
 		"#iurl":    "imageUrl",
-		"#ct":      "contentType",
 		"#l":       "language",
 		"#err":     "error",
 		"#wc":      "wordCount",
 		"#rt":      "readingTimeMinutes",
 		"#p":       "publishedAt",
-		"#dst":     "deliveryStatus",
-		"#df":      "deliveredFrom",
-		"#dt":      "deliveredTo",
-		"#deu":     "deliveredEmailUUID",
-		"#db":      "deliveredBy",
+		"#tg":      "tags",
+		"#f":       attributeNameFavorite,
 	}
 }
 
-func (d *DynamoDB) totalCountByAccount(ctx context.Context, account string) (int, error) {
-	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
-		TableName:              aws.String(d.articleTableName),
-		IndexName:              aws.String(consts.DynamoDBGSIName),
-		KeyConditionExpression: aws.String("#account = :account"),
-		ExpressionAttributeNames: map[string]string{
-			"#account": attributeNameAccount,
-		},
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":account": &types.AttributeValueMemberS{Value: account},
-		},
-		Select: types.SelectCount,
-	})
+func (d *DynamoDB) getProjectionExpression() string {
+	attrNames := d.getProjectionAttributeNames()
+	delete(attrNames, "#account")
+
+	keys := make([]string, 0, len(attrNames))
+	for key := range attrNames {
+		keys = append(keys, key)
+	}
+
+	return strings.Join(keys, ", ")
+}
+
+func (d *DynamoDB) totalCountByAccount(ctx context.Context, account string, favoriteFilter *bool) (int, error) {
+	attrNames := map[string]string{
+		"#account": attributeNameAccount,
+	}
+	attrValues := map[string]types.AttributeValue{
+		":account": &types.AttributeValueMemberS{Value: account},
+	}
+
+	if favoriteFilter != nil {
+		attrNames["#f"] = attributeNameFavorite
+		attrValues[":favorite"] = &types.AttributeValueMemberBOOL{Value: *favoriteFilter}
+	}
+
+	queryInput := &dynamodb.QueryInput{
+		TableName:                 aws.String(d.articleTableName),
+		IndexName:                 aws.String(consts.DynamoDBGSIName),
+		KeyConditionExpression:    aws.String("#account = :account"),
+		ExpressionAttributeNames:  attrNames,
+		ExpressionAttributeValues: attrValues,
+		Select:                    types.SelectCount,
+	}
+
+	if favoriteFilter != nil {
+		queryInput.FilterExpression = aws.String("#f = :favorite")
+	}
+
+	resp, err := d.client.Query(ctx, queryInput)
 	if err != nil {
 		return 0, fmt.Errorf("failed to query count: %w", err)
 	}
@@ -64,12 +87,13 @@ func (d *DynamoDB) GetMetadataByAccount(
 	ctx context.Context,
 	account string,
 	page, pageSize int,
+	favoriteFilter *bool,
 ) (articles []*model.Article, lastEvaluatedKey map[string]types.AttributeValue, total int, err error) {
 	if page < consts.MinPage || pageSize < consts.MinPageSize || pageSize > consts.MaxPageSize {
 		pageSize = consts.DefaultPageSize
 	}
 
-	total, err = d.totalCountByAccount(ctx, account)
+	total, err = d.totalCountByAccount(ctx, account, favoriteFilter)
 	if err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to get count: %w", err)
 	}
@@ -88,7 +112,7 @@ func (d *DynamoDB) GetMetadataByAccount(
 
 	for i := 0; i < offset; i += pageSize {
 		skipSize := min(pageSize, offset-i)
-		resp, err = d.queryArticlesByAccount(ctx, account, skipSize, exclusiveStartKey)
+		resp, err = d.queryArticlesByAccount(ctx, account, skipSize, exclusiveStartKey, favoriteFilter)
 		if err != nil {
 			return nil, nil, 0, fmt.Errorf("failed to query articles: %w", err)
 		}
@@ -98,7 +122,7 @@ func (d *DynamoDB) GetMetadataByAccount(
 		}
 	}
 
-	resp, err = d.queryArticlesByAccount(ctx, account, pageSize, exclusiveStartKey)
+	resp, err = d.queryArticlesByAccount(ctx, account, pageSize, exclusiveStartKey, favoriteFilter)
 	if err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to query articles: %w", err)
 	}
@@ -116,20 +140,30 @@ func (d *DynamoDB) queryArticlesByAccount(
 	account string,
 	pageSize int,
 	exclusiveStartKey map[string]types.AttributeValue,
+	favoriteFilter *bool,
 ) (*dynamodb.QueryOutput, error) {
+	attrNames := d.getProjectionAttributeNames()
+	attrValues := map[string]types.AttributeValue{
+		":account": &types.AttributeValueMemberS{Value: account},
+	}
+
+	if favoriteFilter != nil {
+		attrValues[":favorite"] = &types.AttributeValueMemberBOOL{Value: *favoriteFilter}
+	}
+
 	queryInput := &dynamodb.QueryInput{
-		TableName:              aws.String(d.articleTableName),
-		IndexName:              aws.String(consts.DynamoDBGSIName),
-		KeyConditionExpression: aws.String("#account = :account"),
-		ProjectionExpression: aws.String(
-			"#a, #i, #u, #c, #t, #au, #sn, #sd, #e, #iurl, #ct, #l, #err, #wc, #rt, #p, #dst, #df, #dt, #deu, #db",
-		),
-		ExpressionAttributeNames: d.getProjectionAttributeNames(),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":account": &types.AttributeValueMemberS{Value: account},
-		},
-		ScanIndexForward: aws.Bool(false),
-		Limit:            aws.Int32(int32(pageSize)), //nolint:gosec // pageSize is validated to be <= 20
+		TableName:                 aws.String(d.articleTableName),
+		IndexName:                 aws.String(consts.DynamoDBGSIName),
+		KeyConditionExpression:    aws.String("#account = :account"),
+		ProjectionExpression:      aws.String(d.getProjectionExpression()),
+		ExpressionAttributeNames:  attrNames,
+		ExpressionAttributeValues: attrValues,
+		ScanIndexForward:          aws.Bool(false),
+		Limit:                     aws.Int32(int32(pageSize)), //nolint:gosec // pageSize is validated to be <= 20
+	}
+
+	if favoriteFilter != nil {
+		queryInput.FilterExpression = aws.String("#f = :favorite")
 	}
 
 	if exclusiveStartKey != nil {

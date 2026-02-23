@@ -83,9 +83,32 @@ func (d *DynamoDB) DeleteByAccountAndID(ctx context.Context, account, id string)
 	return nil
 }
 
+// UpdateFavorite updates the favorite status of an article.
+func (d *DynamoDB) UpdateFavorite(ctx context.Context, account, id string, favorite bool) error {
+	_, err := d.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(d.articleTableName),
+		Key: map[string]types.AttributeValue{
+			attributeNameAccount: &types.AttributeValueMemberS{Value: account},
+			attributeNameID:      &types.AttributeValueMemberS{Value: id},
+		},
+		UpdateExpression: aws.String("SET #f = :favorite"),
+		ExpressionAttributeNames: map[string]string{
+			"#f": "favorite",
+		},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":favorite": &types.AttributeValueMemberBOOL{Value: favorite},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update favorite: %w", err)
+	}
+
+	return nil
+}
+
 // DeleteByAccount implements Repository.DeleteByAccount.
 func (d *DynamoDB) DeleteByAccount(ctx context.Context, account string) (int, error) {
-	articles, _, _, err := d.GetMetadataByAccount(ctx, account, 1, consts.MaxPageSize)
+	articles, _, _, err := d.GetMetadataByAccount(ctx, account, 1, consts.MaxPageSize, nil)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get articles for deletion: %w", err)
 	}

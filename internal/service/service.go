@@ -26,13 +26,16 @@ type Interface interface {
 	WriteToFile(result *ProcessResult, outputPath string) error
 	CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error)
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
-	GetArticlesMetadata(ctx context.Context, accountID string, page, pageSize int) (*GetArticlesResult, error)
+	GetArticlesMetadata(
+		ctx context.Context, accountID string, page, pageSize int, favoriteFilter *bool,
+	) (*GetArticlesResult, error)
 	DeleteArticle(ctx context.Context, accountID, articleID string) (*DeleteArticleResult, error)
 	DeleteAllArticles(ctx context.Context, accountID string) (*DeleteArticleResult, error)
 	GetDBError() error
 	GetUserKindleEmail(ctx context.Context, accountID string) (string, error)
 	SetUserKindleEmail(ctx context.Context, accountID, kindleEmail string) error
 	DeleteUserProfile(ctx context.Context, accountID string) error
+	ToggleFavorite(ctx context.Context, accountID, articleID string) (bool, error)
 }
 
 // Service holds the stateless dependencies and provides methods to process articles.
@@ -420,10 +423,12 @@ func (s *Service) GetArticle(ctx context.Context, accountID, articleID string) (
 // GetArticlesMetadata retrieves article metadata for a given account with pagination.
 // page starts at 1, pageSize limits the number of articles returned.
 // Content field is excluded from returned articles.
+// favoriteFilter can be set to true to filter only favorite articles.
 func (s *Service) GetArticlesMetadata(
 	ctx context.Context,
 	accountID string,
 	page, pageSize int,
+	favoriteFilter *bool,
 ) (*GetArticlesResult, error) {
 	if s.repo == nil {
 		return &GetArticlesResult{
@@ -435,7 +440,7 @@ func (s *Service) GetArticlesMetadata(
 		}, nil
 	}
 
-	articles, lastEvaluatedKey, total, err := s.repo.GetMetadataByAccount(ctx, accountID, page, pageSize)
+	articles, lastEvaluatedKey, total, err := s.repo.GetMetadataByAccount(ctx, accountID, page, pageSize, favoriteFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get articles: %w", err)
 	}
@@ -451,6 +456,30 @@ func (s *Service) GetArticlesMetadata(
 		Total:    total,
 		HasMore:  lastEvaluatedKey != nil,
 	}, nil
+}
+
+// ToggleFavorite toggles the favorite status of an article.
+func (s *Service) ToggleFavorite(ctx context.Context, accountID, articleID string) (bool, error) {
+	if s.repo == nil {
+		return false, errors.New("repository not configured")
+	}
+
+	article, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
+	if err != nil {
+		if errors.Is(err, repoimpl.ErrNotFound) {
+			return false, errors.New("article not found")
+		}
+		return false, fmt.Errorf("failed to get article: %w", err)
+	}
+
+	newFavoriteStatus := !article.Favorite
+
+	err = s.repo.UpdateFavorite(ctx, accountID, articleID, newFavoriteStatus)
+	if err != nil {
+		return false, fmt.Errorf("failed to update favorite: %w", err)
+	}
+
+	return newFavoriteStatus, nil
 }
 
 // GetUserKindleEmail retrieves the kindle email for a given account ID.

@@ -35,10 +35,14 @@ func (m *MockRepository) GetMetadataByAccount(
 	_ context.Context,
 	account string,
 	page, pageSize int,
+	favoriteFilter *bool,
 ) (articles []*model.Article, lastEvaluatedKey map[string]types.AttributeValue, total int, err error) {
 	var result []*model.Article
 	for _, article := range m.articles {
 		if article.Account == account {
+			if favoriteFilter != nil && article.Favorite != *favoriteFilter {
+				continue
+			}
 			articleCopy := *article
 			articleCopy.Content = ""
 			result = append(result, &articleCopy)
@@ -86,6 +90,16 @@ func (m *MockRepository) DeleteByAccount(_ context.Context, account string) (int
 	}
 	m.articles = filtered
 	return initialLen - len(m.articles), nil
+}
+
+func (m *MockRepository) UpdateFavorite(_ context.Context, account, id string, favorite bool) error {
+	for _, article := range m.articles {
+		if article.Account == account && article.ID == id {
+			article.Favorite = favorite
+			return nil
+		}
+	}
+	return repoimpl.ErrNotFound
 }
 
 func TestGetArticlesMetadata(t *testing.T) {
@@ -175,7 +189,7 @@ func TestGetArticlesMetadata(t *testing.T) {
 			mockRepo := &MockRepository{articles: articles}
 			svc := &Service{repo: mockRepo}
 
-			result, err := svc.GetArticlesMetadata(context.Background(), tt.accountID, tt.page, tt.pageSize)
+			result, err := svc.GetArticlesMetadata(context.Background(), tt.accountID, tt.page, tt.pageSize, nil)
 
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -207,7 +221,7 @@ func TestGetArticlesMetadata(t *testing.T) {
 func TestGetArticlesMetadataWithNilRepo(t *testing.T) {
 	svc := &Service{repo: nil}
 
-	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10)
+	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -300,7 +314,7 @@ func TestGetArticlesMetadataWithDeliveryStatus(t *testing.T) {
 	mockRepo := &MockRepository{articles: articles}
 	svc := &Service{repo: mockRepo}
 
-	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10)
+	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

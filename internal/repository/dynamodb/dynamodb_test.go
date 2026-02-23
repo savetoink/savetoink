@@ -191,7 +191,7 @@ func TestDynamoDB_GetMetadataByAccount(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	retrieved, _, _, err := repo.GetMetadataByAccount(ctx, account, 1, 20)
+	retrieved, _, _, err := repo.GetMetadataByAccount(ctx, account, 1, 20, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Len(t, retrieved, 2)
@@ -214,7 +214,7 @@ func TestDynamoDB_GetByAccount_Empty(t *testing.T) {
 	repo := setupTestDynamoDB(t)
 	ctx := context.Background()
 
-	retrieved, _, _, err := repo.GetMetadataByAccount(ctx, "non-existent@example.com", 1, 20)
+	retrieved, _, _, err := repo.GetMetadataByAccount(ctx, "non-existent@example.com", 1, 20, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Empty(t, retrieved)
@@ -328,12 +328,12 @@ func TestDynamoDB_DeleteByAccount(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 2, deleted)
 
-	retrieved, _, _, err := repo.GetMetadataByAccount(ctx, account, 1, 20)
+	retrieved, _, _, err := repo.GetMetadataByAccount(ctx, account, 1, 20, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Empty(t, retrieved)
 
-	otherArticles, _, _, err := repo.GetMetadataByAccount(ctx, "other@example.com", 1, 20)
+	otherArticles, _, _, err := repo.GetMetadataByAccount(ctx, "other@example.com", 1, 20, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Len(t, otherArticles, 1)
@@ -378,19 +378,19 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_MultiplePages(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	page1, _, total, err := repo.GetMetadataByAccount(ctx, account, 1, 10)
+	page1, _, total, err := repo.GetMetadataByAccount(ctx, account, 1, 10, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, 10, len(page1))
 	assert.Equal(t, numArticles, total)
 
-	page2, _, total, err := repo.GetMetadataByAccount(ctx, account, 2, 10)
+	page2, _, total, err := repo.GetMetadataByAccount(ctx, account, 2, 10, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, 10, len(page2))
 	assert.Equal(t, numArticles, total)
 
-	page3, _, total, err := repo.GetMetadataByAccount(ctx, account, 3, 10)
+	page3, _, total, err := repo.GetMetadataByAccount(ctx, account, 3, 10, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, 5, len(page3))
@@ -436,14 +436,14 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_LastPage(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	page1, lastKey1, total, err := repo.GetMetadataByAccount(ctx, account, 1, 10)
+	page1, lastKey1, total, err := repo.GetMetadataByAccount(ctx, account, 1, 10, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, 10, len(page1))
 	assert.NotNil(t, lastKey1, "lastEvaluatedKey should be non-nil when there are more results")
 	assert.Equal(t, numArticles, total)
 
-	page2, lastKey2, total, err := repo.GetMetadataByAccount(ctx, account, 2, 10)
+	page2, lastKey2, total, err := repo.GetMetadataByAccount(ctx, account, 2, 10, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, 5, len(page2))
@@ -476,7 +476,7 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_PageOutOfRange(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	articles, lastKey, total, err := repo.GetMetadataByAccount(ctx, account, 10, 10)
+	articles, lastKey, total, err := repo.GetMetadataByAccount(ctx, account, 10, 10, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Empty(t, articles)
@@ -509,19 +509,19 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_TotalCountAccuracy(t *testing.
 		require.NoError(t, err)
 	}
 
-	page1, _, total1, err := repo.GetMetadataByAccount(ctx, account, 1, 5)
+	page1, _, total1, err := repo.GetMetadataByAccount(ctx, account, 1, 5, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, 5, len(page1))
 	assert.Equal(t, numArticles, total1)
 
-	page2, _, total2, err := repo.GetMetadataByAccount(ctx, account, 2, 5)
+	page2, _, total2, err := repo.GetMetadataByAccount(ctx, account, 2, 5, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, 5, len(page2))
 	assert.Equal(t, numArticles, total2)
 
-	page3, _, total3, err := repo.GetMetadataByAccount(ctx, account, 3, 5)
+	page3, _, total3, err := repo.GetMetadataByAccount(ctx, account, 3, 5, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(page3))
@@ -556,7 +556,7 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_LargePageSize(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	articles, _, total, err := repo.GetMetadataByAccount(ctx, account, 1, 100)
+	articles, _, total, err := repo.GetMetadataByAccount(ctx, account, 1, 100, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, numArticles, len(articles))
@@ -587,7 +587,7 @@ func TestDynamoDB_GetMetadataByAccount_Pagination_InvalidPageDefaults(t *testing
 		require.NoError(t, err)
 	}
 
-	articles, _, _, err := repo.GetMetadataByAccount(ctx, account, 0, 10)
+	articles, _, _, err := repo.GetMetadataByAccount(ctx, account, 0, 10, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Len(t, articles, 5)
@@ -728,7 +728,7 @@ func TestDynamoDB_GetMetadataByAccount_SortsByCreatedAt(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	retrieved, _, _, err := repo.GetMetadataByAccount(ctx, account, 1, 20)
+	retrieved, _, _, err := repo.GetMetadataByAccount(ctx, account, 1, 20, nil)
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Len(t, retrieved, 5)
@@ -891,7 +891,7 @@ func setupTestDynamoDB(t *testing.T) *DynamoDB {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		articles, _, _, err := repo.GetMetadataByAccount(ctx, testAccount, 1, 20)
+		articles, _, _, err := repo.GetMetadataByAccount(ctx, testAccount, 1, 20, nil)
 		if err != nil {
 			return
 		}
