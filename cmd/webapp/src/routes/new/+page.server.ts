@@ -1,6 +1,11 @@
 import { error, redirect } from '@sveltejs/kit';
 import { POST } from '$lib/server/apiClient';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async () => {
+	// no-op required to ensure server side is loaded to properly redirect unauthenticated requests
+	return {};
+};
 
 export const actions: Actions = {
 	new: async ({ locals, request }) => {
