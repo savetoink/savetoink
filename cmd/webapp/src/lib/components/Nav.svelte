@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import NavItem from './NavItem.svelte';
 </script>
 
 <nav>
 	<ul>
 		{#if page.data?.total && page.data.total > 0}
-			<li><a href={resolve('/')}>My List ({page.data.total})</a></li>
+			<NavItem link="/" text="My List ({page.data.total})" />
 		{:else}
-			<li><a href={resolve('/')}>My List</a></li>
+			<NavItem link="/" text="My List" />
 		{/if}
-		<li><a href={resolve('/new')}>New</a></li>
-		<li><a href={resolve('/account')}>Account</a></li>
+		<NavItem link="/new" text="New" />
+		<NavItem link="/account" text="Account" />
 	</ul>
 </nav>
