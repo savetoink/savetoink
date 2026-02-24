@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { checkLoggedIn } from '$lib/auth';
 	import type { ActionData, PageData } from './$types';
 
 	let { form, data }: { form: ActionData; data: PageData } = $props();
-	const loggedIn = $derived(checkLoggedIn(data));
+	const loggedIn = $derived(data.isLoggedIn);
 </script>
 
 <section>

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { PUBLIC_AUTH_BACKEND } from '$env/static/public';
 	import { Auth0, SharedKey } from '$lib/consts';
-	import { checkLoggedIn } from '$lib/auth';
 	import Auth0Login from './Auth0Login.svelte';
 	import SharedKeyLogin from './SharedKeyLogin.svelte';
 	import KindleDelivery from './KindleDelivery.svelte';
@@ -9,7 +8,6 @@
 	import type { PageProps } from './$types';
 
 	let { form, data }: PageProps = $props();
-	const loggedIn = $derived(checkLoggedIn(data));
 </script>
 
 <section>
@@ -21,6 +19,6 @@
 	{/if}
 </section>
 
-{#if loggedIn}
+{#if data?.isLoggedIn}
 	<KindleDelivery {data} />
 {/if}

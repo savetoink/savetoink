@@ -5,7 +5,6 @@
 		PUBLIC_AUTH0_AUDIENCE
 	} from '$env/static/public';
 	import { page } from '$app/state';
-	import { checkLoggedIn } from '$lib/auth';
 	import type { PageData } from './$types';
 
 	const origin = page.url.origin;
@@ -27,10 +26,9 @@
 	};
 
 	let { data }: { data: PageData } = $props();
-	const loggedIn = $derived(checkLoggedIn(data));
 </script>
 
-{#if loggedIn}
+{#if data?.isLoggedIn}
 	<p>ID: <code>{data.account}</code></p>
 	<button onclick={logout}>Logout</button>
 {:else}

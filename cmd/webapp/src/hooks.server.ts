@@ -11,6 +11,7 @@ export const handle: Handle = sequence(sentryHandle(), async ({ event, resolve }
 	validateEnv();
 
 	event.locals.jwt = getJwtCookie(event.cookies);
+	event.locals.isLoggedIn = !!event.locals.jwt;
 
 	if (isAuthenticatedPath(event.url.pathname) && !event.locals?.jwt) {
 		return redirect(303, '/account');

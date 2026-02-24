@@ -2,7 +2,6 @@
 	import { navigating } from '$app/state';
 	import favicon from '$lib/assets/favicon.svg';
 	import Nav from '$lib/components/Nav.svelte';
-	import { checkLoggedIn } from '$lib/auth';
 
 	const version = __APP_VERSION__;
 	const buildDate = __BUILD_DATE__;
@@ -10,7 +9,7 @@
 	const title = `Save to Ink - ${version}-${buildDate}-${gitHash}`;
 
 	let { children, data } = $props();
-	const loggedIn = $derived(checkLoggedIn(data));
+	const loggedIn = $derived(data.isLoggedIn);
 </script>
 
 <svelte:head>

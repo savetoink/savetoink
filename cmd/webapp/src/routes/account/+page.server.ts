@@ -17,12 +17,19 @@ export const load: PageServerLoad = async ({ fetch, locals, cookies }) => {
 };
 
 export const actions: Actions = {
-	save: async ({ cookies, request }) => {
+	save: async ({ cookies, request, fetch }) => {
 		const data = await request.formData();
 		const token = data.get(JWT_KEY);
 
 		if (!token || typeof token !== 'string' || token.trim() === '') {
 			return fail(400, { error: 'api key is required' });
+		}
+
+		try {
+			await GET(fetch, '/v1/user/profile', token);
+		} catch (err) {
+			console.error('failed to validate api key', err);
+			return fail(400, { error: 'Invalid API key' });
 		}
 
 		setJwtCookie(cookies, token, { trim: true });
