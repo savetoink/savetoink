@@ -20,6 +20,7 @@
 		</h1>
 
 		<ArticleMetaAccordion article={data} />
+		<ArticleControls article={data} />
 	</header>
 	<section>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
