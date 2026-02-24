@@ -17,3 +17,10 @@
 		<button onclick={() => navigateTo(page + 1)}>Next</button>
 	{/if}
 </nav>
+
+<style>
+	nav {
+		display: flex;
+		justify-content: center;
+	}
+</style>
