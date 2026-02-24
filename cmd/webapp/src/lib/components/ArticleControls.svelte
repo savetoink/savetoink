@@ -9,6 +9,12 @@
 	}
 </script>
 
-<form method="POST" action="/articles/{article.id}?/delete" use:enhance={handleEnhance}>
-	<button type="submit">Delete</button>
-</form>
+<div role="group">
+	<form method="POST" action="/articles/{article.id}?/favorite">
+		<button type="submit">{article.favorite ? 'Unfavorite' : 'Favorite'}</button>
+	</form>
+
+	<form method="POST" action="/articles/{article.id}?/delete" use:enhance={handleEnhance}>
+		<button type="submit">Delete</button>
+	</form>
+</div>

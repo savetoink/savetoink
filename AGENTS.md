@@ -10,7 +10,6 @@ This repository contains the code for the savetoink application, composed of:
 
 - APIs currently unstable so no need to keep any backward compatibility
 - **ALWAYS** run `just lint test` and fix issues before considering a change ready for user review.
-- **ALWAYS** add new tests for any new functionality.
 - **NEVER** ignore linting errors via `//nolint` statements or similar tricks without prompting the user for permission.
 - prefer lowercase log and error messages
 - don't use any CSS for webapp development for now
