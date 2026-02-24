@@ -96,8 +96,8 @@ func TestArticleIDFromURL_Deterministic(t *testing.T) {
 	assert.NoError(t, err2)
 	assert.NoError(t, err3)
 
-	assert.Equal(t, id1, id2, "IDs should be same for same base URL")
-	assert.Equal(t, id1, id3, "IDs should be same for same base URL")
+	assert.NotEqual(t, id1, id2, "IDs should be different for different query params")
+	assert.NotEqual(t, id1, id3, "IDs should be different for trailing slash")
 }
 
 func TestArticleIDFromURL_DifferentURLs(t *testing.T) {
@@ -137,9 +137,9 @@ func TestCleanURL(t *testing.T) {
 		errContains string
 	}{
 		{
-			name:        "strips query parameters",
+			name:        "preserves query parameters",
 			inputURL:    "https://example.com/article/123?source=twitter&utm=test",
-			expectedURL: "https://example.com/article/123",
+			expectedURL: "https://example.com/article/123?source=twitter&utm=test",
 			wantErr:     false,
 		},
 		{
@@ -149,9 +149,9 @@ func TestCleanURL(t *testing.T) {
 			wantErr:     false,
 		},
 		{
-			name:        "strips both query and fragment",
+			name:        "strips fragment but preserves query",
 			inputURL:    "https://example.com/article/123?ref=news#intro",
-			expectedURL: "https://example.com/article/123",
+			expectedURL: "https://example.com/article/123?ref=news",
 			wantErr:     false,
 		},
 		{
@@ -187,7 +187,7 @@ func TestCleanURL(t *testing.T) {
 		{
 			name:        "complex path with query",
 			inputURL:    "https://example.com/blog/2023/12/post?id=456&category=tech",
-			expectedURL: "https://example.com/blog/2023/12/post",
+			expectedURL: "https://example.com/blog/2023/12/post?id=456&category=tech",
 			wantErr:     false,
 		},
 		{
@@ -233,18 +233,31 @@ func TestCleanURL(t *testing.T) {
 }
 
 func TestCleanURL_Deterministic(t *testing.T) {
-	urls := []string{
-		"https://example.com/article/123?source=twitter",
-		"https://example.com/article/123?utm_source=newsletter#intro",
-		"https://example.com/article/123/",
-		"https://example.com/article/123",
+	tests := []struct {
+		inputURL         string
+		expectedCleanURL string
+	}{
+		{
+			inputURL:         "https://example.com/article/123?source=twitter",
+			expectedCleanURL: "https://example.com/article/123?source=twitter",
+		},
+		{
+			inputURL:         "https://example.com/article/123?utm_source=newsletter#intro",
+			expectedCleanURL: "https://example.com/article/123?utm_source=newsletter",
+		},
+		{
+			inputURL:         "https://example.com/article/123/",
+			expectedCleanURL: "https://example.com/article/123",
+		},
+		{
+			inputURL:         "https://example.com/article/123",
+			expectedCleanURL: "https://example.com/article/123",
+		},
 	}
 
-	expectedCleanURL := "https://example.com/article/123"
-
-	for _, u := range urls {
-		cleanURL, err := CleanURL(u)
+	for _, tt := range tests {
+		cleanURL, err := CleanURL(tt.inputURL)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedCleanURL, cleanURL)
+		assert.Equal(t, tt.expectedCleanURL, cleanURL)
 	}
 }
