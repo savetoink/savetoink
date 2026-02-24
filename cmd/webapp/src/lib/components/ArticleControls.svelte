@@ -9,7 +9,7 @@
 	}
 </script>
 
-<div role="group">
+<div>
 	<form method="POST" action="/articles/{article.id}?/favorite">
 		<button type="submit">{article.favorite ? 'Unfavorite' : 'Favorite'}</button>
 	</form>
@@ -18,3 +18,11 @@
 		<button type="submit">Delete</button>
 	</form>
 </div>
+
+<style>
+	div {
+		display: flex;
+		gap: 1rem;
+		justify-content: center;
+	}
+</style>

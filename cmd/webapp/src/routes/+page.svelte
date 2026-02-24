@@ -52,4 +52,11 @@
 			list-style: none;
 		}
 	}
+
+	header {
+		margin: 0;
+	}
+	footer {
+		margin: 0;
+	}
 </style>
