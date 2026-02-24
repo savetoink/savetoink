@@ -9,7 +9,6 @@ export const load: PageServerLoad = async ({ locals, fetch, params }) => {
 export const actions = {
 	favorite: async ({ locals, fetch, params }) => {
 		await PUT(fetch, `/v1/articles/${params.id}/favorite`, null, locals.jwt);
-		redirect(303, '/');
 	},
 	delete: async ({ locals, fetch, params }) => {
 		await DELETE(fetch, `/v1/articles/${params.id}`, locals.jwt);

@@ -10,7 +10,7 @@
 </script>
 
 <div>
-	<form method="POST" action="/articles/{article.id}?/favorite">
+	<form method="POST" action="/articles/{article.id}?/favorite" use:enhance>
 		<button type="submit">{article.favorite ? 'Unfavorite' : 'Favorite'}</button>
 	</form>
 
