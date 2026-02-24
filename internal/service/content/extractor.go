@@ -16,6 +16,7 @@ import (
 	"github.com/markusmobius/go-trafilatura"
 	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
+	"golang.org/x/net/html"
 )
 
 // Extractor handles the extraction of article content from URLs and HTML.
@@ -42,11 +43,16 @@ func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.A
 		}
 	}()
 
+	htmlBytes, err := io.ReadAll(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
 	opts := trafilatura.Options{
 		OriginalURL: parsedURL,
 	}
 
-	result, err := trafilatura.Extract(body, opts)
+	result, err := trafilatura.Extract(strings.NewReader(string(htmlBytes)), opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract article content: %w", err)
 	}
@@ -55,7 +61,8 @@ func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.A
 		return nil, errors.New("no content extracted")
 	}
 
-	return e.buildArticle(result, urlStr), nil
+	article := e.buildArticle(result, htmlBytes)
+	return article, nil
 }
 
 func (e *Extractor) fetchURL(ctx context.Context, urlStr string) (*url.URL, io.ReadCloser, error) {
@@ -97,19 +104,26 @@ func (e *Extractor) fetchURL(ctx context.Context, urlStr string) (*url.URL, io.R
 	return parsedURL, resp.Body, nil
 }
 
-func (e *Extractor) buildArticle(result *trafilatura.ExtractResult, urlStr string) *model.Article {
+func (e *Extractor) buildArticle(result *trafilatura.ExtractResult, htmlBytes []byte) *model.Article {
 	contentHTML := dom.InnerHTML(result.ContentNode)
 	plainText := stripHTML(contentHTML)
 	wordCount := countWords(plainText)
 
+	title := result.Metadata.Title
+	if title == result.Metadata.Sitename {
+		if extractedTitle := extractTitleFromHTML(htmlBytes); extractedTitle != "" {
+			title = extractedTitle
+		}
+	}
+
 	return &model.Article{
-		Title:              result.Metadata.Title,
+		Title:              title,
 		Author:             result.Metadata.Author,
 		Content:            contentHTML,
 		Excerpt:            result.Metadata.Description,
 		ImageURL:           result.Metadata.Image,
 		PublishedAt:        toTimePtr(result.Metadata.Date),
-		URL:                urlStr,
+		URL:                result.Metadata.URL,
 		CreatedAt:          time.Now().UTC(),
 		WordCount:          wordCount,
 		ReadingTimeMinutes: (wordCount + consts.WordsPerMinute - 1) / consts.WordsPerMinute,
@@ -120,6 +134,53 @@ func (e *Extractor) buildArticle(result *trafilatura.ExtractResult, urlStr strin
 	}
 }
 
+func extractTitleFromHTML(htmlBytes []byte) string {
+	doc, err := html.Parse(strings.NewReader(string(htmlBytes)))
+	if err != nil {
+		return ""
+	}
+
+	titleNodes := dom.QuerySelectorAll(doc, "title")
+	if len(titleNodes) > 0 {
+		fullTitle := dom.TextContent(titleNodes[0])
+		title := cleanTitle(fullTitle)
+		if title != "" {
+			return title
+		}
+	}
+
+	h2Nodes := dom.QuerySelectorAll(doc, "h2")
+	if len(h2Nodes) > 0 {
+		h2Text := strings.TrimSpace(dom.TextContent(h2Nodes[0]))
+		if h2Text != "" {
+			return h2Text
+		}
+	}
+
+	return ""
+}
+
+// cleanTitle extracts the article title from a full title string by removing
+// the sitename suffix. This is needed because some websites format their
+// <title> tags as "Article Title - Site Name", and we want just the article
+// portion when the title extraction fails and we fall back to parsing the
+// <title> tag directly.
+func cleanTitle(fullTitle string) string {
+	parts := strings.Split(fullTitle, " - ")
+	if len(parts) < 2 { //nolint:mnd // Need at least 2 parts: article title and site name
+		return ""
+	}
+
+	articleTitle := strings.Join(parts[:len(parts)-1], " - ")
+	articleTitle = strings.TrimSpace(articleTitle)
+
+	if articleTitle == "" {
+		return ""
+	}
+
+	return articleTitle
+}
+
 func toTimePtr(t time.Time) *time.Time {
 	if t.IsZero() {
 		return nil
@@ -127,7 +188,7 @@ func toTimePtr(t time.Time) *time.Time {
 	return &t
 }
 
-func stripHTML(html string) string {
+func stripHTML(s string) string {
 	re := strings.NewReplacer(
 		"<p>", " ",
 		"</p>", " ",
@@ -138,7 +199,7 @@ func stripHTML(html string) string {
 		"<br />", " ",
 	)
 
-	result := re.Replace(html)
+	result := re.Replace(s)
 
 	var stripped strings.Builder
 	inTag := false

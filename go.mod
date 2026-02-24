@@ -19,6 +19,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/net v0.50.0
 	golang.org/x/sync v0.19.0
 )
 
@@ -85,7 +86,6 @@ require (
 	github.com/yosssi/gohtml v0.0.0-20201013000340-ee4748c638f4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect

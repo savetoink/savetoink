@@ -269,6 +269,88 @@ func TestArticleFields(t *testing.T) {
 	}
 }
 
+func TestTitleExtractionFromTitleTag(t *testing.T) {
+	ctx := context.Background()
+	html := `<!DOCTYPE html>
+<html>
+<head>
+	<title>First run the tests - Agentic Engineering Patterns - Simon Willison's Weblog</title>
+	<meta name="author" content="Simon Willison">
+	<meta property="og:site_name" content="Simon Willison's Weblog">
+</head>
+<body>
+	<h1><a href="/">Simon Willison's Weblog</a></h1>
+	<h2 class="archive-h2">First run the tests</h2>
+	<article>
+		<p>This is test content.</p>
+	</article>
+</body>
+</html>`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(html))
+	}))
+	defer server.Close()
+
+	extractor := NewExtractor()
+	article, err := extractor.ExtractFromURL(ctx, server.URL)
+	if err != nil {
+		t.Fatalf("ExtractFromURL() error = %v", err)
+	}
+
+	if article.Title == "" {
+		t.Error("Expected title to be set")
+	}
+
+	if article.Title == "Simon Willison's Weblog" {
+		t.Errorf("Title should not be equal to sitename. Got: %q", article.Title)
+	}
+
+	expectedTitle := "First run the tests - Agentic Engineering Patterns"
+	if article.Title != expectedTitle {
+		t.Errorf("Expected title %q, got %q", expectedTitle, article.Title)
+	}
+}
+
+func TestTitleExtractionFromH2(t *testing.T) {
+	ctx := context.Background()
+	html := `<!DOCTYPE html>
+<html>
+<head>
+	<title>Simon Willison's Weblog</title>
+	<meta name="author" content="Simon Willison">
+	<meta property="og:site_name" content="Simon Willison's Weblog">
+</head>
+<body>
+	<h1><a href="/">Simon Willison's Weblog</a></h1>
+	<h2>First run the tests</h2>
+	<article>
+		<p>This is test content.</p>
+	</article>
+</body>
+</html>`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(html))
+	}))
+	defer server.Close()
+
+	extractor := NewExtractor()
+	article, err := extractor.ExtractFromURL(ctx, server.URL)
+	if err != nil {
+		t.Fatalf("ExtractFromURL() error = %v", err)
+	}
+
+	expectedTitle := "First run the tests"
+	if article.Title != expectedTitle {
+		t.Errorf("Expected title %q, got %q", expectedTitle, article.Title)
+	}
+}
+
 func TestUserAgentHeader(t *testing.T) {
 	ctx := context.Background()
 	html := "<!DOCTYPE html><html><head><title>Test</title></head>" +
