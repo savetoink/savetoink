@@ -37,6 +37,7 @@ go.work.sum
 bin/*
 cmd/function/function
 cmd/cli/cli
+dump/*
 
 # SvelteKit
 cmd/webapp/.svelte-kit

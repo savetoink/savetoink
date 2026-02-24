@@ -212,3 +212,9 @@ upgrade-svelte-deps:
     npm upgrade
 
 upgrade-deps: upgrade-go-deps upgrade-svelte-deps
+
+dump-table TABLE_NAME:
+    uvx dynamodump -r $AWS_REGION -m backup -s {{ TABLE_NAME }}
+
+restore-table TABLE_NAME:
+    uvx dynamodump -r $AWS_REGION -m restore -s {{ TABLE_NAME }}
