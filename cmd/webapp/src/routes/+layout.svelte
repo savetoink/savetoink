@@ -2,13 +2,15 @@
 	import { navigating } from '$app/state';
 	import favicon from '$lib/assets/favicon.svg';
 	import Nav from '$lib/components/Nav.svelte';
+	import { checkLoggedIn } from '$lib/auth';
 
 	const version = __APP_VERSION__;
 	const buildDate = __BUILD_DATE__;
 	const gitHash = __GIT_HASH__;
 	const title = `Save to Ink - ${version}-${buildDate}-${gitHash}`;
 
-	let { children } = $props();
+	let { children, data } = $props();
+	const loggedIn = $derived(checkLoggedIn(data));
 </script>
 
 <svelte:head>
@@ -17,7 +19,7 @@
 </svelte:head>
 
 <header class="container">
-	<Nav />
+	<Nav {loggedIn} />
 </header>
 
 <main class="container">
