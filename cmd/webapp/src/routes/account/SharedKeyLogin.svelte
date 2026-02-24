@@ -4,7 +4,6 @@
 
 	let { form, data }: { form: ActionData; data: PageData } = $props();
 	const loggedIn = $derived(checkLoggedIn(data));
-	const shortJwt = $derived(data.jwt?.slice(0, 8) + '*'.repeat(data.jwt?.length - 8));
 </script>
 
 <section>
@@ -23,7 +22,7 @@
 			<fieldset>
 				<label>
 					API Key
-					<input type="text" name="jwt" value={shortJwt} />
+					<input type="text" name="jwt" value={data.jwt} />
 				</label>
 			</fieldset>
 			<button type="submit">Logout</button>
