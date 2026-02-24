@@ -6,6 +6,7 @@
 	} from '$env/static/public';
 	import { page } from '$app/state';
 	import { checkLoggedIn } from '$lib/auth';
+	import type { PageData } from './$types';
 
 	const origin = page.url.origin;
 	const authUrl =
@@ -25,7 +26,7 @@
 			`returnTo=${encodeURIComponent(origin)}`;
 	};
 
-	let { data } = $props();
+	let { data }: { data: PageData } = $props();
 	const loggedIn = $derived(checkLoggedIn(data));
 </script>
 

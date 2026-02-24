@@ -1,13 +1,9 @@
-import type { Actions, PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { GET, DELETE } from '$lib/server/apiClient';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, fetch, params }) => {
-	try {
-		return await GET(fetch, `/v1/articles/${params.id}`, locals.jwt);
-	} catch {
-		redirect(303, '/');
-	}
+	return await GET(fetch, `/v1/articles/${params.id}`, locals.jwt);
 };
 
 export const actions = {

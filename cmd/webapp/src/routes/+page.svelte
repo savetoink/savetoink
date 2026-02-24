@@ -1,8 +1,9 @@
 <script lang="ts">
-	import ArticleControls from '$lib/components/ArticleControls.svelte';
 	import { resolve } from '$app/paths';
+	import ArticleControls from '$lib/components/ArticleControls.svelte';
 	import Navigator from '$lib/components/Navigator.svelte';
 	import type { PageData } from './$types';
+
 	let { data }: { data: PageData } = $props();
 </script>
 
@@ -22,7 +23,6 @@
 							{/if}
 							{#if article.imageUrl}
 								<picture>
-									<source srcset={article.imageUrl} type="image/webp" />
 									<img src={article.imageUrl} alt={article.title} />
 								</picture>
 							{/if}

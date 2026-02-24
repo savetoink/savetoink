@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { PageData } from './$types';
 	import ArticleControls from '$lib/components/ArticleControls.svelte';
 	import ArticleMetaAccordion from '$lib/components/ArticleMetaAccordion.svelte';
+	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 	const title = $derived(data.title || data.url);
