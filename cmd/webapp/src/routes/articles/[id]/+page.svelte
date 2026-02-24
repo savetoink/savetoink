@@ -15,7 +15,11 @@
 				target="_blank"
 				rel="external noopener"
 				title="Open the original link"
-				data-tooltip="Open the original link">{title}</a
+				data-tooltip="Open the original link"
+				>{#if data.favorite}
+					<span>⭐️&nbsp;</span>
+				{/if}
+				{title}</a
 			>
 		</h1>
 

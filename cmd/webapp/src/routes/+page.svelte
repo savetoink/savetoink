@@ -17,9 +17,23 @@
 					<article>
 						<header>
 							{#if article.title}
-								<h2><a href={resolve(`/articles/${article.id}`)}>{article.title}</a></h2>
+								<h2>
+									<a href={resolve(`/articles/${article.id}`)}
+										>{#if article.favorite}
+											<span>⭐️&nbsp;</span>
+										{/if}
+										{article.title}</a
+									>
+								</h2>
 							{:else}
-								<h2><a href={resolve(`/articles/${article.id}`)}>{article.url}</a></h2>
+								<h2>
+									<a href={resolve(`/articles/${article.id}`)}
+										>{#if article.favorite}
+											<span>⭐️&nbsp;</span>
+										{/if}
+										{article.url}</a
+									>
+								</h2>
 							{/if}
 							{#if article.imageUrl}
 								<picture>
