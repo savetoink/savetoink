@@ -49,7 +49,12 @@ func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.A
 	}
 
 	opts := trafilatura.Options{
-		OriginalURL: parsedURL,
+		OriginalURL:    parsedURL,
+		EnableFallback: true,
+		Config: &trafilatura.Config{
+			MinExtractedSize: consts.MinimumExtractedSize,
+			MinOutputSize:    consts.MinimumOutputSize,
+		},
 	}
 
 	result, err := trafilatura.Extract(strings.NewReader(string(htmlBytes)), opts)

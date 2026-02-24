@@ -64,6 +64,13 @@ const (
 const (
 	// WordsPerMinute is the average reading speed used to calculate estimated reading time.
 	WordsPerMinute = 250
+
+	// MinimumExtractedSize is the minimum number of characters required for extracted content.
+	// Set to 0 to allow articles of any size including empty content.
+	MinimumExtractedSize = 0
+
+	// MinimumOutputSize is the minimum number of characters required in final output.
+	MinimumOutputSize = 0
 )
 
 // Auth0 client timeout constants.
