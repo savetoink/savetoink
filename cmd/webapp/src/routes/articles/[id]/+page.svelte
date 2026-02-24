@@ -13,7 +13,7 @@
 			<a
 				href={data.url}
 				target="_blank"
-				rel="external noreferrer"
+				rel="external noopener"
 				title="Open the original link"
 				data-tooltip="Open the original link">{title}</a
 			>

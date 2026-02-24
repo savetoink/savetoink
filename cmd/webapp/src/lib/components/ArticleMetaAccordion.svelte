@@ -68,7 +68,7 @@
 		{/if}
 		<dt>Original link</dt>
 		<dd>
-			<a href={article.url} target="_blank" rel="external noreferrer">{article.url}</a>
+			<a href={article.url} target="_blank" rel="external noopener">{article.url}</a>
 		</dd>
 	</dl>
 	{#if article.error}
