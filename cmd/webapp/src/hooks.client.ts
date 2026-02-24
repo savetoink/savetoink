@@ -8,12 +8,8 @@ if (!import.meta.env.DEV) {
 		tracesSampleRate: 1.0,
 		enableLogs: true,
 		tunnel: '/sentry/tunnel',
-
-		// Enable sending user PII (Personally Identifiable Information)
-		// https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
 		sendDefaultPii: true
 	});
 }
 
-// If you have a custom error handler, pass it to `handleErrorWithSentry`
 export const handleError = handleErrorWithSentry();
