@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - master
+    paths:
+      - cmd/lambda/**
+      - go.mod
+      - go.sum
+      - infra/**
+      - internal/**
 
 permissions:
   id-token: write
