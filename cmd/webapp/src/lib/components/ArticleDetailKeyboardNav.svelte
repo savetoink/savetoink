@@ -19,8 +19,13 @@
 				deleteArticle();
 				break;
 			case 'ArrowLeft':
+			case 'Escape':
 				e.preventDefault();
 				goto(resolve('/'));
+				break;
+			case 'n':
+				e.preventDefault();
+				goto(resolve('/new'));
 				break;
 		}
 	}
