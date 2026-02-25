@@ -1,11 +1,14 @@
 <script lang="ts">
 	import ArticleControls from '$lib/components/ArticleControls.svelte';
+	import ArticleDetailKeyboardNav from '$lib/components/ArticleDetailKeyboardNav.svelte';
 	import ArticleMetaAccordion from '$lib/components/ArticleMetaAccordion.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 	const title = $derived(data.title || data.url);
 </script>
+
+<ArticleDetailKeyboardNav articleID={data.id} />
 
 <article>
 	<header>

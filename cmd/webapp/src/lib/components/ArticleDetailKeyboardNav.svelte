@@ -1,0 +1,56 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
+
+	let { articleID }: { articleID: string } = $props();
+	let favoriteForm: HTMLFormElement;
+	let deleteForm: HTMLFormElement;
+
+	function handleKeydown(e: KeyboardEvent) {
+		switch (e.key) {
+			case 'f':
+				e.preventDefault();
+				toggleFavorite();
+				break;
+			case 'd':
+				e.preventDefault();
+				deleteArticle();
+				break;
+			case 'ArrowLeft':
+				e.preventDefault();
+				goto(resolve('/'));
+				break;
+		}
+	}
+
+	function toggleFavorite() {
+		favoriteForm.requestSubmit();
+	}
+
+	async function deleteArticle() {
+		if (!window.confirm('Are you sure you want to delete this article?')) {
+			return;
+		}
+		deleteForm.requestSubmit();
+	}
+
+	onMount(() => {
+		document.addEventListener('keydown', handleKeydown);
+		return () => document.removeEventListener('keydown', handleKeydown);
+	});
+</script>
+
+<form
+	bind:this={favoriteForm}
+	method="POST"
+	action="/articles/{articleID}?/favorite"
+	use:enhance
+></form>
+<form
+	bind:this={deleteForm}
+	method="POST"
+	action="/articles/{articleID}?/delete"
+	use:enhance
+></form>
