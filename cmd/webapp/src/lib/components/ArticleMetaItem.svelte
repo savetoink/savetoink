@@ -1,11 +1,18 @@
-<script>
+<script lang="ts">
 	import { resolve } from '$app/paths';
 	import ArticleControls from './ArticleControls.svelte';
 
-	let { article } = $props();
+	let { article, selected = false, ref } = $props();
+	let liElement: HTMLLIElement | undefined;
+
+	$effect(() => {
+		if (ref && liElement) {
+			ref(liElement);
+		}
+	});
 </script>
 
-<li>
+<li bind:this={liElement} data-selected={selected}>
 	<article>
 		<header>
 			{#if article.title}
@@ -45,6 +52,14 @@
 <style>
 	li {
 		list-style: none;
+	}
+
+	li[data-selected='true'] {
+		outline: 2px solid var(--pico-primary-focus);
+		outline-offset: -2px;
+		background-color: var(--pico-card-sectioning-background-color);
+		box-shadow: var(--pico-box-shadow);
+		border-radius: var(--pico-border-radius);
 	}
 
 	header {
