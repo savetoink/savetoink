@@ -176,7 +176,7 @@ server-http:
     reflex -r '\.(env|go)$' -s -- go run -ldflags "{{ build_flags }}=$(just version)" ./cmd/http/main.go
 
 [working-directory('cmd/webapp')]
-server-web:
+server-webapp:
     bun run dev --open
 
 [working-directory('cmd/webapp')]
@@ -218,3 +218,10 @@ dump-table TABLE_NAME:
 
 restore-table TABLE_NAME:
     uvx dynamodump -r $AWS_REGION -m restore -s {{ TABLE_NAME }}
+
+bootstrap-website:
+    npx create-docusaurus@latest cmd/website classic
+
+[working-directory('cmd/website')]
+server-website:
+    npx docusaurus start
