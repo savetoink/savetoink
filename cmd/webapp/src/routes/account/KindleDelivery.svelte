@@ -16,6 +16,7 @@
 		<form method="POST" action="?/updateProfile">
 			<fieldset>
 				<legend>
+<-- invert paragraphs, use ol -->
 					<p>Add your Amazon Kindle Email to enable sending articles to your device</p>
 					<p>
 						Remember to add first <code>no-reply@saveto.ink</code> to
