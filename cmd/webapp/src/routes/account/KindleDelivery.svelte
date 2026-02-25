@@ -16,11 +16,20 @@
 		<form method="POST" action="?/updateProfile">
 			<fieldset>
 				<legend>
-					<p>Add your Amazon Kindle Email to enable sending articles to your device</p>
-					<p>
-						Remember to add first <code>no-reply@saveto.ink</code> to
-						<a href="https://www.amazon.com/gp/sendtokindle/email/">your Amazon Kindle whitelist</a>
-					</p>
+					<ol>
+						<li>
+							Add <code>no-reply@saveto.ink</code> to
+							<a
+								href="https://www.amazon.com/gp/sendtokindle/email/"
+								target="_blank"
+								rel="external noopener">your Approved Personal Document E-mail List</a
+							>
+						</li>
+						<li>
+							<p>Save your Amazon Kindle email address to enable sending articles to your device</p>
+						</li>
+					</ol>
+					<p></p>
 				</legend>
 
 				<input
@@ -28,7 +37,7 @@
 					name="kindleEmail"
 					required
 					autocomplete="email"
-					placeholder="yourname@kindle.com"
+					placeholder="abcd1234@kindle.com"
 				/>
 			</fieldset>
 			<button type="submit">Enable Kindle delivey</button>
