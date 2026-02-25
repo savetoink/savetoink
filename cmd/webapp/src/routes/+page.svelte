@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import ArticleControls from '$lib/components/ArticleControls.svelte';
+	import ArticleMetaItem from '$lib/components/ArticleMetaItem.svelte';
 	import Navigator from '$lib/components/Navigator.svelte';
 	import type { PageData } from './$types';
 
@@ -13,65 +12,16 @@
 	{:else}
 		<ul>
 			{#each data.articles as article (article.id)}
-				<li>
-					<article>
-						<header>
-							{#if article.title}
-								<h2>
-									<a href={resolve(`/articles/${article.id}`)}
-										>{#if article.favorite}
-											<span>⭐️&nbsp;</span>
-										{/if}
-										{article.title}</a
-									>
-								</h2>
-							{:else}
-								<h2>
-									<a href={resolve(`/articles/${article.id}`)}
-										>{#if article.favorite}
-											<span>⭐️&nbsp;</span>
-										{/if}
-										{article.url}</a
-									>
-								</h2>
-							{/if}
-							{#if article.imageUrl}
-								<picture>
-									<img src={article.imageUrl} alt={article.title} />
-								</picture>
-							{/if}
-							{#if article.excerpt}
-								<p>{article.excerpt}</p>
-							{/if}
-						</header>
-						<footer>
-							<ArticleControls {article} />
-						</footer>
-					</article>
-				</li>
+				<ArticleMetaItem {article} />
 			{/each}
 		</ul>
 	{/if}
 
-	{#if data.articles.length > 0}
-		<Navigator page={data.page} has_more={data.has_more} />
-	{/if}
+	<Navigator page={data.page} has_more={data.has_more} />
 </section>
 
 <style>
 	ul {
 		padding-left: 0;
-
-		li {
-			list-style: none;
-		}
-	}
-
-	header {
-		margin: 0;
-	}
-
-	footer {
-		margin: 0;
 	}
 </style>
