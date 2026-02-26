@@ -8,6 +8,9 @@
 <nav>
 	<ul>
 		{#if loggedIn}
+			<strong>
+				<li>Save<span>to.</span>ink</li>
+			</strong>
 			{#if page.data?.total && page.data.total > 0 && !page.url.search.includes('favorite=true')}
 				<NavItem link="/" text="My List ({page.data.total})" />
 			{:else}
@@ -25,3 +28,9 @@
 		<NavItem link="/account" text="Account" />
 	</ul>
 </nav>
+
+<style>
+	span {
+		color: var(--pico-primary);
+	}
+</style>
