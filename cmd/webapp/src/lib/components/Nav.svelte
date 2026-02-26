@@ -10,7 +10,9 @@
 	<ul>
 		{#if loggedIn}
 			<li>
-				<Landing />
+				<strong>
+					<Landing />
+				</strong>
 			</li>
 			{#if page.data?.total && page.data.total > 0 && !page.url.search.includes('favorite=true')}
 				<NavItem link="/" text="My List ({page.data.total})" />
