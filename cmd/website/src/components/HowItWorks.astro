@@ -1,0 +1,84 @@
+---
+const steps = [
+  {
+    num: "01",
+    icon: "🔖",
+    title: "Save the article",
+    body: "Paste a URL in the web app, use the Firefox extension, or call the API from anywhere. We strip ads, sidebars, and noise — just the words.",
+  },
+  {
+    num: "02",
+    icon: "📖",
+    title: "Convert to EPUB",
+    body: "Articles are parsed with go-trafilatura for clean extraction, then packaged as a well-formatted EPUB ready for any e-reader.",
+  },
+  {
+    num: "03",
+    icon: "✉️",
+    title: "Deliver to Kindle",
+    body: "One click sends the EPUB straight to your Kindle email address via MailJet. It shows up in your library like any other book.",
+  },
+];
+---
+
+<section id="how">
+  <div class="inner">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">Three steps to inbox zero<br>on your Kindle.</h2>
+    <div class="steps">
+      {steps.map((s) => (
+        <div class="step">
+          <div class="step-num">{s.num}</div>
+          <div class="step-icon">{s.icon}</div>
+          <h3>{s.title}</h3>
+          <p>{s.body}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  section {
+    background: var(--ink);
+    padding: 5rem 2.5rem;
+  }
+  .inner { max-width: 1200px; margin: 0 auto; }
+  .section-label { color: var(--sepia); }
+  .section-title { color: var(--paper); margin-bottom: 0; }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 3.5rem;
+  }
+  .step {
+    background: #161616;
+    padding: 2.5rem;
+  }
+  .step-num {
+    font-family: var(--font-serif);
+    font-size: 4rem;
+    font-weight: 900;
+    color: #2a2a2a;
+    line-height: 1;
+    margin-bottom: 1.5rem;
+  }
+  .step-icon {
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+    display: block;
+  }
+  h3 {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--paper);
+    margin-bottom: 0.75rem;
+  }
+  p { font-size: 0.875rem; color: #888; line-height: 1.7; }
+
+  @media (max-width: 900px) {
+    .steps { grid-template-columns: 1fr; }
+  }
+</style>

@@ -1,0 +1,30 @@
+---
+---
+<footer>
+  <div class="foot-logo">save<span>.</span>to<span>.</span>ink</div>
+  <nav>
+    <a href="https://github.com/savetoink/savetoink">GitHub</a>
+    <a href="https://github.com/savetoink/savetoink/blob/master/LICENSE">License</a>
+    <a href="https://app.saveto.ink">App</a>
+  </nav>
+  <p>MIT License · Made with ☕</p>
+</footer>
+
+<style>
+  footer {
+    background: var(--ink);
+    color: #666;
+    padding: 2.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .foot-logo { font-family: var(--font-serif); font-size: 1rem; color: var(--paper); font-weight: 700; }
+  .foot-logo span { color: var(--rust); }
+  nav { display: flex; gap: 1.5rem; }
+  nav a { font-size: 0.8rem; color: #666; text-decoration: none; transition: color 0.2s; }
+  nav a:hover { color: var(--paper); }
+  p { font-family: var(--font-mono); font-size: 0.7rem; }
+
+  @media (max-width: 700px) {
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+</style>

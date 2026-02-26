@@ -1,0 +1,125 @@
+---
+const features = [
+  {
+    icon: "🧹",
+    title: "Clean article extraction",
+    body: "Powered by go-trafilatura, one of the best open-source readability engines. Strips ads, sidebars, and cookie notices to give you just the article.",
+    tags: ["go-trafilatura", "HTML output"],
+  },
+  {
+    icon: "☁️",
+    title: "Self-hosted on AWS",
+    body: "Runs as AWS Lambda with CloudFront and DynamoDB. Deploy with a single command. Your articles, your server, your data.",
+    tags: ["Lambda", "DynamoDB", "CloudFront"],
+  },
+  {
+    icon: "🔐",
+    title: "Flexible auth",
+    body: "Single-user mode with a shared API key, or full multi-user support with Auth0. Swap backends without changing your data.",
+    tags: ["Single-user", "Auth0", "API key"],
+  },
+  {
+    icon: "🧩",
+    title: "Browser extension",
+    body: "Firefox extension lets you save any page or right-click any link to send it to Kindle without leaving your browser.",
+    tags: ["Firefox", "Context menu"],
+  },
+  {
+    icon: "⚡",
+    title: "Open REST API",
+    body: "A clean HTTP API means you can integrate save-to-ink into any workflow — scripts, automation, or other apps. CORS ready.",
+    tags: ["REST", "CORS", "Go backend"],
+  },
+];
+---
+
+<section id="features">
+  <div class="inner">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything a reader needs.<br>Nothing they don't.</h2>
+    <p class="section-sub">Built by readers, for readers. No dark patterns, no algorithm, no "engagement".</p>
+
+    <div class="grid">
+      <!-- Featured card -->
+      <div class="card featured">
+        <div class="feat-body">
+          <div class="icon">📚</div>
+          <h3>Kindle-native delivery</h3>
+          <p>Send any saved article directly to your Kindle via email — formatted like a real book. No sideloading, no USB cables.</p>
+          <div class="tags">
+            <span class="tag light">MailJet backend</span>
+            <span class="tag light">EPUB format</span>
+            <span class="tag light">Automatic delivery</span>
+          </div>
+        </div>
+        <div class="feat-visual">📱</div>
+      </div>
+
+      <!-- Regular cards -->
+      {features.map((f) => (
+        <div class="card">
+          <div class="icon">{f.icon}</div>
+          <h3>{f.title}</h3>
+          <p>{f.body}</p>
+          <div class="tags">
+            {f.tags.map((t) => <span class="tag">{t}</span>)}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  section { padding: 5rem 2.5rem; }
+  .inner { max-width: 1200px; margin: 0 auto; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-top: 3.5rem;
+  }
+  .card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    border-radius: 4px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(13,13,13,0.1); }
+  .card.featured {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    background: var(--ink);
+    color: var(--paper);
+    border-color: transparent;
+  }
+  .feat-visual {
+    display: flex; align-items: center; justify-content: center;
+    background: #1a1a1a;
+    border-radius: 4px;
+    font-size: 4rem;
+  }
+  .icon { font-size: 1.5rem; margin-bottom: 1rem; display: block; }
+  h3 { font-family: var(--font-serif); font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; }
+  p { font-size: 0.875rem; color: #666; line-height: 1.6; }
+  .featured p { color: #aaa; }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    background: rgba(13,13,13,0.08);
+    padding: 0.2rem 0.5rem;
+    border-radius: 2px;
+    color: #555;
+  }
+  .tag.light { background: rgba(245,240,232,0.1); color: var(--sepia); }
+
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+    .card.featured { grid-column: span 1; grid-template-columns: 1fr; }
+    .feat-visual { min-height: 120px; }
+  }
+</style>

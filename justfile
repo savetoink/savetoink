@@ -179,6 +179,10 @@ server-http:
 server-webapp:
     bun run dev --open
 
+[working-directory('cmd/website')]
+server-website:
+    npm run dev
+
 [working-directory('cmd/webapp')]
 test-webapp:
     npm run check
@@ -220,8 +224,4 @@ restore-table TABLE_NAME:
     uvx dynamodump -r $AWS_REGION -m restore -s {{ TABLE_NAME }}
 
 bootstrap-website:
-    npx create-docusaurus@latest cmd/website classic
-
-[working-directory('cmd/website')]
-server-website:
-    npx docusaurus start
+    npm create astro@latest cmd/website
