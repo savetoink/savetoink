@@ -1,61 +1,92 @@
 ---
+
 ---
+
 <nav>
-  <a href="/" class="nav-logo">save<span class="dot">.</span>to<span class="dot">.</span>ink</a>
-  <ul>
-    <li><a href="#features">Features</a></li>
-    <li><a href="#how">How it works</a></li>
-    <li><a href="#cli">CLI</a></li>
-    <li><a href="https://github.com/savetoink/savetoink" class="btn-nav">GitHub ↗</a></li>
-  </ul>
+    <a href="/" class="nav-logo"
+        >save<span class="dot">.</span>to<span class="dot">.</span>ink</a
+    >
+    <ul>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#cli">CLI</a></li>
+        <li>
+            <a href="https://app.saveto.ink/account" class="btn-nav"
+                >Log In/Sign Up ↗</a
+            >
+        </li>
+        <li>
+            <a href="https://github.com/savetoink/savetoink" class="btn-nav"
+                >GitHub ↗</a
+            >
+        </li>
+    </ul>
 </nav>
 
 <style>
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 1.25rem 2.5rem;
-    background: rgba(245, 240, 232, 0.85);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-  }
-  .nav-logo {
-    font-family: var(--font-serif);
-    font-weight: 900;
-    font-size: 1.35rem;
-    letter-spacing: -0.02em;
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .nav-logo .dot { color: var(--rust); }
-  ul {
-    list-style: none;
-    display: flex; gap: 2rem; align-items: center;
-  }
-  ul a {
-    text-decoration: none;
-    color: var(--ink);
-    font-size: 0.875rem;
-    font-weight: 500;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-  }
-  ul a:hover { opacity: 1; }
-  .btn-nav {
-    background: var(--ink);
-    color: var(--paper) !important;
-    opacity: 1 !important;
-    padding: 0.5rem 1.25rem;
-    border-radius: 2px;
-    font-size: 0.8rem !important;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    transition: background 0.2s !important;
-  }
-  .btn-nav:hover { background: var(--rust) !important; }
+    nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 2.5rem;
+        background: rgba(245, 240, 232, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+        font-family: var(--font-serif);
+        font-weight: 900;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        text-decoration: none;
+    }
+    .nav-logo .dot {
+        color: var(--rust);
+    }
+    ul {
+        list-style: none;
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+    }
+    ul a {
+        text-decoration: none;
+        color: var(--ink);
+        font-size: 0.875rem;
+        font-weight: 500;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+    ul a:hover {
+        opacity: 1;
+    }
+    .btn-nav {
+        background: var(--ink);
+        color: var(--paper) !important;
+        opacity: 1 !important;
+        padding: 0.5rem 1.25rem;
+        border-radius: 2px;
+        font-size: 0.8rem !important;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        transition: background 0.2s !important;
+    }
+    .btn-nav:hover {
+        background: var(--rust) !important;
+    }
 
-  @media (max-width: 700px) {
-    ul li:not(:last-child) { display: none; }
-    nav { padding: 1rem 1.25rem; }
-  }
+    @media (max-width: 700px) {
+        ul li:not(:last-child) {
+            display: none;
+        }
+        nav {
+            padding: 1rem 1.25rem;
+        }
+    }
 </style>
