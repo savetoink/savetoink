@@ -2,11 +2,13 @@
 	import { navigating } from '$app/state';
 	import favicon from '$lib/assets/favicon.svg';
 	import Nav from '$lib/components/Nav.svelte';
+	import Landing from '$lib/components/Landing.svelte';
 
 	const version = __APP_VERSION__;
 	const buildDate = __BUILD_DATE__;
 	const gitHash = __GIT_HASH__;
-	const title = `Save to Ink - ${version}-${buildDate}-${gitHash}`;
+	const versionTxt = `${version}-${buildDate}-${gitHash}`;
+	const title = 'Save to Ink';
 
 	let { children, data } = $props();
 	const loggedIn = $derived(data.isLoggedIn);
@@ -31,7 +33,15 @@
 
 <footer class="container">
 	<hr />
-	<small>{title} - Source on <a href="https://github.com/savetoink/savetoink">GitHub</a></small>
+	<small>
+		<Landing />
+		- {versionTxt} - Source on
+		<a
+			href="https://github.com/savetoink/savetoink"
+			target="_blank"
+			rel="external noopener noreferrer">GitHub</a
+		></small
+	>
 </footer>
 
 <style>
