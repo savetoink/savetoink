@@ -1,4 +1,4 @@
-<a href="https://savetoink.netlify.app/" target="_blank" rel="external noopener noreferrer">
+<a href="https://www.saveto.ink/" target="_blank" rel="external noopener noreferrer">
 	Save<span>to.</span>ink
 </a>
 

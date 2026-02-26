@@ -18,11 +18,11 @@
 				<legend>
 					<ol>
 						<li>
-							Add <code>no-reply@saveto.ink</code> to
+							Add <code>no-reply@saveto.ink</code> to your
 							<a
 								href="https://www.amazon.com/gp/sendtokindle/email/"
 								target="_blank"
-								rel="external noopener">your Approved Personal Document E-mail List</a
+								rel="external noopener">Approved Personal Document E-mail List</a
 							>
 						</li>
 						<li>
