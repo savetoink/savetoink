@@ -1,86 +1,114 @@
-# savetoink Firefox Extension
+# SaveToInk Browser Extension
 
-A simple Firefox extension to send web articles to your Kindle device.
+A browser extension that allows you to save articles to your Kindle with a single click or right-click.
 
 ## Features
 
-- **Click to Send**: Click the extension icon to send the current page to your Kindle
-- **Context Menu**: Right-click on any link to send it to your Kindle
-- **Secure Settings**: Store your API key and URL securely using Chrome storage API
-
-## Installation
-
-1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
-2. Click "Load Temporary Add-on"
-3. Select the `manifest.json` file in this directory
-4. Configure your API settings by clicking the extension icon and selecting "Configure Settings"
-
-## Configuration
-
-Before using the extension, you need to configure:
-
-1. **API URL**: The URL of your deployed savetoink Lambda function
-2. **API Key**: Your secret API key for authentication
-
-To configure settings:
-- Click the extension icon
-- Click "Configure Settings"
-- Enter your API URL and API key
-- Click "Save Settings"
-
-The extension will verify your settings by making a health check request to your API.
-
-## Usage
-
-### Send Current Page
-1. Navigate to any article or web page
-2. Click the savetoink extension icon
-3. Click "Send to Kindle"
-4. Wait for confirmation message
-
-### Send a Link
-1. Right-click on any link on a web page
-2. Select "Send to Kindle" from the context menu
-3. Wait for confirmation message
-
-## API Compatibility
-
-This extension works with the savetoink backend API:
-
-- `POST /v1/articles` - Queue article for Kindle delivery
- - `GET /v1/health` - Health check endpoint
-
-Authentication is done via the `Authorization` header with `Bearer` prefix.
-
-## Security
-
-- API keys are stored using `chrome.storage.local`, which is not encrypted but isolated per extension
-- For production use, consider using `chrome.storage.session` for ephemeral storage
-- The extension only communicates with the configured API URL
+- **Auth0 Authentication**: Secure login with Auth0 OAuth 2.0 PKCE flow
+- **One-click saving**: Send the current page URL to SaveToInk API
+- **Context menu integration**: Right-click on any page, link, or selected text to save
+- **Cross-browser support**: Works on Chrome, Firefox, and Safari (via WXT framework)
+- **Automatic token refresh**: Tokens are automatically refreshed when needed
 
 ## Development
 
-The extension uses Manifest V3 and is compatible with Firefox and Chrome.
+### Prerequisites
 
-File structure:
-- `manifest.json` - Extension manifest
-- `popup.html` - Popup UI for icon click
-- `popup.js` - Popup logic for sending current tab
-- `background.js` - Background script for context menu
-- `options.html` - Settings page UI
-- `options.js` - Settings page logic
-- `icons/` - Extension icons (you need to add your own icons)
+- Node.js 18+
+- Bun or npm
+- Auth0 credentials configured in `.env`
 
-## Icons
+### Setup
 
-You need to add the following icon files to the `icons/` directory:
-- `icon-16.png` (16x16px)
-- `icon-32.png` (32x32px)
-- `icon-48.png` (48x48px)
-- `icon-128.png` (128x128px)
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
 
-You can use any PNG images for these icons. A simple book or Kindle icon would work well.
+2. Edit `.env` with your Auth0 credentials:
+   ```
+   VITE_AUTH0_DOMAIN=your-auth0-domain.auth0.com
+   VITE_AUTH0_CLIENT_ID=your-client-id
+   VITE_AUTH0_AUDIENCE=your-api-audience
+   VITE_API_BASE_URL=https://api.saveto.ink/v1
+   ```
+
+### Development
+
+Run in development mode (auto-reload):
+```bash
+npm run dev
+```
+
+For Firefox:
+```bash
+npm run dev:firefox
+```
+
+### Build
+
+Build for production:
+```bash
+npm run build
+```
+
+Build for Firefox:
+```bash
+npm run build:firefox
+```
+
+### Create Distribution Package
+
+```bash
+npm run zip
+```
+
+## Usage
+
+### Authentication
+
+1. Click the SaveToInk extension icon
+2. Click "Login with Auth0"
+3. Complete the Auth0 authentication flow
+4. You'll be redirected back and logged in
+
+### Saving Articles
+
+**Method 1: Popup**
+1. Click the SaveToInk extension icon
+2. Click "Send this page"
+
+**Method 2: Context Menu**
+1. Right-click anywhere on the page
+2. Select "Send to SaveToInk"
+
+**Method 3: Link/Selection**
+1. Right-click on a link or selected text
+2. Select "Send to SaveToInk"
+
+## Architecture
+
+### Components
+
+- **Background Service Worker**: Handles Auth0 flow, API calls, and context menu
+- **Popup UI**: Svelte-based interface for authentication and quick actions
+- **Content Script**: Minimal script for page interaction
+- **Redirect Handler**: Processes OAuth callback from Auth0
+
+### Key Files
+
+- `src/lib/auth.ts`: Auth0 SDK wrapper and token management
+- `src/lib/api.ts`: API client for SaveToInk backend
+- `src/entrypoints/background.ts`: Service worker with message handlers
+- `src/entrypoints/popup/App.svelte`: Main popup UI
+
+### Storage
+
+Uses `chrome.storage.local` for:
+- Auth tokens (access, refresh tokens, expiration)
+- User profile information
+- Authentication state
 
 ## License
 
-Same as the main savetoink project.
+See project root LICENSE file.

@@ -225,3 +225,6 @@ restore-table TABLE_NAME:
 
 bootstrap-website:
     npm create astro@latest cmd/website
+
+boostrap-extension:
+    bunx wxt@latest init
