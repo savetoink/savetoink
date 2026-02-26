@@ -1,118 +1,131 @@
 ---
 interface Props {
-  title?: string;
-  description?: string;
+    title?: string;
+    description?: string;
 }
 const {
-  title = 'Save To Ink — Read Later, Delivered to Your Kindle',
-  description = 'Self-hosted read-later service with native Kindle delivery. Open-source alternative to Pocket + Send-to-Kindle.',
+    title = "Save To Ink — Read Later, Delivered to Your Kindle",
+    description = "Self-hosted read-later service with native Kindle delivery. Open-source alternative to Pocket + Send-to-Kindle.",
 } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content="https://saveto.ink" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <slot />
-  </body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content="https://www.saveto.ink" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+        <slot />
+    </body>
 </html>
 
 <style is:global>
-  :root {
-    --ink: #0d0d0d;
-    --paper: #f5f0e8;
-    --cream: #ede8dc;
-    --sepia: #c9b99a;
-    --rust: #c0411a;
-    --rust-light: #e05a30;
-    --grey: #888;
-    --border: rgba(13,13,13,0.12);
-    --font-serif: 'Playfair Display', Georgia, serif;
-    --font-mono: 'DM Mono', 'Courier New', monospace;
-    --font-sans: 'DM Sans', system-ui, sans-serif;
-  }
+    :root {
+        --ink: #0d0d0d;
+        --paper: #f5f0e8;
+        --cream: #ede8dc;
+        --sepia: #c9b99a;
+        --rust: #c0411a;
+        --rust-light: #e05a30;
+        --grey: #888;
+        --border: rgba(13, 13, 13, 0.12);
+        --font-serif: "Playfair Display", Georgia, serif;
+        --font-mono: "DM Mono", "Courier New", monospace;
+        --font-sans: "DM Sans", system-ui, sans-serif;
+    }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    html {
+        scroll-behavior: smooth;
+    }
 
-  body {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: var(--font-sans);
-    font-size: 16px;
-    line-height: 1.6;
-    overflow-x: hidden;
-  }
+    body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.6;
+        overflow-x: hidden;
+    }
 
-  /* Shared utility classes used across components */
-  .section-label {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--rust);
-    margin-bottom: 0.75rem;
-    display: block;
-  }
+    /* Shared utility classes used across components */
+    .section-label {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--rust);
+        margin-bottom: 0.75rem;
+        display: block;
+    }
 
-  .section-title {
-    font-family: var(--font-serif);
-    font-size: clamp(2rem, 3vw, 3rem);
-    font-weight: 900;
-    letter-spacing: -0.025em;
-    line-height: 1.1;
-    margin-bottom: 1rem;
-  }
+    .section-title {
+        font-family: var(--font-serif);
+        font-size: clamp(2rem, 3vw, 3rem);
+        font-weight: 900;
+        letter-spacing: -0.025em;
+        line-height: 1.1;
+        margin-bottom: 1rem;
+    }
 
-  .section-sub {
-    color: #555;
-    font-size: 1rem;
-    max-width: 520px;
-    line-height: 1.7;
-    margin-bottom: 1rem;
-  }
+    .section-sub {
+        color: #555;
+        font-size: 1rem;
+        max-width: 520px;
+        line-height: 1.7;
+        margin-bottom: 1rem;
+    }
 
-  .btn-primary {
-    background: var(--rust);
-    color: var(--paper);
-    text-decoration: none;
-    padding: 0.85rem 2rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-    border-radius: 2px;
-    transition: background 0.2s, transform 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .btn-primary:hover { background: var(--rust-light); transform: translateY(-1px); }
+    .btn-primary {
+        background: var(--rust);
+        color: var(--paper);
+        text-decoration: none;
+        padding: 0.85rem 2rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border-radius: 2px;
+        transition:
+            background 0.2s,
+            transform 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-primary:hover {
+        background: var(--rust-light);
+        transform: translateY(-1px);
+    }
 
-  .btn-secondary {
-    text-decoration: none;
-    color: var(--ink);
-    font-size: 0.9rem;
-    font-weight: 500;
-    padding: 0.85rem 1.5rem;
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    transition: border-color 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .btn-secondary:hover { border-color: var(--ink); }
+    .btn-secondary {
+        text-decoration: none;
+        color: var(--ink);
+        font-size: 0.9rem;
+        font-weight: 500;
+        padding: 0.85rem 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        transition: border-color 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-secondary:hover {
+        border-color: var(--ink);
+    }
 </style>
