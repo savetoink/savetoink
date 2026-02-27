@@ -30,15 +30,12 @@ type Request struct {
 	// EPUBData is the EPUB data to be sent as attachment.
 	EPUBData []byte
 
-	// Subject is the email subject. nil means use default (article title or consts.DefaultSubject).
-	Subject *string
-
 	// DestEmail is the email address of the recipient, typically a
 	// Kindle Personal Document Service address like "abcd@kindle.com".
 	DestEmail string
 
-	// BodyText is the email body text. nil means use consts.DefaultBodyText.
-	BodyText *string
+	// AppURL is the base URL for the application, used in email body.
+	AppURL string
 }
 
 // GenerateFilename creates a sanitized filename from the article title.
@@ -49,15 +46,17 @@ func GenerateFilename(article *model.Article) string {
 	return "article.epub"
 }
 
-// GenerateSubject creates an email subject from the article title or custom subject.
-func GenerateSubject(articleTitle, customSubject string) string {
-	if customSubject != "" {
-		return sanitizeSubject(customSubject)
+// BuildSubject creates an email subject in the format "[Save to Ink] <Title>".
+func BuildSubject(articleTitle string) string {
+	if articleTitle == "" {
+		articleTitle = "Document"
 	}
-	if articleTitle != "" {
-		return sanitizeSubject(articleTitle)
+	articleTitle = strings.TrimSpace(articleTitle)
+	maxTitleLength := max(0, consts.MaxSubjectLength-len(consts.MailSubjectPrefix))
+	if len(articleTitle) > maxTitleLength {
+		articleTitle = articleTitle[:maxTitleLength]
 	}
-	return consts.DefaultSubject
+	return consts.MailSubjectPrefix + articleTitle
 }
 
 func sanitizeFilename(name string) string {
@@ -68,15 +67,4 @@ func sanitizeFilename(name string) string {
 		return "article"
 	}
 	return sanitized
-}
-
-func sanitizeSubject(subject string) string {
-	if subject == "" {
-		return consts.DefaultSubject
-	}
-	subject = strings.TrimSpace(subject)
-	if len(subject) > consts.MaxSubjectLength {
-		subject = subject[:consts.MaxSubjectLength]
-	}
-	return subject
 }

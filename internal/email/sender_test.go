@@ -3,7 +3,6 @@ package email
 import (
 	"testing"
 
-	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
 )
 
@@ -82,78 +81,40 @@ func TestSanitizeFilename(t *testing.T) {
 	}
 }
 
-func TestGenerateSubject(t *testing.T) {
+func TestBuildSubject(t *testing.T) {
 	tests := []struct {
-		name          string
-		articleTitle  string
-		customSubject string
-		expected      string
+		name         string
+		articleTitle string
+		expected     string
 	}{
 		{
-			name:          "custom subject",
-			articleTitle:  "Article Title",
-			customSubject: "Custom Subject",
-			expected:      "Custom Subject",
+			name:         "article title",
+			articleTitle: "Article Title",
+			expected:     "[Save to Ink] Article Title",
 		},
 		{
-			name:          "article title subject",
-			articleTitle:  "Article Title",
-			customSubject: "",
-			expected:      "Article Title",
+			name:         "title with leading/trailing spaces",
+			articleTitle: "  Article Title  ",
+			expected:     "[Save to Ink] Article Title",
 		},
 		{
-			name:          "empty",
-			articleTitle:  "",
-			customSubject: "",
-			expected:      consts.DefaultSubject,
+			name: "long title",
+			articleTitle: "This is a very long article title that definitely exceeds " +
+				"the maximum length limit and should be properly truncated to fit",
+			expected: "[Save to Ink] This is a very long article title that definitely " +
+				"exceeds the maximum length limit and",
+		},
+		{
+			name:     "empty title",
+			expected: "[Save to Ink] Document",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GenerateSubject(tt.articleTitle, tt.customSubject)
+			got := BuildSubject(tt.articleTitle)
 			if got != tt.expected {
-				t.Errorf("GenerateSubject() = %v, want %v", got, tt.expected)
-			}
-		})
-	}
-}
-
-func TestSanitizeSubject(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "simple subject",
-			input:    "Test Subject",
-			expected: "Test Subject",
-		},
-		{
-			name:     "subject with leading/trailing spaces",
-			input:    "  Test Subject  ",
-			expected: "Test Subject",
-		},
-		{
-			name: "long subject",
-			input: "This is a very long subject that definitely exceeds the " +
-				"100 character limit and should be properly truncated",
-			expected: "This is a very long subject that definitely exceeds " +
-				"the 100 character limit and should be properly t",
-		},
-		{
-			name:     "empty subject",
-			input:    "",
-			expected: consts.DefaultSubject,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := sanitizeSubject(tt.input)
-			if got != tt.expected {
-				t.Errorf("sanitizeSubject() = %v, want %v", got, tt.expected)
+				t.Errorf("BuildSubject() = %v, want %v", got, tt.expected)
 			}
 		})
 	}

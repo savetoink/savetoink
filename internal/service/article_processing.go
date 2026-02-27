@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/email"
 	"github.com/shaftoe/savetoink/internal/model"
 )
@@ -73,9 +72,7 @@ func (s *Service) Process(ctx context.Context, url string) (*ProcessResult, erro
 func (s *Service) Send(
 	ctx context.Context,
 	result *ProcessResult,
-	subject *string,
 	destEmail string,
-	bodyText *string,
 ) (*email.SendEmailResponse, error) {
 	if result == nil {
 		return nil, errors.New("result is nil, must call Process first")
@@ -97,8 +94,7 @@ func (s *Service) Send(
 		Article:   result.article,
 		EPUBData:  result.epubData,
 		DestEmail: destEmail,
-		Subject:   generateSubject(result.article.Title, subject),
-		BodyText:  generateBodyText(bodyText),
+		AppURL:    s.cfg.AppURL,
 	}
 
 	resp, err := s.sender.SendEmail(ctx, emailReq)
@@ -130,20 +126,4 @@ func (s *Service) WriteToFile(result *ProcessResult, outputPath string) error {
 	}
 
 	return nil
-}
-
-func generateBodyText(customBodyText *string) *string {
-	if customBodyText != nil {
-		return customBodyText
-	}
-	defaultBodyText := consts.DefaultBodyText
-	return &defaultBodyText
-}
-
-func generateSubject(articleTitle string, customSubject *string) *string {
-	if customSubject != nil {
-		return customSubject
-	}
-	defaultSubject := email.GenerateSubject(articleTitle, "")
-	return &defaultSubject
 }

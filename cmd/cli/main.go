@@ -22,10 +22,8 @@ var (
 	timeout    time.Duration
 	verbose    bool
 
-	sendEmail     bool
-	emailSubject  string
-	emailBodyText string
-	destEmail     string
+	sendEmail bool
+	destEmail string
 )
 
 var rootCmd = &cobra.Command{
@@ -78,7 +76,7 @@ func runConvert(_ *cobra.Command, args []string) error {
 
 	var resp *email.SendEmailResponse
 	if sendEmail {
-		resp, err = sendToKindle(ctx, svc, result, emailSubject, destEmail, emailBodyText)
+		resp, err = sendToKindle(ctx, svc, result, destEmail)
 		if err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}
@@ -106,16 +104,9 @@ func sendToKindle(
 	ctx context.Context,
 	svc *service.Service,
 	result *service.ProcessResult,
-	emailSubject, destEmail, emailBodyText string,
+	destEmail string,
 ) (*email.SendEmailResponse, error) {
-	var subjectPtr, bodyTextPtr *string
-	if emailSubject != "" {
-		subjectPtr = &emailSubject
-	}
-	if emailBodyText != "" {
-		bodyTextPtr = &emailBodyText
-	}
-	resp, err := svc.Send(ctx, result, subjectPtr, destEmail, bodyTextPtr)
+	resp, err := svc.Send(ctx, result, destEmail)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send: %w", err)
 	}
@@ -142,9 +133,6 @@ func main() {
 
 	convertCmd.Flags().BoolVar(&sendEmail, "send", false, "Send EPUB to Kindle via email instead of saving locally")
 	convertCmd.Flags().StringVar(&destEmail, "dest-email", "", "Destination Kindle email address")
-	convertCmd.Flags().StringVar(&emailSubject, "email-subject", "", "Email subject (defaults to article title)")
-	convertCmd.Flags().StringVar(&emailBodyText, "email-body", "",
-		"Email body text (defaults to 'EPUB document attached.')")
 
 	rootCmd.AddCommand(convertCmd)
 	rootCmd.AddCommand(versionCmd)

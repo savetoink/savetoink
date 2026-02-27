@@ -9,7 +9,6 @@ import (
 
 	mailjetLib "github.com/mailjet/mailjet-apiv3-go/v4"
 
-	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/email"
 )
 
@@ -55,16 +54,14 @@ func (s *Sender) SendEmail(_ context.Context, req *email.Request) (*email.SendEm
 
 func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV31 {
 	filename := email.GenerateFilename(req.Article)
-	subject := req.Subject
-	if subject == nil {
-		defaultSubject := email.GenerateSubject(req.Article.Title, "")
-		subject = &defaultSubject
-	}
-	bodyText := req.BodyText
-	if bodyText == nil {
-		defaultBodyText := consts.DefaultBodyText
-		bodyText = &defaultBodyText
-	}
+	subject := email.BuildSubject(req.Article.Title)
+	bodyText := fmt.Sprintf(`EPUB document attached.
+
+To disable email delivery update your account settings at %s
+
+---
+Save to Ink - https://www.saveto.ink
+ `, req.AppURL)
 
 	base64Content := base64.StdEncoding.EncodeToString(req.EPUBData)
 
@@ -78,8 +75,8 @@ func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV
 					Email: req.DestEmail,
 				},
 			},
-			Subject:  *subject,
-			TextPart: *bodyText,
+			Subject:  subject,
+			TextPart: bodyText,
 			Attachments: &mailjetLib.AttachmentsV31{
 				mailjetLib.AttachmentV31{
 					ContentType:   "application/epub+zip",

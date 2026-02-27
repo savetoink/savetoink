@@ -266,9 +266,7 @@ func (m *mockUserProfileService) Process(_ context.Context, _ string) (*service.
 func (m *mockUserProfileService) Send(
 	_ context.Context,
 	_ *service.ProcessResult,
-	_ *string,
 	_ string,
-	_ *string,
 ) (*email.SendEmailResponse, error) {
 	return nil, nil
 }

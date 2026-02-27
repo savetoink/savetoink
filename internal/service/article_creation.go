@@ -97,15 +97,7 @@ func (s *Service) sendArticle(
 		return nil, "", nil
 	}
 
-	bodyText := fmt.Sprintf(`EPUB document attached.
-
-To disable email delivery update your account settings at %s
-
----
-Save to Ink - https://www.saveto.ink
-`, s.cfg.AppURL)
-
-	emailResp, err := s.Send(ctx, result, nil, destEmail, &bodyText)
+	emailResp, err := s.Send(ctx, result, destEmail)
 	if err != nil {
 		return nil, "", err
 	}

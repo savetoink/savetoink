@@ -10,12 +10,9 @@ const (
 
 // Email constants.
 const (
-	// DefaultSubject is the default email subject.
-	DefaultSubject = "Document"
-
 	// MaxSubjectLength is the maximum length for email subjects.
 	MaxSubjectLength = 100
 
-	// DefaultBodyText is the default email body text.
-	DefaultBodyText = "EPUB document attached."
+	// MailSubjectPrefix is the prefix for email subjects.
+	MailSubjectPrefix = "[Save to Ink] "
 )

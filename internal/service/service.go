@@ -21,9 +21,7 @@ type Interface interface {
 	Send(
 		ctx context.Context,
 		result *ProcessResult,
-		subject *string,
 		destEmail string,
-		bodyText *string,
 	) (*email.SendEmailResponse, error)
 	WriteToFile(result *ProcessResult, outputPath string) error
 	CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error)
