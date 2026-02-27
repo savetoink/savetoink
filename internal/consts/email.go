@@ -15,4 +15,7 @@ const (
 
 	// MailSubjectPrefix is the prefix for email subjects.
 	MailSubjectPrefix = "[Save to Ink] "
+
+	// LandingURL is the URL for the landing page.
+	LandingURL = "https://www.saveto.ink"
 )

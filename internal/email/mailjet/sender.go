@@ -9,6 +9,7 @@ import (
 
 	mailjetLib "github.com/mailjet/mailjet-apiv3-go/v4"
 
+	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/email"
 )
 
@@ -60,8 +61,8 @@ func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV
 To disable email delivery update your account settings at %s
 
 ---
-Save to Ink - https://www.saveto.ink
- `, req.AppURL)
+Save to Ink - %s
+ `, req.AppURL, consts.LandingURL)
 
 	base64Content := base64.StdEncoding.EncodeToString(req.EPUBData)
 
