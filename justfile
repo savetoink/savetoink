@@ -68,6 +68,7 @@ deploy-api:
         --capabilities CAPABILITY_NAMED_IAM \
         --parameter-overrides \
             APIKeySecret="$SAVETOINK_API_KEY" \
+            AppURL="$SAVETOINK_APP_URL" \
             Auth0Audience="$SAVETOINK_AUTH0_AUDIENCE" \
             Auth0Domain="$SAVETOINK_AUTH0_DOMAIN" \
             Auth0ClientId="$SAVETOINK_AUTH0_CLIENT_ID" \

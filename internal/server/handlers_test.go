@@ -22,9 +22,11 @@ const (
 )
 
 type MockService struct {
-	createFunc          func(context.Context, string, string) (*service.CreateArticleResult, error)
-	processFunc         func(context.Context, string) (*service.ProcessResult, error)
-	sendFunc            func(context.Context, *service.ProcessResult, string, string) (*email.SendEmailResponse, error)
+	createFunc  func(context.Context, string, string) (*service.CreateArticleResult, error)
+	processFunc func(context.Context, string) (*service.ProcessResult, error)
+	sendFunc    func(
+		context.Context, *service.ProcessResult, *string, string, *string,
+	) (*email.SendEmailResponse, error)
 	writeFunc           func(*service.ProcessResult, string) error
 	getArticle          func(context.Context, string, string) (*model.Article, error)
 	getArticlesMetadata func(context.Context, string, int, int, *bool) (*service.GetArticlesResult, error)
@@ -66,10 +68,12 @@ func (m *MockService) Process(ctx context.Context, url string) (*service.Process
 func (m *MockService) Send(
 	ctx context.Context,
 	result *service.ProcessResult,
-	subject, destEmail string,
+	subject *string,
+	destEmail string,
+	bodyText *string,
 ) (*email.SendEmailResponse, error) {
 	if m.sendFunc != nil {
-		return m.sendFunc(ctx, result, subject, destEmail)
+		return m.sendFunc(ctx, result, subject, destEmail, bodyText)
 	}
 	return &email.SendEmailResponse{
 		Status:    "success",

@@ -14,6 +14,10 @@ Parameters:
     Type: String
     Description: S3 key for the Lambda source zip file
 
+  AppURL:
+    Type: String
+    Description: URL of the Save to Ink app
+
   MailjetAPIKey:
     Type: String
     NoEcho: true
@@ -114,6 +118,7 @@ Resources:
       Environment:
         Variables:
           SAVETOINK_API_KEY: !Ref APIKeySecret
+          SAVETOINK_APP_URL: !Ref AppURL
           SAVETOINK_AUTH0_AUDIENCE: !Ref Auth0Audience
           SAVETOINK_AUTH0_DOMAIN: !Ref Auth0Domain
           SAVETOINK_AUTH0_CLIENT_ID: !Ref Auth0ClientId

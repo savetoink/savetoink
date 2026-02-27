@@ -18,7 +18,13 @@ import (
 // Interface defines the contract for service operations.
 type Interface interface {
 	Process(ctx context.Context, url string) (*ProcessResult, error)
-	Send(ctx context.Context, result *ProcessResult, subject, destEmail string) (*email.SendEmailResponse, error)
+	Send(
+		ctx context.Context,
+		result *ProcessResult,
+		subject *string,
+		destEmail string,
+		bodyText *string,
+	) (*email.SendEmailResponse, error)
 	WriteToFile(result *ProcessResult, outputPath string) error
 	CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error)
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)

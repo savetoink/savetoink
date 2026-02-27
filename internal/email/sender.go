@@ -30,12 +30,15 @@ type Request struct {
 	// EPUBData is the EPUB data to be sent as attachment.
 	EPUBData []byte
 
-	// Subject is the email subject.
-	Subject string
+	// Subject is the email subject. nil means use default (article title or consts.DefaultSubject).
+	Subject *string
 
 	// DestEmail is the email address of the recipient, typically a
 	// Kindle Personal Document Service address like "abcd@kindle.com".
 	DestEmail string
+
+	// BodyText is the email body text. nil means use consts.DefaultBodyText.
+	BodyText *string
 }
 
 // GenerateFilename creates a sanitized filename from the article title.

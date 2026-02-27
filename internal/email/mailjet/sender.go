@@ -9,6 +9,7 @@ import (
 
 	mailjetLib "github.com/mailjet/mailjet-apiv3-go/v4"
 
+	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/email"
 )
 
@@ -41,12 +42,33 @@ func (s *Sender) SendEmail(_ context.Context, req *email.Request) (*email.SendEm
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	messagesInfo := s.buildMessageInfo(req)
+	messages := mailjetLib.MessagesV31{Info: messagesInfo}
+
+	resp, err := s.client.SendMailV31(&messages)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return s.parseResponse(resp)
+}
+
+func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV31 {
 	filename := email.GenerateFilename(req.Article)
-	subject := email.GenerateSubject(req.Article.Title, req.Subject)
+	subject := req.Subject
+	if subject == nil {
+		defaultSubject := email.GenerateSubject(req.Article.Title, "")
+		subject = &defaultSubject
+	}
+	bodyText := req.BodyText
+	if bodyText == nil {
+		defaultBodyText := consts.DefaultBodyText
+		bodyText = &defaultBodyText
+	}
 
 	base64Content := base64.StdEncoding.EncodeToString(req.EPUBData)
 
-	messagesInfo := []mailjetLib.InfoMessagesV31{
+	return []mailjetLib.InfoMessagesV31{
 		{
 			From: &mailjetLib.RecipientV31{
 				Email: s.senderEmail,
@@ -56,8 +78,8 @@ func (s *Sender) SendEmail(_ context.Context, req *email.Request) (*email.SendEm
 					Email: req.DestEmail,
 				},
 			},
-			Subject:  subject,
-			TextPart: "EPUB document attached.",
+			Subject:  *subject,
+			TextPart: *bodyText,
 			Attachments: &mailjetLib.AttachmentsV31{
 				mailjetLib.AttachmentV31{
 					ContentType:   "application/epub+zip",
@@ -67,14 +89,9 @@ func (s *Sender) SendEmail(_ context.Context, req *email.Request) (*email.SendEm
 			},
 		},
 	}
+}
 
-	messages := mailjetLib.MessagesV31{Info: messagesInfo}
-
-	resp, err := s.client.SendMailV31(&messages)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send email: %w", err)
-	}
-
+func (s *Sender) parseResponse(resp *mailjetLib.ResultsV31) (*email.SendEmailResponse, error) {
 	if len(resp.ResultsV31) == 0 {
 		return nil, errors.New("no messages in response")
 	}

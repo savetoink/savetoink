@@ -16,6 +16,7 @@ type Config struct {
 	Debug            bool
 	ArticlesTable    string
 	UserProfileTable string
+	AppURL           string
 	Mode             consts.RunMode
 
 	// Auth
@@ -64,6 +65,7 @@ func bindEnvVars() error {
 		{"api-key", "SAVETOINK_MAILJET_API_KEY"},
 		{"api-key-secret", "SAVETOINK_API_KEY"},
 		{"api-secret", "SAVETOINK_MAILJET_API_SECRET"},
+		{"app-url", "SAVETOINK_APP_URL"},
 		{"auth-backend", "SAVETOINK_AUTH_BACKEND"},
 		{"auth0-audience", "SAVETOINK_AUTH0_AUDIENCE"},
 		{"auth0-client-id", "SAVETOINK_AUTH0_CLIENT_ID"},
@@ -86,6 +88,7 @@ func bindEnvVars() error {
 func loadConfig(mode consts.RunMode) *Config {
 	cfg := &Config{
 		APIKeySecret:      viper.GetString("api-key-secret"),
+		AppURL:            viper.GetString("app-url"),
 		Auth0Audience:     viper.GetString("auth0-audience"),
 		Auth0ClientID:     viper.GetString("auth0-client-id"),
 		Auth0ClientSecret: viper.GetString("auth0-client-secret"),
@@ -143,6 +146,9 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 	}
 	if c.ArticlesTable == "" {
 		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
+	}
+	if c.AppURL == "" {
+		*missing = append(*missing, "SAVETOINK_APP_URL")
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.Background())

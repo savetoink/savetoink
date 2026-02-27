@@ -15,4 +15,7 @@ const (
 
 	// MaxSubjectLength is the maximum length for email subjects.
 	MaxSubjectLength = 100
+
+	// DefaultBodyText is the default email body text.
+	DefaultBodyText = "EPUB document attached."
 )
