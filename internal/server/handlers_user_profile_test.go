@@ -174,6 +174,10 @@ func TestHandleGetUserProfile_Success(t *testing.T) {
 		t.Errorf("expected kindle email '%s', got: %s", testKindleEmail, resp.KindleEmail)
 	}
 
+	if resp.Email != "test@example.com" {
+		t.Errorf("expected email 'test@example.com', got: %s", resp.Email)
+	}
+
 	if resp.Account == "" {
 		t.Errorf("expected account ID to be set")
 	}
@@ -308,6 +312,23 @@ func (m *mockUserProfileService) GetUserKindleEmail(_ context.Context, _ string)
 }
 
 func (m *mockUserProfileService) SetUserKindleEmail(_ context.Context, _, _ string) error {
+	if m.shouldError {
+		return errors.New("database error")
+	}
+	return nil
+}
+
+func (m *mockUserProfileService) GetUserProfile(_ context.Context, _ string) (*model.UserProfile, error) {
+	if m.shouldError {
+		return nil, errors.New("database error")
+	}
+	return &model.UserProfile{
+		Email:       "test@example.com",
+		KindleEmail: testKindleEmail,
+	}, nil
+}
+
+func (m *mockUserProfileService) SetUserEmail(_ context.Context, _, _ string) error {
 	if m.shouldError {
 		return errors.New("database error")
 	}

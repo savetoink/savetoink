@@ -17,6 +17,7 @@ type userProfileRequest struct {
 
 type userProfileResponse struct {
 	Account     string `json:"account"`
+	Email       string `json:"email"`
 	KindleEmail string `json:"kindle_email"`
 }
 
@@ -31,9 +32,23 @@ func (h *handlers) handleGetUserProfile(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	profile, err := h.service.GetUserProfile(r.Context(), accountID)
+	if err != nil {
+		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	email := ""
+	if profile != nil {
+		email = profile.Email
+	}
+
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(userProfileResponse{
 		Account:     accountID,
+		Email:       email,
 		KindleEmail: kindleEmail,
 	})
 }
@@ -79,9 +94,23 @@ func (h *handlers) handleSetUserProfile(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	profile, err := h.service.GetUserProfile(r.Context(), accountID)
+	if err != nil {
+		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	email := ""
+	if profile != nil {
+		email = profile.Email
+	}
+
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(userProfileResponse{
 		Account:     accountID,
+		Email:       email,
 		KindleEmail: req.KindleEmail,
 	})
 }

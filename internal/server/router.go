@@ -16,13 +16,6 @@ import (
 	"github.com/shaftoe/savetoink/internal/service"
 )
 
-func jsonContentTypeMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
-	})
-}
-
 // NewRouter creates and configures a new chi router with all middleware and routes.
 func NewRouter(cfg *config.Config) *chi.Mux {
 	return newRouterWithClient(cfg, &http.Client{

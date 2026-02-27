@@ -92,6 +92,16 @@ func (m *MockService) SetUserKindleEmail(ctx context.Context, accountID, kindleE
 	return nil
 }
 
+func (m *MockService) GetUserProfile(_ context.Context, accountID string) (*model.UserProfile, error) {
+	return &model.UserProfile{
+		Account: accountID,
+	}, nil
+}
+
+func (m *MockService) SetUserEmail(_ context.Context, _, _ string) error {
+	return nil
+}
+
 func (m *MockService) DeleteUserProfile(ctx context.Context, accountID string) error {
 	if m.deleteUserProfile != nil {
 		return m.deleteUserProfile(ctx, accountID)
