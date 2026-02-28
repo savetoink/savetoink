@@ -77,7 +77,7 @@ func (m *MockService) Send(
 	return &email.SendEmailResponse{
 		Status:    "success",
 		Message:   "sent",
-		EmailUUID: "test-uuid",
+		MessageID: "test-uuid",
 	}, nil
 }
 
@@ -92,7 +92,7 @@ func (m *MockService) SendArticle(
 	return &email.SendEmailResponse{
 		Status:    "success",
 		Message:   "sent",
-		EmailUUID: "test-uuid",
+		MessageID: "test-uuid",
 	}, nil
 }
 
@@ -239,7 +239,7 @@ func TestHandleCreateArticleSuccessWithEmail(t *testing.T) {
 			EmailResp: &email.SendEmailResponse{
 				Status:    "success",
 				Message:   "sent",
-				EmailUUID: "test-uuid",
+				MessageID: "test-uuid",
 			},
 		}, nil
 	})

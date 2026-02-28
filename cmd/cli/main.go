@@ -121,7 +121,7 @@ func printResult(resp *email.SendEmailResponse) {
 		absPath, _ := filepath.Abs(outputPath)
 		fmt.Printf("\n✓ EPUB saved to: %s\n", absPath)
 	} else if resp != nil {
-		fmt.Printf("\n✓ Article sent to Kindle (email ID: %s)\n", resp.EmailUUID)
+		fmt.Printf("\n✓ Article sent to Kindle (email ID: %s)\n", resp.MessageID)
 	}
 }
 

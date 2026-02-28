@@ -14,7 +14,7 @@ import (
 type SendEmailResponse struct {
 	Status    string `json:"status"`
 	Message   string `json:"message"`
-	EmailUUID string `json:"email_uuid,omitempty"`
+	MessageID string `json:"message_id,omitempty"`
 }
 
 // Sender defines the interface for sending emails.

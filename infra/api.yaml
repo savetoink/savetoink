@@ -130,6 +130,7 @@ Resources:
           SAVETOINK_MAILJET_API_KEY: !Ref MailjetAPIKey
           SAVETOINK_MAILJET_API_SECRET: !Ref MailjetAPISecret
           SAVETOINK_SENDER_EMAIL: !Ref SenderEmail
+          SAVETOINK_SENDS_TABLE_NAME: !Ref SendsTable
           SAVETOINK_USER_PROFILE_TABLE_NAME: !Ref UserProfileTable
       TracingConfig:
         Mode: PassThrough
@@ -312,6 +313,45 @@ Resources:
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
 
+  SendsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-sends"
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: articleId
+          AttributeType: S
+        - AttributeName: sentAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: ArticleIdIndex
+          KeySchema:
+            - AttributeName: articleId
+              KeyType: HASH
+            - AttributeName: sentAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: UserSentAtIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: sentAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+
   DynamoDBTableAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -323,15 +363,16 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - dynamodb:PutItem
+              - dynamodb:DeleteItem
               - dynamodb:GetItem
+              - dynamodb:PutItem
               - dynamodb:Query
               - dynamodb:UpdateItem
-              - dynamodb:DeleteItem
             Resource:
               - !GetAtt ArticleTable.Arn
-              - !GetAtt UserProfileTable.Arn
               - !GetAtt ArticleTagsTable.Arn
+              - !GetAtt SendsTable.Arn
+              - !GetAtt UserProfileTable.Arn
 
   GitHubOIDCProvider:
     Type: AWS::IAM::OIDCProvider
@@ -428,6 +469,18 @@ Outputs:
     Value: !GetAtt ArticleTagsTable.Arn
     Export:
       Name: !Sub "${ProjectName}-article-tags-table-arn"
+
+  SendsTableName:
+    Description: Name of the DynamoDB table for storing sends
+    Value: !Ref SendsTable
+    Export:
+      Name: !Sub "${ProjectName}-sends-table-name"
+
+  SendsTableArn:
+    Description: ARN of the sends DynamoDB table
+    Value: !GetAtt SendsTable.Arn
+    Export:
+      Name: !Sub "${ProjectName}-sends-table-arn"
 
   CloudFrontDistributionId:
     Description: CloudFront distribution ID

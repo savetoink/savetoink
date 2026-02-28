@@ -19,10 +19,11 @@ type DynamoDB struct {
 	client           *dynamodb.Client
 	articleTableName string
 	profileTableName string
+	sendsTableName   string
 }
 
 // NewDynamoDB creates a new DynamoDB repository instance.
-func NewDynamoDB(awsConfig *aws.Config, articlesTableName, profileTableName string) *DynamoDB {
+func NewDynamoDB(awsConfig *aws.Config, articlesTableName, profileTableName, sendsTableName string) *DynamoDB {
 	cfg, _ := config.LoadDefaultConfig(context.TODO())
 	if awsConfig != nil && awsConfig.Region == "" {
 		cfg.Region = awsConfig.Region
@@ -31,5 +32,6 @@ func NewDynamoDB(awsConfig *aws.Config, articlesTableName, profileTableName stri
 		client:           dynamodb.NewFromConfig(cfg),
 		articleTableName: articlesTableName,
 		profileTableName: profileTableName,
+		sendsTableName:   sendsTableName,
 	}
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/internal/config"
-	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
 	repoimpl "github.com/shaftoe/savetoink/internal/repository/dynamodb"
 )
@@ -286,54 +285,6 @@ func TestGetArticleEmptyID(t *testing.T) {
 
 	if err == nil {
 		t.Error("expected error for empty ID, got nil")
-	}
-}
-
-func TestGetArticlesMetadataWithDeliveryStatus(t *testing.T) {
-	now := time.Now()
-	articles := []*model.Article{
-		{
-			Account:        "user1",
-			ID:             "1",
-			Title:          "Article 1",
-			URL:            "https://example.com/1",
-			CreatedAt:      now.Add(-1 * time.Hour),
-			DeliveryStatus: consts.StatusDelivered,
-		},
-		{
-			Account:        "user1",
-			ID:             "2",
-			Title:          "Article 2",
-			URL:            "https://example.com/2",
-			CreatedAt:      now,
-			DeliveryStatus: consts.StatusFailed,
-			Error:          "email failed",
-		},
-	}
-
-	mockRepo := &MockRepository{articles: articles}
-	svc := &Service{repo: mockRepo}
-
-	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10, nil)
-
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if len(result.Articles) != 2 {
-		t.Errorf("expected 2 articles, got %d", len(result.Articles))
-	}
-
-	if result.Articles[0].DeliveryStatus != consts.StatusFailed {
-		t.Errorf("expected delivery status %v, got %v", consts.StatusFailed, result.Articles[0].DeliveryStatus)
-	}
-
-	if result.Articles[0].Error != "email failed" {
-		t.Errorf("expected error 'email failed', got '%s'", result.Articles[0].Error)
-	}
-
-	if result.Articles[1].DeliveryStatus != consts.StatusDelivered {
-		t.Errorf("expected delivery status %v, got %v", consts.StatusDelivered, result.Articles[1].DeliveryStatus)
 	}
 }
 

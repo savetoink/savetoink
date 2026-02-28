@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -615,17 +614,12 @@ func TestDynamoDB_UpdateArticle(t *testing.T) {
 	require.NoError(t, err)
 
 	updated := &model.Article{
-		Account:            testAccount,
-		ID:                 "test-id-9",
-		URL:                "https://example.com/test9",
-		Title:              "Updated Article 9",
-		Content:            "<p>Updated content 9</p>",
-		CreatedAt:          original.CreatedAt,
-		DeliveryStatus:     consts.StatusDelivered,
-		DeliveredFrom:      stringPtr("sender@example.com"),
-		DeliveredTo:        stringPtr("kindle@example.com"),
-		DeliveredEmailUUID: stringPtr("email-uuid-123"),
-		DeliveredBy:        consts.EmailBackendMailjet,
+		Account:   testAccount,
+		ID:        "test-id-9",
+		URL:       "https://example.com/test9",
+		Title:     "Updated Article 9",
+		Content:   "<p>Updated content 9</p>",
+		CreatedAt: original.CreatedAt,
 	}
 
 	err = repo.Store(ctx, updated)
@@ -636,8 +630,6 @@ func TestDynamoDB_UpdateArticle(t *testing.T) {
 	skipIfTableNotFound(t, err)
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Article 9", retrieved.Title)
-	assert.Equal(t, consts.StatusDelivered, retrieved.DeliveryStatus)
-	assert.Equal(t, "sender@example.com", *retrieved.DeliveredFrom)
 }
 
 func TestDynamoDB_Store_NormalizesToUTC(t *testing.T) {
@@ -878,16 +870,13 @@ func TestDynamoDB_PutUserProfile_RequiresAccount(t *testing.T) {
 	assert.Contains(t, err.Error(), "account field is required")
 }
 
-func stringPtr(s string) *string {
-	return &s
-}
-
 func setupTestDynamoDB(t *testing.T) *DynamoDB {
 	t.Helper()
 
 	articlesTableName := "test-savetoink-articles"
 	profileTableName := "test-savetoink-user-profiles"
-	repo := NewDynamoDB(nil, articlesTableName, profileTableName)
+	sendsTableName := "test-savetoink-sends"
+	repo := NewDynamoDB(nil, articlesTableName, profileTableName, sendsTableName)
 
 	t.Cleanup(func() {
 		ctx := context.Background()

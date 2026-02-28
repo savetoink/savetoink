@@ -52,6 +52,7 @@ type Service struct {
 	sender          email.Sender
 	repo            repository.ArticlesRepository
 	userProfileRepo repository.UserProfileRepository
+	sendsRepo       repository.SendsRepository
 	cfg             *config.Config
 	dbErrors        error
 }
@@ -68,9 +69,11 @@ func New(cfg *config.Config) *Service {
 
 	var repo repository.ArticlesRepository
 	var userProfileRepo repository.UserProfileRepository
+	var sendsRepo repository.SendsRepository
 	if cfg.ArticlesTable != "" && cfg.AWSConfig != nil {
-		repo = repoimpl.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable)
+		repo = repoimpl.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable, cfg.SendsTable)
 		userProfileRepo = repo.(repository.UserProfileRepository)
+		sendsRepo = repo.(repository.SendsRepository)
 	}
 
 	return &Service{
@@ -79,6 +82,7 @@ func New(cfg *config.Config) *Service {
 		sender:          sender,
 		repo:            repo,
 		userProfileRepo: userProfileRepo,
+		sendsRepo:       sendsRepo,
 		cfg:             cfg,
 	}
 }

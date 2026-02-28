@@ -16,6 +16,7 @@ type Config struct {
 	Debug            bool
 	ArticlesTable    string
 	UserProfileTable string
+	SendsTable       string
 	AppURL           string
 	Mode             consts.RunMode
 
@@ -74,6 +75,7 @@ func bindEnvVars() error {
 		{"debug", "SAVETOINK_DEBUG"},
 		{"dynamodb-table", "SAVETOINK_ARTICLE_TABLE_NAME"},
 		{"sender-email", "SAVETOINK_SENDER_EMAIL"},
+		{"sends-table", "SAVETOINK_SENDS_TABLE_NAME"},
 		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
 	}
 
@@ -100,6 +102,7 @@ func loadConfig(mode consts.RunMode) *Config {
 		MailjetAPISecret:  viper.GetString("api-secret"),
 		Mode:              mode,
 		SenderEmail:       viper.GetString("sender-email"),
+		SendsTable:        viper.GetString("sends-table"),
 		UserProfileTable:  viper.GetString("user-profile-table"),
 	}
 
@@ -146,6 +149,9 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 	}
 	if c.ArticlesTable == "" {
 		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
+	}
+	if c.SendsTable == "" {
+		*missing = append(*missing, "SAVETOINK_SENDS_TABLE_NAME")
 	}
 	if c.AppURL == "" {
 		*missing = append(*missing, "SAVETOINK_APP_URL")

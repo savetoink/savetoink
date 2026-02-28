@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/email"
 	"github.com/shaftoe/savetoink/internal/model"
 	"github.com/shaftoe/savetoink/internal/service/content"
@@ -26,7 +25,6 @@ type CreateArticleResult struct {
 // - cleans the URL and generates an article ID
 // - processes the article (extracts content and generates EPUB)
 // - optionally sends the article to Kindle via email
-// - enriches the article with delivery metadata
 // - stores the article to the database in the background (if repository is configured)
 // Returns CreateArticleResult with the article and status information.
 func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error) {
@@ -68,15 +66,17 @@ func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string) (
 		return nil, articleErr
 	}
 
-	emailResp, destEmail, err := s.sendArticle(ctx, result, accountID)
+	emailResp, err := s.sendArticle(ctx, result, accountID)
 	if err != nil {
 		article.Error = err.Error()
 		articlesChan <- article
 		return nil, err
 	}
 
-	s.enrichArticle(result.Article(), &articleID, emailResp, accountID, destEmail)
-	articlesChan <- result.Article()
+	processedArticle := result.Article()
+	processedArticle.Account = accountID
+	processedArticle.ID = articleID
+	articlesChan <- processedArticle
 
 	return &CreateArticleResult{
 		Article:   result.Article(),
@@ -89,21 +89,21 @@ func (s *Service) sendArticle(
 	ctx context.Context,
 	result *ProcessResult,
 	accountID string,
-) (*email.SendEmailResponse, string, error) {
+) (*email.SendEmailResponse, error) {
 	destEmail, err := s.GetUserKindleEmail(ctx, accountID)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get user kindle email: %w", err)
+		return nil, fmt.Errorf("failed to get user kindle email: %w", err)
 	}
 	if destEmail == "" {
-		return nil, "", nil
+		return nil, nil
 	}
 
 	emailResp, err := s.Send(ctx, result, destEmail)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return emailResp, destEmail, nil
+	return emailResp, nil
 }
 
 // GetDBError returns any accumulated database errors from background operations.
@@ -135,29 +135,6 @@ func (s *Service) startBackgroundDBStore(ctx context.Context) (eg *errgroup.Grou
 	return
 }
 
-func (s *Service) enrichArticle(
-	article *model.Article,
-	id *string,
-	emailResp *email.SendEmailResponse,
-	accountID, destEmail string,
-) {
-	article.Account = accountID
-	article.ID = *id
-
-	if emailResp == nil {
-		if destEmail != "" {
-			article.DeliveryStatus = consts.StatusFailed
-		}
-		return
-	}
-
-	article.DeliveryStatus = consts.StatusDelivered
-	article.DeliveredFrom = &s.cfg.SenderEmail
-	article.DeliveredTo = &destEmail
-	article.DeliveredEmailUUID = &emailResp.EmailUUID
-	article.DeliveredBy = s.cfg.EmailProvider
-}
-
 func (s *Service) getMessage(_ *model.Article, emailResp *email.SendEmailResponse) string {
 	if emailResp == nil {
 		return "article saved (kindle email not configured)"
@@ -187,12 +164,10 @@ func (s *Service) SendArticle(
 
 	result := NewProcessResult(article, epubData, article.URL)
 
-	emailResp, destEmail, err := s.sendArticle(ctx, result, accountID)
+	emailResp, err := s.sendArticle(ctx, result, accountID)
 	if err != nil {
 		return nil, err
 	}
-
-	s.enrichArticle(article, &article.ID, emailResp, accountID, destEmail)
 
 	if s.repo != nil {
 		if storeErr := s.repo.Store(ctx, article); storeErr != nil {

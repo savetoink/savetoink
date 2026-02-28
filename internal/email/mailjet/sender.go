@@ -104,7 +104,7 @@ func (s *Sender) parseResponse(resp *mailjetLib.ResultsV31) (*email.SendEmailRes
 	}
 
 	if len(resp.ResultsV31[0].To) > 0 {
-		result.EmailUUID = resp.ResultsV31[0].To[0].MessageUUID
+		result.MessageID = resp.ResultsV31[0].To[0].MessageUUID
 	}
 
 	return result, nil

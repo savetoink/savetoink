@@ -56,7 +56,7 @@ func createTestHandlerWithMock(
 			emailResp = &email.SendEmailResponse{
 				Status:    "success",
 				Message:   "sent",
-				EmailUUID: "test-uuid",
+				MessageID: "test-uuid",
 			}
 		}
 		return &service.CreateArticleResult{

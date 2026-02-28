@@ -38,16 +38,10 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	addLogAttr(r.Context(), slog.String("article_id", result.Article.ID))
-	addLogAttr(r.Context(), slog.String("article_url", result.Article.URL))
 	addLogAttr(r.Context(), slog.String("message", result.Message))
 
-	if result.Article.DeliveryStatus != "" {
-		addLogAttr(r.Context(), slog.String("delivery_status", string(result.Article.DeliveryStatus)))
-		addLogAttr(r.Context(), slog.String("email_provider", string(h.cfg.EmailProvider)))
-	}
-
-	if result.EmailResp != nil && result.EmailResp.EmailUUID != "" {
-		addLogAttr(r.Context(), slog.String("email_uuid", result.EmailResp.EmailUUID))
+	if result.EmailResp != nil && result.EmailResp.MessageID != "" {
+		addLogAttr(r.Context(), slog.String("message_id", result.EmailResp.MessageID))
 	}
 
 	if dbErr := h.service.GetDBError(); dbErr != nil {
@@ -56,11 +50,10 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(articleResponse{
-		ID:             result.Article.ID,
-		Title:          result.Article.Title,
-		URL:            result.Article.URL,
-		Message:        result.Message,
-		DeliveryStatus: string(result.Article.DeliveryStatus),
+		ID:      result.Article.ID,
+		Title:   result.Article.Title,
+		URL:     result.Article.URL,
+		Message: result.Message,
 	})
 }
 
@@ -212,7 +205,7 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if emailResp != nil {
-		addLogAttr(r.Context(), slog.String("email_uuid", emailResp.EmailUUID))
+		addLogAttr(r.Context(), slog.String("email_uuid", emailResp.MessageID))
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -3,6 +3,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/internal/model"
@@ -28,4 +29,11 @@ type UserProfileRepository interface {
 	GetUserProfile(ctx context.Context, account string) (*model.UserProfile, error)
 	PutUserProfile(ctx context.Context, profile *model.UserProfile) error
 	DeleteUserProfile(ctx context.Context, account string) error
+}
+
+// SendsRepository defines the interface for send persistence.
+type SendsRepository interface {
+	CreateSend(ctx context.Context, send *model.Send) error
+	GetSendsByArticleID(ctx context.Context, articleID string) ([]*model.Send, error)
+	GetSendsByUserIDDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*model.Send, error)
 }

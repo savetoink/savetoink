@@ -37,6 +37,7 @@ func TestConfigValidate(t *testing.T) {
 				Mode:          consts.ModeServer,
 				APIKeySecret:  "api-key-secret",
 				ArticlesTable: "test-table",
+				SendsTable:    "test-sends-table",
 				AuthBackend:   consts.AuthBackendSharedAPIKey,
 				AppURL:        "https://example.com",
 			},
@@ -68,6 +69,7 @@ func TestConfigValidate(t *testing.T) {
 				Mode:          consts.ModeServer,
 				APIKeySecret:  "api-key-secret",
 				ArticlesTable: "test-table",
+				SendsTable:    "test-sends-table",
 				AuthBackend:   "invalid_backend",
 				AppURL:        "https://example.com",
 			},
@@ -83,6 +85,7 @@ func TestConfigValidate(t *testing.T) {
 				Auth0ClientID:     "test-client-id",
 				Auth0ClientSecret: "test-client-secret",
 				ArticlesTable:     "test-table",
+				SendsTable:        "test-sends-table",
 				AppURL:            "https://example.com",
 			},
 			wantErr: false,
@@ -129,6 +132,7 @@ func TestLoad(t *testing.T) {
 	_ = os.Unsetenv("SAVETOINK_MAILJET_API_SECRET")
 	_ = os.Unsetenv("SAVETOINK_API_KEY")
 	_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
+	_ = os.Unsetenv("SAVETOINK_SENDS_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
@@ -164,6 +168,7 @@ func TestLoadDefaultsToCLI(t *testing.T) {
 	_ = os.Unsetenv("SAVETOINK_MAILJET_API_SECRET")
 	_ = os.Unsetenv("SAVETOINK_API_KEY")
 	_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
+	_ = os.Unsetenv("SAVETOINK_SENDS_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
@@ -178,10 +183,12 @@ func TestLoadDefaultsToCLI(t *testing.T) {
 func TestLoadServerMode(t *testing.T) {
 	_ = os.Setenv("SAVETOINK_API_KEY", "api-key-secret")
 	_ = os.Setenv("SAVETOINK_ARTICLE_TABLE_NAME", "test-table")
+	_ = os.Setenv("SAVETOINK_SENDS_TABLE_NAME", "test-sends-table")
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	defer func() {
 		_ = os.Unsetenv("SAVETOINK_API_KEY")
 		_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
+		_ = os.Unsetenv("SAVETOINK_SENDS_TABLE_NAME")
 	}()
 
 	cfg, err := Load(consts.ModeServer)
@@ -195,6 +202,7 @@ func TestLoadServerModeAuth0(t *testing.T) {
 	_ = os.Unsetenv("SAVETOINK_MAILJET_API_SECRET")
 	_ = os.Unsetenv("SAVETOINK_API_KEY")
 	_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
+	_ = os.Unsetenv("SAVETOINK_SENDS_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
 	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
@@ -207,6 +215,7 @@ func TestLoadServerModeAuth0(t *testing.T) {
 	_ = os.Setenv("SAVETOINK_AUTH0_CLIENT_ID", "test-client-id")
 	_ = os.Setenv("SAVETOINK_AUTH0_CLIENT_SECRET", "test-client-secret")
 	_ = os.Setenv("SAVETOINK_ARTICLE_TABLE_NAME", "test-table")
+	_ = os.Setenv("SAVETOINK_SENDS_TABLE_NAME", "test-sends-table")
 	defer func() {
 		_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
 		_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
@@ -214,6 +223,7 @@ func TestLoadServerModeAuth0(t *testing.T) {
 		_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_ID")
 		_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_SECRET")
 		_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
+		_ = os.Unsetenv("SAVETOINK_SENDS_TABLE_NAME")
 	}()
 
 	cfg, err := Load(consts.ModeServer)
