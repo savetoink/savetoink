@@ -267,6 +267,7 @@ Resources:
             ProjectionType: INCLUDE
             NonKeyAttributes:
               - author
+              - deliveryStatus
               - error
               - excerpt
               - favorite

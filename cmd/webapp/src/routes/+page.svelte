@@ -12,6 +12,7 @@
 	let selectedArticleIndex = $state<number | null>(null);
 	let articleElements: HTMLLIElement[] = [];
 	let favoriteForm: HTMLFormElement | undefined;
+	let sendForm: HTMLFormElement | undefined;
 	let deleteForm: HTMLFormElement | undefined;
 
 	function setArticleElement(element: HTMLLIElement | undefined, index: number) {
@@ -33,6 +34,12 @@
 			return;
 		}
 		deleteForm.requestSubmit();
+	}
+
+	function sendArticle() {
+		if (selectedArticleIndex !== null && sendForm) {
+			sendForm.requestSubmit();
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -67,6 +74,10 @@
 			case 'd':
 				e.preventDefault();
 				deleteArticle();
+				break;
+			case 's':
+				e.preventDefault();
+				sendArticle();
 				break;
 			case 'n':
 				e.preventDefault();
@@ -113,6 +124,14 @@
 	method="POST"
 	action={selectedArticleIndex !== null
 		? `/articles/${data.articles[selectedArticleIndex].id}?/favorite`
+		: ''}
+	use:enhance
+></form>
+<form
+	bind:this={sendForm}
+	method="POST"
+	action={selectedArticleIndex !== null
+		? `/articles/${data.articles[selectedArticleIndex].id}?/send`
 		: ''}
 	use:enhance
 ></form>

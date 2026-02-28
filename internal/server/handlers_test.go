@@ -27,6 +27,7 @@ type MockService struct {
 	sendFunc    func(
 		context.Context, *service.ProcessResult, string,
 	) (*email.SendEmailResponse, error)
+	sendArticleFunc     func(context.Context, *model.Article, string) (*email.SendEmailResponse, error)
 	writeFunc           func(*service.ProcessResult, string) error
 	getArticle          func(context.Context, string, string) (*model.Article, error)
 	getArticlesMetadata func(context.Context, string, int, int, *bool) (*service.GetArticlesResult, error)
@@ -72,6 +73,21 @@ func (m *MockService) Send(
 ) (*email.SendEmailResponse, error) {
 	if m.sendFunc != nil {
 		return m.sendFunc(ctx, result, destEmail)
+	}
+	return &email.SendEmailResponse{
+		Status:    "success",
+		Message:   "sent",
+		EmailUUID: "test-uuid",
+	}, nil
+}
+
+func (m *MockService) SendArticle(
+	ctx context.Context,
+	article *model.Article,
+	accountID string,
+) (*email.SendEmailResponse, error) {
+	if m.sendArticleFunc != nil {
+		return m.sendArticleFunc(ctx, article, accountID)
 	}
 	return &email.SendEmailResponse{
 		Status:    "success",

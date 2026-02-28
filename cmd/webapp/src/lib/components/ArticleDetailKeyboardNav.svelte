@@ -6,6 +6,7 @@
 
 	let { articleID }: { articleID: string } = $props();
 	let favoriteForm: HTMLFormElement;
+	let sendForm: HTMLFormElement;
 	let deleteForm: HTMLFormElement;
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -17,6 +18,10 @@
 			case 'd':
 				e.preventDefault();
 				deleteArticle();
+				break;
+			case 's':
+				e.preventDefault();
+				sendArticle();
 				break;
 			case 'ArrowLeft':
 			case 'Escape':
@@ -41,6 +46,10 @@
 		deleteForm.requestSubmit();
 	}
 
+	function sendArticle() {
+		sendForm.requestSubmit();
+	}
+
 	onMount(() => {
 		document.addEventListener('keydown', handleKeydown);
 		return () => document.removeEventListener('keydown', handleKeydown);
@@ -53,6 +62,7 @@
 	action="/articles/{articleID}?/favorite"
 	use:enhance
 ></form>
+<form bind:this={sendForm} method="POST" action="/articles/{articleID}?/send" use:enhance></form>
 <form
 	bind:this={deleteForm}
 	method="POST"

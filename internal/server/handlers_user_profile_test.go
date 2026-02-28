@@ -271,6 +271,14 @@ func (m *mockUserProfileService) Send(
 	return nil, nil
 }
 
+func (m *mockUserProfileService) SendArticle(
+	_ context.Context,
+	_ *model.Article,
+	_ string,
+) (*email.SendEmailResponse, error) {
+	return nil, nil
+}
+
 func (m *mockUserProfileService) WriteToFile(_ *service.ProcessResult, _ string) error {
 	return nil
 }

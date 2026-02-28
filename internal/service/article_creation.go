@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/shaftoe/savetoink/internal/consts"
@@ -162,4 +163,42 @@ func (s *Service) getMessage(_ *model.Article, emailResp *email.SendEmailRespons
 		return "article saved (kindle email not configured)"
 	}
 	return "article sent to Kindle successfully"
+}
+
+// SendArticle sends an already-stored article to Kindle via email.
+// Generates EPUB from the stored content and sends it to the user's Kindle email.
+func (s *Service) SendArticle(
+	ctx context.Context,
+	article *model.Article,
+	accountID string,
+) (*email.SendEmailResponse, error) {
+	if article == nil {
+		return nil, errors.New("article is nil")
+	}
+
+	if article.Content == "" {
+		return nil, errors.New("article has no content")
+	}
+
+	epubData, err := s.generator.Generate(article)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate EPUB: %w", err)
+	}
+
+	result := NewProcessResult(article, epubData, article.URL)
+
+	emailResp, destEmail, err := s.sendArticle(ctx, result, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	s.enrichArticle(article, &article.ID, emailResp, accountID, destEmail)
+
+	if s.repo != nil {
+		if storeErr := s.repo.Store(ctx, article); storeErr != nil {
+			slog.Warn("failed to update article in database", "error", storeErr)
+		}
+	}
+
+	return emailResp, nil
 }

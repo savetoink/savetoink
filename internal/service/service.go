@@ -23,6 +23,11 @@ type Interface interface {
 		result *ProcessResult,
 		destEmail string,
 	) (*email.SendEmailResponse, error)
+	SendArticle(
+		ctx context.Context,
+		article *model.Article,
+		accountID string,
+	) (*email.SendEmailResponse, error)
 	WriteToFile(result *ProcessResult, outputPath string) error
 	CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error)
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)

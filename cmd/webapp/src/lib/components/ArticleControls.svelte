@@ -14,6 +14,10 @@
 		<button type="submit">{article.favorite ? 'Unfavorite' : 'Favorite'}</button>
 	</form>
 
+	<form method="POST" action="/articles/{article.id}?/send">
+		<button type="submit">{article.deliveryStatus === 'delivered' ? 'Resend' : 'Send'}</button>
+	</form>
+
 	<form method="POST" action="/articles/{article.id}?/delete" use:enhance={handleEnhance}>
 		<button type="submit">Delete</button>
 	</form>

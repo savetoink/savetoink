@@ -33,6 +33,7 @@ func (d *DynamoDB) getProjectionAttributeNames() map[string]string {
 		"#p":       "publishedAt",
 		"#tg":      "tags",
 		"#f":       attributeNameFavorite,
+		"#ds":      "deliveryStatus",
 	}
 }
 

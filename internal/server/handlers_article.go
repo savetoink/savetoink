@@ -186,3 +186,38 @@ func (h *handlers) handleToggleFavorite(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(favoriteResponse{Favorite: newStatus})
 }
+
+func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountID(r.Context())
+	articleID := chi.URLParam(r, "id")
+
+	addLogAttr(r.Context(), slog.String("article_id", articleID))
+
+	article, err := h.service.GetArticle(r.Context(), accountID, articleID)
+	if err != nil {
+		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	addLogAttr(r.Context(), slog.String("article_title", article.Title))
+
+	emailResp, err := h.service.SendArticle(r.Context(), article, accountID)
+	if err != nil {
+		addLogAttr(r.Context(), slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if emailResp != nil {
+		addLogAttr(r.Context(), slog.String("email_uuid", emailResp.EmailUUID))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(sendArticleResponse{
+		Status:  "sent",
+		Message: "article sent to Kindle successfully",
+	})
+}

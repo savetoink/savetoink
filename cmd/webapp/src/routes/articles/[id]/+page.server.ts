@@ -10,6 +10,9 @@ export const actions = {
 	favorite: async ({ locals, fetch, params }) => {
 		await PUT(fetch, `/v1/articles/${params.id}/favorite`, null, locals.jwt);
 	},
+	send: async ({ locals, fetch, params }) => {
+		await PUT(fetch, `/v1/articles/${params.id}/send`, null, locals.jwt);
+	},
 	delete: async ({ locals, fetch, params }) => {
 		await DELETE(fetch, `/v1/articles/${params.id}`, locals.jwt);
 		redirect(303, '/');
