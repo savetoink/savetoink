@@ -6,7 +6,7 @@ import "time"
 type Send struct {
 	PK            string    `dynamodbav:"pk"`
 	SK            string    `dynamodbav:"sk"`
-	UserID        string    `dynamodbav:"userId"`
+	Account       string    `dynamodbav:"account"`
 	ArticleID     string    `dynamodbav:"articleId"`
 	SentAt        time.Time `dynamodbav:"sentAt"`
 	Title         string    `dynamodbav:"title"`

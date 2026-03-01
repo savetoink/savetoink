@@ -322,7 +322,7 @@ Resources:
           AttributeType: S
         - AttributeName: sk
           AttributeType: S
-        - AttributeName: userId
+        - AttributeName: account
           AttributeType: S
         - AttributeName: articleId
           AttributeType: S
@@ -342,9 +342,9 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-        - IndexName: UserSentAtIndex
+        - IndexName: AccountSentAtIndex
           KeySchema:
-            - AttributeName: userId
+            - AttributeName: account
               KeyType: HASH
             - AttributeName: sentAt
               KeyType: RANGE

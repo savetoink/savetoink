@@ -14,20 +14,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// CreateArticleResult holds the result of creating an article.
-type CreateArticleResult struct {
-	Article   *model.Article
-	Message   string
-	EmailResp *email.SendEmailResponse
-}
-
-// CreateArticle orchestrates the entire article creation flow:
+// CreateArticle orchestrates the article creation flow:
 // - cleans the URL and generates an article ID
 // - processes the article (extracts content and generates EPUB)
-// - optionally sends the article to Kindle via email
-// - stores the article to the database in the background (if repository is configured)
-// Returns CreateArticleResult with the article and status information.
-func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error) {
+// - stores the article to the database in the background (if repository is configured).
+func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string) (*model.Article, error) {
 	cleanURL, err := content.CleanURL(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to clean url: %w", err)
@@ -66,44 +57,12 @@ func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string) (
 		return nil, articleErr
 	}
 
-	emailResp, err := s.sendArticle(ctx, result, accountID)
-	if err != nil {
-		article.Error = err.Error()
-		articlesChan <- article
-		return nil, err
-	}
-
 	processedArticle := result.Article()
 	processedArticle.Account = accountID
 	processedArticle.ID = articleID
 	articlesChan <- processedArticle
 
-	return &CreateArticleResult{
-		Article:   result.Article(),
-		Message:   s.getMessage(result.Article(), emailResp),
-		EmailResp: emailResp,
-	}, nil
-}
-
-func (s *Service) sendArticle(
-	ctx context.Context,
-	result *ProcessResult,
-	accountID string,
-) (*email.SendEmailResponse, error) {
-	destEmail, err := s.GetUserKindleEmail(ctx, accountID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user kindle email: %w", err)
-	}
-	if destEmail == "" {
-		return nil, nil
-	}
-
-	emailResp, err := s.Send(ctx, result, destEmail)
-	if err != nil {
-		return nil, err
-	}
-
-	return emailResp, nil
+	return processedArticle, nil
 }
 
 // GetDBError returns any accumulated database errors from background operations.
@@ -135,13 +94,6 @@ func (s *Service) startBackgroundDBStore(ctx context.Context) (eg *errgroup.Grou
 	return
 }
 
-func (s *Service) getMessage(_ *model.Article, emailResp *email.SendEmailResponse) string {
-	if emailResp == nil {
-		return "article saved (kindle email not configured)"
-	}
-	return "article sent to Kindle successfully"
-}
-
 // SendArticle sends an already-stored article to Kindle via email.
 // Generates EPUB from the stored content and sends it to the user's Kindle email.
 func (s *Service) SendArticle(
@@ -157,6 +109,15 @@ func (s *Service) SendArticle(
 		return nil, errors.New("article has no content")
 	}
 
+	destEmail, _, err := s.GetUserDeviceEmail(ctx, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user device email: %w", err)
+	}
+
+	if destEmail == "" {
+		return nil, errors.New("user email not configured")
+	}
+
 	epubData, err := s.generator.Generate(article)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate EPUB: %w", err)
@@ -164,10 +125,20 @@ func (s *Service) SendArticle(
 
 	result := NewProcessResult(article, epubData, article.URL)
 
-	emailResp, err := s.sendArticle(ctx, result, accountID)
+	send := s.buildSendRecord(accountID, article.ID, article.Title, destEmail)
+	if s.sendsRepo != nil {
+		if storeErr := s.sendsRepo.CreateSend(ctx, send); storeErr != nil {
+			return nil, fmt.Errorf("failed to store send record: %w", storeErr)
+		}
+	}
+
+	emailResp, err := s.Send(ctx, result, destEmail)
 	if err != nil {
+		s.updateSendRecord(ctx, send, "failed", "", err.Error())
 		return nil, err
 	}
+
+	s.updateSendRecord(ctx, send, "success", emailResp.MessageID, "")
 
 	if s.repo != nil {
 		if storeErr := s.repo.Store(ctx, article); storeErr != nil {
@@ -176,4 +147,31 @@ func (s *Service) SendArticle(
 	}
 
 	return emailResp, nil
+}
+
+func (s *Service) buildSendRecord(accountID, articleID, title, destEmail string) *model.Send {
+	now := time.Now().UTC()
+	return &model.Send{
+		PK:          "USER#" + accountID,
+		SK:          "SEND#" + now.Format(time.RFC3339) + "#" + articleID,
+		Account:     accountID,
+		ArticleID:   articleID,
+		SentAt:      now,
+		Title:       title,
+		DestEmail:   destEmail,
+		Status:      "pending",
+		SenderEmail: s.cfg.SenderEmail,
+		Provider:    string(s.cfg.EmailProvider),
+	}
+}
+
+func (s *Service) updateSendRecord(ctx context.Context, send *model.Send, status, messageID, errorResponse string) {
+	send.Status = status
+	send.MessageID = messageID
+	send.ErrorResponse = errorResponse
+	if s.sendsRepo != nil {
+		if err := s.sendsRepo.CreateSend(ctx, send); err != nil {
+			slog.Warn("failed to update send record", "error", err)
+		}
+	}
 }

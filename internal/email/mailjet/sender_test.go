@@ -92,7 +92,7 @@ func TestValidateRequest(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "missing kindle email",
+			name: "missing device email",
 			req: &email.Request{
 				Article:   &model.Article{Title: "Test"},
 				EPUBData:  []byte("data"),
@@ -207,7 +207,7 @@ func TestSendEmailValidation(t *testing.T) {
 			expectResp: nil,
 		},
 		{
-			name:        "missing kindle email in request",
+			name:        "missing device email in request",
 			apiKey:      "key",
 			apiSecret:   "secret",
 			senderEmail: "test@example.com",

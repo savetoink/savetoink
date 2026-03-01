@@ -42,13 +42,13 @@ export const actions: Actions = {
 	},
 	updateProfile: async ({ locals, request }) => {
 		const data = await request.formData();
-		const kindleEmail = data.get('kindleEmail');
+		const deviceEmail = data.get('deviceEmail');
 
-		if (!kindleEmail || typeof kindleEmail !== 'string' || kindleEmail.trim() === '') {
-			return error(400, 'kindle email is required');
+		if (!deviceEmail || typeof deviceEmail !== 'string' || deviceEmail.trim() === '') {
+			return error(400, 'device email is required');
 		}
 
-		const parts = kindleEmail.split('@');
+		const parts = deviceEmail.split('@');
 		if (parts.length !== 2 || !parts[1]) {
 			return error(400, 'invalid email format');
 		}
@@ -63,7 +63,7 @@ export const actions: Actions = {
 				fetch,
 				'/v1/user/profile',
 				{
-					kindle_email: kindleEmail
+					device_email: deviceEmail
 				},
 				locals.jwt
 			);

@@ -125,7 +125,7 @@ func (s *Sender) validateConfig() error {
 
 func (s *Sender) validateRequest(req *email.Request) error {
 	if req.DestEmail == "" {
-		return errors.New("kindle email is required")
+		return errors.New("device email is required")
 	}
 	if req.EPUBData == nil {
 		return errors.New("epub data is required")

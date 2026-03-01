@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { GET, DELETE, PUT } from '$lib/server/apiClient';
+import { GET, POST, DELETE, PUT } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, fetch, params }) => {
@@ -11,7 +11,7 @@ export const actions = {
 		await PUT(fetch, `/v1/articles/${params.id}/favorite`, null, locals.jwt);
 	},
 	send: async ({ locals, fetch, params }) => {
-		await PUT(fetch, `/v1/articles/${params.id}/send`, null, locals.jwt);
+		await POST(fetch, `/v1/articles/${params.id}/send`, null, locals.jwt);
 	},
 	delete: async ({ locals, fetch, params }) => {
 		await DELETE(fetch, `/v1/articles/${params.id}`, locals.jwt);

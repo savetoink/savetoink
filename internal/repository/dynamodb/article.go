@@ -1,3 +1,4 @@
+// Package repository provides DynamoDB implementations for data persistence.
 package repository
 
 import (

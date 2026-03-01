@@ -29,7 +29,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	addLogAttr(r.Context(), slog.String("url", req.URL))
 
-	result, err := h.service.CreateArticle(r.Context(), req.URL, auth.GetAccountID(r.Context()))
+	article, err := h.service.CreateArticle(r.Context(), req.URL, auth.GetAccountID(r.Context()))
 	if err != nil {
 		addLogAttr(r.Context(), slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -37,12 +37,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addLogAttr(r.Context(), slog.String("article_id", result.Article.ID))
-	addLogAttr(r.Context(), slog.String("message", result.Message))
-
-	if result.EmailResp != nil && result.EmailResp.MessageID != "" {
-		addLogAttr(r.Context(), slog.String("message_id", result.EmailResp.MessageID))
-	}
+	addLogAttr(r.Context(), slog.String("article_id", article.ID))
 
 	if dbErr := h.service.GetDBError(); dbErr != nil {
 		addLogAttr(r.Context(), slog.String("db_error", dbErr.Error()))
@@ -50,10 +45,9 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(articleResponse{
-		ID:      result.Article.ID,
-		Title:   result.Article.Title,
-		URL:     result.Article.URL,
-		Message: result.Message,
+		ID:    article.ID,
+		Title: article.Title,
+		URL:   article.URL,
 	})
 }
 
@@ -205,12 +199,11 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if emailResp != nil {
-		addLogAttr(r.Context(), slog.String("email_uuid", emailResp.MessageID))
+		addLogAttr(r.Context(), slog.String("message_id", emailResp.MessageID))
 	}
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(sendArticleResponse{
-		Status:  "sent",
-		Message: "article sent to Kindle successfully",
+		Status: "sent",
 	})
 }

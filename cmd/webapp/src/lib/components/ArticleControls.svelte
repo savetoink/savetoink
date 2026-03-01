@@ -15,7 +15,7 @@
 	</form>
 
 	<form method="POST" action="/articles/{article.id}?/send">
-		<button type="submit">{article.deliveryStatus === 'delivered' ? 'Resend' : 'Send'}</button>
+		<button type="submit">Send</button>
 	</form>
 
 	<form method="POST" action="/articles/{article.id}?/delete" use:enhance={handleEnhance}>

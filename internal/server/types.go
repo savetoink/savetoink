@@ -14,10 +14,9 @@ type articleRequest struct {
 }
 
 type articleResponse struct {
-	ID      string `json:"id"`
-	Title   string `json:"title"`
-	URL     string `json:"url"`
-	Message string `json:"message"`
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	URL   string `json:"url"`
 }
 
 type healthResponse struct {
@@ -41,8 +40,7 @@ type favoriteResponse struct {
 }
 
 type sendArticleResponse struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
+	Status string `json:"status"`
 }
 
 type authTokenExchangeRequest struct {

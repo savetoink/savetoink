@@ -2,13 +2,13 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	const kindleEmail = $derived(data?.kindle_email);
+	const deviceEmail = $derived(data?.device_email);
 </script>
 
 <section>
 	<h2>Kindle delivery</h2>
-	{#if kindleEmail}
-		<p>Email delivery enabled for <code>{kindleEmail}</code></p>
+	{#if deviceEmail}
+		<p>Email delivery enabled for <code>{deviceEmail}</code></p>
 		<form method="POST" action="?/deleteProfile">
 			<button type="submit">Disable Kindle delivery</button>
 		</form>
@@ -34,7 +34,7 @@
 
 				<input
 					type="email"
-					name="kindleEmail"
+					name="deviceEmail"
 					required
 					autocomplete="email"
 					placeholder="abcd1234@kindle.com"

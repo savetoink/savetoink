@@ -1,5 +1,7 @@
 package consts
 
+import "strings"
+
 // EmailProvider defines the email provider type.
 type EmailProvider string
 
@@ -7,6 +9,21 @@ const (
 	// EmailBackendMailjet indicates MailJet email backend.
 	EmailBackendMailjet EmailProvider = "mailjet"
 )
+
+// validDeviceEmailDomains contains the valid email domain suffixes for device emails.
+var validDeviceEmailDomains = []string{"@kindle.com", "@free.kindle.com"}
+
+// GetValidDeviceEmailDomains returns a copy of the valid device email domains slice.
+func GetValidDeviceEmailDomains() []string {
+	domains := make([]string, len(validDeviceEmailDomains))
+	copy(domains, validDeviceEmailDomains)
+	return domains
+}
+
+// ValidDeviceEmailDomainsJoined returns the valid domains joined with " or ".
+func ValidDeviceEmailDomainsJoined() string {
+	return strings.Join(validDeviceEmailDomains, " or ")
+}
 
 // Email constants.
 const (

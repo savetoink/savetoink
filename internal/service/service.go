@@ -29,7 +29,7 @@ type Interface interface {
 		accountID string,
 	) (*email.SendEmailResponse, error)
 	WriteToFile(result *ProcessResult, outputPath string) error
-	CreateArticle(ctx context.Context, rawURL, accountID string) (*CreateArticleResult, error)
+	CreateArticle(ctx context.Context, rawURL, accountID string) (*model.Article, error)
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
 	GetArticlesMetadata(
 		ctx context.Context, accountID string, page, pageSize int, favoriteFilter *bool,
@@ -37,8 +37,8 @@ type Interface interface {
 	DeleteArticle(ctx context.Context, accountID, articleID string) (*DeleteArticleResult, error)
 	DeleteAllArticles(ctx context.Context, accountID string) (*DeleteArticleResult, error)
 	GetDBError() error
-	GetUserKindleEmail(ctx context.Context, accountID string) (string, error)
-	SetUserKindleEmail(ctx context.Context, accountID, kindleEmail string) error
+	GetUserDeviceEmail(ctx context.Context, accountID string) (string, bool, error)
+	SetUserDeviceEmailWithAutoSend(ctx context.Context, accountID, deviceEmail string, autoSend bool) error
 	GetUserProfile(ctx context.Context, accountID string) (*model.UserProfile, error)
 	SetUserEmail(ctx context.Context, accountID, email string) error
 	DeleteUserProfile(ctx context.Context, accountID string) error

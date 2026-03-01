@@ -35,5 +35,5 @@ type UserProfileRepository interface {
 type SendsRepository interface {
 	CreateSend(ctx context.Context, send *model.Send) error
 	GetSendsByArticleID(ctx context.Context, articleID string) ([]*model.Send, error)
-	GetSendsByUserIDDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*model.Send, error)
+	GetSendsByAccountDateRange(ctx context.Context, account string, startDate, endDate time.Time) ([]*model.Send, error)
 }
