@@ -10,6 +10,7 @@
 	const gitHash = __GIT_HASH__;
 	const versionTxt = isDev ? `${version}-${buildDate}-${gitHash}` : version;
 	const title = 'Save to Ink';
+	const picoFile = isDev ? 'pico.yellow.min.css' : 'pico.min.css';
 
 	let { children, data } = $props();
 	const loggedIn = $derived(data.isLoggedIn);
@@ -17,6 +18,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	<link rel="stylesheet" href={`https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/${picoFile}`} />
 	<title>{title}</title>
 </svelte:head>
 
