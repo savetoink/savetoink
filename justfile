@@ -23,6 +23,8 @@ test: test-go test-webapp
 test-go:
     go test ./... -short
 
+check: lint test
+
 # Build Lambda binary for Linux
 build-lambda:
     GOOS=linux GOARCH=amd64 go build -ldflags "{{ build_flags }}=$(just version)" -o bin/bootstrap ./cmd/lambda

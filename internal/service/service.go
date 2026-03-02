@@ -61,7 +61,6 @@ type Service struct {
 
 // New creates a new Service instance with the given config.
 // All internal dependencies (extractor, generator, sender, repository) are created based on configuration.
-// DynamoDB repository is wired only if both DynamoDBTable and AWSConfig are available.
 func New(cfg *config.Config) *Service {
 	var sender email.Sender
 	if cfg.MailjetAPIKey != "" && cfg.MailjetAPISecret != "" && cfg.SenderEmail != "" {
@@ -72,7 +71,7 @@ func New(cfg *config.Config) *Service {
 	var repo repository.ArticlesRepository
 	var userProfileRepo repository.UserProfileRepository
 	var sendsRepo repository.SendsRepository
-	if cfg.ArticlesTable != "" && cfg.AWSConfig != nil {
+	if cfg.AWSConfig != nil {
 		repo = repoimpl.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable, cfg.SendsTable)
 		userProfileRepo = repo.(repository.UserProfileRepository)
 		sendsRepo = repo.(repository.SendsRepository)
