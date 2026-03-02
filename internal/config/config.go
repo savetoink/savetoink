@@ -63,6 +63,7 @@ func bindEnvVars() error {
 		key    string
 		envVar string
 	}{
+// change to mailjet-api-key
 		{"api-key", "SAVETOINK_MAILJET_API_KEY"},
 		{"api-key-secret", "SAVETOINK_API_KEY"},
 		{"api-secret", "SAVETOINK_MAILJET_API_SECRET"},
