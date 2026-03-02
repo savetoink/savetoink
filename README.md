@@ -131,4 +131,4 @@ Email sent successfully. Message ID: 1234567890, UUID: abc123-def456-ghi789
 
 ## License
 
-See [LICENSE](LICENSE) file for details.
+See [LICENSE](LICENSE.md) file for details.
