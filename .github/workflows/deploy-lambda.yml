@@ -1,17 +1,17 @@
 name: Deploy Lambda
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - master
-    paths:
-      - cmd/lambda/**
-      - go.mod
-      - go.sum
-      - infra/**
-      - internal/**
-      - VERSION
+  workflow_call:
+    inputs:
+      bucket:
+        required: true
+        type: string
+      aws_role_arn:
+        required: true
+        type: string
+      aws_region:
+        required: true
+        type: string
 
 permissions:
   id-token: write
@@ -35,10 +35,10 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ inputs.aws_role_arn }}
+          aws-region: ${{ inputs.aws_region }}
 
       - name: Deploy Lambda (hide output to avoid leaking secrets)
         run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda > /dev/null
         env:
-          SAVETOINK_BUCKET: ${{ vars.SAVETOINK_BUCKET }}
+          SAVETOINK_BUCKET: ${{ inputs.bucket }}

@@ -1,10 +1,10 @@
-name: Deploy Lambda - Development
+name: Deploy Lambda - Production
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - dev
+      - master
     paths:
       - cmd/lambda/**
       - go.mod
@@ -21,6 +21,6 @@ jobs:
   deploy:
     uses: ./.github/workflows/deploy-lambda.yml
     with:
-      bucket: ${{ vars.SAVETOINK_BUCKET_DEV }}
-      aws_role_arn: ${{ vars.AWS_ROLE_ARN_DEV }}
-      aws_region: ${{ vars.AWS_REGION_DEV }}
+      bucket: ${{ vars.SAVETOINK_BUCKET }}
+      aws_role_arn: ${{ vars.AWS_ROLE_ARN }}
+      aws_region: ${{ vars.AWS_REGION }}
