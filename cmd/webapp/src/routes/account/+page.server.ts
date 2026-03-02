@@ -32,7 +32,7 @@ export const actions: Actions = {
 		}
 
 		setAuthCookie(cookies, token, { trim: true });
-		setUserCookie(cookies, {
+		await setUserCookie(cookies, {
 			account: profile.account,
 			email: profile.email,
 			deviceEmail: profile.device_email,
@@ -70,7 +70,7 @@ export const actions: Actions = {
 		await PUT(fetch, '/v1/devices', updateData, locals.auth);
 
 		const updatedProfile = await GET(fetch, '/v1/user/profile', locals.auth);
-		setUserCookie(cookies, {
+		await setUserCookie(cookies, {
 			account: updatedProfile.account,
 			email: updatedProfile.email,
 			deviceEmail: updatedProfile.device_email,
@@ -81,7 +81,7 @@ export const actions: Actions = {
 	deleteDevice: async ({ locals, cookies }) => {
 		await DELETE(fetch, '/v1/devices', locals.auth);
 		const profile = await GET(fetch, '/v1/user/profile', locals.auth);
-		setUserCookie(cookies, {
+		await setUserCookie(cookies, {
 			account: profile.account,
 			email: profile.email,
 			deviceEmail: profile.device_email,

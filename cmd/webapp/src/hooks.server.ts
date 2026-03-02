@@ -15,7 +15,7 @@ export const handle: Handle = sequence(sentryHandle(), async ({ event, resolve }
 	event.locals.user = undefined;
 
 	if (event.locals.auth) {
-		const userData = getUserCookie(event.cookies);
+		const userData = await getUserCookie(event.cookies);
 		if (userData) {
 			event.locals.user = {
 				account: userData.account,

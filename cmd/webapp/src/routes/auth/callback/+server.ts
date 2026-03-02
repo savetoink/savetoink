@@ -25,7 +25,7 @@ export const GET: RequestHandler = async ({ fetch, url, cookies }) => {
 	});
 
 	const profile = await apiGet(fetch, '/v1/user/profile', response.access_token);
-	setUserCookie(cookies, {
+	await setUserCookie(cookies, {
 		account: profile.account,
 		email: profile.email,
 		deviceEmail: profile.device_email,

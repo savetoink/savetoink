@@ -1,4 +1,3 @@
-import { createHmac, timingSafeEqual } from 'crypto';
 import type { Cookies } from '@sveltejs/kit';
 import type { User } from '$lib/types';
 
@@ -13,6 +12,26 @@ function getCookieSecret(): string {
 }
 
 const cookieSecret = getCookieSecret();
+
+async function getCryptoKey(): Promise<CryptoKey> {
+	const encoder = new TextEncoder();
+	const keyData = encoder.encode(cookieSecret);
+	return await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, [
+		'sign',
+		'verify'
+	]);
+}
+
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+	if (a.length !== b.length) {
+		return false;
+	}
+	let result = 0;
+	for (let i = 0; i < a.length; i++) {
+		result |= a[i] ^ b[i];
+	}
+	return result === 0;
+}
 
 export interface SetAuthCookieOptions {
 	trim?: boolean;
@@ -47,25 +66,41 @@ export function getAuthCookie(cookies: Cookies) {
 
 export { AUTH_KEY };
 
-function sign(data: string): string {
-	return createHmac('sha256', cookieSecret).update(data).digest('hex');
+async function sign(data: string): Promise<string> {
+	const key = await getCryptoKey();
+	const encoder = new TextEncoder();
+	const dataBuffer = encoder.encode(data);
+	const signature = await crypto.subtle.sign('HMAC', key, dataBuffer);
+	const signatureArray = Array.from(new Uint8Array(signature));
+	return signatureArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function encode(userData: User): string {
+async function encode(userData: User): Promise<string> {
 	const json = JSON.stringify(userData);
-	const signature = sign(json);
+	const signature = await sign(json);
 	return `${json}.${signature}`;
 }
 
-function decode(cookieValue: string): User | null {
+async function decode(cookieValue: string): Promise<User | null> {
 	const lastDotIndex = cookieValue.lastIndexOf('.');
 	if (lastDotIndex === -1) {
 		return null;
 	}
 	const json = cookieValue.slice(0, lastDotIndex);
 	const signature = cookieValue.slice(lastDotIndex + 1);
-	const expectedSignature = sign(json);
-	if (!timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+	const expectedSignature = await sign(json);
+
+	const sigBuffer = new Uint8Array(signature.length / 2);
+	for (let i = 0; i < signature.length; i += 2) {
+		sigBuffer[i / 2] = parseInt(signature.substring(i, i + 2), 16);
+	}
+
+	const expectedSigBuffer = new Uint8Array(expectedSignature.length / 2);
+	for (let i = 0; i < expectedSignature.length; i += 2) {
+		expectedSigBuffer[i / 2] = parseInt(expectedSignature.substring(i, i + 2), 16);
+	}
+
+	if (!timingSafeEqual(sigBuffer, expectedSigBuffer)) {
 		return null;
 	}
 	try {
@@ -75,16 +110,16 @@ function decode(cookieValue: string): User | null {
 	}
 }
 
-export function getUserCookie(cookies: Cookies): User | undefined {
+export async function getUserCookie(cookies: Cookies): Promise<User | undefined> {
 	const value = cookies.get(USER_COOKIE_KEY);
 	if (!value) {
 		return undefined;
 	}
-	return decode(value) ?? undefined;
+	return (await decode(value)) ?? undefined;
 }
 
-export function setUserCookie(cookies: Cookies, userData: User) {
-	const value = encode(userData);
+export async function setUserCookie(cookies: Cookies, userData: User) {
+	const value = await encode(userData);
 	cookies.set(USER_COOKIE_KEY, value, {
 		path: '/',
 		httpOnly: true,

@@ -101,4 +101,73 @@ describe('cookies', () => {
 			expect(AUTH_KEY).toBe('auth');
 		});
 	});
+
+	describe('User cookie encoding and decoding', () => {
+		it('should encode and decode user data', async () => {
+			const { getUserCookie, setUserCookie } = await import('./cookies');
+			const userData = {
+				account: 'test-account',
+				email: 'test@example.com',
+				deviceEmail: 'test@kindle.com',
+				autoSend: true
+			};
+
+			mockGet.mockReturnValue(null);
+
+			await setUserCookie(mockCookies, userData);
+
+			expect(mockSet).toHaveBeenCalledWith(
+				'profile',
+				expect.stringContaining(JSON.stringify(userData)),
+				expect.any(Object)
+			);
+
+			const cookieValue = mockSet.mock.calls[0][1];
+			mockGet.mockReturnValue(cookieValue);
+
+			const decoded = await getUserCookie(mockCookies);
+
+			expect(decoded).toEqual(userData);
+		});
+
+		it('should return undefined for missing cookie', async () => {
+			const { getUserCookie } = await import('./cookies');
+			mockGet.mockReturnValue(null);
+
+			const result = await getUserCookie(mockCookies);
+
+			expect(result).toBeUndefined();
+		});
+
+		it('should return null for invalid signature', async () => {
+			const { getUserCookie, setUserCookie } = await import('./cookies');
+			const userData = {
+				account: 'test-account',
+				email: 'test@example.com',
+				deviceEmail: 'test@kindle.com',
+				autoSend: true
+			};
+
+			mockGet.mockReturnValue(null);
+			await setUserCookie(mockCookies, userData);
+
+			const cookieValue = mockSet.mock.calls[0][1];
+			const tamperedValue = cookieValue.slice(0, -10) + '0000000000';
+			mockGet.mockReturnValue(tamperedValue);
+
+			const decoded = await getUserCookie(mockCookies);
+
+			expect(decoded).toBeUndefined();
+		});
+	});
+
+	describe('deleteUserCookie', () => {
+		it('should delete user cookie', async () => {
+			const { deleteUserCookie } = await import('./cookies');
+
+			await deleteUserCookie(mockCookies);
+
+			expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/' });
+		});
+	});
 });
