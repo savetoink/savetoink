@@ -1,0 +1,44 @@
+name: Deploy Lambda (dev)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - cmd/lambda/**
+      - go.mod
+      - go.sum
+      - infra/**
+      - internal/**
+      - VERSION
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+
+      - name: Set up Just
+        uses: extractions/setup-just@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN_DEV }}
+          aws-region: ${{ vars.AWS_REGION_DEV }}
+
+      - name: Deploy Lambda (hide output to avoid leaking secrets)
+        run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda > /dev/null
+        env:
+          SAVETOINK_BUCKET: ${{ vars.SAVETOINK_BUCKET_DEV }}

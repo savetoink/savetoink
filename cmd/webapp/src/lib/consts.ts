@@ -1,3 +1,5 @@
+import { PUBLIC_IS_DEV_WORKER } from '$env/static/public';
+
 const unauthenticatedPaths = ['/account', '/auth/callback', '/sentry/tunnel'];
 export const isAuthenticatedPath = (path: string) => {
 	try {
@@ -17,3 +19,5 @@ export const Auth0: authBackend = 'auth0';
 export const SharedKey: authBackend = 'sharedKey';
 
 export const KindleDomains = ['@kindle.com', '@free.kindle.com'];
+
+export const isDev: boolean = import.meta.env.DEV || PUBLIC_IS_DEV_WORKER === 'true';

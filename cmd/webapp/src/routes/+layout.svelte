@@ -3,11 +3,12 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import Nav from '$lib/components/Nav.svelte';
 	import Landing from '$lib/components/Landing.svelte';
+	import { isDev } from '$lib/consts';
 
 	const version = __APP_VERSION__;
 	const buildDate = __BUILD_DATE__;
 	const gitHash = __GIT_HASH__;
-	const versionTxt = `${version}-${buildDate}-${gitHash}`;
+	const versionTxt = isDev ? `${version}-${buildDate}-${gitHash}` : version;
 	const title = 'Save to Ink';
 
 	let { children, data } = $props();
