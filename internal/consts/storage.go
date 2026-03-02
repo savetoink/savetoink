@@ -7,4 +7,10 @@ const (
 
 	// DynamoDBGSIName is the name of the Global Secondary Index for sorting articles by creation date.
 	DynamoDBGSIName = "AccountCreatedAtIndex"
+
+	// DynamoDBSendsArticleIDIndex is the name of the Global Secondary Index for querying sends by article ID.
+	DynamoDBSendsArticleIDIndex = "ArticleIdIndex"
+
+	// DynamoDBSendsAccountSentAtIndex is the GSI for querying sends by account and sent date.
+	DynamoDBSendsAccountSentAtIndex = "AccountSentAtIndex"
 )

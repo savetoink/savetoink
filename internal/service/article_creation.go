@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/shaftoe/savetoink/internal/email"
 	"github.com/shaftoe/savetoink/internal/model"
 	"github.com/shaftoe/savetoink/internal/service/content"
 	"golang.org/x/sync/errgroup"
@@ -92,61 +91,6 @@ func (s *Service) startBackgroundDBStore(ctx context.Context) (eg *errgroup.Grou
 	})
 
 	return
-}
-
-// SendArticle sends an already-stored article to Kindle via email.
-// Generates EPUB from the stored content and sends it to the user's Kindle email.
-func (s *Service) SendArticle(
-	ctx context.Context,
-	article *model.Article,
-	accountID string,
-) (*email.SendEmailResponse, error) {
-	if article == nil {
-		return nil, errors.New("article is nil")
-	}
-
-	if article.Content == "" {
-		return nil, errors.New("article has no content")
-	}
-
-	destEmail, _, err := s.GetUserDeviceEmail(ctx, accountID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user device email: %w", err)
-	}
-
-	if destEmail == "" {
-		return nil, errors.New("user email not configured")
-	}
-
-	epubData, err := s.generator.Generate(article)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate EPUB: %w", err)
-	}
-
-	result := NewProcessResult(article, epubData, article.URL)
-
-	send := s.buildSendRecord(accountID, article.ID, article.Title, destEmail)
-	if s.sendsRepo != nil {
-		if storeErr := s.sendsRepo.CreateSend(ctx, send); storeErr != nil {
-			return nil, fmt.Errorf("failed to store send record: %w", storeErr)
-		}
-	}
-
-	emailResp, err := s.Send(ctx, result, destEmail)
-	if err != nil {
-		s.updateSendRecord(ctx, send, "failed", "", err.Error())
-		return nil, err
-	}
-
-	s.updateSendRecord(ctx, send, "success", emailResp.MessageID, "")
-
-	if s.repo != nil {
-		if storeErr := s.repo.Store(ctx, article); storeErr != nil {
-			slog.Warn("failed to update article in database", "error", storeErr)
-		}
-	}
-
-	return emailResp, nil
 }
 
 func (s *Service) buildSendRecord(accountID, articleID, title, destEmail string) *model.Send {

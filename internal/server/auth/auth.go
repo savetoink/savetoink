@@ -27,8 +27,9 @@ const (
 type contextKey string
 
 const (
-	accountIDKey contextKey = "account_id"
-	authErrorKey contextKey = "auth_error"
+	accountIDKey  contextKey = "account_id"
+	authErrorKey  contextKey = "auth_error"
+	sendsCountKey contextKey = "sends_count"
 )
 
 // NewAccountIDMiddleware returns authentication middleware based on the configured auth backend.
@@ -79,6 +80,18 @@ func GetAuthError(ctx context.Context) error {
 		return errors.New(authError)
 	}
 	return nil
+}
+
+// GetSendsCount retrieves the sends count from the context, if any.
+func GetSendsCount(ctx context.Context) int {
+	count, _ := ctx.Value(sendsCountKey).(int)
+	return count
+}
+
+// HasSendsCount checks if a sends count was set in the context.
+func HasSendsCount(ctx context.Context) bool {
+	_, exists := ctx.Value(sendsCountKey).(int)
+	return exists
 }
 
 func sharedAPIKeyMiddleware(apiKeySecret string) func(http.Handler) http.Handler {

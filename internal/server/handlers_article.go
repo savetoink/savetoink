@@ -203,6 +203,16 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+
+	if auth.HasSendsCount(r.Context()) {
+		sendsCount := auth.GetSendsCount(r.Context())
+		_ = json.NewEncoder(w).Encode(sendArticleResponseWithCount{
+			Status:     "sent",
+			SendsCount: sendsCount + 1,
+		})
+		return
+	}
+
 	_ = json.NewEncoder(w).Encode(sendArticleResponse{
 		Status: "sent",
 	})

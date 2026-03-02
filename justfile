@@ -139,6 +139,12 @@ test-create-article *URL:
       -H "Authorization: Bearer $SAVETOINK_API_KEY" \
       -d "{\"url\": \"{{ URL }}\", \"tags\":\"test\"}" | jq .
 
+test-send-article ID:
+    curl --silent \
+      -X POST http://localhost:8080/v1/articles/{{ ID }}/send \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer $SAVETOINK_API_KEY" | jq .
+
 test-get-article *ID:
     curl --silent \
       -X GET http://localhost:8080/v1/articles/{{ ID }} \

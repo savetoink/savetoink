@@ -78,3 +78,12 @@ const (
 	// Auth0ClientTimeout is the timeout for Auth0 API calls.
 	Auth0ClientTimeout = 10 * time.Second
 )
+
+// Free tier constants.
+const (
+	// MaxFreeTierSendsPerPeriod is the maximum number of articles a user can send within the free tier period.
+	MaxFreeTierSendsPerPeriod = 10
+
+	// FreeTierSendPeriodDays is the number of days in the free tier period for send limits.
+	FreeTierSendPeriodDays = 10
+)

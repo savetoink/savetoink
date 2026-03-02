@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
 )
 
@@ -51,7 +52,7 @@ func (d *DynamoDB) GetSendsByArticleID(ctx context.Context, articleID string) ([
 
 	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(d.sendsTableName),
-		IndexName:              aws.String("ArticleIdIndex"),
+		IndexName:              aws.String(consts.DynamoDBSendsArticleIDIndex),
 		KeyConditionExpression: aws.String("articleId = :articleId"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":articleId": &types.AttributeValueMemberS{Value: articleID},
@@ -89,7 +90,7 @@ func (d *DynamoDB) GetSendsByAccountDateRange(
 
 	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(d.sendsTableName),
-		IndexName:              aws.String("AccountSentAtIndex"),
+		IndexName:              aws.String(consts.DynamoDBSendsAccountSentAtIndex),
 		KeyConditionExpression: aws.String("account = :account AND sentAt BETWEEN :start AND :end"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":account": &types.AttributeValueMemberS{Value: account},
@@ -115,4 +116,32 @@ func (d *DynamoDB) GetSendsByAccountDateRange(
 	}
 
 	return sends, nil
+}
+
+// CountSendsByAccountDateRange counts the number of sends for a given account within a date range.
+func (d *DynamoDB) CountSendsByAccountDateRange(
+	ctx context.Context,
+	account string,
+	startDate, endDate time.Time,
+) (int, error) {
+	if d.sendsTableName == "" {
+		return 0, nil
+	}
+
+	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(d.sendsTableName),
+		IndexName:              aws.String(consts.DynamoDBSendsAccountSentAtIndex),
+		Select:                 types.SelectCount,
+		KeyConditionExpression: aws.String("account = :account AND sentAt BETWEEN :start AND :end"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":account": &types.AttributeValueMemberS{Value: account},
+			":start":   &types.AttributeValueMemberS{Value: startDate.UTC().Format(time.RFC3339)},
+			":end":     &types.AttributeValueMemberS{Value: endDate.UTC().Format(time.RFC3339)},
+		},
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to count sends: %w", err)
+	}
+
+	return int(resp.Count), nil
 }

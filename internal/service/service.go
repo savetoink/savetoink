@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/shaftoe/savetoink/internal/config"
 	"github.com/shaftoe/savetoink/internal/consts"
@@ -43,6 +44,7 @@ type Interface interface {
 	SetUserEmail(ctx context.Context, accountID, email string) error
 	DeleteUserProfile(ctx context.Context, accountID string) error
 	ToggleFavorite(ctx context.Context, accountID, articleID string) (bool, error)
+	CountSendsByAccountDateRange(ctx context.Context, accountID string, startDate, endDate time.Time) (int, error)
 }
 
 // Service holds the stateless dependencies and provides methods to process articles.
