@@ -52,6 +52,12 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "method_not_allowed"})
 	})
 
+	setupRoutes(r, handlers, cfg, srv)
+
+	return r
+}
+
+func setupRoutes(r *chi.Mux, handlers *handlers, cfg *config.Config, srv service.Interface) {
 	r.Route("/v1", func(r chi.Router) {
 		r.Get("/health", handlers.handleHealth)
 
@@ -70,17 +76,19 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 			r.Use(auth.EnsureAutheticatedMiddleware)
 			r.Route("/profile", func(r chi.Router) {
 				r.Get("/", handlers.handleGetUserProfile)
-				r.Put("/", handlers.handleSetUserProfile)
-				r.Delete("/", handlers.handleDeleteProfile)
 			})
+		})
+
+		r.Route("/devices", func(r chi.Router) {
+			r.Use(auth.EnsureAutheticatedMiddleware)
+			r.Put("/", handlers.handleSetDevice)
+			r.Delete("/", handlers.handleDeleteDevice)
 		})
 
 		if cfg.AuthBackend == consts.AuthBackendAuth0 {
 			r.Post("/auth/token", handlers.handleAuthTokenExchange)
 		}
 	})
-
-	return r
 }
 
 func setupLogging(cfg *config.Config) {

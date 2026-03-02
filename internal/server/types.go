@@ -63,6 +63,16 @@ type authTokenExchangeResponse struct {
 	ExpiresIn    int    `json:"expires_in"`
 }
 
+type deviceRequest struct {
+	DeviceEmail string `json:"device_email"`
+	AutoSend    bool   `json:"auto_send"`
+}
+
+type deviceResponse struct {
+	DeviceEmail string `json:"device_email"`
+	AutoSend    bool   `json:"auto_send"`
+}
+
 type handlers struct {
 	cfg     *config.Config
 	service service.Interface

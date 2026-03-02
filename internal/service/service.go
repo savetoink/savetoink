@@ -40,6 +40,7 @@ type Interface interface {
 	GetDBError() error
 	GetUserDeviceEmail(ctx context.Context, accountID string) (string, bool, error)
 	SetUserDeviceEmailWithAutoSend(ctx context.Context, accountID, deviceEmail string, autoSend bool) error
+	DeleteUserDeviceEmail(ctx context.Context, accountID string) error
 	GetUserProfile(ctx context.Context, accountID string) (*model.UserProfile, error)
 	SetUserEmail(ctx context.Context, accountID, email string) error
 	DeleteUserProfile(ctx context.Context, accountID string) error

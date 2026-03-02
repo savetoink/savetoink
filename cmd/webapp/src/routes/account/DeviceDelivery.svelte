@@ -56,7 +56,7 @@
 				<small style="color: red">{error}</small>
 			{/if}
 		</form>
-		<form method="POST" action="?/deleteProfile">
+		<form method="POST" action="?/deleteDevice">
 			<button type="submit">Disable device delivery</button>
 		</form>
 	{:else}
@@ -83,7 +83,6 @@
 				<input
 					type="email"
 					name="deviceEmail"
-					required
 					autocomplete="email"
 					placeholder={DeviceDomains.join(', ')}
 				/>

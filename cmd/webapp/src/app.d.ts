@@ -1,14 +1,11 @@
+import type { User } from '$lib/types';
+
 declare global {
 	namespace App {
 		interface Locals {
-			jwt?: string;
+			auth?: string;
 			isLoggedIn: boolean;
-			user?: {
-				account: string;
-				email: string;
-				deviceEmail?: string;
-				autoSend?: boolean;
-			};
+			user?: User;
 		}
 	}
 }

@@ -25,10 +25,10 @@ export const actions: Actions = {
 				.filter((tag) => tag.length > 0);
 		}
 
-		const article = await POST(fetch, `/v1/articles`, { url: txt, tags }, locals.jwt);
+		const article = await POST(fetch, `/v1/articles`, { url: txt, tags }, locals.auth);
 
 		if (sendToDevice === 'on') {
-			await POST(fetch, `/v1/articles/${article.id}/send`, {}, locals.jwt);
+			await POST(fetch, `/v1/articles/${article.id}/send`, {}, locals.auth);
 		}
 
 		redirect(303, '/');

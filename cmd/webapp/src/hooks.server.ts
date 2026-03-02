@@ -2,8 +2,7 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { handleErrorWithSentry, sentryHandle } from '@sentry/sveltekit';
 import { redirect } from '@sveltejs/kit';
 import { validateEnv } from '$lib/server/validateEnv';
-import { getJwtCookie, deleteJwtCookie } from '$lib/server/cookies';
-import { GET } from '$lib/server/apiClient';
+import { getAuthCookie, getUserCookie } from '$lib/server/cookies';
 import { isAuthenticatedPath } from '$lib/consts';
 
 import type { Handle } from '@sveltejs/kit';
@@ -11,26 +10,20 @@ import type { Handle } from '@sveltejs/kit';
 export const handle: Handle = sequence(sentryHandle(), async ({ event, resolve }) => {
 	validateEnv();
 
-	event.locals.jwt = getJwtCookie(event.cookies);
+	event.locals.auth = getAuthCookie(event.cookies);
 	event.locals.isLoggedIn = false;
 	event.locals.user = undefined;
 
-	if (event.locals.jwt) {
-		try {
-			const profile = await GET(event.fetch, '/v1/user/profile', event.locals.jwt);
+	if (event.locals.auth) {
+		const userData = getUserCookie(event.cookies);
+		if (userData) {
 			event.locals.user = {
-				account: profile.account,
-				email: profile.email,
-				deviceEmail: profile.device_email,
-				autoSend: profile.auto_send
+				account: userData.account,
+				email: userData.email,
+				deviceEmail: userData.deviceEmail,
+				autoSend: userData.autoSend
 			};
 			event.locals.isLoggedIn = true;
-		} catch {
-			deleteJwtCookie(event.cookies);
-			event.locals.jwt = undefined;
-			if (isAuthenticatedPath(event.url.pathname)) {
-				return redirect(303, '/account');
-			}
 		}
 	}
 

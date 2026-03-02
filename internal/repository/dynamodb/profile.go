@@ -72,3 +72,23 @@ func (d *DynamoDB) DeleteUserProfile(ctx context.Context, account string) error 
 
 	return nil
 }
+
+// DeleteUserDeviceEmail implements UserProfileRepository.DeleteUserDeviceEmail.
+func (d *DynamoDB) DeleteUserDeviceEmail(ctx context.Context, account string) error {
+	_, err := d.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(d.profileTableName),
+		Key: map[string]types.AttributeValue{
+			attributeNameAccount: &types.AttributeValueMemberS{Value: account},
+		},
+		UpdateExpression: aws.String("REMOVE #de, #as"),
+		ExpressionAttributeNames: map[string]string{
+			"#de": "deviceEmail",
+			"#as": "autoSend",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete user device email: %w", err)
+	}
+
+	return nil
+}

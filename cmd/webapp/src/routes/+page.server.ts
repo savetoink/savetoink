@@ -17,6 +17,6 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
 
 	// TODO: return typed response: https://svelte.dev/docs/kit/types
 	// https://github.com/savetoink/savetoink/issues/2
-	const data = await GET(fetch, path, locals.jwt);
+	const data = await GET(fetch, path, locals.auth);
 	return { ...data, user: locals.user };
 };

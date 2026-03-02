@@ -95,6 +95,15 @@ func (s *Service) SetUserDeviceEmailWithAutoSend(
 	return nil
 }
 
+// DeleteUserDeviceEmail removes the device email and auto-send preference for a given account ID.
+func (s *Service) DeleteUserDeviceEmail(ctx context.Context, accountID string) error {
+	if err := s.userProfileRepo.DeleteUserDeviceEmail(ctx, accountID); err != nil {
+		return fmt.Errorf("failed to delete user device email: %w", err)
+	}
+
+	return nil
+}
+
 // GetUserProfile retrieves the full user profile for a given account ID.
 func (s *Service) GetUserProfile(ctx context.Context, accountID string) (*model.UserProfile, error) {
 	if s.userProfileRepo == nil {

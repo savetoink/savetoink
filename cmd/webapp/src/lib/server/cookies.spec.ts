@@ -29,12 +29,12 @@ describe('cookies', () => {
 
 	describe('setJwtCookie', () => {
 		it('should set cookie with default options', async () => {
-			const { setJwtCookie } = await import('./cookies');
+			const { setAuthCookie: setJwtCookie } = await import('./cookies');
 			const testToken = 'test-token-123';
 
 			setJwtCookie(mockCookies, testToken);
 
-			expect(mockSet).toHaveBeenCalledWith('jwt', testToken, {
+			expect(mockSet).toHaveBeenCalledWith('auth', testToken, {
 				path: '/',
 				httpOnly: true,
 				secure: false,
@@ -44,23 +44,23 @@ describe('cookies', () => {
 		});
 
 		it('should trim token when trim option is true', async () => {
-			const { setJwtCookie } = await import('./cookies');
+			const { setAuthCookie: setJwtCookie } = await import('./cookies');
 			const testToken = '  test-token-123  ';
 
 			setJwtCookie(mockCookies, testToken, { trim: true });
 
-			expect(mockSet).toHaveBeenCalledWith('jwt', 'test-token-123', expect.any(Object));
+			expect(mockSet).toHaveBeenCalledWith('auth', 'test-token-123', expect.any(Object));
 		});
 
 		it('should use custom maxAge', async () => {
-			const { setJwtCookie } = await import('./cookies');
+			const { setAuthCookie: setJwtCookie } = await import('./cookies');
 			const testToken = 'test-token-123';
 			const customMaxAge = 60 * 60 * 24;
 
 			setJwtCookie(mockCookies, testToken, { maxAge: customMaxAge });
 
 			expect(mockSet).toHaveBeenCalledWith(
-				'jwt',
+				'auth',
 				testToken,
 				expect.objectContaining({
 					maxAge: customMaxAge
@@ -69,13 +69,13 @@ describe('cookies', () => {
 		});
 
 		it('should use custom secure option', async () => {
-			const { setJwtCookie } = await import('./cookies');
+			const { setAuthCookie: setJwtCookie } = await import('./cookies');
 			const testToken = 'test-token-123';
 
 			setJwtCookie(mockCookies, testToken, { secure: true });
 
 			expect(mockSet).toHaveBeenCalledWith(
-				'jwt',
+				'auth',
 				testToken,
 				expect.objectContaining({
 					secure: true
@@ -86,19 +86,19 @@ describe('cookies', () => {
 
 	describe('deleteJwtCookie', () => {
 		it('should delete cookie', async () => {
-			const { deleteJwtCookie } = await import('./cookies');
+			const { deleteAuthCookie: deleteJwtCookie } = await import('./cookies');
 
 			deleteJwtCookie(mockCookies);
 
-			expect(mockDelete).toHaveBeenCalledWith('jwt', { path: '/' });
+			expect(mockDelete).toHaveBeenCalledWith('auth', { path: '/' });
 		});
 	});
 
-	describe('JWT_KEY', () => {
-		it('should export JWT_KEY constant', async () => {
-			const { JWT_KEY } = await import('./cookies');
+	describe('AUTH_KEY', () => {
+		it('should export AUTH_KEY constant', async () => {
+			const { AUTH_KEY } = await import('./cookies');
 
-			expect(JWT_KEY).toBe('jwt');
+			expect(AUTH_KEY).toBe('auth');
 		});
 	});
 });

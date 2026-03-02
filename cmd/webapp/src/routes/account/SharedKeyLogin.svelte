@@ -21,7 +21,7 @@
 			<fieldset>
 				<label>
 					API Key
-					<input type="text" name="jwt" value={data.jwt} />
+					<input type="text" name="auth" value={data.auth} />
 				</label>
 			</fieldset>
 			<button type="submit">Logout</button>
@@ -33,7 +33,7 @@
 					API Key
 					<input
 						type="password"
-						name="jwt"
+						name="auth"
 						required
 						autocomplete="current-password"
 						placeholder="Enter your API key"
