@@ -150,6 +150,9 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 	if c.ArticlesTable == "" {
 		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
 	}
+	if c.UserProfileTable == "" {
+		*missing = append(*missing, "SAVETOINK_USER_PROFILE_TABLE_NAME")
+	}
 	if c.SendsTable == "" {
 		*missing = append(*missing, "SAVETOINK_SENDS_TABLE_NAME")
 	}

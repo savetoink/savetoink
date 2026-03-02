@@ -24,6 +24,16 @@ type DynamoDB struct {
 
 // NewDynamoDB creates a new DynamoDB repository instance.
 func NewDynamoDB(awsConfig *aws.Config, articlesTableName, profileTableName, sendsTableName string) *DynamoDB {
+	if articlesTableName == "" {
+		panic("articles table name is required")
+	}
+	if profileTableName == "" {
+		panic("user profile table name is required")
+	}
+	if sendsTableName == "" {
+		panic("sends table name is required")
+	}
+
 	cfg, _ := config.LoadDefaultConfig(context.TODO())
 	if awsConfig != nil && awsConfig.Region == "" {
 		cfg.Region = awsConfig.Region

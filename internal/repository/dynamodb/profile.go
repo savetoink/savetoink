@@ -14,10 +14,6 @@ import (
 
 // GetUserProfile implements UserProfileRepository.GetUserProfile.
 func (d *DynamoDB) GetUserProfile(ctx context.Context, account string) (*model.UserProfile, error) {
-	if d.profileTableName == "" {
-		return nil, errors.New("user profile table not configured")
-	}
-
 	resp, err := d.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(d.profileTableName),
 		Key: map[string]types.AttributeValue{
@@ -42,10 +38,6 @@ func (d *DynamoDB) GetUserProfile(ctx context.Context, account string) (*model.U
 
 // PutUserProfile implements UserProfileRepository.PutUserProfile.
 func (d *DynamoDB) PutUserProfile(ctx context.Context, profile *model.UserProfile) error {
-	if d.profileTableName == "" {
-		return errors.New("user profile table not configured")
-	}
-
 	if profile.Account == "" {
 		return errors.New("account field is required")
 	}
@@ -68,10 +60,6 @@ func (d *DynamoDB) PutUserProfile(ctx context.Context, profile *model.UserProfil
 
 // DeleteUserProfile implements UserProfileRepository.DeleteUserProfile.
 func (d *DynamoDB) DeleteUserProfile(ctx context.Context, account string) error {
-	if d.profileTableName == "" {
-		return errors.New("user profile table not configured")
-	}
-
 	_, err := d.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(d.profileTableName),
 		Key: map[string]types.AttributeValue{

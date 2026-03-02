@@ -16,10 +16,6 @@ import (
 
 // CreateSend implements SendsRepository.CreateSend.
 func (d *DynamoDB) CreateSend(ctx context.Context, send *model.Send) error {
-	if d.sendsTableName == "" {
-		return errors.New("sends table not configured")
-	}
-
 	if send.PK == "" {
 		return errors.New("pk field is required")
 	}
@@ -46,10 +42,6 @@ func (d *DynamoDB) CreateSend(ctx context.Context, send *model.Send) error {
 
 // GetSendsByArticleID implements SendsRepository.GetSendsByArticleID.
 func (d *DynamoDB) GetSendsByArticleID(ctx context.Context, articleID string) ([]*model.Send, error) {
-	if d.sendsTableName == "" {
-		return nil, errors.New("sends table not configured")
-	}
-
 	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(d.sendsTableName),
 		IndexName:              aws.String(consts.DynamoDBSendsArticleIDIndex),
@@ -84,10 +76,6 @@ func (d *DynamoDB) GetSendsByAccountDateRange(
 	account string,
 	startDate, endDate time.Time,
 ) ([]*model.Send, error) {
-	if d.sendsTableName == "" {
-		return nil, errors.New("sends table not configured")
-	}
-
 	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(d.sendsTableName),
 		IndexName:              aws.String(consts.DynamoDBSendsAccountSentAtIndex),
@@ -124,10 +112,6 @@ func (d *DynamoDB) CountSendsByAccountDateRange(
 	account string,
 	startDate, endDate time.Time,
 ) (int, error) {
-	if d.sendsTableName == "" {
-		return 0, nil
-	}
-
 	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(d.sendsTableName),
 		IndexName:              aws.String(consts.DynamoDBSendsAccountSentAtIndex),
