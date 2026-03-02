@@ -1,9 +1,9 @@
 import { error, redirect } from '@sveltejs/kit';
-import { POST, GET } from '$lib/server/apiClient';
+import { POST } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ fetch, locals }) => {
-	return await GET(fetch, '/v1/user/profile', locals.jwt);
+export const load: PageServerLoad = async ({ locals }) => {
+	return { user: locals.user };
 };
 
 export const actions: Actions = {

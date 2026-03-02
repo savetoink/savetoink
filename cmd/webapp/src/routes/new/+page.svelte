@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	let sendToDevice = $derived(data?.auto_send || false);
+	let sendToDevice = $derived(data?.user?.autoSend || false);
 </script>
 
 <section>
@@ -35,10 +35,10 @@
 				/>
 				<small>Optional comma-separated tags (e.g., tech, reading, tutorial)</small>
 			</label> -->
-			{#if data?.device_email}
+			{#if data?.user?.deviceEmail}
 				<label>
 					<input type="checkbox" name="sendToDevice" bind:checked={sendToDevice} />
-					Send to device (<code>{data.device_email}</code>)
+					Send to device (<code>{data.user.deviceEmail}</code>)
 				</label>
 			{/if}
 		</fieldset>

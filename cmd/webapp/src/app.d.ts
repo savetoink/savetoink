@@ -3,10 +3,12 @@ declare global {
 		interface Locals {
 			jwt?: string;
 			isLoggedIn: boolean;
-		}
-		interface PageData {
-			device_email?: string;
-			auto_send?: boolean;
+			user?: {
+				account: string;
+				email: string;
+				deviceEmail?: string;
+				autoSend?: boolean;
+			};
 		}
 	}
 }

@@ -5,8 +5,8 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const deviceEmail = $derived(data?.device_email);
-	let autoSend = $derived(data?.auto_send || false);
+	const deviceEmail = $derived(data?.user?.deviceEmail);
+	let autoSend = $derived(data?.user?.autoSend || false);
 	let profileForm = $state<HTMLFormElement | undefined>();
 	let isSaving = $state(false);
 	let error = $state<string | null>(null);

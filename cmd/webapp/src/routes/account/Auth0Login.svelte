@@ -29,7 +29,7 @@
 </script>
 
 {#if data?.isLoggedIn}
-	<p>Email: <code>{data.email}</code></p>
+	<p>Email: <code>{data.user?.email}</code></p>
 	<button onclick={logout}>Logout</button>
 {:else}
 	<button onclick={login}>Log In / Sign Up</button>

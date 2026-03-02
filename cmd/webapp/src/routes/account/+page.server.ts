@@ -4,16 +4,8 @@ import { GET, PUT, DELETE } from '$lib/server/apiClient';
 import { DeviceDomains } from '$lib/consts';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ fetch, locals, cookies }) => {
-	if (locals.jwt) {
-		try {
-			return await GET(fetch, '/v1/user/profile', locals.jwt);
-		} catch (err) {
-			deleteJwtCookie(cookies);
-			console.error('failed to load user profile', err);
-		}
-	}
-	return {};
+export const load: PageServerLoad = async ({ locals }) => {
+	return { user: locals.user };
 };
 
 export const actions: Actions = {
