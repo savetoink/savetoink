@@ -11,7 +11,13 @@ const (
 )
 
 // validDeviceEmailDomains contains the valid email domain suffixes for device emails.
-var validDeviceEmailDomains = []string{"@kindle.com", "@free.kindle.com"}
+var validDeviceEmailDomains = []string{
+	"@kindle.com",
+	"@free.kindle.com",
+	"@send.kobo.com",
+	"@pbsync.com",
+	"@mytolino.com",
+}
 
 // GetValidDeviceEmailDomains returns a copy of the valid device email domains slice.
 func GetValidDeviceEmailDomains() []string {

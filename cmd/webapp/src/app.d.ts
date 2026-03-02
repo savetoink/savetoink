@@ -4,6 +4,10 @@ declare global {
 			jwt?: string;
 			isLoggedIn: boolean;
 		}
+		interface PageData {
+			device_email?: string;
+			auto_send?: boolean;
+		}
 	}
 }
 

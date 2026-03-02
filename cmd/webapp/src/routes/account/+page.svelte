@@ -3,7 +3,7 @@
 	import { Auth0, SharedKey } from '$lib/consts';
 	import Auth0Login from './Auth0Login.svelte';
 	import SharedKeyLogin from './SharedKeyLogin.svelte';
-	import KindleDelivery from './KindleDelivery.svelte';
+	import DeviceDelivery from './DeviceDelivery.svelte';
 
 	import type { PageProps } from './$types';
 
@@ -20,5 +20,5 @@
 </section>
 
 {#if data?.isLoggedIn}
-	<KindleDelivery {data} />
+	<DeviceDelivery {data} />
 {/if}

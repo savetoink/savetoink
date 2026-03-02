@@ -1,3 +1,10 @@
+<script lang="ts">
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+	let sendToDevice = $derived(data?.auto_send || false);
+</script>
+
 <section>
 	<hgroup>
 		<h1>Add Article</h1>
@@ -28,6 +35,12 @@
 				/>
 				<small>Optional comma-separated tags (e.g., tech, reading, tutorial)</small>
 			</label> -->
+			{#if data?.device_email}
+				<label>
+					<input type="checkbox" name="sendToDevice" bind:checked={sendToDevice} />
+					Send to device (<code>{data.device_email}</code>)
+				</label>
+			{/if}
 		</fieldset>
 		<button type="submit">Add</button>
 	</form>

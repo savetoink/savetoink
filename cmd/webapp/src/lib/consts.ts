@@ -18,6 +18,12 @@ type authBackend = 'auth0' | 'sharedKey';
 export const Auth0: authBackend = 'auth0';
 export const SharedKey: authBackend = 'sharedKey';
 
-export const KindleDomains = ['@kindle.com', '@free.kindle.com'];
+export const DeviceDomains = [
+	'@kindle.com',
+	'@free.kindle.com',
+	'@send.kobo.com',
+	'@pbsync.com',
+	'@mytolino.com'
+];
 
 export const isDev: boolean = import.meta.env.DEV || PUBLIC_IS_DEV_WORKER === 'true';
