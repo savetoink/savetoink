@@ -1,4 +1,4 @@
-set dotenv-load := true
+set dotenv-filename := ".env"
 
 project_name := 'savetoink'
 lambda_archive := 'lambda-source.zip'
@@ -88,13 +88,12 @@ deploy-api:
 
 # Full deployment (bucket + upload + infra)
 deploy:
-    # just auth0-create-api
     just deploy-bucket
     just deploy-cert
     just build-lambda-zip
     just upload-zip
     just deploy-api
-    @echo "Add DNS record: $SAVETOINK_DOMAIN A $(just get-distribution-url)."
+    @echo "Add DNS record: $SAVETOINK_DOMAIN CNAME $(just get-distribution-url)."
 
 # Destroy Lambda infrastructure
 destroy:
@@ -105,7 +104,6 @@ destroy:
     aws cloudformation wait stack-delete-complete --stack-name {{ project_name }}-bucket
     aws cloudformation delete-stack --stack-name {{ project_name }}-cert --region us-east-1
     aws cloudformation wait stack-delete-complete --stack-name {{ project_name }}-cert --region us-east-1
-    -just auth0-destroy-api
 
 # Get Lambda function URL
 get-url:
