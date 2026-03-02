@@ -110,6 +110,7 @@
 		{#each data.articles as article, index (article.id)}
 			<ArticleMetaItem
 				{article}
+				user={data.user}
 				selected={selectedArticleIndex === index}
 				ref={(el: HTMLLIElement) => setArticleElement(el, index)}
 			/>

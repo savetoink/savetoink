@@ -27,13 +27,13 @@
 		</h1>
 
 		<ArticleMetaAccordion article={data} />
-		<ArticleControls article={data} />
+		<ArticleControls article={data} user={data.user} />
 	</header>
 	<section>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html data.content}
 	</section>
 	<footer>
-		<ArticleControls article={data} />
+		<ArticleControls article={data} user={data.user} />
 	</footer>
 </article>

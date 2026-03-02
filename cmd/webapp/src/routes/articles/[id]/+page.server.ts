@@ -3,7 +3,8 @@ import { GET, POST, DELETE, PUT } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, fetch, params }) => {
-	return await GET(fetch, `/v1/articles/${params.id}`, locals.jwt);
+	const article = await GET(fetch, `/v1/articles/${params.id}`, locals.jwt);
+	return { ...article, user: locals.user };
 };
 
 export const actions = {

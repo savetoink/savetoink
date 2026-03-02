@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import ArticleControls from './ArticleControls.svelte';
 
-	let { article, selected = false, ref } = $props();
+	let { article, user, selected = false, ref } = $props();
 	let liElement: HTMLLIElement | undefined;
 
 	$effect(() => {
@@ -44,7 +44,7 @@
 			{/if}
 		</header>
 		<footer>
-			<ArticleControls {article} />
+			<ArticleControls {article} {user} />
 		</footer>
 	</article>
 </li>
