@@ -11,6 +11,7 @@ on:
       - go.sum
       - infra/**
       - internal/**
+      - VERSION
 
 permissions:
   id-token: write
