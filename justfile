@@ -2,7 +2,6 @@ set dotenv-load := true
 
 project_name := 'savetoink'
 lambda_archive := 'lambda-source.zip'
-bucket_name := 'savetoink-lambda-source'
 build_flags := "-X github.com/shaftoe/savetoink/internal/consts.version"
 
 # Build CLI binary
@@ -39,7 +38,7 @@ deploy-bucket:
     aws cloudformation deploy \
         --template-file infra/bucket.yaml \
         --stack-name {{ project_name }}-bucket \
-        --parameter-overrides BucketName={{ bucket_name }}
+        --parameter-overrides BucketName=$SAVETOINK_BUCKET
 
 # Deploy ACM certificate (must be deployed to us-east-1)
 deploy-cert:
@@ -60,7 +59,7 @@ get-cert-arn:
 
 # Upload Lambda source zip to S3
 upload-zip:
-    aws s3 cp bin/{{ lambda_archive }} s3://{{ bucket_name }}/{{ lambda_archive }}
+    aws s3 cp bin/{{ lambda_archive }} s3://${SAVETOINK_BUCKET}/{{ lambda_archive }}
 
 # Deploy Lambda infrastructure
 deploy-api:
@@ -84,12 +83,12 @@ deploy-api:
             ProjectName={{ project_name }} \
             SenderEmail="$SAVETOINK_SENDER_EMAIL" \
             SourceBucketKey={{ lambda_archive }} \
-            SourceBucketName={{ bucket_name }} \
+            SourceBucketName=${SAVETOINK_BUCKET} \
             Debug="true"
 
 # Full deployment (bucket + upload + infra)
 deploy:
-    just auth0-create-api
+    # just auth0-create-api
     just deploy-bucket
     just deploy-cert
     just build-lambda-zip
@@ -101,7 +100,7 @@ deploy:
 destroy:
     aws cloudformation delete-stack --stack-name {{ project_name }}-infra
     aws cloudformation wait stack-delete-complete --stack-name {{ project_name }}-infra
-    -aws s3 rm s3://{{ bucket_name }} --recursive
+    -aws s3 rm s3://$SAVETOINK_BUCKET --recursive
     aws cloudformation delete-stack --stack-name {{ project_name }}-bucket
     aws cloudformation wait stack-delete-complete --stack-name {{ project_name }}-bucket
     aws cloudformation delete-stack --stack-name {{ project_name }}-cert --region us-east-1
@@ -177,7 +176,7 @@ test-auth-browser-login:
 deploy-lambda: build-lambda-zip upload-zip
     aws lambda update-function-code \
         --function-name {{ project_name }}-api \
-        --s3-bucket {{ bucket_name }} \
+        --s3-bucket ${SAVETOINK_BUCKET} \
         --s3-key {{ lambda_archive }} \
         --publish
 

@@ -37,4 +37,6 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Deploy Lambda (hide output to avoid leaking secrets)
-        run: just deploy-lambda > /dev/null
+        run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda > /dev/null
+        env:
+          SAVETOINK_BUCKET: ${{ vars.SAVETOINK_BUCKET }}
