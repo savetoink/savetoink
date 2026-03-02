@@ -14,7 +14,8 @@ import (
 
 // GetUserProfile implements UserProfileRepository.GetUserProfile.
 func (d *DynamoDB) GetUserProfile(ctx context.Context, account string) (*model.UserProfile, error) {
-	if d.profileTableName == "" {
+	// remove all these checks, validate in the factory call
+if d.profileTableName == "" {
 		return nil, errors.New("user profile table not configured")
 	}
 
