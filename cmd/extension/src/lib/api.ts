@@ -1,21 +1,65 @@
-import type { SendArticleResponse } from './types';
+export const API_URL = import.meta.env.VITE_SAVETOINK_API_URL;
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.saveto.ink/v1';
-
-export async function sendArticle(url: string, accessToken: string): Promise<SendArticleResponse> {
-  const response = await fetch(`${API_BASE_URL}/articles`, {
-    method: 'POST',
+const send = async (path: string, token: string): Promise<Response> => {
+  const url = `${API_URL}${path}`;
+  const options: RequestInit = {
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  };
+  return await fetch(url, options);
+};
+
+export interface ProfileResponse {
+  ok: boolean;
+  status: number;
+  profile?: {
+    account: string;
+    email: string;
+    device_email: string;
+    auto_send: boolean;
+  };
+}
+
+export const getProfile = async (token: string): Promise<ProfileResponse> => {
+  const response = await send("/v1/user/profile", token);
+  const result: ProfileResponse = {
+    ok: response.ok,
+    status: response.status,
+  };
+
+  if (response.ok) {
+    try {
+      const data = await response.json();
+      result.profile = data;
+    } catch (error) {
+      console.error("failed to parse profile response:", error);
+    }
+  }
+
+  return result;
+};
+
+export interface CreateArticleResponse {
+  id: string;
+  title: string;
+  url: string;
+}
+
+export const createArticle = async (url: string, token: string): Promise<CreateArticleResponse> => {
+  const response = await fetch(`${API_URL}/v1/articles/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ url }),
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to send article: ${response.status} ${errorText}`);
+    const error = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(error.error || "failed to create article");
   }
 
   return response.json();
-}
+};

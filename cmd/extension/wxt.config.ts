@@ -1,9 +1,15 @@
 import { defineConfig } from 'wxt';
 
+// See https://wxt.dev/api/config.html
 export default defineConfig({
   srcDir: 'src',
   modules: ['@wxt-dev/module-svelte'],
   manifest: {
-    permissions: ['storage', 'notifications', 'contextMenus'],
+    permissions: ['storage'],
+  },
+  vite(env) {
+    return {
+      envPrefix: 'VITE_',
+    };
   },
 });
