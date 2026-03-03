@@ -46,33 +46,44 @@ export const actions: Actions = {
 		deleteUserCookie(cookies);
 		redirect(303, '/account');
 	},
+	updateAutoSend: async ({ locals, request, fetch, cookies }) => {
+		const data = await request.formData();
+		const autoSend = data.get('autoSend');
+
+		const updateData: Record<string, unknown> = {
+			device_email: locals.user?.deviceEmail || '',
+			auto_send: autoSend === 'on'
+		};
+		await PUT(fetch, '/v1/devices', updateData, locals.auth);
+
+		const updatedProfile = await GET(fetch, '/v1/user/profile', locals.auth);
+		await setUserCookie(cookies, {
+			account: updatedProfile.account,
+			email: updatedProfile.email,
+			deviceEmail: updatedProfile.device_email,
+			autoSend: updatedProfile.auto_send
+		});
+		return { success: true };
+	},
 	updateProfile: async ({ locals, request, fetch, cookies }) => {
 		const data = await request.formData();
 		const deviceEmail = data.get('deviceEmail');
 		const autoSend = data.get('autoSend');
 
-		let deviceEmailToSend: string;
-		if (deviceEmail !== null) {
-			if (typeof deviceEmail === 'string' && deviceEmail.trim() !== '') {
-				const parts = deviceEmail.split('@');
-				if (parts.length !== 2 || !parts[1]) {
-					return error(400, 'invalid email format');
-				}
-
-				const domain = '@' + parts[1];
-				if (!DeviceDomains.includes(domain)) {
-					return error(400, 'kindle email domain must be ' + DeviceDomains.join(' or '));
-				}
-				deviceEmailToSend = deviceEmail;
-			} else {
-				deviceEmailToSend = '';
+		if (typeof deviceEmail === 'string' && deviceEmail.trim() !== '') {
+			const parts = deviceEmail.split('@');
+			if (parts.length !== 2 || !parts[1]) {
+				error(400, 'invalid email format');
 			}
-		} else {
-			deviceEmailToSend = locals.user?.deviceEmail || '';
+
+			const domain = '@' + parts[1];
+			if (!DeviceDomains.includes(domain)) {
+				error(400, 'kindle email domain must be ' + DeviceDomains.join(' or '));
+			}
 		}
 
 		const updateData: Record<string, unknown> = {
-			device_email: deviceEmailToSend,
+			device_email: deviceEmail,
 			auto_send: autoSend === 'on'
 		};
 		await PUT(fetch, '/v1/devices', updateData, locals.auth);

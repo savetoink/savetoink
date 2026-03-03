@@ -11,17 +11,6 @@
 	let isSaving = $state(false);
 	let error = $state<string | null>(null);
 
-	async function handleEnhance() {
-		isSaving = true;
-		error = null;
-		return async ({ result }: { result: { type: string } }) => {
-			isSaving = false;
-			if (result.type === 'failure') {
-				error = 'Failed to save preference';
-			}
-		};
-	}
-
 	function handleAutoSendChange() {
 		if (profileForm) {
 			profileForm.requestSubmit();
@@ -33,12 +22,7 @@
 	<h2>Device delivery (Kindle, Kobo, Tolino, etc.)</h2>
 	{#if deviceEmail}
 		<p>Email delivery enabled for <code>{deviceEmail}</code></p>
-		<form
-			bind:this={profileForm}
-			method="POST"
-			action="?/updateProfile"
-			use:enhance={handleEnhance}
-		>
+		<form bind:this={profileForm} method="POST" action="?/updateAutoSend" use:enhance>
 			<label>
 				<input
 					type="checkbox"
