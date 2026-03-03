@@ -46,6 +46,9 @@ type Interface interface {
 	DeleteUserProfile(ctx context.Context, accountID string) error
 	ToggleFavorite(ctx context.Context, accountID, articleID string) (bool, error)
 	CountSendsByAccountDateRange(ctx context.Context, accountID string, startDate, endDate time.Time) (int, error)
+	HandleBounce(ctx context.Context, deviceEmail, errorMessage string) error
+	IsEmailBouncing(ctx context.Context, accountID, deviceEmail string) (bool, error)
+	GetAccountIDByDeviceEmail(ctx context.Context, deviceEmail string) (string, error)
 }
 
 // Service holds the stateless dependencies and provides methods to process articles.
@@ -64,8 +67,7 @@ type Service struct {
 // All internal dependencies (extractor, generator, sender, repository) are created based on configuration.
 func New(cfg *config.Config) *Service {
 	var sender email.Sender
-	if cfg.MailjetAPIKey != "" && cfg.MailjetAPISecret != "" && cfg.SenderEmail != "" {
-		cfg.EmailProvider = consts.EmailBackendMailjet
+	if cfg.EmailProvider == consts.EmailBackendMailjet {
 		sender = mailjet.NewSender(cfg.MailjetAPIKey, cfg.MailjetAPISecret, cfg.SenderEmail)
 	}
 

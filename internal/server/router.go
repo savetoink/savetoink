@@ -69,7 +69,11 @@ func setupRoutes(r *chi.Mux, handlers *handlers, cfg *config.Config, srv service
 			r.Get("/{id}", handlers.handleGetArticle)
 			r.Delete("/{id}", handlers.handleDeleteArticle)
 			r.Put("/{id}/favorite", handlers.handleToggleFavorite)
-			r.With(auth.NewActiveSubscriptionMiddleware(cfg, srv)).Post("/{id}/send", handlers.handleSendArticle)
+			r.With(
+				auth.NewEmailBackendEnabledMiddleware(cfg),
+				auth.NewActiveSubscriptionMiddleware(cfg, srv),
+				auth.NewBouncingEmailMiddleware(srv),
+			).Post("/{id}/send", handlers.handleSendArticle)
 		})
 
 		r.Route("/user", func(r chi.Router) {
@@ -87,6 +91,10 @@ func setupRoutes(r *chi.Mux, handlers *handlers, cfg *config.Config, srv service
 
 		if cfg.AuthBackend == consts.AuthBackendAuth0 {
 			r.Post("/auth/token", handlers.handleAuthTokenExchange)
+		}
+
+		if cfg.EmailProvider == consts.EmailBackendMailjet {
+			r.Post("/webhooks/mailjet", handlers.handleMailjetWebhook)
 		}
 	})
 }

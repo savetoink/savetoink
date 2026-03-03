@@ -18,26 +18,22 @@ func (s *Service) SendArticle(
 	article *model.Article,
 	accountID string,
 ) (*email.SendEmailResponse, error) {
-	if article == nil {
-		return nil, errors.New("article is nil")
+	if err := s.validateArticleForSend(article); err != nil {
+		return nil, err
 	}
 
-	if article.Content == "" {
-		return nil, errors.New("article has no content")
-	}
-
-	destEmail, _, err := s.GetUserDeviceEmail(ctx, accountID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user device email: %w", err)
+	destEmail, _, getErr := s.GetUserDeviceEmail(ctx, accountID)
+	if getErr != nil {
+		return nil, fmt.Errorf("failed to get user device email: %w", getErr)
 	}
 
 	if destEmail == "" {
 		return nil, errors.New("user email not configured")
 	}
 
-	epubData, err := s.generator.Generate(article)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate EPUB: %w", err)
+	epubData, epubErr := s.generator.Generate(article)
+	if epubErr != nil {
+		return nil, fmt.Errorf("failed to generate EPUB: %w", epubErr)
 	}
 
 	result := NewProcessResult(article, epubData, article.URL)
@@ -64,6 +60,16 @@ func (s *Service) SendArticle(
 	}
 
 	return emailResp, nil
+}
+
+func (s *Service) validateArticleForSend(article *model.Article) error {
+	if article == nil {
+		return errors.New("article is nil")
+	}
+	if article.Content == "" {
+		return errors.New("article has no content")
+	}
+	return nil
 }
 
 // CountSendsByAccountDateRange counts the number of sends for a given account within a date range.

@@ -30,10 +30,11 @@ type Config struct {
 	AuthBackend       consts.AuthBackend
 
 	// Email
-	EmailProvider    consts.EmailProvider
-	MailjetAPIKey    string
-	MailjetAPISecret string
-	SenderEmail      string
+	EmailProvider        consts.EmailProvider
+	MailjetAPIKey        string
+	MailjetAPISecret     string
+	MailjetWebhookSecret string
+	SenderEmail          string
 }
 
 // Load reads configuration from environment variables and returns a Config instance.
@@ -66,6 +67,7 @@ func bindEnvVars() error {
 		{"api-key", "SAVETOINK_MAILJET_API_KEY"},
 		{"api-key-secret", "SAVETOINK_API_KEY"},
 		{"api-secret", "SAVETOINK_MAILJET_API_SECRET"},
+		{"api-webhook-secret", "SAVETOINK_MAILJET_WEBHOOK_SECRET"},
 		{"app-url", "SAVETOINK_APP_URL"},
 		{"articles-table", "SAVETOINK_ARTICLE_TABLE_NAME"},
 		{"auth-backend", "SAVETOINK_AUTH_BACKEND"},
@@ -74,6 +76,7 @@ func bindEnvVars() error {
 		{"auth0-client-secret", "SAVETOINK_AUTH0_CLIENT_SECRET"},
 		{"auth0-domain", "SAVETOINK_AUTH0_DOMAIN"},
 		{"debug", "SAVETOINK_DEBUG"},
+		{"email-backend", "SAVETOINK_EMAIL_BACKEND"},
 		{"sender-email", "SAVETOINK_SENDER_EMAIL"},
 		{"sends-table", "SAVETOINK_SENDS_TABLE_NAME"},
 		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
@@ -89,21 +92,23 @@ func bindEnvVars() error {
 
 func loadConfig(mode consts.RunMode) *Config {
 	cfg := &Config{
-		APIKeySecret:      viper.GetString("api-key-secret"),
-		AppURL:            viper.GetString("app-url"),
-		ArticlesTable:     viper.GetString("articles-table"),
-		Auth0Audience:     viper.GetString("auth0-audience"),
-		Auth0ClientID:     viper.GetString("auth0-client-id"),
-		Auth0ClientSecret: viper.GetString("auth0-client-secret"),
-		Auth0Domain:       viper.GetString("auth0-domain"),
-		AuthBackend:       consts.AuthBackend(viper.GetString("auth-backend")),
-		Debug:             viper.GetBool("debug"),
-		MailjetAPIKey:     viper.GetString("api-key"),
-		MailjetAPISecret:  viper.GetString("api-secret"),
-		Mode:              mode,
-		SenderEmail:       viper.GetString("sender-email"),
-		SendsTable:        viper.GetString("sends-table"),
-		UserProfileTable:  viper.GetString("user-profile-table"),
+		APIKeySecret:         viper.GetString("api-key-secret"),
+		AppURL:               viper.GetString("app-url"),
+		ArticlesTable:        viper.GetString("articles-table"),
+		Auth0Audience:        viper.GetString("auth0-audience"),
+		Auth0ClientID:        viper.GetString("auth0-client-id"),
+		Auth0ClientSecret:    viper.GetString("auth0-client-secret"),
+		Auth0Domain:          viper.GetString("auth0-domain"),
+		AuthBackend:          consts.AuthBackend(viper.GetString("auth-backend")),
+		Debug:                viper.GetBool("debug"),
+		EmailProvider:        consts.EmailProvider(viper.GetString("email-backend")),
+		MailjetAPIKey:        viper.GetString("api-key"),
+		MailjetAPISecret:     viper.GetString("api-secret"),
+		MailjetWebhookSecret: viper.GetString("api-webhook-secret"),
+		Mode:                 mode,
+		SenderEmail:          viper.GetString("sender-email"),
+		SendsTable:           viper.GetString("sends-table"),
+		UserProfileTable:     viper.GetString("user-profile-table"),
 	}
 
 	return cfg
@@ -126,6 +131,34 @@ func (c *Config) validate() error {
 }
 
 func (c *Config) validateServerConfig(missing *[]string) error {
+	if err := c.validateAuthBackendConfig(missing); err != nil {
+		return err
+	}
+
+	c.validateEmailProviderConfig(missing)
+
+	if c.ArticlesTable == "" {
+		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
+	}
+	if c.UserProfileTable == "" {
+		*missing = append(*missing, "SAVETOINK_USER_PROFILE_TABLE_NAME")
+	}
+	if c.SendsTable == "" {
+		*missing = append(*missing, "SAVETOINK_SENDS_TABLE_NAME")
+	}
+	if c.AppURL == "" {
+		*missing = append(*missing, "SAVETOINK_APP_URL")
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to load AWS config: %w", err)
+	}
+	c.AWSConfig = &cfg
+	return nil
+}
+
+func (c *Config) validateAuthBackendConfig(missing *[]string) error {
 	switch c.AuthBackend {
 	case consts.AuthBackendSharedAPIKey:
 		if c.APIKeySecret == "" {
@@ -147,23 +180,22 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 	default:
 		return fmt.Errorf("unsupported auth backend: %s", c.AuthBackend)
 	}
-	if c.ArticlesTable == "" {
-		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
-	}
-	if c.UserProfileTable == "" {
-		*missing = append(*missing, "SAVETOINK_USER_PROFILE_TABLE_NAME")
-	}
-	if c.SendsTable == "" {
-		*missing = append(*missing, "SAVETOINK_SENDS_TABLE_NAME")
-	}
-	if c.AppURL == "" {
-		*missing = append(*missing, "SAVETOINK_APP_URL")
-	}
-
-	cfg, err := config.LoadDefaultConfig(context.Background())
-	if err != nil {
-		return fmt.Errorf("failed to load AWS config: %w", err)
-	}
-	c.AWSConfig = &cfg
 	return nil
+}
+
+func (c *Config) validateEmailProviderConfig(missing *[]string) {
+	if c.EmailProvider == consts.EmailBackendMailjet {
+		if c.MailjetAPIKey == "" {
+			*missing = append(*missing, "SAVETOINK_MAILJET_API_KEY")
+		}
+		if c.MailjetAPISecret == "" {
+			*missing = append(*missing, "SAVETOINK_MAILJET_API_SECRET")
+		}
+		if c.MailjetWebhookSecret == "" {
+			*missing = append(*missing, "SAVETOINK_MAILJET_WEBHOOK_SECRET")
+		}
+		if c.SenderEmail == "" {
+			*missing = append(*missing, "SAVETOINK_SENDER_EMAIL")
+		}
+	}
 }

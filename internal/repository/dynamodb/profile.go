@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/shaftoe/savetoink/internal/consts"
 	"github.com/shaftoe/savetoink/internal/model"
 )
 
@@ -34,6 +35,33 @@ func (d *DynamoDB) GetUserProfile(ctx context.Context, account string) (*model.U
 	}
 
 	return &profile, nil
+}
+
+// GetAccountIDByDeviceEmail implements UserProfileRepository.GetAccountIDByDeviceEmail.
+func (d *DynamoDB) GetAccountIDByDeviceEmail(ctx context.Context, deviceEmail string) (string, error) {
+	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(d.profileTableName),
+		IndexName:              aws.String(consts.DynamoDBDeviceEmailIndex),
+		KeyConditionExpression: aws.String("deviceEmail = :deviceEmail"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":deviceEmail": &types.AttributeValueMemberS{Value: deviceEmail},
+		},
+		Limit: aws.Int32(1),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query by device email: %w", err)
+	}
+
+	if len(resp.Items) == 0 {
+		return "", nil
+	}
+
+	var profile model.UserProfile
+	if unmarshalErr := attributevalue.UnmarshalMap(resp.Items[0], &profile); unmarshalErr != nil {
+		return "", fmt.Errorf("failed to unmarshal user profile: %w", unmarshalErr)
+	}
+
+	return profile.Account, nil
 }
 
 // PutUserProfile implements UserProfileRepository.PutUserProfile.

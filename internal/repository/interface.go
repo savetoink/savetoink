@@ -27,6 +27,7 @@ type ArticlesRepository interface {
 // UserProfileRepository defines the interface for user profile persistence.
 type UserProfileRepository interface {
 	GetUserProfile(ctx context.Context, account string) (*model.UserProfile, error)
+	GetAccountIDByDeviceEmail(ctx context.Context, deviceEmail string) (string, error)
 	PutUserProfile(ctx context.Context, profile *model.UserProfile) error
 	DeleteUserProfile(ctx context.Context, account string) error
 	DeleteUserDeviceEmail(ctx context.Context, account string) error

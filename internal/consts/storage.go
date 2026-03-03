@@ -13,4 +13,7 @@ const (
 
 	// DynamoDBSendsAccountSentAtIndex is the GSI for querying sends by account and sent date.
 	DynamoDBSendsAccountSentAtIndex = "AccountSentAtIndex"
+
+	// DynamoDBDeviceEmailIndex is the GSI for querying user profiles by device email.
+	DynamoDBDeviceEmailIndex = "DeviceEmailIndex"
 )
