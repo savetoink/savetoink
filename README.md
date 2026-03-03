@@ -6,15 +6,15 @@ Self-hosted read-later service with native Kindle delivery. Save articles in the
 
 ## Features
 
-- Fetch web articles, strip markup with [go-trafilatura](https://github.com/markusmobius/go-trafilatura) and save main readable content as HTML
-- Run as web service (API) or as [CLI tool](#cli-tool)
+- Fetch web pages (articles, blog posts, etc), strip markup with [go-trafilatura](https://github.com/markusmobius/go-trafilatura) and save main readable content as HTML
+- Run as self-hosted web application (Frontend + API) or as [CLI tool](#cli-tool)
 - Convert content to EPUB format with [go-epub](https://github.com/go-shiori/go-epub) for e-reader devices
-- Optionally send directly to Kindle via email backend (only [MailJet](https://www.mailjet.com/) supported at the moment)
+- Optionally send to reader devices like Kindle, Kobo, etc. via email backend (only [MailJet](https://www.mailjet.com/) supported at the moment)
 
 ### Backend
 
-- generic Go HTTP server
-- deployed as AWS Lambda Function (with [HTTP adapter](https://github.com/akrylysov/algnhsa) + CloudFront for custom domain, DynamoDB for storage
+- generic Go HTTP server with AWS DynamoDB backend
+- or deployed as AWS Lambda Function (with [HTTP adapter](https://github.com/akrylysov/algnhsa) + CloudFront for custom domain
 - pluggable user backend
   -  single-user shared API key
   -  multi-user with [Auth0](https://auth0.com/)
@@ -29,17 +29,26 @@ Self-hosted read-later service with native Kindle delivery. Save articles in the
 
 ### Deployment
 
+To run locally:
+
 ```bash
-# Full deployment
+just server-http
+just server-webapp
+```
+
+To deploy to AWS Lambda:
+
+```bash
+# Full AWS Lambda deployment
 just deploy
 
-# Destroy infrastructure
+# Destroy AWS Lambda infrastructure
 just destroy
 ```
 
 ## CLI Tool
 
-The CLI tool allows you to convert web articles to EPUB format and send them to your Kindle device directly from the terminal.
+The CLI tool allows you to convert web articles to EPUB format and send them to your reader device directly from the terminal.
 
 ### Installation
 
@@ -55,7 +64,7 @@ go build -o bin/savetoink cmd/cli
 ./bin/savetoink convert https://example.com
 ```
 
-**Send directly to Kindle via email:**
+**Send directly to Kindle via email (requires MailJet credentials as environment variables):**
 
 ```bash
 ./bin/savetoink convert https://example.com --send
@@ -78,25 +87,6 @@ go build -o bin/savetoink cmd/cli
 ```bash
 ./bin/savetoink convert https://example.com -v
 ```
-
-### Browser Extension
-
-**Install the extension:**
-
-**Temporary Installation (Development):**
-
-1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
-2. Click "Load Temporary Add-on"
-3. Select the `extension/manifest.json` file
-4. Configure settings by clicking extension icon → "Configure Settings"
-5. Enter your API URL and API Key
-
-**Using the extension:**
-1. Click the extension icon on any web page to send it to Kindle
-2. Or right-click on any link → "Send to Kindle"
-3. Configure API settings via extension icon → "Configure Settings"
-4. The extension stores your API key and URL securely using Chrome storage API
-5. CORS headers are properly configured for cross-origin requests to your Lambda function
 
 ### Examples
 
