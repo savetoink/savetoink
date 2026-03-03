@@ -81,6 +81,10 @@ type handlers struct {
 
 type contextKey string
 
+const (
+	requestErrorKey contextKey = "request_error"
+)
+
 type logRecord struct {
 	*slog.Record
 }

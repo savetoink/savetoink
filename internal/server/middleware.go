@@ -76,56 +76,67 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		var (
 			start     = time.Now()
 			accountID = auth.GetAccountID(r.Context())
-			level     = slog.LevelInfo
-			record    = slog.NewRecord(time.Now(), level, "request completed", 0)
 			requestID = getRequestIDFromContext(r.Context())
-			userAgent = userAgent(r)
-			clientIP  = remoteAddr(r)
 			version   = consts.Version()
 		)
 
-		record.AddAttrs(
-			slog.String("client_ip", clientIP),
-			slog.String("user_agent", userAgent),
-			slog.String("method", r.Method),
-			slog.String("path", r.URL.Path),
-		)
-		if requestID != nil {
-			record.AddAttrs(slog.String("request_id", *requestID))
-		}
-		if version != nil {
-			record.AddAttrs(slog.String("version", *version))
-		}
-		if accountID != "" {
-			record.AddAttrs(slog.String("account_id", accountID))
-		}
+		record := createLogRecord(r, accountID, requestID, version)
 
+		var requestError error
 		ctx := context.WithValue(r.Context(), logRecordKey, &logRecord{Record: &record})
+		ctx = context.WithValue(ctx, requestErrorKey, &requestError)
 
 		recorder := &responseStatusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(recorder, r.WithContext(ctx))
 
-		latency := time.Since(start)
-		statusCode := recorder.status
-		authErr := auth.GetAuthError(r.Context())
-
-		if authErr != nil {
-			record.AddAttrs(slog.String("auth_result", authErr.Error()))
-		}
-
-		if statusCode >= http.StatusInternalServerError {
-			record.Level = slog.LevelError
-		}
-
-		record.AddAttrs(
-			slog.Int("status", statusCode),
-			slog.Int64("latency_ms", latency.Milliseconds()),
-		)
-
-		if err := slog.Default().Handler().Handle(ctx, record); err != nil {
-			slog.Error("failed to log request", "error", err)
-		}
+		finalizeLogRecord(ctx, &record, start, recorder.status)
 	})
+}
+
+func createLogRecord(r *http.Request, accountID string, requestID, version *string) slog.Record {
+	record := slog.NewRecord(time.Now(), slog.LevelInfo, "request completed", 0)
+	record.AddAttrs(
+		slog.String("client_ip", remoteAddr(r)),
+		slog.String("user_agent", userAgent(r)),
+		slog.String("method", r.Method),
+		slog.String("path", r.URL.Path),
+	)
+	if requestID != nil {
+		record.AddAttrs(slog.String("request_id", *requestID))
+	}
+	if version != nil {
+		record.AddAttrs(slog.String("version", *version))
+	}
+	if accountID != "" {
+		record.AddAttrs(slog.String("account_id", accountID))
+	}
+	return record
+}
+
+func finalizeLogRecord(ctx context.Context, record *slog.Record, start time.Time, statusCode int) {
+	authResult := auth.GetAuthError(ctx)
+	if authResult != nil {
+		record.AddAttrs(slog.String("auth_result", authResult.Error()))
+	}
+
+	requestError := getRequestError(ctx)
+	if requestError != nil {
+		record.Level = slog.LevelError
+		record.AddAttrs(slog.String("error", requestError.Error()))
+	}
+
+	if statusCode >= http.StatusInternalServerError {
+		record.Level = slog.LevelError
+	}
+
+	record.AddAttrs(
+		slog.Int("status", statusCode),
+		slog.Int64("latency_ms", time.Since(start).Milliseconds()),
+	)
+
+	if err := slog.Default().Handler().Handle(ctx, *record); err != nil {
+		slog.Error("failed to log request", "error", err)
+	}
 }
 
 func generateRequestID() string {

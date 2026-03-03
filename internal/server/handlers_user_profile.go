@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"log/slog"
+	"fmt"
 	"net/http"
 
 	"github.com/shaftoe/savetoink/internal/model"
@@ -21,7 +21,7 @@ func (h *handlers) handleGetUserProfile(w http.ResponseWriter, r *http.Request) 
 
 	deviceEmail, autoSend, err := h.service.GetUserDeviceEmail(r.Context(), accountID)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -29,7 +29,7 @@ func (h *handlers) handleGetUserProfile(w http.ResponseWriter, r *http.Request) 
 
 	profile, err := h.service.GetUserProfile(r.Context(), accountID)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -60,7 +60,7 @@ func (h *handlers) handleSetDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.SetUserDeviceEmailWithAutoSend(r.Context(), accountID, req.DeviceEmail, req.AutoSend); err != nil {
-		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -75,7 +75,7 @@ func (h *handlers) handleDeleteDevice(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.DeleteUserDeviceEmail(r.Context(), accountID)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return

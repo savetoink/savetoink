@@ -40,22 +40,22 @@ func (h *handlers) handleMailjetWebhook(w http.ResponseWriter, r *http.Request) 
 
 	body, readErr := readRequestBody(r)
 	if readErr != nil {
-		addLogAttr(r.Context(), slog.String("error", "failed to read request body"))
+		addRequestError(r.Context(), readErr)
 		return
 	}
 
+	slog.Debug("processing bounce events", slog.String("body", string(body)))
+
 	if verifyErr := h.verifyMailjetSecret(r); verifyErr != nil {
-		addLogAttr(r.Context(), slog.String("error", "failed to verify shared secret"))
+		addRequestError(r.Context(), verifyErr)
 		return
 	}
 
 	var events []mailjetEvent
 	if unmarshalErr := json.Unmarshal(body, &events); unmarshalErr != nil {
-		addLogAttr(r.Context(), slog.String("error", "failed to unmarshal webhook request"))
+		addRequestError(r.Context(), unmarshalErr)
 		return
 	}
-
-	slog.Debug("processing bounce events", slog.Int("count", len(events)), slog.Any("events", events))
 
 	processErrors := h.processBounceEvents(r, events)
 	if processErrors != nil {

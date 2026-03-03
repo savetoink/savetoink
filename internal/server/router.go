@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
@@ -115,4 +116,24 @@ func addLogAttr(ctx context.Context, attr slog.Attr) {
 	if record, ok := ctx.Value(logRecordKey).(*logRecord); ok {
 		record.AddAttrs(attr)
 	}
+}
+
+func addRequestError(ctx context.Context, err error) {
+	if err == nil {
+		return
+	}
+	if errPtr, ok := ctx.Value(requestErrorKey).(*error); ok && errPtr != nil {
+		if *errPtr != nil {
+			*errPtr = errors.Join(*errPtr, err)
+		} else {
+			*errPtr = err
+		}
+	}
+}
+
+func getRequestError(ctx context.Context) error {
+	if errPtr, ok := ctx.Value(requestErrorKey).(*error); ok && errPtr != nil {
+		return *errPtr
+	}
+	return nil
 }

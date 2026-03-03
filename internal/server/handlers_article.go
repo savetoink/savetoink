@@ -3,6 +3,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -31,7 +32,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	article, err := h.service.CreateArticle(r.Context(), req.URL, auth.GetAccountID(r.Context()))
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("error", err.Error()))
+		addRequestError(r.Context(), err)
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -40,7 +41,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 	addLogAttr(r.Context(), slog.String("article_id", article.ID))
 
 	if dbErr := h.service.GetDBError(); dbErr != nil {
-		addLogAttr(r.Context(), slog.String("db_error", dbErr.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -77,7 +78,7 @@ func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, favoriteFilter)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -105,7 +106,7 @@ func (h *handlers) handleGetArticle(w http.ResponseWriter, r *http.Request) {
 
 	article, err := h.service.GetArticle(r.Context(), accountID, articleID)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusNotFound)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -125,7 +126,7 @@ func (h *handlers) handleDeleteArticle(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.DeleteArticle(r.Context(), accountID, articleID)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -142,7 +143,7 @@ func (h *handlers) handleDeleteAllArticles(w http.ResponseWriter, r *http.Reques
 
 	result, err := h.service.DeleteAllArticles(r.Context(), accountID)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -162,7 +163,7 @@ func (h *handlers) handleToggleFavorite(w http.ResponseWriter, r *http.Request) 
 
 	newStatus, err := h.service.ToggleFavorite(r.Context(), accountID, articleID)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -182,7 +183,7 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	article, err := h.service.GetArticle(r.Context(), accountID, articleID)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("db_error", err.Error()))
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		w.WriteHeader(http.StatusNotFound)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
@@ -192,7 +193,7 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	emailResp, err := h.service.SendArticle(r.Context(), article, accountID)
 	if err != nil {
-		addLogAttr(r.Context(), slog.String("error", err.Error()))
+		addRequestError(r.Context(), err)
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return

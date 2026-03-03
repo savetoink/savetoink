@@ -52,7 +52,7 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	//nolint:bodyclose // response is closed in executeTokenExchange
 	resp, body, execErr := h.executeTokenExchange(tokenReq)
 	if execErr != nil {
-		addLogAttr(r.Context(), slog.String("error", execErr.Error()))
+		addRequestError(r.Context(), execErr)
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "failed to exchange token with Auth0: " + execErr.Error()})
 		return
@@ -65,7 +65,7 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 
 	var tokenResp authTokenExchangeResponse
 	if unmarshalErr := json.Unmarshal(body, &tokenResp); unmarshalErr != nil {
-		addLogAttr(r.Context(), slog.String("error", unmarshalErr.Error()))
+		addRequestError(r.Context(), unmarshalErr)
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "failed to decode token response: " + unmarshalErr.Error()})
 		return
@@ -77,11 +77,11 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	if tokenResp.IDToken != "" {
 		email, extractErr := extractEmailFromIDToken(tokenResp.IDToken)
 		if extractErr != nil {
-			addLogAttr(r.Context(), slog.String("error", fmt.Sprintf("failed to extract email from id_token: %v", extractErr)))
+			addRequestError(r.Context(), fmt.Errorf("failed to extract email from id_token: %w", extractErr))
 		} else {
 			tokenResp.Email = email
 			if storeErr := h.storeUserEmail(r.Context(), email, tokenResp.AccessToken); storeErr != nil {
-				addLogAttr(r.Context(), slog.String("error", fmt.Sprintf("failed to store user email: %v", storeErr)))
+				addRequestError(r.Context(), fmt.Errorf("failed to store user email: %w", storeErr))
 			}
 		}
 	}
