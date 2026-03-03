@@ -51,20 +51,28 @@ export const actions: Actions = {
 		const deviceEmail = data.get('deviceEmail');
 		const autoSend = data.get('autoSend');
 
-		if (deviceEmail && typeof deviceEmail === 'string' && deviceEmail.trim() !== '') {
-			const parts = deviceEmail.split('@');
-			if (parts.length !== 2 || !parts[1]) {
-				return error(400, 'invalid email format');
-			}
+		let deviceEmailToSend: string;
+		if (deviceEmail !== null) {
+			if (typeof deviceEmail === 'string' && deviceEmail.trim() !== '') {
+				const parts = deviceEmail.split('@');
+				if (parts.length !== 2 || !parts[1]) {
+					return error(400, 'invalid email format');
+				}
 
-			const domain = '@' + parts[1];
-			if (!DeviceDomains.includes(domain)) {
-				return error(400, 'kindle email domain must be ' + DeviceDomains.join(' or '));
+				const domain = '@' + parts[1];
+				if (!DeviceDomains.includes(domain)) {
+					return error(400, 'kindle email domain must be ' + DeviceDomains.join(' or '));
+				}
+				deviceEmailToSend = deviceEmail;
+			} else {
+				deviceEmailToSend = '';
 			}
+		} else {
+			deviceEmailToSend = locals.user?.deviceEmail || '';
 		}
 
 		const updateData: Record<string, unknown> = {
-			device_email: deviceEmail || '',
+			device_email: deviceEmailToSend,
 			auto_send: autoSend === 'on'
 		};
 		await PUT(fetch, '/v1/devices', updateData, locals.auth);

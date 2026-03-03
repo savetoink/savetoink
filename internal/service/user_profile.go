@@ -149,9 +149,8 @@ func (s *Service) SetUserEmail(ctx context.Context, accountID, userEmail string)
 func validateDeviceEmail(email string) error {
 	addr, err := mail.ParseAddress(email)
 	if err != nil {
-		return fmt.Errorf(
-			"invalid device email: must be a valid email ending with %s",
-			consts.ValidDeviceEmailDomainsJoined(),
+		return errors.New(
+			"invalid device email: must be a valid email address",
 		)
 	}
 
