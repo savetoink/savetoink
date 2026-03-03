@@ -20,17 +20,15 @@
             loginStatus = "redirecting";
 
             redirectUri = browser.identity.getRedirectURL();
-            console.log("Redirect URI:", redirectUri);
 
             const authUrl =
-                `https://${import.meta.env.VITE_SAVETOINK_AUTH0_DOMAIN}/authorize?` +
+                `https://${import.meta.env.PUBLIC_AUTH0_DOMAIN}/authorize?` +
                 `response_type=code&` +
                 `prompt=login&` +
-                `client_id=${import.meta.env.VITE_SAVETOINK_AUTH0_CLIENT_ID}&` +
+                `client_id=${import.meta.env.PUBLIC_AUTH0_CLIENT_ID}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                `audience=${import.meta.env.VITE_SAVETOINK_AUTH0_AUDIENCE}&` +
+                `audience=${import.meta.env.PUBLIC_AUTH0_AUDIENCE}&` +
                 `scope=openid profile email`;
-            console.log("Auth URL:", authUrl);
 
             loginStatus = "authenticating";
 
@@ -56,7 +54,9 @@
 
             loginStatus = "fetching";
 
-            const profileResponse = await getProfile(tokenResponse.access_token);
+            const profileResponse = await getProfile(
+                tokenResponse.access_token,
+            );
 
             if (!profileResponse.ok || !profileResponse.profile) {
                 throw new Error("failed to fetch profile");
@@ -83,9 +83,7 @@
 </script>
 
 {#if !isLoggedIn}
-    <button type="button" on:click={handleLogin}>
-        Log In / Sign Up
-    </button>
+    <button type="button" on:click={handleLogin}> Log In / Sign Up </button>
     {#if loginStatus === "redirecting"}
         <p>redirecting to Auth0...</p>
     {:else if loginStatus === "authenticating"}

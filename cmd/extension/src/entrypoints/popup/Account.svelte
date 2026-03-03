@@ -15,7 +15,7 @@
 
     let apiKey = "";
     let authBackend: AuthBackendType =
-        (import.meta.env.VITE_SAVETOINK_AUTH_BACKEND as AuthBackendType) ||
+        (import.meta.env.PUBLIC_AUTH_BACKEND as AuthBackendType) ||
         SharedKeyBackend;
     let userProfile: UserProfile | null = null;
 

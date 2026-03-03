@@ -1,7 +1,7 @@
 export const STORAGE_KEY = "local:shared_api_key";
 export const USER_PROFILE_KEY = "local:user_profile";
 
-export type AuthBackendType = "shared_api_key" | "auth0";
+export type AuthBackendType = "sharedKey" | "auth0";
 
 export interface UserProfile {
   account: string;
@@ -9,7 +9,7 @@ export interface UserProfile {
   device_email: string;
   auto_send: boolean;
 }
-export const SharedKeyBackend: AuthBackendType = "shared_api_key";
+export const SharedKeyBackend: AuthBackendType = "sharedKey";
 export const Auth0Backend: AuthBackendType = "auth0";
 
 export async function getAPIKey(): Promise<string | null> {

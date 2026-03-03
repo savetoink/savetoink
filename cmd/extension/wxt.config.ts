@@ -10,7 +10,7 @@ export default defineConfig({
   },
   vite(env) {
     return {
-      envPrefix: "VITE_",
+      envPrefix: "PUBLIC_",
     };
   },
 });
