@@ -1,5 +1,4 @@
 export const STORAGE_KEY = "local:shared_api_key";
-export const AUTH_BACKEND_KEY = "local:auth_backend";
 export const USER_PROFILE_KEY = "local:user_profile";
 
 export type AuthBackendType = "shared_api_key" | "auth0";
@@ -28,25 +27,6 @@ export async function saveAPIKey(key: string): Promise<void> {
     await storage.setItem(STORAGE_KEY, key);
   } catch (error) {
     console.error("failed to save API key to storage:", error);
-    throw error;
-  }
-}
-
-export async function getAuthBackend(): Promise<AuthBackendType> {
-  try {
-    const value = await storage.getItem<AuthBackendType>(AUTH_BACKEND_KEY);
-    return value === Auth0Backend ? Auth0Backend : SharedKeyBackend;
-  } catch (error) {
-    console.error("failed to get auth backend from storage:", error);
-    return SharedKeyBackend;
-  }
-}
-
-export async function saveAuthBackend(type: AuthBackendType): Promise<void> {
-  try {
-    await storage.setItem(AUTH_BACKEND_KEY, type);
-  } catch (error) {
-    console.error("failed to save auth backend to storage:", error);
     throw error;
   }
 }

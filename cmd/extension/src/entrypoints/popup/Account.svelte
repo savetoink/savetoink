@@ -5,8 +5,6 @@
         getAPIKey,
         saveAPIKey,
         clearAPIKey,
-        getAuthBackend,
-        saveAuthBackend,
         getUserProfile,
         saveUserProfile,
         clearUserProfile,
@@ -16,28 +14,21 @@
     import type { AuthBackendType, UserProfile } from "../../lib/storage";
 
     let apiKey = "";
-    let authBackend: AuthBackendType = SharedKeyBackend;
+    let authBackend: AuthBackendType =
+        (import.meta.env.VITE_SAVETOINK_AUTH_BACKEND as AuthBackendType) ||
+        SharedKeyBackend;
     let userProfile: UserProfile | null = null;
 
     onMount(async () => {
-        const [savedKey, savedBackend, savedProfile] = await Promise.all([
+        const [savedKey, savedProfile] = await Promise.all([
             getAPIKey(),
-            getAuthBackend(),
             getUserProfile(),
         ]);
         if (savedKey) {
             apiKey = savedKey;
         }
-        authBackend = savedBackend;
         userProfile = savedProfile;
     });
-
-    async function handleAuthBackendChange(event: Event) {
-        const target = event.target as HTMLInputElement;
-        const newBackend = target.value as AuthBackendType;
-        authBackend = newBackend;
-        await saveAuthBackend(newBackend);
-    }
 
     async function handleApiKeySave(detail: {
         apiKey: string;
@@ -65,7 +56,6 @@
         {apiKey}
         {authBackend}
         {userProfile}
-        onAuthBackendChange={handleAuthBackendChange}
         onApiKeySave={handleApiKeySave}
         onApiKeyLogout={handleApiKeyLogout}
     />
@@ -74,8 +64,6 @@
 <section>
     <ul>
         {#if userProfile}
-            <li><strong>Account:</strong> {userProfile.account}</li>
-
             {#if userProfile.email}
                 <li>
                     <strong>Email:</strong>

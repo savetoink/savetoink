@@ -75,8 +75,29 @@ export const createArticle = async (
 };
 
 export const sendArticle = async (
-  articleId: string,
-  token: string,
+    articleId: string,
+    token: string,
 ): Promise<Response> => {
-  return send(`/v1/articles/${articleId}/send`, token, "POST");
+    return send(`/v1/articles/${articleId}/send`, token, "POST");
+};
+
+export const exchangeCodeForToken = async (
+    code: string,
+    redirectUri: string,
+): Promise<{ access_token: string; expires_in?: number }> => {
+    const response = await send(
+        "/v1/auth/token",
+        "",
+        "POST",
+        JSON.stringify({ code, redirect_uri: redirectUri }),
+    );
+
+    if (!response.ok) {
+        const error = await response
+            .json()
+            .catch(() => ({ error: response.statusText }));
+        throw new Error(error.error || "failed to exchange code for token");
+    }
+
+    return response.json();
 };
