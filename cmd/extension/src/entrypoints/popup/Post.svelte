@@ -1,12 +1,25 @@
 <script lang="ts">
-    import { createArticle } from "../../lib/api";
-    import { getAPIKey } from "../../lib/storage";
+    import { createArticle, sendArticle } from "../../lib/api";
+    import { getAPIKey, getUserProfile } from "../../lib/storage";
+    import type { UserProfile } from "../../lib/storage";
 
-    let url = "";
-    let loading = false;
-    let status: "" | "success" | "error" = "";
-    let errorMessage = "";
+    let url = $state("");
+    let loading = $state(false);
+    let status: "" | "success" | "error" = $state("");
+    let errorMessage = $state("");
     let statusTimeout: ReturnType<typeof setTimeout>;
+    let profile: UserProfile | null = $state(null);
+    let sendToDevice = $state(false);
+
+    async function loadProfile() {
+        const apiKey = await getAPIKey();
+        if (apiKey) {
+            profile = await getUserProfile();
+            sendToDevice = profile?.auto_send || false;
+        }
+    }
+
+    loadProfile();
 
     function clearStatus() {
         status = "";
@@ -35,7 +48,15 @@
                 return;
             }
 
-            await createArticle(url, apiKey);
+            const article = await createArticle(url, apiKey);
+
+            if (sendToDevice) {
+                const sendResponse = await sendArticle(article.id, apiKey);
+                if (!sendResponse.ok) {
+                    throw new Error("failed to send article to device");
+                }
+            }
+
             status = "success";
 
             statusTimeout = setTimeout(() => {
@@ -61,7 +82,7 @@
 
 <p>Save a new article to your reading list</p>
 
-<form on:submit|preventDefault={handleSubmit}>
+<form onsubmit={handleSubmit}>
     <input
         type="url"
         name="url"
@@ -69,23 +90,25 @@
         bind:value={url}
         required
     />
+    {#if profile?.device_email}
+        <label>
+            <input type="checkbox" bind:checked={sendToDevice} />
+            Send to reader device
+        </label>
+    {/if}
     <button type="submit" disabled={loading}>
         {loading ? "Adding..." : "Add"}
     </button>
 
     {#if status === "error"}
-        <p class="error">{errorMessage}</p>
+        <p aria-invalid="true" class="error">
+            {errorMessage}
+        </p>
     {:else if status === "success"}
-        <p class="success">article saved successfully</p>
+        {#if sendToDevice}
+            <ins>article saved and delivered successfully</ins>
+        {:else}
+            <ins>article saved successfully</ins>
+        {/if}
     {/if}
 </form>
-
-<style>
-    .error {
-        color: #d32f2f;
-    }
-
-    .success {
-        color: #388e3c;
-    }
-</style>

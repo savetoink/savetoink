@@ -1,15 +1,16 @@
-import { defineConfig } from 'wxt';
+import { defineConfig } from "wxt";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
-  srcDir: 'src',
-  modules: ['@wxt-dev/module-svelte'],
+  srcDir: "src",
+  outDir: "dist",
+  modules: ["@wxt-dev/module-svelte"],
   manifest: {
-    permissions: ['storage'],
+    permissions: ["storage"],
   },
   vite(env) {
     return {
-      envPrefix: 'VITE_',
+      envPrefix: "VITE_",
     };
   },
 });

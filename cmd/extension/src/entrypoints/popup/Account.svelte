@@ -75,19 +75,27 @@
     <ul>
         {#if userProfile}
             <li><strong>Account:</strong> {userProfile.account}</li>
+
             {#if userProfile.email}
                 <li>
                     <strong>Email:</strong>
                     {userProfile.email}
-                </li>{/if}
-            <li>
-                <strong>Device email:</strong>
-                {userProfile.device_email || "Not set"}
-            </li>
-            <li>
-                <strong>Auto-send:</strong>
-                {userProfile.auto_send ? "Enabled" : "Disabled"}
-            </li>
+                </li>
+            {/if}
+
+            {#if userProfile.device_email}
+                <li>
+                    <strong>Device email:</strong>
+                    {userProfile.device_email || "Not set"}
+                </li>
+            {/if}
+
+            {#if userProfile.auto_send}
+                <li>
+                    <strong>Auto-send:</strong>
+                    {userProfile.auto_send ? "Enabled" : "Disabled"}
+                </li>
+            {/if}
         {/if}
     </ul>
 </section>

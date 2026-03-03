@@ -1,11 +1,18 @@
 export const API_URL = import.meta.env.VITE_SAVETOINK_API_URL;
 
-const send = async (path: string, token: string): Promise<Response> => {
+export const send = async (
+  path: string,
+  token: string,
+  method: string = "GET",
+  body: string | undefined = undefined,
+): Promise<Response> => {
   const url = `${API_URL}${path}`;
   const options: RequestInit = {
+    method: method,
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    body: body,
   };
   return await fetch(url, options);
 };
@@ -46,20 +53,30 @@ export interface CreateArticleResponse {
   url: string;
 }
 
-export const createArticle = async (url: string, token: string): Promise<CreateArticleResponse> => {
-  const response = await fetch(`${API_URL}/v1/articles/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ url }),
-  });
+export const createArticle = async (
+  url: string,
+  token: string,
+): Promise<CreateArticleResponse> => {
+  const response = await send(
+    `/v1/articles`,
+    token,
+    "POST",
+    JSON.stringify({ url }),
+  );
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
+    const error = await response
+      .json()
+      .catch(() => ({ error: response.statusText }));
     throw new Error(error.error || "failed to create article");
   }
 
   return response.json();
+};
+
+export const sendArticle = async (
+  articleId: string,
+  token: string,
+): Promise<Response> => {
+  return send(`/v1/articles/${articleId}/send`, token, "POST");
 };

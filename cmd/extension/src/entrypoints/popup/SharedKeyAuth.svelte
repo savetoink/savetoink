@@ -63,13 +63,11 @@
 
         <button type="submit">Login</button>
         {#if saveStatus === "validating"}
-            <small>validating API key...</small>
-        {:else if saveStatus === "saved"}
-            <small>logged in successfully</small>
+            <ins>validating API key...</ins>
         {:else if saveStatus === "invalid"}
-            <small>invalid API key</small>
+            <p aria-invalid="true" class="error">invalid API key</p>
         {:else if saveStatus === "error"}
-            <small>failed to save API key</small>
+            <p aria-invalid="true" class="error">failed to save API key</p>
         {/if}
     </form>
 {:else}
