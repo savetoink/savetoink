@@ -6,7 +6,7 @@ export default defineConfig({
   outDir: "dist",
   modules: ["@wxt-dev/module-svelte"],
   manifest: {
-    permissions: ["storage"],
+    permissions: ["storage", "tabs"],
   },
   vite(env) {
     return {

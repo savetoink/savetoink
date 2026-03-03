@@ -11,11 +11,35 @@
     let profile: UserProfile | null = $state(null);
     let sendToDevice = $state(false);
 
+    async function getCurrentTabUrl(): Promise<string | null> {
+        try {
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+            return tab?.url ?? null;
+        } catch (error) {
+            console.error("failed to get current tab URL:", error);
+            return null;
+        }
+    }
+
+    function isValidUrl(url: string): boolean {
+        try {
+            const parsed = new URL(url);
+            return parsed.protocol === "http:" || parsed.protocol === "https:";
+        } catch {
+            return false;
+        }
+    }
+
     async function loadProfile() {
         const apiKey = await getAPIKey();
         if (apiKey) {
             profile = await getUserProfile();
             sendToDevice = profile?.auto_send || false;
+        }
+
+        const currentUrl = await getCurrentTabUrl();
+        if (currentUrl && isValidUrl(currentUrl)) {
+            url = currentUrl;
         }
     }
 
