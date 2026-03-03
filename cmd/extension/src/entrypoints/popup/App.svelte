@@ -4,8 +4,12 @@
 </script>
 
 <main class="container">
-    <Post />
-    <Account />
+    <section>
+        <Post />
+    </section>
+    <section>
+        <Account />
+    </section>
 </main>
 
 <style>

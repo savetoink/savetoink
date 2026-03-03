@@ -10,3 +10,7 @@ server-extension:
 build-extension:
     bun run build
     bun run build:firefox
+
+[working-directory('cmd/extension')]
+server-extension-firefox:
+    bun run dev:firefox
