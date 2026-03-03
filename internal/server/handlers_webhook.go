@@ -32,38 +32,36 @@ type mailjetWebhookResponse struct {
 }
 
 func (h *handlers) handleMailjetWebhook(w http.ResponseWriter, r *http.Request) {
+	// https://dev.mailjet.com/email/guides/webhooks/#best-practices
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(mailjetWebhookResponse{
+		Status: "ok",
+	})
+
 	body, readErr := readRequestBody(r)
 	if readErr != nil {
 		addLogAttr(r.Context(), slog.String("error", "failed to read request body"))
-		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if verifyErr := h.verifyMailjetSecret(r); verifyErr != nil {
 		addLogAttr(r.Context(), slog.String("error", "failed to verify shared secret"))
-		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	var events []mailjetEvent
 	if unmarshalErr := json.Unmarshal(body, &events); unmarshalErr != nil {
 		addLogAttr(r.Context(), slog.String("error", "failed to unmarshal webhook request"))
-		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	slog.Debug("processing bounce events", slog.Int("count", len(events)), slog.Any("events", events))
 
 	processErrors := h.processBounceEvents(r, events)
 	if processErrors != nil {
 		addLogAttr(r.Context(), slog.String("error", processErrors.Error()))
-
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(mailjetWebhookResponse{
-		Status: "ok",
-	})
 }
 
 func (h *handlers) verifyMailjetSecret(r *http.Request) error {
