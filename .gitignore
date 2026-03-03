@@ -48,3 +48,6 @@ cmd/webapp/.env
 
 # macOS
 .DS_Store
+
+# Agents
+.opencode/
