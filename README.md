@@ -129,6 +129,10 @@ Email sent successfully. Message ID: 1234567890, UUID: abc123-def456-ghi789
 ✓ Article sent to Kindle
 ```
 
+## Mailjet Webhook
+
+At the moment `just setup-mailjet-webhook` creates the webhook for Mailjet bounce events correctly BUT Mailjet API doesn't seem to offer a way to enable "Group events", so it needs to be checked manually at <https://app.mailjet.com/account/triggers>
+
 ## License
 
 See [LICENSE](LICENSE.md) file for details.

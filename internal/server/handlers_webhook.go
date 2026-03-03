@@ -44,8 +44,6 @@ func (h *handlers) handleMailjetWebhook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	slog.Debug("processing bounce events", slog.String("body", string(body)))
-
 	if verifyErr := h.verifyMailjetSecret(r); verifyErr != nil {
 		addRequestError(r.Context(), verifyErr)
 		return
@@ -59,7 +57,7 @@ func (h *handlers) handleMailjetWebhook(w http.ResponseWriter, r *http.Request) 
 
 	processErrors := h.processBounceEvents(r, events)
 	if processErrors != nil {
-		addLogAttr(r.Context(), slog.String("error", processErrors.Error()))
+		addRequestError(r.Context(), processErrors)
 		return
 	}
 }
