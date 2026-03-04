@@ -39,10 +39,11 @@ cmd/function/function
 cmd/cli/cli
 dump/*
 
+**/node_modules
+
 # SvelteKit
 cmd/webapp/.svelte-kit
 cmd/webapp/build
-cmd/webapp/node_modules
 cmd/webapp/package-lock.json
 cmd/webapp/.env
 

@@ -8,14 +8,14 @@ tools-init:
 # Generate icons from https://www.svgrepo.com/svg/168917/ereader SVG source
 generate-icons: tools-init generate-icons-webapp generate-icons-website generate-icons-extension
 
-[working-directory("cmd/webapp")]
+[working-directory("cmd/web/webapp")]
 generate-icons-webapp:
     @bun run icons:generate
 
-[working-directory("cmd/website")]
+[working-directory("cmd/web/website")]
 generate-icons-website:
     @bun run icons:generate
 
-[working-directory("cmd/extension")]
+[working-directory("cmd/web/extension")]
 generate-icons-extension:
     @bun run icons:generate

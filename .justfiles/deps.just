@@ -1,7 +1,7 @@
 upgrade-go-deps:
     go get -u all
 
-[working-directory('cmd/webapp')]
+[working-directory('cmd/web/webapp')]
 upgrade-svelte-deps:
     npm upgrade
 

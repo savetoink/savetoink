@@ -12,7 +12,7 @@ test: test-go test-webapp
 # Run linter and tests
 check: lint test
 
-[working-directory('cmd/webapp')]
+[working-directory('cmd/web/webapp')]
 test-webapp:
     npm run check
     npm run lint

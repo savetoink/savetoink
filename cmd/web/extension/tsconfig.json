@@ -1,0 +1,10 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "useDefineForClassFields": true,
+    "paths": {
+      "@savetoink/shared": ["../shared/src/index.ts"],
+      "@savetoink/shared/*": ["../shared/src/*"]
+    }
+  }
+}
