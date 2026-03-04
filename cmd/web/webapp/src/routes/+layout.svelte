@@ -8,7 +8,7 @@
 	const buildDate = __BUILD_DATE__;
 	const gitHash = __GIT_HASH__;
 	const versionTxt = isDev ? `${version}-${buildDate}-${gitHash}` : version;
-	const title = 'Save to Ink';
+	const title = isDev ? `Save to Ink - ${versionTxt}` : 'Save to Ink';
 	const picoFile = isDev ? 'pico.yellow.min.css' : 'pico.min.css';
 
 	let { children, data } = $props();

@@ -25,14 +25,21 @@ function createSvelteKitClient(fetch: typeof globalThis.fetch) {
 export const getProfile = (fetch: typeof globalThis.fetch, token: string) =>
 	withSvelteKitError(() => createSvelteKitClient(fetch).getProfile(token));
 
-export const getArticles = (fetch: typeof globalThis.fetch, params: { page?: number; pageSize?: number; favorite?: boolean }, token: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).getArticles(params, token));
+export const getArticles = (
+	fetch: typeof globalThis.fetch,
+	params: { page?: number; pageSize?: number; favorite?: boolean },
+	token: string
+) => withSvelteKitError(() => createSvelteKitClient(fetch).getArticles(params, token));
 
 export const getArticle = (fetch: typeof globalThis.fetch, id: string, token: string) =>
 	withSvelteKitError(() => createSvelteKitClient(fetch).getArticle(id, token));
 
-export const createArticle = (fetch: typeof globalThis.fetch, url: string, tags: string[] | null | undefined, token: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).createArticle(url, tags ?? null, token));
+export const createArticle = (
+	fetch: typeof globalThis.fetch,
+	url: string,
+	tags: string[] | null | undefined,
+	token: string
+) => withSvelteKitError(() => createSvelteKitClient(fetch).createArticle(url, tags ?? null, token));
 
 export const sendArticle = (fetch: typeof globalThis.fetch, id: string, token: string) =>
 	withSvelteKitError(() => createSvelteKitClient(fetch).sendArticle(id, token));
@@ -43,11 +50,19 @@ export const favoriteArticle = (fetch: typeof globalThis.fetch, id: string, toke
 export const deleteArticle = (fetch: typeof globalThis.fetch, id: string, token: string) =>
 	withSvelteKitError(() => createSvelteKitClient(fetch).deleteArticle(id, token));
 
-export const updateDevice = (fetch: typeof globalThis.fetch, deviceEmail: string, autoSend: boolean, token: string) =>
+export const updateDevice = (
+	fetch: typeof globalThis.fetch,
+	deviceEmail: string,
+	autoSend: boolean,
+	token: string
+) =>
 	withSvelteKitError(() => createSvelteKitClient(fetch).updateDevice(deviceEmail, autoSend, token));
 
 export const deleteDevice = (fetch: typeof globalThis.fetch, token: string) =>
 	withSvelteKitError(() => createSvelteKitClient(fetch).deleteDevice(token));
 
-export const exchangeCodeForToken = (fetch: typeof globalThis.fetch, code: string, redirectUri: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).exchangeCodeForToken(code, redirectUri));
+export const exchangeCodeForToken = (
+	fetch: typeof globalThis.fetch,
+	code: string,
+	redirectUri: string
+) => withSvelteKitError(() => createSvelteKitClient(fetch).exchangeCodeForToken(code, redirectUri));

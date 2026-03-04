@@ -8,16 +8,15 @@
         getUserProfile,
         saveUserProfile,
         clearUserProfile,
-        SharedKeyBackend,
-        Auth0Backend,
     } from "../../lib/storage";
     import { API_URL } from "../../lib/api";
     import type { AuthBackendType, UserProfile } from "@savetoink/shared";
+    import { SharedKey, Auth0 } from "@savetoink/shared";
 
     let apiKey = "";
     let authBackend: AuthBackendType =
         (import.meta.env.PUBLIC_AUTH_BACKEND as AuthBackendType) ||
-        SharedKeyBackend;
+        SharedKey;
     let userProfile: UserProfile | null = null;
 
     onMount(async () => {

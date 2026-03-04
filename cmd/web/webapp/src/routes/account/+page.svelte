@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { PUBLIC_AUTH_BACKEND } from '$env/static/public';
-	import { Auth0, SharedKey } from '$lib/consts';
+	import { Auth0, SharedKey } from '@savetoink/shared';
 	import Auth0Login from './Auth0Login.svelte';
 	import SharedKeyLogin from './SharedKeyLogin.svelte';
 	import DeviceDelivery from './DeviceDelivery.svelte';

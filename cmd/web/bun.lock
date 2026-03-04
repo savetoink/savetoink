@@ -7,7 +7,7 @@
     },
     "extension": {
       "name": "savetoink",
-      "version": "0.7.1",
+      "version": "0.7.2",
       "dependencies": {
         "@savetoink/shared": "*"
       },
@@ -24,14 +24,14 @@
     },
     "shared": {
       "name": "@savetoink/shared",
-      "version": "0.7.1",
+      "version": "0.7.2",
       "dependencies": {
         "date-fns": "^4.1.0"
       }
     },
     "webapp": {
       "name": "webapp",
-      "version": "0.7.1",
+      "version": "0.7.2",
       "dependencies": {
         "@savetoink/shared": "*",
         "@sentry/sveltekit": "^10.39.0",
@@ -66,7 +66,7 @@
     },
     "website": {
       "name": "savetoink-website",
-      "version": "0.7.1",
+      "version": "0.7.2",
       "dependencies": {
         "astro": "^4.0.0"
       }

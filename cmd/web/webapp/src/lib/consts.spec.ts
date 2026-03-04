@@ -57,13 +57,13 @@ describe('isAuthenticatedPath', () => {
 		expect(isAuthenticatedPath('/LOGIN')).toBe(true);
 	});
 
-	it('should export Auth0 constant', async () => {
-		const { Auth0 } = await import('./consts');
+	it('should export Auth0 constant from @savetoink/shared', async () => {
+		const { Auth0 } = await import('@savetoink/shared');
 		expect(Auth0).toBe('auth0');
 	});
 
-	it('should export SharedKey constant', async () => {
-		const { SharedKey } = await import('./consts');
+	it('should export SharedKey constant from @savetoink/shared', async () => {
+		const { SharedKey } = await import('@savetoink/shared');
 		expect(SharedKey).toBe('sharedKey');
 	});
 });

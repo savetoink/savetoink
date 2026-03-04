@@ -29,3 +29,7 @@ export const DeviceDomains = [
   "@pbsync.com",
   "@mytolino.com",
 ];
+
+export const getIsDev = (isViteDev?: boolean, isDevWorker?: string): boolean => {
+  return isViteDev === true || isDevWorker === 'true';
+};

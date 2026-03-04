@@ -13,7 +13,7 @@ export const actions: Actions = {
 		const tagsStr = data.get('tags');
 		const sendToDevice = data.get('sendToDevice');
 
-		if (!txt) {
+		if (!txt || typeof txt !== 'string') {
 			error(400, 'URL is required');
 		}
 

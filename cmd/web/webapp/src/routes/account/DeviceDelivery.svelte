@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { DeviceDomains } from '$lib/consts';
+	import { DeviceDomains } from '@savetoink/shared';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

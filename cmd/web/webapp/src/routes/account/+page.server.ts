@@ -7,7 +7,7 @@ import {
 	deleteUserCookie
 } from '$lib/server/cookies';
 import { getProfile, updateDevice, deleteDevice } from '$lib/server/apiClient';
-import { DeviceDomains } from '$lib/consts';
+import { DeviceDomains } from '@savetoink/shared';
 import type { UserProfile } from '@savetoink/shared';
 import type { Actions, PageServerLoad } from './$types';
 

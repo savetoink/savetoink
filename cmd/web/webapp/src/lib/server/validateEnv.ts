@@ -6,7 +6,7 @@ import {
 	PUBLIC_AUTH0_DOMAIN,
 	PUBLIC_AUTH0_AUDIENCE
 } from '$env/static/public';
-import { Auth0, SharedKey } from '$lib/consts';
+import { Auth0, SharedKey } from '@savetoink/shared';
 
 export const validateEnv = () => {
 	const requiredEnvVars = [

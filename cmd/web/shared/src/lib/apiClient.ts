@@ -27,6 +27,7 @@ export interface ArticlesResponse {
   total: number;
   page: number;
   pageSize: number;
+  has_more: boolean;
 }
 
 export interface ApiClient {

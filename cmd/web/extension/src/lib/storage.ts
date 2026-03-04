@@ -1,10 +1,7 @@
 import type { UserProfile, AuthBackendType } from "@savetoink/shared";
-import { SharedKey as SharedKeyBackend, Auth0 as Auth0Backend } from "@savetoink/shared";
 
 export const STORAGE_KEY = "local:shared_api_key";
 export const USER_PROFILE_KEY = "local:user_profile";
-
-export { SharedKeyBackend, Auth0Backend };
 
 interface ApiUserProfile {
   account: string;

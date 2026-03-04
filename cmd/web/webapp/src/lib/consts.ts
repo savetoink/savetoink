@@ -1,6 +1,5 @@
 import { PUBLIC_IS_DEV_WORKER } from '$env/static/public';
-import { Auth0, SharedKey, DeviceDomains } from '@savetoink/shared';
-import type { AuthBackendType } from '@savetoink/shared';
+import { getIsDev } from '@savetoink/shared';
 
 const unauthenticatedPaths = ['/account', '/auth/callback', '/sentry/tunnel'];
 export const isAuthenticatedPath = (path: string) => {
@@ -16,7 +15,4 @@ export const isAuthenticatedPath = (path: string) => {
 	}
 };
 
-export type { AuthBackendType as authBackend };
-export { Auth0, SharedKey, DeviceDomains };
-
-export const isDev: boolean = import.meta.env.DEV || PUBLIC_IS_DEV_WORKER === 'true';
+export const isDev: boolean = getIsDev(import.meta.env.DEV, PUBLIC_IS_DEV_WORKER);
