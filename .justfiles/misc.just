@@ -19,3 +19,8 @@ generate-icons-website:
 [working-directory("cmd/web/extension")]
 generate-icons-extension:
     @bun run icons:generate
+
+# Update VERSION file and all package.json files with new version
+[working-directory("tools")]
+bump-versions version_type:
+    @bun run update_versions.ts {{ version_type }}
