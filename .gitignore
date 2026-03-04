@@ -51,11 +51,3 @@ cmd/webapp/.env
 
 # Agents
 .opencode/
-
-# Images
-*.svg
-*.png
-*.ico
-!favicon.svg
-!cmd/webapp/src/lib/assets/favicon.svg
-!cmd/website/public/favicon.svg
