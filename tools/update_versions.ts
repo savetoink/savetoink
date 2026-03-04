@@ -50,7 +50,11 @@ function bumpVersion(version: Version, bumpType: BumpType): Version {
     case "minor":
       return { major: version.major, minor: version.minor + 1, patch: 0 };
     case "patch":
-      return { major: version.major, minor: version.minor, patch: version.patch + 1 };
+      return {
+        major: version.major,
+        minor: version.minor,
+        patch: version.patch + 1,
+      };
     default:
       return version;
   }
@@ -87,8 +91,60 @@ async function detectIndent(filePath: string): Promise<IndentStyle> {
 }
 
 function formatJson(obj: any, indentStyle: IndentStyle): string {
-  const indent = indentStyle.useTabs ? "\t" : " ".repeat(indentStyle.spaceCount);
+  const indent = indentStyle.useTabs
+    ? "\t"
+    : " ".repeat(indentStyle.spaceCount);
   return JSON.stringify(obj, null, indent);
+}
+
+async function updateBunLockWorkspaces(
+  bunLockPath: string,
+  repoRoot: string,
+  newVersion: string,
+): Promise<number> {
+  let content = await fs.readFile(bunLockPath, "utf-8");
+
+  content = content.replace(/,(\s*[}\]])/g, "$1");
+  let obj: any;
+
+  try {
+    obj = JSON.parse(content);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(
+      `⚠️  Skipped ${path.relative(repoRoot, bunLockPath)} (invalid JSON: ${message})`,
+    );
+    return 0;
+  }
+
+  if (!obj.workspaces || typeof obj.workspaces !== "object") {
+    console.log(`✅ ${path.relative(repoRoot, bunLockPath)} (no workspaces)`);
+    return 0;
+  }
+
+  const relativeBunLockPath = path.relative(repoRoot, bunLockPath);
+  let updatedCount = 0;
+  for (const [workspaceName, workspaceData] of Object.entries(obj.workspaces)) {
+    if (workspaceName === "" || typeof workspaceData !== "object") continue;
+    if (!("version" in workspaceData)) continue;
+
+    const oldVersion = workspaceData.version;
+    workspaceData.version = newVersion;
+    console.log(
+      `✅ ${relativeBunLockPath}:${workspaceName} (${oldVersion} → ${newVersion})`,
+    );
+    updatedCount++;
+  }
+
+  if (updatedCount === 0) {
+    console.log(`✅ ${relativeBunLockPath} (no version fields to update)`);
+    return 0;
+  }
+
+  const indent = "  ";
+  const newContent = JSON.stringify(obj, null, indent);
+  await fs.writeFile(bunLockPath, newContent + "\n");
+  return updatedCount;
 }
 
 async function main(): Promise<void> {
@@ -121,7 +177,9 @@ async function main(): Promise<void> {
   const oldVersionStr = formatVersion(version);
   const newVersionStr = formatVersion(newVersion);
 
-  console.log(`\n📦 Updating version: ${oldVersionStr} → ${newVersionStr} (${bumpType})\n`);
+  console.log(
+    `\n📦 Updating version: ${oldVersionStr} → ${newVersionStr} (${bumpType})\n`,
+  );
 
   const files = await git.listFiles({ fs, dir: repoRoot, ref: "HEAD" });
   const packageJsonFiles = files
@@ -141,7 +199,9 @@ async function main(): Promise<void> {
     try {
       obj = JSON.parse(content);
     } catch {
-      console.warn(`⚠️  Skipped ${path.relative(repoRoot, filePath)} (invalid JSON)`);
+      console.warn(
+        `⚠️  Skipped ${path.relative(repoRoot, filePath)} (invalid JSON)`,
+      );
       continue;
     }
 
@@ -166,9 +226,25 @@ async function main(): Promise<void> {
     updatedCount++;
   }
 
+  const bunLockPath = path.join(repoRoot, "cmd", "web", "bun.lock");
+  const packageCount = updatedCount;
+  try {
+    const bunLockUpdates = await updateBunLockWorkspaces(
+      bunLockPath,
+      repoRoot,
+      newVersionStr,
+    );
+    updatedCount += bunLockUpdates;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(
+      `⚠️  Could not update ${path.relative(repoRoot, bunLockPath)}: ${message}`,
+    );
+  }
+
   console.log(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Done! Updated VERSION and ${updatedCount} package.json files
+ Done! Updated VERSION, ${packageCount} package.json files, and ${updatedCount - packageCount} bun.lock workspace versions
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
 }
