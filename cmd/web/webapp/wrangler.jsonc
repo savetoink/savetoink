@@ -11,6 +11,9 @@
 	"env": {
 		"dev": {
 			"name": "savetoink-dev"
+		},
+		"prod": {
+			"name": "savetoink-prod"
 		}
 	}
 }
