@@ -10,8 +10,13 @@ Self-hosted read-later service with native Kindle delivery. Save articles in the
 - Run as self-hosted web application (Frontend + API) or as [CLI tool](#cli-tool)
 - Convert content to EPUB format with [go-epub](https://github.com/go-shiori/go-epub) for e-reader devices
 - Optionally send to reader devices like Kindle, Kobo, etc. via email backend (only [MailJet](https://www.mailjet.com/) supported at the moment)
+- Browser extension to easy save/send pages
 
-### Backend
+## Frontend
+
+- SSR SvelteKit app, running as CloudFlare worker or self hosted
+
+## Backend
 
 - generic Go HTTP server with AWS DynamoDB backend
 - or deployed as AWS Lambda Function (with [HTTP adapter](https://github.com/akrylysov/algnhsa) + CloudFront for custom domain
@@ -33,7 +38,6 @@ To run locally:
 
 ```bash
 just server-http
-just server-webapp
 ```
 
 To deploy to AWS Lambda:
