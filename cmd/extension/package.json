@@ -12,7 +12,8 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "icons:generate": "bun run ../../tools/generate_icons.ts ../../favicon.svg icon-targets.csv"
   },
   "devDependencies": {
     "@tsconfig/svelte": "^5.0.7",

@@ -1,0 +1,6 @@
+type,path,size
+png,public/icon/16.png,16
+png,public/icon/32.png,32
+png,public/icon/48.png,48
+png,public/icon/96.png,96
+png,public/icon/128.png,128

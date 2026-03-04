@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "icons:generate": "bun run ../../tools/generate_icons.ts ../../favicon.svg icon-targets.csv"
   },
   "dependencies": {
     "astro": "^4.0.0"

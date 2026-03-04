@@ -1,6 +1,21 @@
 version:
     @echo "$(cat VERSION)-$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)"
 
+[working-directory("tools")]
+tools-init:
+    @bun install
+
 # Generate icons from https://www.svgrepo.com/svg/168917/ereader SVG source
-generate-icons:
-    bun tools/generate_icons.ts
+generate-icons: tools-init generate-icons-webapp generate-icons-website generate-icons-extension
+
+[working-directory("cmd/webapp")]
+generate-icons-webapp:
+    @bun run icons:generate
+
+[working-directory("cmd/website")]
+generate-icons-website:
+    @bun run icons:generate
+
+[working-directory("cmd/extension")]
+generate-icons-extension:
+    @bun run icons:generate

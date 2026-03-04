@@ -1,0 +1,11 @@
+type,path,size
+png,public/apple-touch-icon.png,180
+png,public/apple-touch-icon-152x152.png,152
+png,public/apple-touch-icon-144x144.png,144
+png,public/apple-touch-icon-120x120.png,120
+png,public/apple-touch-icon-76x76.png,76
+png,public/apple-touch-icon-60x60.png,60
+png,public/android-icon-192x192.png,192
+png,public/android-icon-512x512.png,512
+png,public/favicon.ico,48
+svg,public/favicon.svg

@@ -14,7 +14,8 @@
 		"format": "prettier --write .",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"icons:generate": "bun run ../../tools/generate_icons.ts ../../favicon.svg icon-targets.csv"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.2",
@@ -34,8 +35,10 @@
 		"playwright": "^1.58.1",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",
+		"sharp": "^0.34.5",
 		"svelte": "^5.49.2",
 		"svelte-check": "^4.3.6",
+		"to-ico": "^1.1.5",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.54.0",
 		"vite": "^7.3.1",
