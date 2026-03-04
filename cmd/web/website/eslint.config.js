@@ -14,7 +14,12 @@ export default defineConfig(
 	...ts.configs.recommended,
 	prettier,
 	{
-		languageOptions: { globals: { ...globals.browser, ...globals.node } },
+		languageOptions: {
+			globals: { ...globals.browser, ...globals.node },
+			parserOptions: {
+				tsconfigRootDir: import.meta.dirname
+			}
+		},
 		rules: {
 			'no-undef': 'off',
 			'@typescript-eslint/triple-slash-reference': 'off'
