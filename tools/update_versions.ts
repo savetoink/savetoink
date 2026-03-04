@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import git from "isomorphic-git";
+import * as jsonc from "jsonc-parser";
 import path from "path";
 
 type BumpType = "major" | "minor" | "patch";
@@ -102,17 +103,16 @@ async function updateBunLockWorkspaces(
   repoRoot: string,
   newVersion: string,
 ): Promise<number> {
-  let content = await fs.readFile(bunLockPath, "utf-8");
+  const content = await fs.readFile(bunLockPath, "utf-8");
 
-  content = content.replace(/,(\s*[}\]])/g, "$1");
   let obj: any;
 
   try {
-    obj = JSON.parse(content);
+    obj = jsonc.parse(content);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.warn(
-      `⚠️  Skipped ${path.relative(repoRoot, bunLockPath)} (invalid JSON: ${message})`,
+      `⚠️  Skipped ${path.relative(repoRoot, bunLockPath)} (invalid JSONC: ${message})`,
     );
     return 0;
   }
@@ -124,12 +124,20 @@ async function updateBunLockWorkspaces(
 
   const relativeBunLockPath = path.relative(repoRoot, bunLockPath);
   let updatedCount = 0;
+  const replacements: { old: string; new: string }[] = [];
+
   for (const [workspaceName, workspaceData] of Object.entries(obj.workspaces)) {
-    if (workspaceName === "" || typeof workspaceData !== "object") continue;
+    if (workspaceName === "" || typeof workspaceData !== "object" || !workspaceData) continue;
     if (!("version" in workspaceData)) continue;
 
     const oldVersion = workspaceData.version;
-    workspaceData.version = newVersion;
+    if (oldVersion === newVersion) continue;
+
+    replacements.push({
+      old: `"version": "${oldVersion}"`,
+      new: `"version": "${newVersion}"`,
+    });
+
     console.log(
       `✅ ${relativeBunLockPath}:${workspaceName} (${oldVersion} → ${newVersion})`,
     );
@@ -141,9 +149,12 @@ async function updateBunLockWorkspaces(
     return 0;
   }
 
-  const indent = "  ";
-  const newContent = JSON.stringify(obj, null, indent);
-  await fs.writeFile(bunLockPath, newContent + "\n");
+  let newContent = content;
+  for (const { old, new: newVal } of replacements) {
+    newContent = newContent.replace(old, newVal);
+  }
+
+  await fs.writeFile(bunLockPath, newContent);
   return updatedCount;
 }
 

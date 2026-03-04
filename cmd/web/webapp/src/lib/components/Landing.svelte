@@ -1,5 +1,5 @@
 <a href="https://www.saveto.ink/" target="_blank" rel="external noopener noreferrer">
-	Save<span>to.</span>ink
+	<span>Save</span>to.<span>ink</span>
 </a>
 
 <style>

@@ -44,7 +44,11 @@ export default defineBackground(() => {
 		try {
 			const apiKey = await getAPIKey();
 			if (!apiKey) {
-				await showToast('Authentication Required', 'Please login to your Ink account', 'error');
+				await showToast(
+					'Authentication Required',
+					'Please login to your Save to Ink account',
+					'error'
+				);
 				return;
 			}
 
