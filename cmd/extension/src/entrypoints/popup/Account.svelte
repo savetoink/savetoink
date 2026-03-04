@@ -11,6 +11,7 @@
         SharedKeyBackend,
         Auth0Backend,
     } from "../../lib/storage";
+    import { API_URL } from "../../lib/api";
     import type { AuthBackendType, UserProfile } from "../../lib/storage";
 
     let apiKey = "";
@@ -85,5 +86,17 @@
                 </li>
             {/if}
         {/if}
+        {#if import.meta.env.DEV}
+            <li>
+                <strong>API URL:</strong>
+                {API_URL}
+            </li>
+        {/if}
     </ul>
 </section>
+
+<style>
+    ul li {
+        list-style: none;
+    }
+</style>
