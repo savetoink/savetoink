@@ -1,22 +1,22 @@
-import path from "path";
-import { defineConfig } from "wxt";
+import path from 'path';
+import { defineConfig } from 'wxt';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
-  srcDir: "src",
-  outDir: "dist",
-  modules: ["@wxt-dev/module-svelte"],
-  manifest: {
-    permissions: ["storage", "tabs", "contextMenus", "identity"],
-  },
-  vite(env) {
-    return {
-      envPrefix: "PUBLIC_",
-      resolve: {
-        alias: {
-          "@savetoink/shared": path.resolve(__dirname, "../shared/src"),
-        },
-      },
-    };
-  },
+	srcDir: 'src',
+	outDir: 'dist',
+	modules: ['@wxt-dev/module-svelte'],
+	manifest: {
+		permissions: ['storage', 'tabs', 'contextMenus', 'identity']
+	},
+	vite() {
+		return {
+			envPrefix: 'PUBLIC_',
+			resolve: {
+				alias: {
+					'@savetoink/shared': path.resolve(__dirname, '../shared/src')
+				}
+			}
+		};
+	}
 });

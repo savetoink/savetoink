@@ -1,14 +1,28 @@
 {
-  "name": "savetoink-website",
-  "type": "module",
-  "version": "0.7.2",
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "icons:generate": "bun run ../../tools/generate_icons.ts ../../favicon.svg icon-targets.csv"
-  },
-  "dependencies": {
-    "astro": "^4.0.0"
-  }
+	"name": "savetoink-website",
+	"type": "module",
+	"version": "0.7.3",
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
+		"check": "astro check",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write .",
+		"icons:generate": "bun run ../../tools/generate_icons.ts ../../favicon.svg icon-targets.csv"
+	},
+	"dependencies": {
+		"astro": "^4.0.0"
+	},
+	"devDependencies": {
+		"@astrojs/check": "^0.9.6",
+		"@eslint/compat": "^2.0.2",
+		"@eslint/js": "^9.39.2",
+		"eslint": "^9.39.2",
+		"eslint-config-prettier": "^10.1.8",
+		"globals": "^17.3.0",
+		"prettier": "^3.8.1",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.54.0"
+	}
 }

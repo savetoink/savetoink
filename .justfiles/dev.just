@@ -7,4 +7,4 @@ server-webapp:
 
 [working-directory('cmd/web/website')]
 server-website:
-    npm run dev
+    bun run dev

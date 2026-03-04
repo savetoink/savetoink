@@ -1,101 +1,94 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import Login from "./Login.svelte";
-    import {
-        getAPIKey,
-        saveAPIKey,
-        clearAPIKey,
-        getUserProfile,
-        saveUserProfile,
-        clearUserProfile,
-    } from "../../lib/storage";
-    import { API_URL } from "../../lib/api";
-    import type { AuthBackendType, UserProfile } from "@savetoink/shared";
-    import { SharedKey, Auth0 } from "@savetoink/shared";
+	import { onMount } from 'svelte';
+	import Login from './Login.svelte';
+	import {
+		getAPIKey,
+		saveAPIKey,
+		clearAPIKey,
+		getUserProfile,
+		saveUserProfile,
+		clearUserProfile
+	} from '../../lib/storage';
+	import { API_URL } from '../../lib/api';
+	import type { AuthBackendType, UserProfile } from '@savetoink/shared';
+	import { SharedKey } from '@savetoink/shared';
 
-    let apiKey = "";
-    let authBackend: AuthBackendType =
-        (import.meta.env.PUBLIC_AUTH_BACKEND as AuthBackendType) ||
-        SharedKey;
-    let userProfile: UserProfile | null = null;
+	let apiKey = '';
+	let authBackend: AuthBackendType =
+		(import.meta.env.PUBLIC_AUTH_BACKEND as AuthBackendType) || SharedKey;
+	let userProfile: UserProfile | null = null;
 
-    onMount(async () => {
-        const [savedKey, savedProfile] = await Promise.all([
-            getAPIKey(),
-            getUserProfile(),
-        ]);
-        if (savedKey) {
-            apiKey = savedKey;
-        }
-        userProfile = savedProfile;
-    });
+	onMount(async () => {
+		const [savedKey, savedProfile] = await Promise.all([getAPIKey(), getUserProfile()]);
+		if (savedKey) {
+			apiKey = savedKey;
+		}
+		userProfile = savedProfile;
+	});
 
-    async function handleApiKeySave(detail: {
-        apiKey: string;
-        profile?: UserProfile;
-    }) {
-        await saveAPIKey(detail.apiKey);
-        apiKey = detail.apiKey;
-        if (detail.profile) {
-            await saveUserProfile(detail.profile);
-            userProfile = detail.profile;
-        }
-    }
+	async function handleApiKeySave(detail: { apiKey: string; profile?: UserProfile }) {
+		await saveAPIKey(detail.apiKey);
+		apiKey = detail.apiKey;
+		if (detail.profile) {
+			await saveUserProfile(detail.profile);
+			userProfile = detail.profile;
+		}
+	}
 
-    async function handleApiKeyLogout() {
-        await Promise.all([clearAPIKey(), clearUserProfile()]);
-        apiKey = "";
-        userProfile = null;
-    }
+	async function handleApiKeyLogout() {
+		await Promise.all([clearAPIKey(), clearUserProfile()]);
+		apiKey = '';
+		userProfile = null;
+	}
 </script>
 
 <h1>Account</h1>
 
 <section>
-    <Login
-        {apiKey}
-        {authBackend}
-        {userProfile}
-        onApiKeySave={handleApiKeySave}
-        onApiKeyLogout={handleApiKeyLogout}
-    />
+	<Login
+		{apiKey}
+		{authBackend}
+		{userProfile}
+		onApiKeySave={handleApiKeySave}
+		onApiKeyLogout={handleApiKeyLogout}
+	/>
 </section>
 
 <section>
-    <ul>
-        {#if userProfile}
-            {#if userProfile.email}
-                <li>
-                    <strong>Email:</strong>
-                    {userProfile.email}
-                </li>
-            {/if}
+	<ul>
+		{#if userProfile}
+			{#if userProfile.email}
+				<li>
+					<strong>Email:</strong>
+					{userProfile.email}
+				</li>
+			{/if}
 
-            {#if userProfile.deviceEmail}
-                <li>
-                    <strong>Device email:</strong>
-                    {userProfile.deviceEmail || "Not set"}
-                </li>
-            {/if}
+			{#if userProfile.deviceEmail}
+				<li>
+					<strong>Device email:</strong>
+					{userProfile.deviceEmail || 'Not set'}
+				</li>
+			{/if}
 
-            {#if userProfile.autoSend}
-                <li>
-                    <strong>Auto-send:</strong>
-                    {userProfile.autoSend ? "Enabled" : "Disabled"}
-                </li>
-            {/if}
-        {/if}
-        {#if import.meta.env.DEV}
-            <li>
-                <strong>API URL:</strong>
-                {API_URL}
-            </li>
-        {/if}
-    </ul>
+			{#if userProfile.autoSend}
+				<li>
+					<strong>Auto-send:</strong>
+					{userProfile.autoSend ? 'Enabled' : 'Disabled'}
+				</li>
+			{/if}
+		{/if}
+		{#if import.meta.env.DEV}
+			<li>
+				<strong>API URL:</strong>
+				{API_URL}
+			</li>
+		{/if}
+	</ul>
 </section>
 
 <style>
-    ul li {
-        list-style: none;
-    }
+	ul li {
+		list-style: none;
+	}
 </style>

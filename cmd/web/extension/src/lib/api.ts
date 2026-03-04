@@ -1,4 +1,4 @@
-import { createApiClient } from "@savetoink/shared";
+import { createApiClient } from '@savetoink/shared';
 
 const apiClient = createApiClient({ baseUrl: import.meta.env.PUBLIC_API_URL });
 
