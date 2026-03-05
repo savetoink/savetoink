@@ -1,6 +1,6 @@
 module github.com/shaftoe/savetoink
 
-go 1.25.6
+go 1.26.0
 
 require (
 	github.com/akrylysov/algnhsa v1.1.0
@@ -10,6 +10,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.10
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.20.33
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.56.0
+	github.com/getsentry/sentry-go v0.43.0
+	github.com/getsentry/sentry-go/slog v0.43.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c
 	github.com/go-shiori/go-epub v1.2.1
@@ -89,6 +91,5 @@ require (
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -30,6 +30,16 @@ const (
 	AuthBackendAuth0 AuthBackend = "auth0"
 )
 
+// LoggingProvider defines the logging backend type.
+type LoggingProvider string
+
+const (
+	// LoggingBackendNone indicates no external logging backend.
+	LoggingBackendNone LoggingProvider = ""
+	// LoggingBackendSentry indicates Sentry logging backend.
+	LoggingBackendSentry LoggingProvider = "sentry"
+)
+
 // Status represents the delivery status of an article.
 type Status string
 

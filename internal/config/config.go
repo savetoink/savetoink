@@ -35,6 +35,12 @@ type Config struct {
 	MailjetAPISecret     string
 	MailjetWebhookSecret string
 	SenderEmail          string
+
+	// Logging
+	LoggingProvider   consts.LoggingProvider
+	SentryDSN         string
+	SentryEnvironment string
+	SentrySampleRate  float64
 }
 
 // Load reads configuration from environment variables and returns a Config instance.
@@ -80,6 +86,10 @@ func bindEnvVars() error {
 		{"sender-email", "SAVETOINK_SENDER_EMAIL"},
 		{"sends-table", "SAVETOINK_SENDS_TABLE_NAME"},
 		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
+		{"logging-provider", "SAVETOINK_LOGGING_PROVIDER"},
+		{"sentry-dsn", "SAVETOINK_SENTRY_DSN"},
+		{"sentry-environment", "SAVETOINK_SENTRY_ENVIRONMENT"},
+		{"sentry-sample-rate", "SAVETOINK_SENTRY_SAMPLE_RATE"},
 	}
 
 	for _, ev := range envVars {
@@ -109,6 +119,10 @@ func loadConfig(mode consts.RunMode) *Config {
 		SenderEmail:          viper.GetString("sender-email"),
 		SendsTable:           viper.GetString("sends-table"),
 		UserProfileTable:     viper.GetString("user-profile-table"),
+		LoggingProvider:      consts.LoggingProvider(viper.GetString("logging-provider")),
+		SentryDSN:            viper.GetString("sentry-dsn"),
+		SentryEnvironment:    viper.GetString("sentry-environment"),
+		SentrySampleRate:     viper.GetFloat64("sentry-sample-rate"),
 	}
 
 	return cfg
@@ -136,6 +150,7 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 	}
 
 	c.validateEmailProviderConfig(missing)
+	c.validateLoggingProviderConfig(missing)
 
 	if c.ArticlesTable == "" {
 		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
@@ -155,6 +170,7 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 		return fmt.Errorf("failed to load AWS config: %w", err)
 	}
 	c.AWSConfig = &cfg
+
 	return nil
 }
 
@@ -196,6 +212,20 @@ func (c *Config) validateEmailProviderConfig(missing *[]string) {
 		}
 		if c.SenderEmail == "" {
 			*missing = append(*missing, "SAVETOINK_SENDER_EMAIL")
+		}
+	}
+}
+
+func (c *Config) validateLoggingProviderConfig(missing *[]string) {
+	if c.LoggingProvider == consts.LoggingBackendSentry {
+		if c.SentryDSN == "" {
+			*missing = append(*missing, "SAVETOINK_SENTRY_DSN")
+		}
+		if c.SentryEnvironment == "" {
+			*missing = append(*missing, "SAVETOINK_SENTRY_ENVIRONMENT")
+		}
+		if c.SentrySampleRate == 0 {
+			*missing = append(*missing, "SAVETOINK_SENTRY_SAMPLE_RATE")
 		}
 	}
 }

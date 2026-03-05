@@ -81,6 +81,27 @@ Parameters:
     Description: Debug flag
     Default: "false"
 
+  LoggingProvider:
+    Type: String
+    Description: Logging backend (sentry or empty to disable)
+    Default: ""
+
+  SentryDSN:
+    Type: String
+    NoEcho: true
+    Description: Sentry DSN for error tracking
+    Default: ""
+
+  SentryEnvironment:
+    Type: String
+    Description: Sentry environment name (e.g., production, staging)
+    Default: ""
+
+  SentrySampleRate:
+    Type: String
+    Description: Sentry sample rate (0.0 to 1.0)
+    Default: "1.0"
+
   DomainName:
     Type: String
     Description: Custom domain name for the API (e.g. api.saveto.ink)
@@ -147,6 +168,10 @@ Resources:
           SAVETOINK_SENDER_EMAIL: !Ref SenderEmail
           SAVETOINK_SENDS_TABLE_NAME: !Ref SendsTable
           SAVETOINK_USER_PROFILE_TABLE_NAME: !Ref UserProfileTable
+          SAVETOINK_LOGGING_PROVIDER: !Ref LoggingProvider
+          SAVETOINK_SENTRY_DSN: !Ref SentryDSN
+          SAVETOINK_SENTRY_ENVIRONMENT: !Ref SentryEnvironment
+          SAVETOINK_SENTRY_SAMPLE_RATE: !Ref SentrySampleRate
 
       TracingConfig:
         Mode: PassThrough

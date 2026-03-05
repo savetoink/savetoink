@@ -7,7 +7,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/getsentry/sentry-go"
+	sentryslog "github.com/getsentry/sentry-go/slog"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/shaftoe/savetoink/internal/config"
@@ -16,6 +19,8 @@ import (
 	"github.com/shaftoe/savetoink/internal/server/auth"
 	"github.com/shaftoe/savetoink/internal/service"
 )
+
+const sentryTimeout = 5 * time.Second
 
 // NewRouter creates and configures a new chi router with all middleware and routes.
 func NewRouter(cfg *config.Config) *chi.Mux {
@@ -105,9 +110,47 @@ func setupLogging(cfg *config.Config) {
 	if cfg.Debug {
 		level = slog.LevelDebug
 	}
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+
+	defaultHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: level,
-	})))
+	})
+
+	slog.SetDefault(slog.New(defaultHandler))
+
+	if cfg.LoggingProvider == consts.LoggingBackendNone {
+		return
+	}
+
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              cfg.SentryDSN,
+		Debug:            cfg.Debug,
+		Environment:      cfg.SentryEnvironment,
+		SampleRate:       cfg.SentrySampleRate,
+		AttachStacktrace: true,
+		EnableLogs:       true,
+		Transport: &sentry.HTTPSyncTransport{
+			Timeout: sentryTimeout,
+		},
+	})
+
+	if err != nil {
+		slog.Error("failed to initialize Sentry, fall back to default logger", "error", err)
+
+		return
+	}
+
+	logLevels := []slog.Level{slog.LevelInfo, slog.LevelWarn, slog.LevelError}
+	if cfg.Debug {
+		logLevels = append(logLevels, slog.LevelDebug)
+	}
+
+	sentryHandler := sentryslog.Option{
+		EventLevel: []slog.Level{slog.LevelWarn, slog.LevelError, sentryslog.LevelFatal},
+		LogLevel:   logLevels,
+	}.NewSentryHandler(context.Background())
+
+	multiHandler := slog.NewMultiHandler(sentryHandler, defaultHandler)
+	slog.SetDefault(slog.New(multiHandler))
 }
 
 const logRecordKey = contextKey("log_record")
