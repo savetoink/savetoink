@@ -13,7 +13,6 @@ export const GET: RequestHandler = async ({ fetch, url, cookies }) => {
 	const response = await exchangeCodeForToken(fetch, code, `${url.origin}/auth/callback`);
 
 	if (!response.access_token) {
-		console.error(response);
 		error(500, 'Auth0 exchange_failed');
 	}
 
