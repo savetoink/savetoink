@@ -83,6 +83,7 @@
 	}
 
 	.toast-content strong {
+		color: black;
 		font-size: 14px;
 		font-weight: 600;
 	}

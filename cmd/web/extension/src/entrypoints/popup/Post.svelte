@@ -1,42 +1,64 @@
 <script lang="ts">
 	import { createArticle, sendArticle } from '../../lib/api';
-	import { getAPIKey, getUserProfile } from '../../lib/storage';
+	import { getAPIKey } from '../../lib/storage';
 	import type { UserProfile } from '@savetoink/shared';
+
+	let { profile }: { profile: UserProfile | null } = $props();
 
 	let url = $state('');
 	let loading = $state(false);
 	let status: '' | 'success' | 'error' = $state('');
 	let errorMessage = $state('');
 	let statusTimeout: ReturnType<typeof setTimeout>;
-	let profile: UserProfile | null = $state(null);
-	let sendToDevice = $state(false);
-
-	onMount(async () => {
-		await loadProfile();
-	});
+	let sendToDevice = $derived(profile?.auto_send || false);
 
 	async function getCurrentTabUrl(): Promise<string | null> {
 		try {
 			const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-			return tab?.url ?? null;
+			const url = tab?.url ?? null;
+
+			if (!url) {
+				return null;
+			}
+
+			// Must be http:// or https://
+			if (!url.startsWith('http://') && !url.startsWith('https://')) {
+				return null;
+			}
+
+			// Exclude localhost and local network addresses
+			try {
+				const urlObj = new URL(url);
+				const hostname = urlObj.hostname.toLowerCase();
+
+				// Exclude localhost variants
+				if (
+					hostname === 'localhost' ||
+					hostname === '127.0.0.1' ||
+					hostname === '::1' ||
+					hostname.endsWith('.local')
+				) {
+					return null;
+				}
+			} catch {
+				return null;
+			}
+
+			return url;
 		} catch (error) {
 			console.error('failed to get current tab URL:', error);
 			return null;
 		}
 	}
 
-	async function loadProfile() {
-		const apiKey = await getAPIKey();
-		if (apiKey) {
-			profile = await getUserProfile();
-			sendToDevice = profile?.auto_send || false;
-		}
-
+	async function loadCurrentTabUrl() {
 		const currentUrl = await getCurrentTabUrl();
 		if (currentUrl) {
 			url = currentUrl;
 		}
 	}
+
+	loadCurrentTabUrl();
 
 	function clearStatus() {
 		status = '';

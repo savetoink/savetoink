@@ -2,15 +2,21 @@
 	import { getProfile, exchangeCodeForToken } from '../../lib/api';
 	import type { UserProfile } from '@savetoink/shared';
 
-	export let apiKey = '';
-	export let profile: UserProfile | null = null;
-	export let onSave: (detail: { apiKey: string; profile?: UserProfile }) => void | Promise<void>;
-	export let onLogout: () => void | Promise<void>;
+	let {
+		apiKey,
+		profile,
+		onSave,
+		onLogout
+	}: {
+		apiKey: string;
+		profile: UserProfile | null;
+		onSave: (detail: { apiKey: string; profile?: UserProfile }) => void | Promise<void>;
+		onLogout: () => void | Promise<void>;
+	} = $props();
 
-	let loginStatus = '';
+	let isLoggedIn = $derived(!!apiKey && !!profile);
+	let loginStatus = $state('');
 	let redirectUri = '';
-
-	$: isLoggedIn = apiKey && profile;
 
 	async function handleLogin() {
 		try {
@@ -74,7 +80,7 @@
 </script>
 
 {#if !isLoggedIn}
-	<button type="button" on:click={handleLogin}> Log In / Sign Up </button>
+	<button type="button" onclick={handleLogin}> Log In / Sign Up </button>
 	{#if loginStatus === 'redirecting'}
 		<p>redirecting to Auth0...</p>
 	{:else if loginStatus === 'authenticating'}
@@ -89,5 +95,5 @@
 		<p aria-invalid="true" class="error">authentication failed</p>
 	{/if}
 {:else}
-	<button type="button" on:click={handleLogout}>Logout</button>
+	<button type="button" onclick={handleLogout}>Logout</button>
 {/if}

@@ -1,14 +1,28 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Account from './Account.svelte';
 	import Post from './Post.svelte';
+	import { getAPIKey, getUserProfile } from '../../lib/storage';
+	import type { UserProfile } from '@savetoink/shared';
+
+	let apiKey = $state('');
+	let profile: UserProfile | null = $state(null);
+
+	onMount(async () => {
+		const [savedKey, savedProfile] = await Promise.all([getAPIKey(), getUserProfile()]);
+		if (savedKey) {
+			apiKey = savedKey;
+		}
+		profile = savedProfile;
+	});
 </script>
 
 <main class="container">
 	<section>
-		<Post />
+		<Post {profile} />
 	</section>
 	<section>
-		<Account />
+		<Account bind:profile bind:apiKey />
 	</section>
 </main>
 

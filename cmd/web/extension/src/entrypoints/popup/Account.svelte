@@ -1,44 +1,33 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import Login from './Login.svelte';
-	import {
-		getAPIKey,
-		saveAPIKey,
-		clearAPIKey,
-		getUserProfile,
-		saveUserProfile,
-		clearUserProfile
-	} from '../../lib/storage';
+	import { saveAPIKey, clearAPIKey } from '../../lib/storage';
 	import { API_URL } from '../../lib/api';
 	import { SharedKey } from '@savetoink/shared';
 	import type { UserProfile, AuthBackendType } from '@savetoink/shared';
 
-	let apiKey = '';
+	let {
+		profile = $bindable(),
+		apiKey = $bindable()
+	}: {
+		profile: UserProfile | null;
+		apiKey: string;
+	} = $props();
+
 	let authBackend: AuthBackendType =
 		(import.meta.env.PUBLIC_AUTH_BACKEND as AuthBackendType) || SharedKey;
-	let userProfile: UserProfile | null = null;
-
-	onMount(async () => {
-		const [savedKey, savedProfile] = await Promise.all([getAPIKey(), getUserProfile()]);
-		if (savedKey) {
-			apiKey = savedKey;
-		}
-		userProfile = savedProfile;
-	});
 
 	async function handleApiKeySave(detail: { apiKey: string; profile?: UserProfile }) {
 		await saveAPIKey(detail.apiKey);
 		apiKey = detail.apiKey;
 		if (detail.profile) {
-			await saveUserProfile(detail.profile);
-			userProfile = detail.profile;
+			profile = detail.profile;
 		}
 	}
 
 	async function handleApiKeyLogout() {
-		await Promise.all([clearAPIKey(), clearUserProfile()]);
+		await clearAPIKey();
 		apiKey = '';
-		userProfile = null;
+		profile = null;
 	}
 </script>
 
@@ -48,7 +37,7 @@
 	<Login
 		{apiKey}
 		{authBackend}
-		{userProfile}
+		userProfile={profile}
 		onApiKeySave={handleApiKeySave}
 		onApiKeyLogout={handleApiKeyLogout}
 	/>
@@ -56,25 +45,25 @@
 
 <section>
 	<ul>
-		{#if userProfile}
-			{#if userProfile.email}
+		{#if profile}
+			{#if profile.email}
 				<li>
 					<strong>Email:</strong>
-					{userProfile.email}
+					{profile.email}
 				</li>
 			{/if}
 
-			{#if userProfile.device_email}
+			{#if profile.device_email}
 				<li>
 					<strong>Device email:</strong>
-					{userProfile.device_email || 'Not set'}
+					{profile.device_email || 'Not set'}
 				</li>
 			{/if}
 
-			{#if userProfile.auto_send}
+			{#if profile.auto_send}
 				<li>
 					<strong>Auto-send:</strong>
-					{userProfile.auto_send ? 'Enabled' : 'Disabled'}
+					{profile.auto_send ? 'Enabled' : 'Disabled'}
 				</li>
 			{/if}
 		{/if}

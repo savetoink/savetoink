@@ -4,14 +4,19 @@
 	import { SharedKey, Auth0 } from '@savetoink/shared';
 	import type { AuthBackendType, UserProfile } from '@savetoink/shared';
 
-	export let apiKey = '';
-	export let authBackend: AuthBackendType | null = null;
-	export let userProfile: UserProfile | null = null;
-	export let onApiKeySave: (detail: {
+	let {
+		apiKey,
+		authBackend,
+		userProfile,
+		onApiKeySave,
+		onApiKeyLogout
+	}: {
 		apiKey: string;
-		profile?: UserProfile;
-	}) => void | Promise<void>;
-	export let onApiKeyLogout: () => void | Promise<void>;
+		authBackend: AuthBackendType | null;
+		userProfile: UserProfile | null;
+		onApiKeySave: (detail: { apiKey: string; profile?: UserProfile }) => void | Promise<void>;
+		onApiKeyLogout: () => void | Promise<void>;
+	} = $props();
 </script>
 
 {#if authBackend === SharedKey}

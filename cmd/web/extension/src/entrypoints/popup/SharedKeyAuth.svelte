@@ -3,16 +3,21 @@
 	import { ApiError } from '@savetoink/shared';
 	import type { UserProfile } from '@savetoink/shared';
 
-	export let apiKey = '';
-	export let profile: UserProfile | null = null;
-	export let onSave: (detail: { apiKey: string; profile?: UserProfile }) => void | Promise<void>;
-	export let onLogout: () => void | Promise<void>;
+	let {
+		apiKey,
+		profile,
+		onSave,
+		onLogout
+	}: {
+		apiKey: string;
+		profile: UserProfile | null;
+		onSave: (detail: { apiKey: string; profile?: UserProfile }) => void | Promise<void>;
+		onLogout: () => void | Promise<void>;
+	} = $props();
 
-	let localKey = apiKey;
-	let saveStatus = '';
-
-	$: localKey = apiKey;
-	$: isLoggedIn = apiKey && profile;
+	let localKey = $derived(apiKey);
+	let isLoggedIn = $derived(!!apiKey && !!profile);
+	let saveStatus = $state('');
 
 	async function handleSave() {
 		try {
@@ -46,7 +51,12 @@
 </script>
 
 {#if !isLoggedIn}
-	<form on:submit|preventDefault={handleSave}>
+	<form
+		onsubmit={(e) => {
+			e.preventDefault();
+			handleSave();
+		}}
+	>
 		<label for="api-key">API Key</label>
 		<input
 			id="api-key"
@@ -67,5 +77,5 @@
 		{/if}
 	</form>
 {:else}
-	<button type="button" on:click={handleLogout}>Logout</button>
+	<button type="button" onclick={handleLogout}>Logout</button>
 {/if}
