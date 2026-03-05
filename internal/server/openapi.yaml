@@ -1,0 +1,785 @@
+openapi: 3.0.2
+info:
+  title: Save to Ink API
+  description: REST API for article management and delivery service
+  version: 1.0.0
+
+servers:
+  - url: /v1
+    description: API base path
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Article:
+      type: object
+      required:
+        - account
+        - id
+        - url
+        - createdAt
+      properties:
+        account:
+          type: string
+          description: User account ID
+        id:
+          type: string
+          description: Article ID
+        url:
+          type: string
+          description: Article URL
+        createdAt:
+          type: string
+          format: date-time
+          description: Article creation timestamp
+        title:
+          type: string
+          description: Article title
+        content:
+          type: string
+          description: Article content
+        author:
+          type: string
+          description: Article author
+        siteName:
+          type: string
+          description: Site name
+        sourceDomain:
+          type: string
+          description: Source domain
+        excerpt:
+          type: string
+          description: Article excerpt
+        imageUrl:
+          type: string
+          description: Image URL
+        contentType:
+          type: string
+          description: Content type
+        language:
+          type: string
+          description: Article language
+        error:
+          type: string
+          description: Error message if processing failed
+        wordCount:
+          type: integer
+          description: Word count
+        readingTimeMinutes:
+          type: integer
+          description: Estimated reading time in minutes
+        publishedAt:
+          type: string
+          format: date-time
+          description: Original publication date
+        favorite:
+          type: boolean
+          description: Whether article is favorited
+
+    ArticleRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          description: URL of the article to save
+
+    ArticleResponse:
+      type: object
+      required:
+        - id
+        - title
+        - url
+      properties:
+        id:
+          type: string
+          description: Article ID
+        title:
+          type: string
+          description: Article title
+        url:
+          type: string
+          description: Article URL
+
+    ListArticlesResponse:
+      type: object
+      required:
+        - articles
+        - page
+        - page_size
+        - total
+        - has_more
+      properties:
+        articles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Article'
+          description: List of articles
+        page:
+          type: integer
+          description: Current page number
+        page_size:
+          type: integer
+          description: Number of articles per page
+        total:
+          type: integer
+          description: Total number of articles
+        has_more:
+          type: boolean
+          description: Whether there are more pages
+
+    DeleteArticleResponse:
+      type: object
+      required:
+        - deleted
+      properties:
+        deleted:
+          type: integer
+          description: Number of articles deleted
+
+    FavoriteResponse:
+      type: object
+      required:
+        - favorite
+      properties:
+        favorite:
+          type: boolean
+          description: New favorite status
+
+    SendArticleResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: Send status
+
+    SendArticleResponseWithCount:
+      type: object
+      required:
+        - status
+        - sends_count
+      properties:
+        status:
+          type: string
+          description: Send status
+        sends_count:
+          type: integer
+          description: Total sends count
+
+    UserProfile:
+      type: object
+      required:
+        - account
+        - email
+        - device_email
+        - auto_send
+      properties:
+        account:
+          type: string
+          description: User account ID
+        email:
+          type: string
+          description: User email address
+        device_email:
+          type: string
+          description: Kindle device email
+        auto_send:
+          type: boolean
+          description: Whether to auto-send articles
+        bounced_emails:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/BounceInfo'
+          description: Map of bounced emails with their bounce info
+
+    BounceInfo:
+      type: object
+      required:
+        - timestamp
+        - error
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Bounce timestamp
+        error:
+          type: string
+          description: Bounce error message
+
+    DeviceRequest:
+      type: object
+      required:
+        - device_email
+        - auto_send
+      properties:
+        device_email:
+          type: string
+          description: Kindle device email address
+        auto_send:
+          type: boolean
+          description: Whether to auto-send articles to device
+
+    DeviceResponse:
+      type: object
+      required:
+        - device_email
+        - auto_send
+      properties:
+        device_email:
+          type: string
+          description: Kindle device email address
+        auto_send:
+          type: boolean
+          description: Whether to auto-send articles
+
+    AuthTokenExchangeRequest:
+      type: object
+      required:
+        - code
+        - redirect_uri
+      properties:
+        code:
+          type: string
+          description: Authorization code from OAuth provider
+        redirect_uri:
+          type: string
+          description: Redirect URI used in authorization request
+        grant_type:
+          type: string
+          default: authorization_code
+          description: OAuth grant type
+
+    AuthTokenExchangeResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+          description: OAuth access token
+        refresh_token:
+          type: string
+          description: OAuth refresh token
+        id_token:
+          type: string
+          description: JWT ID token
+        email:
+          type: string
+          description: User email extracted from ID token
+        token_type:
+          type: string
+          description: Token type (typically "Bearer")
+        expires_in:
+          type: integer
+          description: Token expiration time in seconds
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: Health status
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the API is running
+      operationId: health
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /articles:
+    get:
+      summary: List articles
+      description: Get a paginated list of articles for the authenticated user
+      operationId: listArticles
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (default: 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          description: Number of articles per page (default: 20, max: 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: favorite
+          in: query
+          description: Filter by favorite status
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of articles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListArticlesResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create article
+      description: Save a new article from a URL
+      operationId: createArticle
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+      responses:
+        '201':
+          description: Article created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete all articles
+      description: Delete all articles for the authenticated user
+      operationId: deleteAllArticles
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Articles deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteArticleResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /articles/{id}:
+    get:
+      summary: Get article
+      description: Get a single article by ID
+      operationId: getArticle
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Article ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete article
+      description: Delete a single article by ID
+      operationId: deleteArticle
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Article ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteArticleResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /articles/{id}/favorite:
+    put:
+      summary: Toggle favorite
+      description: Toggle the favorite status of an article
+      operationId: toggleFavorite
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Article ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Favorite status toggled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /articles/{id}/send:
+    post:
+      summary: Send article
+      description: Send an article to the user's Kindle device. Requires active subscription and non-bouncing email.
+      operationId: sendArticle
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Article ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article sent successfully
+          content:
+            application/json:
+              oneOf:
+                - $ref: '#/components/schemas/SendArticleResponse'
+                - $ref: '#/components/schemas/SendArticleResponseWithCount'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /user/profile:
+    get:
+      summary: Get user profile
+      description: Get the authenticated user's profile
+      operationId: getUserProfile
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /devices:
+    put:
+      summary: Set device
+      description: Set or update the user's Kindle device email and auto-send preferences
+      operationId: setDevice
+      tags:
+        - Devices
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRequest'
+      responses:
+        '200':
+          description: Device settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete device
+      description: Remove the user's Kindle device email
+      operationId: deleteDevice
+      tags:
+        - Devices
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Device removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/token:
+    post:
+      summary: Exchange auth code
+      description: Exchange an OAuth authorization code for access tokens (Auth0 only)
+      operationId: authTokenExchange
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenExchangeRequest'
+      responses:
+        '200':
+          description: Token exchange successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenExchangeResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token exchange failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhooks/mailjet:
+    post:
+      summary: Mailjet webhook
+      description: Receive bounce notifications from Mailjet (Mailjet only)
+      operationId: mailjetWebhook
+      tags:
+        - Webhooks
+      parameters:
+        - name: secret
+          in: query
+          required: true
+          description: Webhook secret for verification
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  event:
+                    type: string
+                    description: Event type (e.g., "bounce")
+                  email:
+                    type: string
+                    description: Email address
+                  time:
+                    type: integer
+                    format: int64
+                    description: Event timestamp
+                  error:
+                    type: string
+                    description: Error message
+                  comment:
+                    type: string
+                    description: Additional comments
+      responses:
+        '200':
+          description: Webhook processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
