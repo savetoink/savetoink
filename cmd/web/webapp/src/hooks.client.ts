@@ -1,6 +1,10 @@
 import { handleErrorWithSentry } from '@sentry/sveltekit';
 import * as Sentry from '@sentry/sveltekit';
 import { PUBLIC_SENTRY_DSN } from '$env/static/public';
+import { isDev } from '$lib/consts';
+import { getCSS } from '@savetoink/shared/css';
+
+getCSS(isDev);
 
 if (!import.meta.env.DEV) {
 	Sentry.init({

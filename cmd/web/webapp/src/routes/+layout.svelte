@@ -9,7 +9,6 @@
 	const gitHash = __GIT_HASH__;
 	const versionTxt = isDev ? `${version}-${buildDate}-${gitHash}` : version;
 	const title = isDev ? `Save to Ink - ${versionTxt}` : 'Save to Ink';
-	const picoFile = isDev ? 'pico.yellow.min.css' : 'pico.min.css';
 
 	let { children, data } = $props();
 	const loggedIn = $derived(data.isLoggedIn);
@@ -25,7 +24,6 @@
 	<link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
 	<link rel="icon" type="image/png" sizes="512x512" href="/android-icon-512x512.png" />
 	<link rel="icon" href="/favicon.ico" />
-	<link rel="stylesheet" href={`https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/${picoFile}`} />
 	<title>{title}</title>
 </svelte:head>
 
