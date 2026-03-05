@@ -1,0 +1,11 @@
+pre-commit:
+  jobs:
+    - name: Generate API types from OpenAPI spec
+      run: just gen-api-types
+      glob: "internal/server/openapi.yaml"
+      stage_fixed: true
+
+pre-push:
+  jobs:
+    - name: Run all tests and linters
+      run: just check

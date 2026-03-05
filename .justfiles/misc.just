@@ -28,3 +28,6 @@ gen-api-types:
 [working-directory("tools")]
 bump-versions version_type:
     @bun run update_versions.ts {{ version_type }}
+
+install-hooks:
+    @lefthook install
