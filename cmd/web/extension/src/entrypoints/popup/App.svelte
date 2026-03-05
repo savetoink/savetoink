@@ -4,6 +4,11 @@
 	import Post from './Post.svelte';
 	import { getAPIKey, getUserProfile } from '../../lib/storage';
 	import type { UserProfile } from '@savetoink/shared';
+	import '@savetoink/shared/css';
+
+	if (import.meta.env.DEV) {
+		import('@savetoink/shared/css-dev');
+	}
 
 	let apiKey = $state('');
 	let profile: UserProfile | null = $state(null);

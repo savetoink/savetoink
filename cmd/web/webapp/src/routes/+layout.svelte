@@ -3,6 +3,11 @@
 	import Nav from '$lib/components/Nav.svelte';
 	import Landing from '$lib/components/Landing.svelte';
 	import { isDev } from '$lib/consts';
+	import '@savetoink/shared/css';
+
+	if (isDev) {
+		import('@savetoink/shared/css-dev');
+	}
 
 	const version = __APP_VERSION__;
 	const buildDate = __BUILD_DATE__;
