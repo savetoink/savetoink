@@ -1,0 +1,74 @@
+---
+---
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href="/" class="footer-logo">Save to Ink</a>
+
+    <nav class="footer-links">
+      <a href="/#pricing">Pricing</a>
+      <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener">GitHub</a>
+      <a href="mailto:hello@saveto.ink">Contact</a>
+    </nav>
+
+    <p class="footer-copy">
+      © {new Date().getFullYear()} Save to Ink · Built for readers.
+    </p>
+  </div>
+</footer>
+
+<style>
+	footer.site-footer {
+		border-top: 1px solid var(--border);
+		padding: 2.5rem 0;
+	}
+
+	.footer-inner {
+		max-width: 72rem;
+		margin: 0 auto;
+		padding: 0 1.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+
+	.footer-logo {
+		font-family: var(--font-display);
+		font-size: 1rem;
+		color: var(--ink);
+		text-decoration: none;
+	}
+
+	.footer-links {
+		display: flex;
+		gap: 1.25rem;
+	}
+
+	.footer-links a {
+		font-size: 0.85rem;
+		color: var(--muted);
+		text-decoration: none;
+		transition: color 0.15s;
+	}
+
+	.footer-links a:hover {
+		color: var(--ink);
+	}
+
+	.footer-copy {
+		font-size: 0.8rem;
+		color: var(--muted);
+		width: 100%;
+		text-align: center;
+		margin-top: 0.25rem;
+	}
+
+	@media (max-width: 640px) {
+		.footer-inner {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+	}
+</style>

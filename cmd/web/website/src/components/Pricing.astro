@@ -1,0 +1,191 @@
+---
+---
+
+<section class="section" id="pricing">
+  <div class="container">
+    <p class="section-label">Pricing</p>
+    <h2 class="section-heading">Simple, honest pricing</h2>
+    <p class="section-sub">
+      No dark patterns. Free while we're in early access — simple plan is on the way.
+    </p>
+
+    <div class="pricing-grid">
+      <!-- Free -->
+      <div class="pricing-card">
+        <h3>Free</h3>
+        <div class="pricing-price">$0</div>
+        <p class="pricing-desc">Forever free, no credit card.</p>
+        <ul class="pricing-features">
+          <li class="strike">20 article sends / month</li>
+          <li class="highlight">Unlimited use for now</li>
+          <li>Kindle &amp; Kobo delivery</li>
+          <li>Browser extension</li>
+          <li>Article library</li>
+        </ul>
+        <a href="https://app.saveto.ink/" class="btn-secondary" style="width:100%;justify-content:center;">
+          Get started free
+        </a>
+      </div>
+
+      <!-- Pro — coming soon -->
+      <div class="pricing-card coming-soon">
+        <div class="coming-soon-ribbon" aria-label="Coming soon"></div>
+        <h3>Pro</h3>
+        <div class="pricing-price">$4 <span>/ month</span></div>
+        <p class="pricing-desc">Or $24/year — save 50%.</p>
+        <ul class="pricing-features">
+          <li>Unlimited sends</li>
+          <li>Everything in Free</li>
+          <li>Early access to features</li>
+        </ul>
+        <button disabled style="width:100%;justify-content:center;opacity:0.45;cursor:not-allowed;">
+          Not available yet
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+	.pricing-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+		gap: 1.5rem;
+		margin-top: 2.5rem;
+		max-width: 48rem;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	.pricing-card {
+		background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+		border: 1px solid var(--border);
+		border-radius: var(--card-radius);
+		padding: 2rem;
+		position: relative;
+	}
+
+	.pricing-card.featured {
+		border-color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 6%, var(--paper));
+	}
+
+	.pricing-badge {
+		position: absolute;
+		top: -0.75rem;
+		left: 50%;
+		transform: translateX(-50%);
+		background: var(--accent);
+		color: #fff;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		padding: 0.2rem 0.75rem;
+		border-radius: 100px;
+		white-space: nowrap;
+	}
+
+	.pricing-card h3 {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--ink);
+		margin: 0 0 0.75rem;
+	}
+
+	.pricing-price {
+		font-family: var(--font-display);
+		font-size: 2.5rem;
+		font-weight: 400;
+		color: var(--ink);
+		line-height: 1;
+		margin-bottom: 0.25rem;
+	}
+
+	.pricing-price span {
+		font-size: 1rem;
+		font-family: var(--font-body);
+		color: var(--muted);
+		font-weight: 400;
+	}
+
+	.pricing-desc {
+		font-size: 0.85rem;
+		color: var(--muted);
+		margin: 0 0 1.25rem;
+	}
+
+	.pricing-features {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 1.75rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.pricing-features li {
+		font-size: 0.875rem;
+		color: var(--muted);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.pricing-features li::before {
+		content: '✓';
+		color: var(--accent);
+		font-weight: 700;
+		flex-shrink: 0;
+	}
+
+	.pricing-features li.strike {
+		text-decoration: line-through;
+		opacity: 0.45;
+	}
+
+	.pricing-features li.highlight {
+		color: var(--accent);
+		font-weight: 500;
+	}
+
+	.pricing-features li.highlight::before {
+		content: '✦';
+	}
+
+	.pricing-card.coming-soon {
+		opacity: 0.6;
+		overflow: hidden;
+		pointer-events: none;
+		user-select: none;
+	}
+
+	.coming-soon-ribbon {
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 6rem;
+		height: 6rem;
+		overflow: hidden;
+		pointer-events: none;
+	}
+
+	.coming-soon-ribbon::before {
+		content: 'Coming soon';
+		position: absolute;
+		top: 1.1rem;
+		right: -1.85rem;
+		width: 7.5rem;
+		background: var(--muted);
+		color: var(--paper);
+		font-size: 0.6rem;
+		font-weight: 700;
+		letter-spacing: 0.07em;
+		text-transform: uppercase;
+		text-align: center;
+		padding: 0.28rem 0;
+		transform: rotate(45deg);
+		transform-origin: center center;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+	}
+</style>

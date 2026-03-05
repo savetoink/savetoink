@@ -1,266 +1,39 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import SiteNav from "../components/SiteNav.astro";
+import Hero from "../components/Hero.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+import Features from "../components/Features.astro";
+import Pricing from "../components/Pricing.astro";
+import OpenSourceBand from "../components/OpenSourceBand.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 ---
 
 <Layout>
   <!-- ══ NAV ══════════════════════════════════════════ -->
-  <nav class="site-nav">
-    <div class="nav-inner">
-      <a href="/" class="nav-logo">
-          Save to Ink
-      </a>
-
-      <div class="nav-links">
-        <a href="/#pricing">Pricing</a>
-        <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener" class="btn-gh">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
-          GitHub
-        </a>
-        <a href="https://app.saveto.ink/" class="btn-primary" style="padding: 0.35rem 0.9rem; font-size: 0.85rem;">
-          Get started
-        </a>
-      </div>
-    </div>
-  </nav>
+  <SiteNav />
 
   <!-- ══ HERO ═════════════════════════════════════════ -->
-  <section class="hero">
-    <div class="container">
-      <div class="hero-badge">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
-          <circle cx="6" cy="6" r="6"/>
-        </svg>
-        Open source · Self-hostable
-      </div>
-
-      <h1>Send any article<br /><em>straight to your e-reader</em></h1>
-
-      <p class="hero-sub">
-        Save to Ink converts any URL into a clean EPUB and delivers it to your
-        Kindle, Kobo, or any other e-reader — in one click.
-      </p>
-
-      <div class="hero-actions">
-        <a href="https://app.saveto.ink/" class="btn-primary">
-          Start for free
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 8h10M9 4l4 4-4 4"/>
-          </svg>
-        </a>
-        <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener" class="btn-secondary">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
-          View on GitHub
-        </a>
-      </div>
-    </div>
-  </section>
+  <Hero />
 
   <hr class="section-divider" />
 
   <!-- ══ HOW IT WORKS ══════════════════════════════════ -->
-  <section class="section">
-    <div class="container">
-      <p class="section-label">How it works</p>
-      <h2 class="section-heading">Three steps, then just read</h2>
-      <p class="section-sub">
-        No clutter, no apps to open. Save an article and pick it up on
-        your e-reader in seconds.
-      </p>
-
-      <div class="steps-row">
-        <div class="step-card">
-          <p class="step-num">Step 01</p>
-          <h3>Paste a URL</h3>
-          <p>Use the web app or the browser extension to submit any article, essay, or long-form page.</p>
-        </div>
-        <div class="step-card">
-          <p class="step-num">Step 02</p>
-          <h3>We clean it up</h3>
-          <p>Save to Ink strips ads, nav, and noise. What's left is the actual content, formatted as a proper EPUB.</p>
-        </div>
-        <div class="step-card">
-          <p class="step-num">Step 03</p>
-          <h3>Delivered to your device</h3>
-          <p>The EPUB lands in your Kindle or Kobo library automatically — ready to read, offline, on your own terms.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  <HowItWorks />
 
   <hr class="section-divider" />
 
   <!-- ══ FEATURES ══════════════════════════════════════ -->
-  <section class="section">
-    <div class="container">
-      <p class="section-label">Features</p>
-      <h2 class="section-heading">Everything you need,<br />nothing you don't</h2>
-      <p class="section-sub">
-        Built for readers who want the web's best writing on their best
-        reading device.
-      </p>
-
-      <div class="features-grid">
-        <!-- Browser Extension -->
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="1" y="3" width="14" height="10" rx="2"/>
-              <path d="M5 3V2M11 3V2"/>
-              <circle cx="8" cy="8" r="2"/>
-            </svg>
-          </div>
-          <h3>Browser extension</h3>
-          <p>One-click saving from Chrome or Firefox — no copy-pasting URLs.</p>
-        </div>
-
-        <!-- Kindle & Kobo -->
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="1" width="10" height="14" rx="1.5"/>
-              <path d="M6 12h4"/>
-            </svg>
-          </div>
-          <h3>Kindle &amp; Kobo ready</h3>
-          <p>Delivers via email-to-Kindle and Kobo's native sideload — no cable needed.</p>
-        </div>
-
-        <!-- Clean EPUB -->
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M2 2h8l4 4v9a1 1 0 01-1 1H3a1 1 0 01-1-1V2z"/>
-              <path d="M10 2v4h4M5 9h6M5 12h4"/>
-            </svg>
-          </div>
-          <h3>Clean EPUB output</h3>
-          <p>Proper chapter structure, images included, metadata filled — a real book-quality file.</p>
-        </div>
-
-        <!-- Article library -->
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M2 4h12M2 8h12M2 12h8"/>
-            </svg>
-          </div>
-          <h3>Article library</h3>
-          <p>Every saved article is stored so you can re-send or download the EPUB anytime.</p>
-        </div>
-
-        <!-- Open source -->
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="8" cy="8" r="6"/>
-              <path d="M5 8a3 3 0 016 0"/>
-              <circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/>
-            </svg>
-          </div>
-          <h3>Open source</h3>
-          <p>EL2-licensed. Self-host it, audit it, contribute to it — the code is right there on GitHub.</p>
-        </div>
-
-        <!-- Free tier -->
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M8 1l1.5 4.5H14l-3.5 2.5 1.5 4.5L8 10l-4 2.5 1.5-4.5L2 5.5h4.5z"/>
-            </svg>
-          </div>
-          <h3>Generous free tier</h3>
-          <p>Start sending articles for free. Upgrade to Pro only when you need unlimited sends.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  <Features />
 
   <hr class="section-divider" />
 
   <!-- ══ PRICING ═══════════════════════════════════════ -->
-  <section class="section" id="pricing">
-    <div class="container">
-      <p class="section-label">Pricing</p>
-      <h2 class="section-heading">Simple, honest pricing</h2>
-      <p class="section-sub">
-        No dark patterns. Free while we're in early access — paid plans are on the way.
-      </p>
-
-      <div class="pricing-grid">
-        <!-- Free -->
-        <div class="pricing-card">
-          <h3>Free</h3>
-          <div class="pricing-price">$0</div>
-          <p class="pricing-desc">Forever free, no credit card.</p>
-          <ul class="pricing-features">
-            <li class="strike">20 article sends / month</li>
-            <li class="highlight">Unlimited use for now</li>
-            <li>Kindle &amp; Kobo delivery</li>
-            <li>Browser extension</li>
-            <li>Article library</li>
-          </ul>
-          <a href="https://app.saveto.ink/" class="btn-secondary" style="width:100%;justify-content:center;">
-            Get started free
-          </a>
-        </div>
-
-        <!-- Pro — coming soon -->
-        <div class="pricing-card coming-soon">
-          <div class="coming-soon-ribbon" aria-label="Coming soon"></div>
-          <h3>Pro</h3>
-          <div class="pricing-price">$4 <span>/ month</span></div>
-          <p class="pricing-desc">Or $24/year — save 50%.</p>
-          <ul class="pricing-features">
-            <li>Unlimited sends</li>
-            <li>Everything in Free</li>
-            <li>Priority processing</li>
-            <li>Early access to features</li>
-          </ul>
-          <button disabled style="width:100%;justify-content:center;opacity:0.45;cursor:not-allowed;">
-            Not available yet
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
+  <Pricing />
 
   <!-- ══ OPEN SOURCE BAND ══════════════════════════════ -->
-  <div class="opensource-band">
-    <div class="container">
-      <h2>Proudly open source</h2>
-      <p>
-        Save to Ink is source-available under the Elastic License 2.0.
-        Self-host it for free, or contribute to the project on GitHub.
-      </p>
-      <div class="hero-actions" style="justify-content:center;">
-        <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener" class="btn-secondary">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
-          Star on GitHub
-        </a>
-      </div>
-    </div>
-  </div>
+  <OpenSourceBand />
 
   <!-- ══ FOOTER ════════════════════════════════════════ -->
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <a href="/" class="footer-logo">Save to Ink</a>
-
-      <nav class="footer-links">
-        <a href="/#pricing">Pricing</a>
-        <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener">GitHub</a>
-        <a href="mailto:hello@saveto.ink">Contact</a>
-      </nav>
-
-      <p class="footer-copy">
-        © {new Date().getFullYear()} Save to Ink · Built for readers.
-      </p>
-    </div>
-  </footer>
+  <SiteFooter />
 </Layout>
