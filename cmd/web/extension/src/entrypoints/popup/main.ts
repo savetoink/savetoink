@@ -1,8 +1,10 @@
 import { mount } from 'svelte';
 import App from './App.svelte';
-import { getCSS } from '@savetoink/shared/css';
+import '@savetoink/shared/css';
 
-getCSS(import.meta.env.DEV);
+if (import.meta.env.DEV) {
+	import('@savetoink/shared/css-dev');
+}
 
 const app = mount(App, {
 	target: document.getElementById('app')!
