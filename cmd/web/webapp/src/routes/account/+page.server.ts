@@ -1,4 +1,4 @@
-import { error, fail, redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import {
 	AUTH_KEY,
 	setAuthCookie,
@@ -7,7 +7,7 @@ import {
 	deleteUserCookie
 } from '$lib/server/cookies';
 import { getProfile, updateDevice, deleteDevice } from '$lib/server/apiClient';
-import { DeviceDomains } from '@savetoink/shared';
+import { ApiError, DeviceDomains } from '@savetoink/shared';
 import type { UserProfile } from '@savetoink/shared';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -28,8 +28,10 @@ export const actions: Actions = {
 		try {
 			profile = await getProfile(fetch, token);
 		} catch (err) {
-			console.error('failed to validate api key', err);
-			return fail(400, { error: 'Invalid API key' });
+			if (err instanceof ApiError) {
+				return fail(400, { error: 'Unauthorized: ' + err.message });
+			}
+			return fail(500, { error: 'Failed to validate api key: ' + err });
 		}
 
 		setAuthCookie(cookies, token, { trim: true });
@@ -75,12 +77,12 @@ export const actions: Actions = {
 		if (typeof deviceEmail === 'string' && deviceEmail.trim() !== '') {
 			const parts = deviceEmail.split('@');
 			if (parts.length !== 2 || !parts[1]) {
-				error(400, 'invalid email format');
+				return fail(400, { error: 'invalid email format' });
 			}
 
 			const domain = '@' + parts[1];
 			if (!DeviceDomains.includes(domain)) {
-				error(400, 'kindle email domain must be ' + DeviceDomains.join(' or '));
+				return fail(400, { error: 'kindle email domain must be ' + DeviceDomains.join(' or ') });
 			}
 		}
 
