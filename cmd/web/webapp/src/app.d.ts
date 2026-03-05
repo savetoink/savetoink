@@ -1,11 +1,11 @@
-import type { components } from '@savetoink/shared';
+import type { UserProfile } from '@savetoink/shared';
 
 declare global {
 	namespace App {
 		interface Locals {
 			auth?: string;
 			isLoggedIn: boolean;
-			user?: components['schemas']['UserProfile'];
+			user?: UserProfile;
 		}
 	}
 }

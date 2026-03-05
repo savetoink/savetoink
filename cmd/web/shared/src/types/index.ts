@@ -1,2 +1,3 @@
 export type * from './auth';
-export * from './api-generated';
+export type * from './api-generated';
+export type * from './schemas';

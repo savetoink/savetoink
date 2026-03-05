@@ -1,4 +1,4 @@
-import type { components } from "../types";
+import type { UserProfile, Article, ArticleResponse, AuthTokenExchangeResponse } from "../types";
 
 export class ApiError extends Error {
   constructor(
@@ -11,7 +11,7 @@ export class ApiError extends Error {
 }
 
 export interface ApiClient {
-  getProfile(token: string): Promise<components["schemas"]["UserProfile"]>;
+  getProfile(token: string): Promise<UserProfile>;
   getArticles(
     params: {
       page?: number;
@@ -20,7 +20,7 @@ export interface ApiClient {
     },
     token: string
   ): Promise<{
-    articles: components["schemas"]["Article"][];
+    articles: Article[];
     page: number;
     page_size: number;
     total: number;
@@ -29,11 +29,11 @@ export interface ApiClient {
   getArticle(
     id: string,
     token: string
-  ): Promise<components["schemas"]["Article"]>;
+  ): Promise<Article>;
   createArticle(
     url: string,
     token: string
-  ): Promise<components["schemas"]["ArticleResponse"]>;
+  ): Promise<ArticleResponse>;
   sendArticle(id: string, token: string): Promise<void>;
   favoriteArticle(id: string, token: string): Promise<void>;
   deleteArticle(id: string, token: string): Promise<void>;
@@ -46,7 +46,7 @@ export interface ApiClient {
   exchangeCodeForToken(
     code: string,
     redirectUri: string
-  ): Promise<components["schemas"]["AuthTokenExchangeResponse"]>;
+  ): Promise<AuthTokenExchangeResponse>;
 }
 
 export interface ApiClientOptions {
@@ -88,7 +88,7 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
 
   return {
     getProfile: (token: string) =>
-      request<components["schemas"]["UserProfile"]>(
+      request<UserProfile>(
         "GET",
         "/v1/user/profile",
         token
@@ -114,7 +114,7 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
       }
       const path = `/v1/articles${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
       return request<{
-        articles: components["schemas"]["Article"][];
+        articles: Article[];
         page: number;
         page_size: number;
         total: number;
@@ -123,14 +123,14 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
     },
 
     getArticle: (id: string, token: string) =>
-      request<components["schemas"]["Article"]>(
+      request<Article>(
         "GET",
         `/v1/articles/${id}`,
         token
       ),
 
     createArticle: (url: string, token: string) =>
-      request<components["schemas"]["ArticleResponse"]>(
+      request<ArticleResponse>(
         "POST",
         "/v1/articles",
         token,
@@ -158,7 +158,7 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
       request<void>("DELETE", "/v1/devices", token),
 
     exchangeCodeForToken: (code: string, redirectUri: string) =>
-      request<components["schemas"]["AuthTokenExchangeResponse"]>(
+      request<AuthTokenExchangeResponse>(
         "POST",
         "/v1/auth/token",
         undefined,

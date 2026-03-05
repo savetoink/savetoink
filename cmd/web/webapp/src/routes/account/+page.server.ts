@@ -8,10 +8,8 @@ import {
 } from '$lib/server/cookies';
 import { getProfile, updateDevice, deleteDevice } from '$lib/server/apiClient';
 import { DeviceDomains } from '@savetoink/shared';
-import type { components } from '@savetoink/shared';
+import type { UserProfile } from '@savetoink/shared';
 import type { Actions, PageServerLoad } from './$types';
-
-type UserProfile = components['schemas']['UserProfile'];
 
 export const load: PageServerLoad = async ({ locals }) => {
 	return { user: locals.user };

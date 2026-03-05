@@ -11,9 +11,7 @@
 	} from '../../lib/storage';
 	import { API_URL } from '../../lib/api';
 	import { SharedKey } from '@savetoink/shared';
-	import type { components, AuthBackendType } from '@savetoink/shared';
-
-	type UserProfile = components['schemas']['UserProfile'];
+	import type { UserProfile, AuthBackendType } from '@savetoink/shared';
 
 	let apiKey = '';
 	let authBackend: AuthBackendType =

@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { createArticle, sendArticle } from '../../lib/api';
 	import { getAPIKey, getUserProfile } from '../../lib/storage';
-	import type { components } from '@savetoink/shared';
-
-	type UserProfile = components['schemas']['UserProfile'];
+	import type { UserProfile } from '@savetoink/shared';
 
 	let url = $state('');
 	let loading = $state(false);

@@ -1,6 +1,7 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import { error } from '@sveltejs/kit';
-import { createApiClient, ApiError, type ApiClientOptions } from '@savetoink/shared';
+import { createApiClient, ApiError } from '@savetoink/shared';
+import type { ApiClientOptions } from '@savetoink/shared';
 
 function withSvelteKitError<T>(fn: () => Promise<T>): Promise<T> {
 	try {
@@ -9,7 +10,7 @@ function withSvelteKitError<T>(fn: () => Promise<T>): Promise<T> {
 		if (e instanceof ApiError) {
 			error(e.status, e.message);
 		}
-		throw e;
+		error(500, e instanceof Error ? e.message : 'Unknown error');
 	}
 }
 

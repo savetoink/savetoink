@@ -1,9 +1,7 @@
-import type { components } from '@savetoink/shared';
+import type { UserProfile } from '@savetoink/shared';
 
 export const STORAGE_KEY = 'local:shared_api_key';
 export const USER_PROFILE_KEY = 'local:user_profile';
-
-type UserProfile = components['schemas']['UserProfile'];
 
 interface ApiUserProfile {
 	account: string;
