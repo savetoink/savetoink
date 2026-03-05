@@ -1,23 +1,23 @@
-import type { UserProfile } from '@savetoink/shared';
+import type { components } from '@savetoink/shared';
 
 export const STORAGE_KEY = 'local:shared_api_key';
 export const USER_PROFILE_KEY = 'local:user_profile';
+
+type UserProfile = components['schemas']['UserProfile'];
 
 interface ApiUserProfile {
 	account: string;
 	email: string;
 	device_email?: string;
 	auto_send?: boolean;
-	bounced_emails?: Record<string, { timestamp: string; error: string }>;
 }
 
 function apiToSharedProfile(apiProfile: ApiUserProfile): UserProfile {
 	return {
 		account: apiProfile.account,
 		email: apiProfile.email,
-		deviceEmail: apiProfile.device_email,
-		autoSend: apiProfile.auto_send,
-		bouncedEmails: apiProfile.bounced_emails
+		device_email: apiProfile.device_email ?? '',
+		auto_send: apiProfile.auto_send ?? false
 	};
 }
 
@@ -25,9 +25,8 @@ function sharedToApiProfile(sharedProfile: UserProfile): ApiUserProfile {
 	return {
 		account: sharedProfile.account,
 		email: sharedProfile.email,
-		device_email: sharedProfile.deviceEmail,
-		auto_send: sharedProfile.autoSend,
-		bounced_emails: sharedProfile.bouncedEmails
+		device_email: sharedProfile.device_email,
+		auto_send: sharedProfile.auto_send
 	};
 }
 

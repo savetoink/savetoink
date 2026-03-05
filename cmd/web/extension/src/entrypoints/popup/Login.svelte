@@ -2,14 +2,14 @@
 	import SharedKeyAuth from './SharedKeyAuth.svelte';
 	import Auth0Auth from './Auth0Auth.svelte';
 	import { SharedKey, Auth0 } from '@savetoink/shared';
-	import type { AuthBackendType, UserProfile } from '@savetoink/shared';
+	import type { AuthBackendType, components } from '@savetoink/shared';
 
 	export let apiKey = '';
 	export let authBackend: AuthBackendType | null = null;
-	export let userProfile: UserProfile | null = null;
+	export let userProfile: components['schemas']['UserProfile'] | null = null;
 	export let onApiKeySave: (detail: {
 		apiKey: string;
-		profile?: UserProfile;
+		profile?: components['schemas']['UserProfile'];
 	}) => void | Promise<void>;
 	export let onApiKeyLogout: () => void | Promise<void>;
 </script>

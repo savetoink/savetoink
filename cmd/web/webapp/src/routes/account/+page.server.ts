@@ -8,8 +8,10 @@ import {
 } from '$lib/server/cookies';
 import { getProfile, updateDevice, deleteDevice } from '$lib/server/apiClient';
 import { DeviceDomains } from '@savetoink/shared';
-import type { UserProfile } from '@savetoink/shared';
+import type { components } from '@savetoink/shared';
 import type { Actions, PageServerLoad } from './$types';
+
+type UserProfile = components['schemas']['UserProfile'];
 
 export const load: PageServerLoad = async ({ locals }) => {
 	return { user: locals.user };
@@ -36,8 +38,8 @@ export const actions: Actions = {
 		await setUserCookie(cookies, {
 			account: profile.account,
 			email: profile.email,
-			deviceEmail: profile.deviceEmail,
-			autoSend: profile.autoSend
+			device_email: profile.device_email,
+			auto_send: profile.auto_send
 		});
 
 		redirect(303, '/');
@@ -51,14 +53,19 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const autoSend = data.get('autoSend');
 
-		await updateDevice(fetch, locals.user?.deviceEmail || '', autoSend === 'on', locals.auth ?? '');
+		await updateDevice(
+			fetch,
+			locals.user?.device_email || '',
+			autoSend === 'on',
+			locals.auth ?? ''
+		);
 
 		const updatedProfile = await getProfile(fetch, locals.auth ?? '');
 		await setUserCookie(cookies, {
 			account: updatedProfile.account,
 			email: updatedProfile.email,
-			deviceEmail: updatedProfile.deviceEmail,
-			autoSend: updatedProfile.autoSend
+			device_email: updatedProfile.device_email,
+			auto_send: updatedProfile.auto_send
 		});
 		return { success: true };
 	},
@@ -90,8 +97,8 @@ export const actions: Actions = {
 		await setUserCookie(cookies, {
 			account: updatedProfile.account,
 			email: updatedProfile.email,
-			deviceEmail: updatedProfile.deviceEmail,
-			autoSend: updatedProfile.autoSend
+			device_email: updatedProfile.device_email,
+			auto_send: updatedProfile.auto_send
 		});
 		redirect(303, '/account');
 	},
@@ -101,8 +108,8 @@ export const actions: Actions = {
 		await setUserCookie(cookies, {
 			account: profile.account,
 			email: profile.email,
-			deviceEmail: profile.deviceEmail,
-			autoSend: profile.autoSend
+			device_email: profile.device_email,
+			auto_send: profile.auto_send
 		});
 		redirect(303, '/account');
 	}

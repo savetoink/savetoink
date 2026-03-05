@@ -1,10 +1,4 @@
-import type {
-  Article,
-  CreateArticleResponse,
-  ExchangeCodeResponse,
-  Send,
-  UserProfile,
-} from "../types";
+import type { components } from "../types";
 
 export class ApiError extends Error {
   constructor(
@@ -16,32 +10,43 @@ export class ApiError extends Error {
   }
 }
 
-export interface GetArticlesParams {
-  page?: number;
-  pageSize?: number;
-  favorite?: boolean;
-}
-
-export interface ArticlesResponse {
-  articles: Article[];
-  total: number;
-  page: number;
-  pageSize: number;
-  has_more: boolean;
-}
-
 export interface ApiClient {
-  getProfile(token: string): Promise<UserProfile>;
-  getArticles(params: GetArticlesParams, token: string): Promise<ArticlesResponse>;
-  getArticle(id: string, token: string): Promise<Article>;
-  createArticle(url: string, tags: string[] | null, token: string): Promise<CreateArticleResponse>;
+  getProfile(token: string): Promise<components["schemas"]["UserProfile"]>;
+  getArticles(
+    params: {
+      page?: number;
+      page_size?: number;
+      favorite?: boolean;
+    },
+    token: string
+  ): Promise<{
+    articles: components["schemas"]["Article"][];
+    page: number;
+    page_size: number;
+    total: number;
+    has_more: boolean;
+  }>;
+  getArticle(
+    id: string,
+    token: string
+  ): Promise<components["schemas"]["Article"]>;
+  createArticle(
+    url: string,
+    token: string
+  ): Promise<components["schemas"]["ArticleResponse"]>;
   sendArticle(id: string, token: string): Promise<void>;
   favoriteArticle(id: string, token: string): Promise<void>;
   deleteArticle(id: string, token: string): Promise<void>;
-  updateDevice(deviceEmail: string, autoSend: boolean, token: string): Promise<void>;
+  updateDevice(
+    deviceEmail: string,
+    autoSend: boolean,
+    token: string
+  ): Promise<void>;
   deleteDevice(token: string): Promise<void>;
-  exchangeCodeForToken(code: string, redirectUri: string): Promise<ExchangeCodeResponse>;
-  getSends(articleId: string, token: string): Promise<Send[]>;
+  exchangeCodeForToken(
+    code: string,
+    redirectUri: string
+  ): Promise<components["schemas"]["AuthTokenExchangeResponse"]>;
 }
 
 export interface ApiClientOptions {
@@ -83,31 +88,56 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
 
   return {
     getProfile: (token: string) =>
-      request<UserProfile>("GET", "/v1/user/profile", token),
+      request<components["schemas"]["UserProfile"]>(
+        "GET",
+        "/v1/user/profile",
+        token
+      ),
 
-    getArticles: (params: GetArticlesParams, token: string) => {
+    getArticles: (
+      params: {
+        page?: number;
+        page_size?: number;
+        favorite?: boolean;
+      },
+      token: string
+    ) => {
       const queryParams = new URLSearchParams();
       if (params.page !== undefined) {
         queryParams.set("page", params.page.toString());
       }
-      if (params.pageSize !== undefined) {
-        queryParams.set("page_size", params.pageSize.toString());
+      if (params.page_size !== undefined) {
+        queryParams.set("page_size", params.page_size.toString());
       }
       if (params.favorite !== undefined) {
         queryParams.set("favorite", params.favorite.toString());
       }
       const path = `/v1/articles${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
-      return request<ArticlesResponse>("GET", path, token);
+      return request<{
+        articles: components["schemas"]["Article"][];
+        page: number;
+        page_size: number;
+        total: number;
+        has_more: boolean;
+      }>("GET", path, token);
     },
 
     getArticle: (id: string, token: string) =>
-      request<Article>("GET", `/v1/articles/${id}`, token),
+      request<components["schemas"]["Article"]>(
+        "GET",
+        `/v1/articles/${id}`,
+        token
+      ),
 
-    createArticle: (url: string, tags: string[] | null, token: string) =>
-      request<CreateArticleResponse>("POST", "/v1/articles", token, {
-        url,
-        ...(tags && { tags }),
-      }),
+    createArticle: (url: string, token: string) =>
+      request<components["schemas"]["ArticleResponse"]>(
+        "POST",
+        "/v1/articles",
+        token,
+        {
+          url,
+        }
+      ),
 
     sendArticle: (id: string, token: string) =>
       request<void>("POST", `/v1/articles/${id}/send`, token),
@@ -128,12 +158,14 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
       request<void>("DELETE", "/v1/devices", token),
 
     exchangeCodeForToken: (code: string, redirectUri: string) =>
-      request<ExchangeCodeResponse>("POST", "/v1/auth/token", undefined, {
-        code,
-        redirect_uri: redirectUri,
-      }),
-
-    getSends: (articleId: string, token: string) =>
-      request<Send[]>("GET", `/v1/articles/${articleId}/sends`, token),
+      request<components["schemas"]["AuthTokenExchangeResponse"]>(
+        "POST",
+        "/v1/auth/token",
+        undefined,
+        {
+          code,
+          redirect_uri: redirectUri,
+        }
+      ),
   };
 }

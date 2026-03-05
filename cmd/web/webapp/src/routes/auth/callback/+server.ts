@@ -25,8 +25,8 @@ export const GET: RequestHandler = async ({ fetch, url, cookies }) => {
 	await setUserCookie(cookies, {
 		account: profile.account,
 		email: profile.email,
-		deviceEmail: profile.deviceEmail,
-		autoSend: profile.autoSend
+		device_email: profile.device_email,
+		auto_send: profile.auto_send
 	});
 
 	redirect(303, '/');

@@ -20,6 +20,10 @@ generate-icons-website:
 generate-icons-extension:
     @bun run icons:generate
 
+# Generate TypeScript types from OpenAPI specification
+gen-api-types:
+    @bunx openapi-typescript internal/server/openapi.yaml -o cmd/web/shared/src/types/api-generated.ts
+
 # Update VERSION file and all package.json files with new version
 [working-directory("tools")]
 bump-versions version_type:

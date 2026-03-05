@@ -10,22 +10,13 @@ export const actions: Actions = {
 	new: async ({ locals, request, fetch }) => {
 		const data = await request.formData();
 		const txt = data.get('url');
-		const tagsStr = data.get('tags');
 		const sendToDevice = data.get('sendToDevice');
 
 		if (!txt || typeof txt !== 'string') {
 			error(400, 'URL is required');
 		}
 
-		let tags: string[] | undefined;
-		if (tagsStr && typeof tagsStr === 'string') {
-			tags = tagsStr
-				.split(',')
-				.map((tag) => tag.trim())
-				.filter((tag) => tag.length > 0);
-		}
-
-		const article = await createArticle(fetch, txt, tags, locals.auth ?? '');
+		const article = await createArticle(fetch, txt, locals.auth ?? '');
 
 		if (sendToDevice === 'on') {
 			await sendArticle(fetch, article.id, locals.auth ?? '');

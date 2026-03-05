@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { getProfile, exchangeCodeForToken } from '../../lib/api';
-	import type { UserProfile } from '@savetoink/shared';
+	import type { components } from '@savetoink/shared';
 
 	export let apiKey = '';
-	export let profile: UserProfile | null = null;
-	export let onSave: (detail: { apiKey: string; profile?: UserProfile }) => void | Promise<void>;
+	export let profile: components['schemas']['UserProfile'] | null = null;
+	export let onSave: (detail: {
+		apiKey: string;
+		profile?: components['schemas']['UserProfile'];
+	}) => void | Promise<void>;
 	export let onLogout: () => void | Promise<void>;
 
 	let loginStatus = '';

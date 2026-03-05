@@ -1,5 +1,4 @@
 import { format } from "date-fns";
-import type { AuthBackendType } from "../types";
 
 export function formatDate(iso: string): string {
   return format(new Date(iso), "d MMM y");
@@ -18,9 +17,6 @@ export function isApiError(e: unknown): e is { error: string } {
     typeof (e as { error: unknown }).error === "string"
   );
 }
-
-export const Auth0: AuthBackendType = "auth0";
-export const SharedKey: AuthBackendType = "sharedKey";
 
 export const DeviceDomains = [
   "@kindle.com",

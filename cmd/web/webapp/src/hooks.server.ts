@@ -21,8 +21,8 @@ export const handle: Handle = sequence(sentryHandle(), async ({ event, resolve }
 			event.locals.user = {
 				account: userData.account,
 				email: userData.email,
-				deviceEmail: userData.deviceEmail,
-				autoSend: userData.autoSend
+				device_email: userData.device_email,
+				auto_send: userData.auto_send
 			};
 			event.locals.isLoggedIn = true;
 		} else {
@@ -32,8 +32,8 @@ export const handle: Handle = sequence(sentryHandle(), async ({ event, resolve }
 				event.locals.user = {
 					account: profileData.account,
 					email: profileData.email,
-					deviceEmail: profileData.deviceEmail,
-					autoSend: profileData.autoSend
+					device_email: profileData.device_email,
+					auto_send: profileData.auto_send
 				};
 				event.locals.isLoggedIn = true;
 				await setUserCookie(event.cookies, profileData);

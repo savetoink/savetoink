@@ -10,8 +10,10 @@
 		clearUserProfile
 	} from '../../lib/storage';
 	import { API_URL } from '../../lib/api';
-	import type { AuthBackendType, UserProfile } from '@savetoink/shared';
 	import { SharedKey } from '@savetoink/shared';
+	import type { components, AuthBackendType } from '@savetoink/shared';
+
+	type UserProfile = components['schemas']['UserProfile'];
 
 	let apiKey = '';
 	let authBackend: AuthBackendType =
@@ -64,17 +66,17 @@
 				</li>
 			{/if}
 
-			{#if userProfile.deviceEmail}
+			{#if userProfile.device_email}
 				<li>
 					<strong>Device email:</strong>
-					{userProfile.deviceEmail || 'Not set'}
+					{userProfile.device_email || 'Not set'}
 				</li>
 			{/if}
 
-			{#if userProfile.autoSend}
+			{#if userProfile.auto_send}
 				<li>
 					<strong>Auto-send:</strong>
-					{userProfile.autoSend ? 'Enabled' : 'Disabled'}
+					{userProfile.auto_send ? 'Enabled' : 'Disabled'}
 				</li>
 			{/if}
 		{/if}

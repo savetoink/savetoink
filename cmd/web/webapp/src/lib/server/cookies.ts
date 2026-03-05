@@ -1,7 +1,10 @@
 import type { Cookies } from '@sveltejs/kit';
-import type { UserProfile } from '@savetoink/shared';
+import type { components } from '@savetoink/shared';
+
 const AUTH_KEY = 'auth';
 const USER_COOKIE_KEY = 'profile';
+
+type UserProfile = components['schemas']['UserProfile'];
 
 function getCookieSecret(): string {
 	if (typeof process !== 'undefined' && process.env?.COOKIE_SECRET) {

@@ -194,11 +194,6 @@ components:
         auto_send:
           type: boolean
           description: Whether to auto-send articles
-        bounced_emails:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/BounceInfo'
-          description: Map of bounced emails with their bounce info
 
     BounceInfo:
       type: object
@@ -329,14 +324,14 @@ paths:
       parameters:
         - name: page
           in: query
-          description: Page number (default: 1)
+          description: Page number, default is 1
           schema:
             type: integer
             minimum: 1
             default: 1
         - name: page_size
           in: query
-          description: Number of articles per page (default: 20, max: 100)
+          description: Number of articles per page, default is 20, max is 100
           schema:
             type: integer
             minimum: 1

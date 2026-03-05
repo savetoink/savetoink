@@ -54,9 +54,9 @@ export default defineBackground(() => {
 
 			const profile = await getUserProfile();
 
-			const article = await createArticle(url, null, apiKey);
+			const article = await createArticle(url, apiKey);
 
-			if (profile?.autoSend) {
+			if (profile?.auto_send) {
 				await sendArticle(article.id, apiKey);
 
 				await showToast('Success', 'Article saved and sent to device', 'success');

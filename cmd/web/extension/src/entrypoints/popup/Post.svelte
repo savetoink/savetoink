@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { createArticle, sendArticle } from '../../lib/api';
 	import { getAPIKey, getUserProfile } from '../../lib/storage';
-	import type { UserProfile } from '@savetoink/shared';
+	import type { components } from '@savetoink/shared';
+
+	type UserProfile = components['schemas']['UserProfile'];
 
 	let url = $state('');
 	let loading = $state(false);
@@ -10,6 +12,10 @@
 	let statusTimeout: ReturnType<typeof setTimeout>;
 	let profile: UserProfile | null = $state(null);
 	let sendToDevice = $state(false);
+
+	onMount(async () => {
+		await loadProfile();
+	});
 
 	async function getCurrentTabUrl(): Promise<string | null> {
 		try {
@@ -21,29 +27,18 @@
 		}
 	}
 
-	function isValidUrl(url: string): boolean {
-		try {
-			const parsed = new URL(url);
-			return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-		} catch {
-			return false;
-		}
-	}
-
 	async function loadProfile() {
 		const apiKey = await getAPIKey();
 		if (apiKey) {
 			profile = await getUserProfile();
-			sendToDevice = profile?.autoSend || false;
+			sendToDevice = profile?.auto_send || false;
 		}
 
 		const currentUrl = await getCurrentTabUrl();
-		if (currentUrl && isValidUrl(currentUrl)) {
+		if (currentUrl) {
 			url = currentUrl;
 		}
 	}
-
-	loadProfile();
 
 	function clearStatus() {
 		status = '';
@@ -72,7 +67,7 @@
 				return;
 			}
 
-			const article = await createArticle(url, null, apiKey);
+			const article = await createArticle(url, apiKey);
 
 			if (sendToDevice) {
 				await sendArticle(article.id, apiKey);
@@ -108,7 +103,7 @@
 		bind:value={url}
 		required
 	/>
-	{#if profile?.deviceEmail}
+	{#if profile?.device_email}
 		<label>
 			<input type="checkbox" bind:checked={sendToDevice} />
 			Send to reader device
