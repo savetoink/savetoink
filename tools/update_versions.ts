@@ -127,7 +127,12 @@ async function updateBunLockWorkspaces(
   const replacements: { old: string; new: string }[] = [];
 
   for (const [workspaceName, workspaceData] of Object.entries(obj.workspaces)) {
-    if (workspaceName === "" || typeof workspaceData !== "object" || !workspaceData) continue;
+    if (
+      workspaceName === "" ||
+      typeof workspaceData !== "object" ||
+      !workspaceData
+    )
+      continue;
     if (!("version" in workspaceData)) continue;
 
     const oldVersion = workspaceData.version;
@@ -237,7 +242,7 @@ async function main(): Promise<void> {
     updatedCount++;
   }
 
-  const bunLockPath = path.join(repoRoot, "cmd", "web", "bun.lock");
+  const bunLockPath = path.join(repoRoot, "frontend", "bun.lock");
   const packageCount = updatedCount;
   try {
     const bunLockUpdates = await updateBunLockWorkspaces(
