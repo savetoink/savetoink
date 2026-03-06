@@ -3,28 +3,22 @@ import type { UserProfile } from '@savetoink/shared';
 export const STORAGE_KEY = 'local:shared_api_key';
 export const USER_PROFILE_KEY = 'local:user_profile';
 
-interface ApiUserProfile {
-	account: string;
-	email: string;
-	device_email?: string;
-	auto_send?: boolean;
-}
-
-function apiToSharedProfile(apiProfile: ApiUserProfile): UserProfile {
+function storageToUserProfile(profile: Partial<UserProfile> | null): UserProfile | null {
+	if (!profile) return null;
 	return {
-		account: apiProfile.account,
-		email: apiProfile.email,
-		device_email: apiProfile.device_email ?? '',
-		auto_send: apiProfile.auto_send ?? false
+		account: profile.account ?? '',
+		email: profile.email ?? '',
+		device_email: profile.device_email ?? '',
+		auto_send: profile.auto_send ?? false
 	};
 }
 
-function sharedToApiProfile(sharedProfile: UserProfile): ApiUserProfile {
+function userProfileToStorage(profile: UserProfile): Partial<UserProfile> {
 	return {
-		account: sharedProfile.account,
-		email: sharedProfile.email,
-		device_email: sharedProfile.device_email,
-		auto_send: sharedProfile.auto_send
+		account: profile.account,
+		email: profile.email,
+		device_email: profile.device_email,
+		auto_send: profile.auto_send
 	};
 }
 
@@ -49,8 +43,8 @@ export async function saveAPIKey(key: string): Promise<void> {
 
 export async function getUserProfile(): Promise<UserProfile | null> {
 	try {
-		const value = await storage.getItem<ApiUserProfile>(USER_PROFILE_KEY);
-		return value ? apiToSharedProfile(value) : null;
+		const value = await storage.getItem<Partial<UserProfile>>(USER_PROFILE_KEY);
+		return storageToUserProfile(value);
 	} catch (error) {
 		console.error('failed to get user profile from storage:', error);
 		return null;
@@ -59,7 +53,7 @@ export async function getUserProfile(): Promise<UserProfile | null> {
 
 export async function saveUserProfile(profile: UserProfile): Promise<void> {
 	try {
-		await storage.setItem(USER_PROFILE_KEY, sharedToApiProfile(profile));
+		await storage.setItem(USER_PROFILE_KEY, userProfileToStorage(profile));
 	} catch (error) {
 		console.error('failed to save user profile to storage:', error);
 		throw error;

@@ -523,17 +523,17 @@ func New(deps Dependencies) *Service {
 
 ### Phase 1: Critical & High Priority
 
-1. **Add comprehensive tests for repository layer** - Critical data layer currently untested
-2. **Add handler tests for all API endpoints** - API endpoints lack test coverage
+1. **Add comprehensive tests for repository layer** - Critical data layer currently untested: **IGNORE FOR NOW**
+2. **Add handler tests for all API endpoints** - API endpoints lack test coverage: **IGNORE FOR NOW**
 3. **Implement HMAC webhook verification** - Security vulnerability with query param auth - **FIXED** (we accept the risk)
 4. **Refactor Service to use dependency injection** - Remove type assertions, improve testability **DONE**
 5. **Split Service into smaller focused services** - Apply SRP, reduce interface size from 19 methods **DONE**
 6. **Add input validation for all user inputs** - URL validation, email validation, webhook secrets **DONE**
-7. **Extract common error handling patterns** - Reduce code duplication, improve consistency
+7. **Extract common error handling patterns** - Reduce code duplication, improve consistency **DONE**
 
 ### Phase 2: Medium Priority
 
-8. **Implement HMAC signature verification for webhooks** - Replace query param auth with HMAC
+8. **Implement HMAC signature verification for webhooks** - Replace query param auth with HMAC **IGNORE FOR NOW**
 9. **Add configuration tests** - Validate config loading and environment variable handling
 10. **Implement cursor-based pagination** - Replace inefficient offset-based pagination
 11. **Add comprehensive logging for critical paths** - Bounce handling, sends, errors

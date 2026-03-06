@@ -111,7 +111,7 @@
 	}
 </script>
 
-<h1>Add Article</h1>
+<h2>Add Article</h2>
 
 <p>Save a new article to your reading list</p>
 

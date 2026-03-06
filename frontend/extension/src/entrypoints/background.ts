@@ -25,7 +25,7 @@ export default defineBackground(() => {
 	browser.runtime.onInstalled.addListener(() => {
 		browser.contextMenus.create({
 			id: 'send-to-ink',
-			title: 'Send to Ink',
+			title: 'Save to Ink',
 			contexts: ['link']
 		});
 	});

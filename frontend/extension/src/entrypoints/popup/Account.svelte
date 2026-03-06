@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Login from './Login.svelte';
 	import { saveAPIKey, clearAPIKey } from '../../lib/storage';
-	import { API_URL } from '../../lib/api';
+	import { API_URL, isDev } from '../../lib/api';
 	import { SharedKey } from '@savetoink/shared';
 	import type { UserProfile, AuthBackendType } from '@savetoink/shared';
 
@@ -31,7 +31,7 @@
 	}
 </script>
 
-<h1>Account</h1>
+<h2>Account</h2>
 
 <section>
 	<Login
@@ -46,28 +46,22 @@
 <section>
 	<ul>
 		{#if profile}
-			{#if profile.email}
+			{#if profile.email && authBackend !== SharedKey}
 				<li>
 					<strong>Email:</strong>
 					{profile.email}
 				</li>
 			{/if}
-
-			{#if profile.device_email}
-				<li>
-					<strong>Device email:</strong>
-					{profile.device_email || 'Not set'}
-				</li>
-			{/if}
-
-			{#if profile.auto_send}
-				<li>
-					<strong>Auto-send:</strong>
-					{profile.auto_send ? 'Enabled' : 'Disabled'}
-				</li>
-			{/if}
+			<li>
+				<strong>Device email:</strong>
+				{profile.device_email || 'Not set'}
+			</li>
+			<li>
+				<strong>Auto-send:</strong>
+				{profile.auto_send ? 'Enabled' : 'Disabled'}
+			</li>
 		{/if}
-		{#if import.meta.env.DEV}
+		{#if isDev}
 			<li>
 				<strong>API URL:</strong>
 				{API_URL}

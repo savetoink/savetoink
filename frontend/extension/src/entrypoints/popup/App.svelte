@@ -4,10 +4,11 @@
 	import Post from './Post.svelte';
 	import { Footer } from '@savetoink/shared/components';
 	import { getAPIKey, getUserProfile } from '../../lib/storage';
+	import { APP_URL, isDev } from '../../lib/api';
 	import '@savetoink/shared/css';
 	import type { UserProfile } from '@savetoink/shared';
 
-	if (import.meta.env.DEV) {
+	if (isDev) {
 		import('@savetoink/shared/css-dev');
 	}
 
@@ -24,6 +25,12 @@
 </script>
 
 <main class="container">
+	<section>
+		<h1>
+			<a href={APP_URL} target="_blank" rel="noopener noreferrer">Save to Ink</a>
+		</h1>
+	</section>
+	<hr />
 	<section>
 		<Post {profile} />
 	</section>
