@@ -42,3 +42,7 @@ dump/*
 
 # Agents
 .opencode/
+*.md
+!README.md
+!AGENT.md
+!LICENSE.md
