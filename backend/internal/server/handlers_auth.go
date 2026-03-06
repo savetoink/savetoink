@@ -13,32 +13,25 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/shaftoe/savetoink/backend/internal/model"
 )
 
 const (
 	jwtPartsCount = 3
 )
 
-//nolint:funlen // handler function is naturally longer due to Auth0 token exchange logic
 func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Request) {
 	var req authTokenExchangeRequest
-	if decodeErr := json.NewDecoder(r.Body).Decode(&req); decodeErr != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "failed to decode request body: " + decodeErr.Error()})
+	if decodeErr := decodeAndValidateRequest(w, r, &req); decodeErr != nil {
 		return
 	}
 
 	if req.Code == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "missing code in request body"})
+		writeJSONError(w, http.StatusBadRequest, errors.New("missing code in request body"))
 		return
 	}
 
 	if req.RedirectURI == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "missing redirect_uri in request body"})
+		writeJSONError(w, http.StatusBadRequest, errors.New("missing redirect_uri in request body"))
 		return
 	}
 
@@ -53,8 +46,7 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	resp, body, execErr := h.executeTokenExchange(tokenReq)
 	if execErr != nil {
 		addRequestError(r.Context(), execErr)
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "failed to exchange token with Auth0: " + execErr.Error()})
+		writeJSONError(w, http.StatusInternalServerError, fmt.Errorf("failed to exchange token with Auth0: %w", execErr))
 		return
 	}
 
@@ -66,8 +58,7 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	var tokenResp authTokenExchangeResponse
 	if unmarshalErr := json.Unmarshal(body, &tokenResp); unmarshalErr != nil {
 		addRequestError(r.Context(), unmarshalErr)
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "failed to decode token response: " + unmarshalErr.Error()})
+		writeJSONError(w, http.StatusInternalServerError, fmt.Errorf("failed to decode token response: %w", unmarshalErr))
 		return
 	}
 
@@ -132,12 +123,11 @@ func (h *handlers) handleAuth0Error(ctx context.Context, w http.ResponseWriter, 
 	}
 	_ = json.Unmarshal(body, &errResp)
 	addLogAttr(ctx, slog.String("auth0_error", errResp.Error))
-	w.WriteHeader(http.StatusUnauthorized)
 
 	if errResp.ErrorDescription != "" {
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: errResp.ErrorDescription})
+		writeJSONError(w, http.StatusUnauthorized, errors.New(errResp.ErrorDescription))
 	} else {
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "token exchange failed: " + errResp.Error})
+		writeJSONError(w, http.StatusUnauthorized, fmt.Errorf("token exchange failed: %s", errResp.Error))
 	}
 }
 

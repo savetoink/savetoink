@@ -93,15 +93,13 @@ func sendError(w http.ResponseWriter, err error) {
 }
 
 func sendBounceError(w http.ResponseWriter, email, errorMessage string) {
+	w.WriteHeader(http.StatusBadRequest)
 	if errorMessage != "" {
-		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{
 			Error: fmt.Sprintf("device email %s is blocked due to previous bounce: %s", email, errorMessage),
 		})
 		return
 	}
-
-	w.WriteHeader(http.StatusBadRequest)
 	_ = json.NewEncoder(w).Encode(model.ErrorResponse{
 		Error: fmt.Sprintf("device email %s is blocked due to previous bounce", email),
 	})

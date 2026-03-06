@@ -3,6 +3,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,28 +11,23 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/shaftoe/savetoink/backend/internal/consts"
-	"github.com/shaftoe/savetoink/backend/internal/model"
 	"github.com/shaftoe/savetoink/backend/internal/server/auth"
 	"github.com/shaftoe/savetoink/backend/internal/validation"
 )
 
 func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 	var req articleRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "failed to decode request body: " + err.Error()})
+	if err := decodeAndValidateRequest(w, r, &req); err != nil {
 		return
 	}
 
 	if req.URL == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "missing URL in request body"})
+		writeJSONError(w, http.StatusBadRequest, errors.New("missing URL in request body"))
 		return
 	}
 
 	if err := validation.ValidateURL(req.URL); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		writeJSONError(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -39,9 +35,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	article, err := h.service.CreateArticle(r.Context(), req.URL, auth.GetAccountID(r.Context()))
 	if err != nil {
-		addRequestError(r.Context(), err)
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "create article")
 		return
 	}
 
@@ -85,9 +79,7 @@ func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, favoriteFilter)
 	if err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "get articles metadata")
 		return
 	}
 
@@ -114,8 +106,7 @@ func (h *handlers) handleGetArticle(w http.ResponseWriter, r *http.Request) {
 	article, err := h.service.GetArticle(r.Context(), accountID, articleID)
 	if err != nil {
 		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		writeJSONError(w, http.StatusNotFound, err)
 		return
 	}
 
@@ -133,9 +124,7 @@ func (h *handlers) handleDeleteArticle(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.DeleteArticle(r.Context(), accountID, articleID)
 	if err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "delete article")
 		return
 	}
 
@@ -150,9 +139,7 @@ func (h *handlers) handleDeleteAllArticles(w http.ResponseWriter, r *http.Reques
 
 	result, err := h.service.DeleteAllArticles(r.Context(), accountID)
 	if err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "delete all articles")
 		return
 	}
 
@@ -170,9 +157,7 @@ func (h *handlers) handleToggleFavorite(w http.ResponseWriter, r *http.Request) 
 
 	newStatus, err := h.service.ToggleFavorite(r.Context(), accountID, articleID)
 	if err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "toggle favorite")
 		return
 	}
 
@@ -191,8 +176,7 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 	article, err := h.service.GetArticle(r.Context(), accountID, articleID)
 	if err != nil {
 		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		writeJSONError(w, http.StatusNotFound, err)
 		return
 	}
 
@@ -200,9 +184,7 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	emailResp, err := h.service.SendArticle(r.Context(), article, accountID)
 	if err != nil {
-		addRequestError(r.Context(), err)
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "send article")
 		return
 	}
 

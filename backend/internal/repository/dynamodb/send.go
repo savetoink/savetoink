@@ -61,8 +61,8 @@ func (d *DynamoDB) GetSendsByArticleID(ctx context.Context, articleID string) ([
 	var sends []*model.Send
 	for _, item := range resp.Items {
 		var send model.Send
-		if unmarshalErr := attributevalue.UnmarshalMap(item, &send); unmarshalErr != nil {
-			return nil, fmt.Errorf("failed to unmarshal send: %w", unmarshalErr)
+		if unmarshalErr := unmarshalItem(item, &send, "send"); unmarshalErr != nil {
+			return nil, unmarshalErr
 		}
 		sends = append(sends, &send)
 	}
@@ -97,8 +97,8 @@ func (d *DynamoDB) GetSendsByAccountDateRange(
 	var sends []*model.Send
 	for _, item := range resp.Items {
 		var send model.Send
-		if unmarshalErr := attributevalue.UnmarshalMap(item, &send); unmarshalErr != nil {
-			return nil, fmt.Errorf("failed to unmarshal send: %w", unmarshalErr)
+		if unmarshalErr := unmarshalItem(item, &send, "send"); unmarshalErr != nil {
+			return nil, unmarshalErr
 		}
 		sends = append(sends, &send)
 	}

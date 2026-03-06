@@ -30,8 +30,8 @@ func (d *DynamoDB) GetUserProfile(ctx context.Context, account string) (*model.U
 	}
 
 	var profile model.UserProfile
-	if unmarshalErr := attributevalue.UnmarshalMap(resp.Item, &profile); unmarshalErr != nil {
-		return nil, fmt.Errorf("failed to unmarshal user profile: %w", unmarshalErr)
+	if unmarshalErr := unmarshalItem(resp.Item, &profile, "user profile"); unmarshalErr != nil {
+		return nil, unmarshalErr
 	}
 
 	return &profile, nil
@@ -57,8 +57,8 @@ func (d *DynamoDB) GetAccountIDByDeviceEmail(ctx context.Context, deviceEmail st
 	}
 
 	var profile model.UserProfile
-	if unmarshalErr := attributevalue.UnmarshalMap(resp.Items[0], &profile); unmarshalErr != nil {
-		return "", fmt.Errorf("failed to unmarshal user profile: %w", unmarshalErr)
+	if unmarshalErr := unmarshalItem(resp.Items[0], &profile, "user profile"); unmarshalErr != nil {
+		return "", unmarshalErr
 	}
 
 	return profile.Account, nil

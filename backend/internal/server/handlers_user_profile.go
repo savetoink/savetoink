@@ -2,10 +2,8 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
-	"github.com/shaftoe/savetoink/backend/internal/model"
 	"github.com/shaftoe/savetoink/backend/internal/server/auth"
 )
 
@@ -21,17 +19,13 @@ func (h *handlers) handleGetUserProfile(w http.ResponseWriter, r *http.Request) 
 
 	deviceEmail, autoSend, err := h.service.GetUserDeviceEmail(r.Context(), accountID)
 	if err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "get user device email")
 		return
 	}
 
 	profile, err := h.service.GetUserProfile(r.Context(), accountID)
 	if err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "get user profile")
 		return
 	}
 
@@ -53,16 +47,12 @@ func (h *handlers) handleSetDevice(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountID(r.Context())
 
 	var req deviceRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "failed to decode request body: " + err.Error()})
+	if err := decodeAndValidateRequest(w, r, &req); err != nil {
 		return
 	}
 
 	if err := h.service.SetUserDeviceEmailWithAutoSend(r.Context(), accountID, req.DeviceEmail, req.AutoSend); err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "set user device email")
 		return
 	}
 
@@ -75,9 +65,7 @@ func (h *handlers) handleDeleteDevice(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.DeleteUserDeviceEmail(r.Context(), accountID)
 	if err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
+		handleServiceError(w, r, err, "delete user device email")
 		return
 	}
 

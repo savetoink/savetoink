@@ -61,8 +61,8 @@ func (d *DynamoDB) GetByAccountAndID(ctx context.Context, account, id string) (*
 	}
 
 	var article model.Article
-	if unmarshalErr := attributevalue.UnmarshalMap(resp.Item, &article); unmarshalErr != nil {
-		return nil, fmt.Errorf("failed to unmarshal article: %w", unmarshalErr)
+	if unmarshalErr := unmarshalItem(resp.Item, &article, "article"); unmarshalErr != nil {
+		return nil, unmarshalErr
 	}
 
 	return &article, nil

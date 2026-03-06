@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/backend/internal/consts"
@@ -182,8 +181,8 @@ func (d *DynamoDB) unmarshalArticles(items []map[string]types.AttributeValue) ([
 	articles := make([]*model.Article, 0, len(items))
 	for _, item := range items {
 		var article model.Article
-		if unmarshalErr := attributevalue.UnmarshalMap(item, &article); unmarshalErr != nil {
-			return nil, fmt.Errorf("failed to unmarshal article: %w", unmarshalErr)
+		if err := unmarshalItem(item, &article, "article"); err != nil {
+			return nil, err
 		}
 		articles = append(articles, &article)
 	}
