@@ -54,7 +54,7 @@ var versionCmd = &cobra.Command{
 func runConvert(_ *cobra.Command, args []string) error {
 	url := args[0]
 
-	cfg, err := config.Load(consts.ModeCLI)
+	cfg, err := config.Load(consts.ModeCLI, nil)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}

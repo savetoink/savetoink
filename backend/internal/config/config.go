@@ -3,10 +3,10 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/spf13/viper"
 )
@@ -43,8 +43,14 @@ type Config struct {
 	SentrySampleRate  float64
 }
 
+// AWSConfigLoader is a function type for loading AWS configuration.
+// This allows for dependency injection and easier testing.
+type AWSConfigLoader func(ctx context.Context) (aws.Config, error)
+
 // Load reads configuration from environment variables and returns a Config instance.
-func Load(mode consts.RunMode) (*Config, error) {
+// The awsLoader parameter is used to load AWS configuration in server mode.
+// It can be nil for CLI mode or in tests where AWS config is not needed.
+func Load(mode consts.RunMode, awsLoader AWSConfigLoader) (*Config, error) {
 	viper.SetEnvPrefix("SAVETOINK")
 	viper.AutomaticEnv()
 
@@ -58,7 +64,7 @@ func Load(mode consts.RunMode) (*Config, error) {
 		cfg.AuthBackend = consts.AuthBackendSharedAPIKey
 	}
 
-	if err := cfg.validate(); err != nil {
+	if err := cfg.validate(awsLoader); err != nil {
 		return nil, err
 	}
 
@@ -128,11 +134,11 @@ func loadConfig(mode consts.RunMode) *Config {
 	return cfg
 }
 
-func (c *Config) validate() error {
+func (c *Config) validate(awsLoader AWSConfigLoader) error {
 	var missing []string
 
 	if c.Mode == consts.ModeServer {
-		if err := c.validateServerConfig(&missing); err != nil {
+		if err := c.validateServerConfig(&missing, awsLoader); err != nil {
 			return err
 		}
 	}
@@ -144,7 +150,7 @@ func (c *Config) validate() error {
 	return nil
 }
 
-func (c *Config) validateServerConfig(missing *[]string) error {
+func (c *Config) validateServerConfig(missing *[]string, awsLoader AWSConfigLoader) error {
 	if err := c.validateAuthBackendConfig(missing); err != nil {
 		return err
 	}
@@ -165,7 +171,11 @@ func (c *Config) validateServerConfig(missing *[]string) error {
 		*missing = append(*missing, "SAVETOINK_APP_URL")
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.Background())
+	if awsLoader == nil {
+		return errors.New("AWS config loader is required in server mode")
+	}
+
+	cfg, err := awsLoader(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
 	}

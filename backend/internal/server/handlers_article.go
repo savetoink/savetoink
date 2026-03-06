@@ -192,6 +192,11 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 		addLogAttr(r.Context(), slog.String("message_id", emailResp.MessageID))
 	}
 
+	deviceEmail, _, getErr := h.service.GetUserDeviceEmail(r.Context(), accountID)
+	if getErr == nil && deviceEmail != "" {
+		addLogAttr(r.Context(), slog.String("destination_email", deviceEmail))
+	}
+
 	w.WriteHeader(http.StatusOK)
 
 	if auth.HasSendsCount(r.Context()) {

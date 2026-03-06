@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 const (
@@ -56,6 +57,8 @@ func (h *handlers) handleMailjetWebhook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	addLogAttr(r.Context(), slog.Int("webhook_event_count", len(events)))
+
 	processErrors := h.processBounceEvents(r, events)
 	if processErrors != nil {
 		addRequestError(r.Context(), processErrors)
@@ -77,29 +80,56 @@ func (h *handlers) verifyMailjetSecret(r *http.Request) error {
 }
 
 func (h *handlers) processBounceEvents(r *http.Request, events []mailjetEvent) error {
+	var processedCount int
+	var failedCount int
 	var err error
 
 	for i := range events {
 		event := &events[i]
 
 		if event.Event != mailjetEventBounce {
+			failedCount++
 			err = errors.Join(err, errors.New("unexpected event: "+event.Event))
 			continue
 		}
 
 		if event.Email == "" {
+			failedCount++
 			err = errors.Join(err, errors.New("empty email"))
 			continue
 		}
 
 		errorMessage := h.extractErrorMessage(event)
 		if handleErr := h.service.HandleBounce(r.Context(), event.Email, errorMessage); handleErr != nil {
+			failedCount++
 			err = errors.Join(err, fmt.Errorf("handleErr: %w (email: %s)", handleErr, event.Email))
 			continue
 		}
 
+		processedCount++
 		addLogAttr(r.Context(), slog.String("bounced_email", event.Email))
+
+		accountID, accountErr := h.service.GetAccountIDByDeviceEmail(r.Context(), event.Email)
+		if accountErr == nil && accountID != "" {
+			addLogAttr(r.Context(), slog.String("account_id", accountID))
+		}
+
+		if errorMessage != "" {
+			addLogAttr(r.Context(), slog.String("bounce_error", errorMessage))
+		}
+
+		if event.HardBounce {
+			addLogAttr(r.Context(), slog.Bool("hard_bounce", true))
+		}
+
+		if event.Time > 0 {
+			bounceTime := time.Unix(event.Time, 0).UTC()
+			addLogAttr(r.Context(), slog.Time("bounce_timestamp", bounceTime))
+		}
 	}
+
+	addLogAttr(r.Context(), slog.Int("processed_count", processedCount))
+	addLogAttr(r.Context(), slog.Int("failed_count", failedCount))
 
 	return err
 }

@@ -2,17 +2,22 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
 	"github.com/akrylysov/algnhsa"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/shaftoe/savetoink/backend/internal/config"
 	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/server"
 )
 
 func main() {
-	cfg, err := config.Load(consts.ModeServer)
+	cfg, err := config.Load(consts.ModeServer, func(ctx context.Context) (aws.Config, error) {
+		return awsconfig.LoadDefaultConfig(ctx)
+	})
 	if err != nil {
 		slog.Error("failed to load configuration", "error", err)
 		os.Exit(1)
