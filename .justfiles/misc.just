@@ -27,7 +27,8 @@ gen-api-types:
 # Update VERSION file and all package.json files with new version
 [working-directory("tools")]
 update-versions version_type:
-    @bun run update_versions.ts {{ version_type }}
+    @bun i
+    @bun update_versions.ts {{ version_type }}
 
 bump-version version_type:
     @just update-versions {{ version_type }}
