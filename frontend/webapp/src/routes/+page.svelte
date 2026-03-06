@@ -118,7 +118,7 @@
 	</ul>
 {/if}
 
-<Navigator page={data.page} has_more={data.has_more} />
+<Navigator page={data.page} hasMore={data.has_more} />
 
 <form
 	bind:this={favoriteForm}

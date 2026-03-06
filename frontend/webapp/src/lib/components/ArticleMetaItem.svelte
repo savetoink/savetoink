@@ -1,8 +1,19 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ArticleControls from './ArticleControls.svelte';
+	import type { Article, UserProfile } from '@savetoink/shared';
 
-	let { article, user, selected = false, ref } = $props();
+	let {
+		article,
+		user,
+		selected = false,
+		ref
+	}: {
+		article: Article;
+		user?: UserProfile;
+		selected: boolean;
+		ref?: (el: HTMLLIElement) => void;
+	} = $props();
 	let liElement: HTMLLIElement | undefined;
 
 	$effect(() => {

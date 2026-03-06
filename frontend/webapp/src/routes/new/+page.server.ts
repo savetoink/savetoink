@@ -1,9 +1,10 @@
 import { error, redirect } from '@sveltejs/kit';
 import { createArticle, sendArticle } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad } from './$types';
+import type { UserProfile } from '@savetoink/shared';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	return { user: locals.user };
+	return { user: locals.user as UserProfile | undefined };
 };
 
 export const actions: Actions = {

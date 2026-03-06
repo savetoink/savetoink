@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import type { Article, UserProfile } from '@savetoink/shared';
 
-	let { article, user } = $props();
+	let { article, user }: { article: Article; user?: UserProfile } = $props();
 
-	const canSendToDevice = $derived(!!user?.deviceEmail);
+	const canSendToDevice = $derived(!!user?.device_email);
 
 	async function handleEnhance({ cancel }: { cancel: () => void }) {
 		if (!window.confirm('Are you sure you want to delete this article?')) {

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { formatDate } from '@savetoink/shared';
-	let { article } = $props();
+	import type { Article } from '@savetoink/shared';
+
+	let { article }: { article: Article } = $props();
 </script>
 
 <details>
@@ -38,33 +40,9 @@
 			<dt>Reading time</dt>
 			<dd>{article.readingTimeMinutes} min</dd>
 		{/if}
-		{#if article.deliveryStatus}
-			<dt>Status</dt>
-			<dd>{article.deliveryStatus}</dd>
-		{/if}
-		{#if article.deliveredFrom}
-			<dt>Delivered from</dt>
-			<dd>{article.deliveredFrom}</dd>
-		{/if}
-		{#if article.deliveredTo}
-			<dt>Delivered to</dt>
-			<dd>{article.deliveredTo}</dd>
-		{/if}
-		{#if article.deliveredBy}
-			<dt>Delivered by</dt>
-			<dd>{article.deliveredBy}</dd>
-		{/if}
-		{#if article.deliveredEmailUUID}
-			<dt>Email ID</dt>
-			<dd>{article.deliveredEmailUUID}</dd>
-		{/if}
 		{#if article.createdAt}
 			<dt>Added</dt>
 			<dd><time datetime={article.createdAt}>{formatDate(article.createdAt)}</time></dd>
-		{/if}
-		{#if article.tags}
-			<dt>Tags</dt>
-			<dd>{article.tags.join(', ')}</dd>
 		{/if}
 		<dt>Original link</dt>
 		<dd>

@@ -2,9 +2,11 @@
 	import ArticleControls from '$lib/components/ArticleControls.svelte';
 	import ArticleDetailKeyboardNav from '$lib/components/ArticleDetailKeyboardNav.svelte';
 	import ArticleMetaAccordion from '$lib/components/ArticleMetaAccordion.svelte';
-	import type { PageData } from './$types';
+	import type { Article, UserProfile } from '@savetoink/shared';
 
-	let { data }: { data: PageData } = $props();
+	type ArticlePageData = Article & { user: UserProfile };
+
+	let { data }: { data: ArticlePageData } = $props();
 	const title = $derived(data.title || data.url);
 </script>
 
@@ -33,7 +35,4 @@
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html data.content}
 	</section>
-	<footer>
-		<ArticleControls article={data} user={data.user} />
-	</footer>
 </article>

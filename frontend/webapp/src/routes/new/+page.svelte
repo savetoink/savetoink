@@ -1,8 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { UserProfile } from '@savetoink/shared';
 
 	let { data }: { data: PageData } = $props();
-	let sendToDevice = $derived(data?.user?.auto_send || false);
+	let user = $derived(data?.user as UserProfile | undefined);
+	let sendToDevice = $derived(user?.auto_send);
 </script>
 
 <section>
@@ -24,21 +26,10 @@
 				/>
 				<small>Enter the full URL of the article you want to save</small>
 			</label>
-			<!-- <label>
-				Tags
-				<input
-					type="text"
-					name="tags"
-					maxlength="200"
-					placeholder="tech, reading, tutorial"
-					autocomplete="off"
-				/>
-				<small>Optional comma-separated tags (e.g., tech, reading, tutorial)</small>
-			</label> -->
-			{#if data?.user?.device_email}
+			{#if data.user?.device_email != ''}
 				<label>
 					<input type="checkbox" name="sendToDevice" bind:checked={sendToDevice} />
-					Send to device (<code>{data.user.device_email}</code>)
+					Send to device (<code>{user?.device_email}</code>)
 				</label>
 			{/if}
 		</fieldset>

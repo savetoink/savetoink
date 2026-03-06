@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 
-	let { page, has_more }: { page: number; has_more: boolean } = $props();
+	let { page, hasMore: has_more }: { page: number; hasMore: boolean } = $props();
 
 	function navigateTo(newPage: number) {
 		goto(resolve(`/?page=${newPage}` as unknown as '/'));
