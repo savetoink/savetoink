@@ -1,4 +1,10 @@
-// Package service provides main orchestration logic for processing articles.
+// Package service provides main entry point to interact with Save to Ink various services e.g.:
+// - content extraction
+// - articles
+// - profiles
+// - email sending
+// - storage access
+// - etc...
 package service
 
 import (
