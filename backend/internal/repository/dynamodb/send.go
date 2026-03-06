@@ -14,14 +14,48 @@ import (
 	"github.com/shaftoe/savetoink/backend/internal/model"
 )
 
-// CreateSend implements SendsRepository.CreateSend.
-func (d *DynamoDB) CreateSend(ctx context.Context, send *model.Send) error {
-	if send.PK == "" {
-		return errors.New("pk field is required")
-	}
+type dynamoDBSend struct {
+	PK            string    `dynamodbav:"pk"`
+	SK            string    `dynamodbav:"sk"`
+	Account       string    `dynamodbav:"account"`
+	ArticleID     string    `dynamodbav:"articleId"`
+	SentAt        time.Time `dynamodbav:"sentAt"`
+	Title         string    `dynamodbav:"title"`
+	DestEmail     string    `dynamodbav:"destEmail"`
+	Status        string    `dynamodbav:"status"`
+	SenderEmail   string    `dynamodbav:"senderEmail"`
+	MessageID     string    `dynamodbav:"messageID,omitempty"`
+	Provider      string    `dynamodbav:"provider"`
+	ErrorResponse string    `dynamodbav:"errorResponse,omitempty"`
+}
 
-	if send.SK == "" {
-		return errors.New("sk field is required")
+func (d *dynamoDBSend) toDomain() *model.Send {
+	return &model.Send{
+		Account:       d.Account,
+		ArticleID:     d.ArticleID,
+		SentAt:        d.SentAt,
+		Title:         d.Title,
+		DestEmail:     d.DestEmail,
+		Status:        d.Status,
+		SenderEmail:   d.SenderEmail,
+		MessageID:     d.MessageID,
+		Provider:      d.Provider,
+		ErrorResponse: d.ErrorResponse,
+	}
+}
+
+// CreateSendRecord implements SendsRepository.CreateSendRecord.
+func (d *DynamoDB) CreateSendRecord(ctx context.Context, accountID, articleID, title, destEmail string) error {
+	now := time.Now().UTC()
+	send := &dynamoDBSend{
+		PK:        "USER#" + accountID,
+		SK:        "SEND#" + now.Format(time.RFC3339) + "#" + articleID,
+		Account:   accountID,
+		ArticleID: articleID,
+		SentAt:    now,
+		Title:     title,
+		DestEmail: destEmail,
+		Status:    "pending",
 	}
 
 	item, err := attributevalue.MarshalMap(send)
@@ -40,8 +74,65 @@ func (d *DynamoDB) CreateSend(ctx context.Context, send *model.Send) error {
 	return nil
 }
 
+// UpdateSendRecord implements SendsRepository.UpdateSendRecord.
+func (d *DynamoDB) UpdateSendRecord(
+	ctx context.Context,
+	accountID, articleID, status, messageID, errorResponse string,
+) error {
+	dbSends, err := d.getDynamoDBSendsByArticleID(ctx, articleID)
+	if err != nil {
+		return fmt.Errorf("failed to get send: %w", err)
+	}
+
+	if len(dbSends) == 0 {
+		return fmt.Errorf("send record not found for article %s", articleID)
+	}
+
+	send := dbSends[len(dbSends)-1]
+	if send.Account != accountID {
+		return errors.New("send record account mismatch")
+	}
+
+	send.Status = status
+	send.MessageID = messageID
+	send.ErrorResponse = errorResponse
+
+	item, err := attributevalue.MarshalMap(send)
+	if err != nil {
+		return fmt.Errorf("failed to marshal send: %w", err)
+	}
+
+	_, err = d.client.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(d.sendsTableName),
+		Item:      item,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update send: %w", err)
+	}
+
+	return nil
+}
+
 // GetSendsByArticleID implements SendsRepository.GetSendsByArticleID.
 func (d *DynamoDB) GetSendsByArticleID(ctx context.Context, articleID string) ([]*model.Send, error) {
+	dbSends, err := d.getDynamoDBSendsByArticleID(ctx, articleID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(dbSends) == 0 {
+		return []*model.Send{}, nil
+	}
+
+	sends := make([]*model.Send, 0, len(dbSends))
+	for _, dbSend := range dbSends {
+		sends = append(sends, dbSend.toDomain())
+	}
+
+	return sends, nil
+}
+
+func (d *DynamoDB) getDynamoDBSendsByArticleID(ctx context.Context, articleID string) ([]*dynamoDBSend, error) {
 	resp, err := d.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(d.sendsTableName),
 		IndexName:              aws.String(consts.DynamoDBSendsArticleIDIndex),
@@ -55,16 +146,16 @@ func (d *DynamoDB) GetSendsByArticleID(ctx context.Context, articleID string) ([
 	}
 
 	if len(resp.Items) == 0 {
-		return []*model.Send{}, nil
+		return []*dynamoDBSend{}, nil
 	}
 
-	var sends []*model.Send
+	var sends []*dynamoDBSend
 	for _, item := range resp.Items {
-		var send model.Send
-		if unmarshalErr := unmarshalItem(item, &send, "send"); unmarshalErr != nil {
-			return nil, unmarshalErr
+		var dbSend dynamoDBSend
+		if unmarshalErr := attributevalue.UnmarshalMap(item, &dbSend); unmarshalErr != nil {
+			return nil, fmt.Errorf("failed to unmarshal send: %w", unmarshalErr)
 		}
-		sends = append(sends, &send)
+		sends = append(sends, &dbSend)
 	}
 
 	return sends, nil
@@ -96,11 +187,11 @@ func (d *DynamoDB) GetSendsByAccountDateRange(
 
 	var sends []*model.Send
 	for _, item := range resp.Items {
-		var send model.Send
-		if unmarshalErr := unmarshalItem(item, &send, "send"); unmarshalErr != nil {
-			return nil, unmarshalErr
+		var dbSend dynamoDBSend
+		if unmarshalErr := attributevalue.UnmarshalMap(item, &dbSend); unmarshalErr != nil {
+			return nil, fmt.Errorf("failed to unmarshal send: %w", unmarshalErr)
 		}
-		sends = append(sends, &send)
+		sends = append(sends, dbSend.toDomain())
 	}
 
 	return sends, nil

@@ -251,9 +251,8 @@ func (s *ArticleService) SendArticle(
 
 	result := servicetypes.NewProcessResult(article, epubData, article.URL)
 
-	send := s.buildSendRecord(accountID, article.ID, article.Title, destEmail)
 	if s.sendsRepo != nil {
-		if storeErr := s.sendsRepo.CreateSend(ctx, send); storeErr != nil {
+		if storeErr := s.sendsRepo.CreateSendRecord(ctx, accountID, article.ID, article.Title, destEmail); storeErr != nil {
 			return nil, fmt.Errorf("failed to store send record: %w", storeErr)
 		}
 	}
@@ -267,11 +266,17 @@ func (s *ArticleService) SendArticle(
 
 	emailResp, err := s.sender.SendEmail(ctx, emailReq)
 	if err != nil {
-		s.updateSendRecord(ctx, send, "failed", "", err.Error())
+		updateErr := s.sendsRepo.UpdateSendRecord(ctx, accountID, article.ID, "failed", "", err.Error())
+		if updateErr != nil {
+			slog.Warn("failed to update send record", "error", updateErr)
+		}
 		return nil, fmt.Errorf("failed to send email: %w", err)
 	}
 
-	s.updateSendRecord(ctx, send, "success", emailResp.MessageID, "")
+	updateErr := s.sendsRepo.UpdateSendRecord(ctx, accountID, article.ID, "success", emailResp.MessageID, "")
+	if updateErr != nil {
+		slog.Warn("failed to update send record", "error", updateErr)
+	}
 
 	if s.repo != nil {
 		if storeErr := s.repo.Store(ctx, article); storeErr != nil {
@@ -329,37 +334,6 @@ func (s *ArticleService) startBackgroundDBStore(
 	})
 
 	return
-}
-
-func (s *ArticleService) buildSendRecord(accountID, articleID, title, destEmail string) *model.Send {
-	now := time.Now().UTC()
-	return &model.Send{
-		PK:          "USER#" + accountID,
-		SK:          "SEND#" + now.Format(time.RFC3339) + "#" + articleID,
-		Account:     accountID,
-		ArticleID:   articleID,
-		SentAt:      now,
-		Title:       title,
-		DestEmail:   destEmail,
-		Status:      "pending",
-		SenderEmail: s.cfg.SenderEmail,
-		Provider:    string(s.cfg.EmailProvider),
-	}
-}
-
-func (s *ArticleService) updateSendRecord(
-	ctx context.Context,
-	send *model.Send,
-	status, messageID, errorResponse string,
-) {
-	send.Status = status
-	send.MessageID = messageID
-	send.ErrorResponse = errorResponse
-	if s.sendsRepo != nil {
-		if err := s.sendsRepo.CreateSend(ctx, send); err != nil {
-			slog.Warn("failed to update send record", "error", err)
-		}
-	}
 }
 
 func (s *ArticleService) validateArticleForSend(article *model.Article) error {
