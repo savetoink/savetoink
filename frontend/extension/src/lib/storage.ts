@@ -3,6 +3,7 @@ import type { UserProfile } from '@savetoink/shared';
 export const STORAGE_KEY = 'local:shared_api_key';
 export const USER_PROFILE_KEY = 'local:user_profile';
 
+// why don't we use the shared types?
 interface ApiUserProfile {
 	account: string;
 	email: string;
