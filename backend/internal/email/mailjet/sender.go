@@ -33,7 +33,7 @@ func NewSender(apiKey, apiSecret, senderEmail string) *Sender {
 }
 
 // SendEmail sends an email with the EPUB attachment via Mailjet.
-func (s *Sender) SendEmail(_ context.Context, req *email.Request) (*email.SendEmailResponse, error) {
+func (s *Sender) SendEmail(ctx context.Context, req *email.Request) (*email.SendEmailResponse, error) {
 	if err := s.validateConfig(); err != nil {
 		return nil, fmt.Errorf("invalid sender config: %w", err)
 	}
@@ -45,7 +45,7 @@ func (s *Sender) SendEmail(_ context.Context, req *email.Request) (*email.SendEm
 	messagesInfo := s.buildMessageInfo(req)
 	messages := mailjetLib.MessagesV31{Info: messagesInfo}
 
-	resp, err := s.client.SendMailV31(&messages)
+	resp, err := s.client.SendMailV31(&messages, mailjetLib.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to send email: %w", err)
 	}
