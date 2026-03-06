@@ -7,11 +7,11 @@ Self-hosted read-later service with native Kindle delivery. Save articles in the
 ## Features
 
 - Fetch web pages (articles, blog posts, etc), strip markup with [go-trafilatura](https://github.com/markusmobius/go-trafilatura) and save main readable content as HTML
-- Run as self-hosted web application (Frontend + API) or as [CLI tool](#cli-tool)
+- Run as self-hosted web application (Web Frontend + API server) or as standalone [CLI tool](#cli-tool)
 - Convert content to EPUB format with [go-epub](https://github.com/go-shiori/go-epub) for e-reader devices
 - Optionally send to reader devices like Kindle, Kobo, etc. via email backend (only [MailJet](https://www.mailjet.com/) supported at the moment)
 
-### Backend
+## Backend
 
 - generic Go HTTP server with AWS DynamoDB backend
 - or deployed as AWS Lambda Function (with [HTTP adapter](https://github.com/akrylysov/algnhsa) + CloudFront for custom domain
@@ -53,7 +53,7 @@ The CLI tool allows you to convert web articles to EPUB format and send them to 
 ### Installation
 
 ```bash
-go build -o bin/savetoink backend/cmd/cli
+go build -o ./savetoink backend/cmd/cli
 ```
 
 ### Usage
@@ -61,31 +61,31 @@ go build -o bin/savetoink backend/cmd/cli
 **Convert a URL to EPUB (save locally):**
 
 ```bash
-./bin/savetoink convert https://example.com
+./savetoink convert https://example.com
 ```
 
 **Send directly to Kindle via email (requires MailJet credentials as environment variables):**
 
 ```bash
-./bin/savetoink convert https://example.com --send
+./savetoink convert https://example.com --send
 ```
 
 **Specify an output file:**
 
 ```bash
-./bin/savetoink convert https://example.com -o my-book.epub
+./savetoink convert https://example.com -o my-book.epub
 ```
 
 **Set a custom timeout:**
 
 ```bash
-./bin/savetoink convert https://example.com -t 1m
+./savetoink convert https://example.com -t 1m
 ```
 
 **Show extracted HTML content (verbose mode):**
 
 ```bash
-./bin/savetoink convert https://example.com -v
+./savetoink convert https://example.com -v
 ```
 
 ### Examples
