@@ -51,6 +51,17 @@ type Interface interface {
 	GetAccountIDByDeviceEmail(ctx context.Context, deviceEmail string) (string, error)
 }
 
+// Dependencies holds all external dependencies required by Service.
+type Dependencies struct {
+	Extractor       *content.Extractor
+	Generator       *epub.Generator
+	Sender          email.Sender
+	ArticlesRepo    repository.ArticlesRepository
+	UserProfileRepo repository.UserProfileRepository
+	SendsRepo       repository.SendsRepository
+	Config          *config.Config
+}
+
 // Service holds the stateless dependencies and provides methods to process articles.
 type Service struct {
 	extractor       *content.Extractor
@@ -63,30 +74,49 @@ type Service struct {
 	dbErrors        error
 }
 
-// New creates a new Service instance with the given config.
-// All internal dependencies (extractor, generator, sender, repository) are created based on configuration.
-func New(cfg *config.Config) *Service {
+// New creates a new Service instance with the provided dependencies.
+func New(deps *Dependencies) *Service {
+	return &Service{
+		extractor:       deps.Extractor,
+		generator:       deps.Generator,
+		sender:          deps.Sender,
+		repo:            deps.ArticlesRepo,
+		userProfileRepo: deps.UserProfileRepo,
+		sendsRepo:       deps.SendsRepo,
+		cfg:             deps.Config,
+	}
+}
+
+// NewDependenciesFromConfig creates all dependencies from configuration.
+func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 	var sender email.Sender
 	if cfg.EmailProvider == consts.EmailBackendMailjet {
 		sender = mailjet.NewSender(cfg.MailjetAPIKey, cfg.MailjetAPISecret, cfg.SenderEmail)
 	}
 
-	var repo repository.ArticlesRepository
+	var articlesRepo repository.ArticlesRepository
 	var userProfileRepo repository.UserProfileRepository
 	var sendsRepo repository.SendsRepository
 	if cfg.AWSConfig != nil {
-		repo = repoimpl.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable, cfg.SendsTable)
-		userProfileRepo = repo.(repository.UserProfileRepository)
-		sendsRepo = repo.(repository.SendsRepository)
+		dynamoDB := repoimpl.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable, cfg.SendsTable)
+		articlesRepo = dynamoDB
+		userProfileRepo = dynamoDB
+		sendsRepo = dynamoDB
 	}
 
-	return &Service{
-		extractor:       content.NewExtractor(),
-		generator:       epub.NewGenerator(),
-		sender:          sender,
-		repo:            repo,
-		userProfileRepo: userProfileRepo,
-		sendsRepo:       sendsRepo,
-		cfg:             cfg,
+	return Dependencies{
+		Extractor:       content.NewExtractor(),
+		Generator:       epub.NewGenerator(),
+		Sender:          sender,
+		ArticlesRepo:    articlesRepo,
+		UserProfileRepo: userProfileRepo,
+		SendsRepo:       sendsRepo,
+		Config:          cfg,
 	}
+}
+
+// NewFromConfig creates a Service and all dependencies from configuration.
+func NewFromConfig(cfg *config.Config) *Service {
+	deps := NewDependenciesFromConfig(cfg)
+	return New(&deps)
 }

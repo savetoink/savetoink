@@ -186,7 +186,7 @@ func TestGetArticlesMetadata(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := &MockRepository{articles: articles}
-			svc := &Service{repo: mockRepo}
+			svc := New(&Dependencies{ArticlesRepo: mockRepo})
 
 			result, err := svc.GetArticlesMetadata(context.Background(), tt.accountID, tt.page, tt.pageSize, nil)
 
@@ -218,7 +218,7 @@ func TestGetArticlesMetadata(t *testing.T) {
 }
 
 func TestGetArticlesMetadataWithNilRepo(t *testing.T) {
-	svc := &Service{repo: nil}
+	svc := New(&Dependencies{})
 
 	result, err := svc.GetArticlesMetadata(context.Background(), "user1", 1, 10, nil)
 
@@ -250,7 +250,7 @@ func TestGetArticle(t *testing.T) {
 	}
 
 	mockRepo := &MockRepository{articles: []*model.Article{article}}
-	svc := &Service{repo: mockRepo}
+	svc := New(&Dependencies{ArticlesRepo: mockRepo})
 
 	result, err := svc.GetArticle(context.Background(), "user1", "test-id")
 
@@ -269,7 +269,7 @@ func TestGetArticle(t *testing.T) {
 
 func TestGetArticleNotFound(t *testing.T) {
 	mockRepo := &MockRepository{articles: []*model.Article{}}
-	svc := &Service{repo: mockRepo}
+	svc := New(&Dependencies{ArticlesRepo: mockRepo})
 
 	_, err := svc.GetArticle(context.Background(), "user1", "non-existent")
 
@@ -279,7 +279,7 @@ func TestGetArticleNotFound(t *testing.T) {
 }
 
 func TestGetArticleEmptyID(t *testing.T) {
-	svc := &Service{repo: nil}
+	svc := New(&Dependencies{})
 
 	_, err := svc.GetArticle(context.Background(), "user1", "")
 
@@ -294,7 +294,7 @@ func TestDeleteArticle_Success(t *testing.T) {
 			{Account: "user1", ID: "1", Title: "Article 1", URL: "https://example.com/1"},
 		},
 	}
-	svc := &Service{repo: mockRepo}
+	svc := New(&Dependencies{ArticlesRepo: mockRepo})
 
 	result, err := svc.DeleteArticle(context.Background(), "user1", "1")
 
@@ -313,7 +313,7 @@ func TestDeleteArticle_NotFound(t *testing.T) {
 			{Account: "user1", ID: "1", Title: "Article 1", URL: "https://example.com/1"},
 		},
 	}
-	svc := &Service{repo: mockRepo}
+	svc := New(&Dependencies{ArticlesRepo: mockRepo})
 
 	result, err := svc.DeleteArticle(context.Background(), "user1", "non-existent")
 
@@ -327,7 +327,7 @@ func TestDeleteArticle_NotFound(t *testing.T) {
 }
 
 func TestDeleteArticle_EmptyID(t *testing.T) {
-	svc := &Service{repo: nil}
+	svc := New(&Dependencies{})
 
 	_, err := svc.DeleteArticle(context.Background(), "user1", "")
 
@@ -337,7 +337,7 @@ func TestDeleteArticle_EmptyID(t *testing.T) {
 }
 
 func TestDeleteArticle_NoRepo(t *testing.T) {
-	svc := &Service{repo: nil}
+	svc := New(&Dependencies{})
 
 	result, err := svc.DeleteArticle(context.Background(), "user1", "1")
 
@@ -358,7 +358,7 @@ func TestDeleteAllArticles_Success(t *testing.T) {
 			{Account: "user2", ID: "3", Title: "Article 3", URL: "https://example.com/3"},
 		},
 	}
-	svc := &Service{repo: mockRepo}
+	svc := New(&Dependencies{ArticlesRepo: mockRepo})
 
 	result, err := svc.DeleteAllArticles(context.Background(), "user1")
 
@@ -372,7 +372,7 @@ func TestDeleteAllArticles_Success(t *testing.T) {
 }
 
 func TestDeleteAllArticles_NoRepo(t *testing.T) {
-	svc := &Service{repo: nil}
+	svc := New(&Dependencies{})
 
 	result, err := svc.DeleteAllArticles(context.Background(), "user1")
 
@@ -391,7 +391,7 @@ func TestSend_NilResult(t *testing.T) {
 		MailjetAPIKey:    "api-key",
 		MailjetAPISecret: "api-secret",
 	}
-	svc := New(cfg)
+	svc := NewFromConfig(cfg)
 
 	_, err := svc.Send(context.Background(), nil, "test@kindle.com")
 
@@ -406,7 +406,7 @@ func TestSend_NilArticle(t *testing.T) {
 		MailjetAPIKey:    "api-key",
 		MailjetAPISecret: "api-secret",
 	}
-	svc := New(cfg)
+	svc := NewFromConfig(cfg)
 
 	result := NewProcessResult(nil, []byte("test"), "https://example.com")
 
@@ -419,7 +419,7 @@ func TestSend_NilArticle(t *testing.T) {
 
 func TestSend_NoSenderConfigured(t *testing.T) {
 	cfg := &config.Config{}
-	svc := New(cfg)
+	svc := NewFromConfig(cfg)
 
 	article := &model.Article{
 		Title: "Test Article",
@@ -435,7 +435,7 @@ func TestSend_NoSenderConfigured(t *testing.T) {
 }
 
 func TestWriteToFile_NilResult(t *testing.T) {
-	svc := &Service{}
+	svc := New(&Dependencies{})
 
 	err := svc.WriteToFile(nil, "/tmp/test.epub")
 
@@ -445,7 +445,7 @@ func TestWriteToFile_NilResult(t *testing.T) {
 }
 
 func TestWriteToFile_NilArticle(t *testing.T) {
-	svc := &Service{}
+	svc := New(&Dependencies{})
 
 	result := NewProcessResult(nil, []byte("test"), "https://example.com")
 
@@ -457,7 +457,7 @@ func TestWriteToFile_NilArticle(t *testing.T) {
 }
 
 func TestWriteToFile_EmptyPath(t *testing.T) {
-	svc := &Service{}
+	svc := New(&Dependencies{})
 
 	article := &model.Article{
 		Title: "Test Article",

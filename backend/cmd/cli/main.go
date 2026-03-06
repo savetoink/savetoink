@@ -63,7 +63,7 @@ func runConvert(_ *cobra.Command, args []string) error {
 
 	fmt.Printf("Fetching article from: %s\n", url)
 
-	svc := service.New(cfg)
+	svc := service.NewFromConfig(cfg)
 
 	start := time.Now()
 	result, err := svc.Process(ctx, url)
