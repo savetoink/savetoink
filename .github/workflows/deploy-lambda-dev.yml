@@ -1,4 +1,4 @@
-name: Deploy Lambda - Development
+name: Deploy Lambda - Dev
 
 on:
   workflow_dispatch:
@@ -6,11 +6,11 @@ on:
     branches:
       - dev
     paths:
-      - cmd/lambda/**
+      - backend/cmd/lambda/**
+      - backend/internal/**
       - go.mod
       - go.sum
       - infra/**
-      - internal/**
       - VERSION
 
 permissions:

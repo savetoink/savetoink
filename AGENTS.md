@@ -2,10 +2,12 @@
 
 This repository contains the code for the savetoink application, composed of:
 
-1. Golang API HTTP backend in [cmd/lambda](cmd/lambda).
-2. Frontend web application in [cmd/webapp](cmd/webapp).
-3. Browser extension in [cmd/extension](cmd/extension).
-4. Landing page website in [cmd/website](cmd/website).
+- Golang API HTTP backend in [backend/cmd/http](backend/cmd/http).
+  - Lambda function wrapper in [backend/cmd/lambda](backend/cmd/lambda).
+- Frontend SvelteKit application in [frontend/webapp](frontend/webapp).
+- Browser WXT extension in [frontend/extension](frontend/extension).
+- Landing page Astro website in [frontend/website](frontend/website).
+- Shared TypeScript web library in [frontend/shared](frontend/shared).
 
 ## Development Guidelines
 
@@ -13,3 +15,9 @@ This repository contains the code for the savetoink application, composed of:
 - **ALWAYS** run `just lint test` and fix issues before considering a change ready for user review.
 - **NEVER** ignore linting errors via `//nolint` statements or similar tricks without prompting the user for permission.
 - prefer lowercase log and error messages
+
+## API Documentation
+
+- The OpenAPI specification is maintained in [backend/internal/server/openapi.yaml](backend/internal/server/openapi.yaml)
+- **When modifying API routes, handlers, or request/response models in `backend/internal/server/`, you MUST update the OpenAPI specification to reflect the changes**
+- The OpenAPI spec should always accurately reflect the current state of the API implementation

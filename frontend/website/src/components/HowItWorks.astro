@@ -1,0 +1,71 @@
+---
+---
+
+<section class="section">
+  <div class="container">
+    <p class="section-label">How it works</p>
+    <h2 class="section-heading">Three steps, then just read</h2>
+    <p class="section-sub">
+      No clutter, no apps to open. Save an article and pick it up on
+      your e-reader in seconds.
+    </p>
+
+    <div class="steps-row">
+      <div class="step-card">
+        <p class="step-num">Step 01</p>
+        <h3>Paste a URL</h3>
+        <p>Use the web app or the browser extension to submit any article, essay, or long-form page.</p>
+      </div>
+      <div class="step-card">
+        <p class="step-num">Step 02</p>
+        <h3>We clean it up</h3>
+        <p>Save to Ink strips ads, nav, and noise. What's left is the actual content, formatted as a proper EPUB.</p>
+      </div>
+      <div class="step-card">
+        <p class="step-num">Step 03</p>
+        <h3>Delivered to your device</h3>
+        <p>The EPUB lands in your Kindle or Kobo library automatically — ready to read, offline, on your own terms.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+	.steps-row {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+		gap: 1.5rem;
+		margin-top: 2rem;
+	}
+
+	.step-card {
+		background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+		border: 1px solid var(--border);
+		border-radius: var(--card-radius);
+		padding: 1.5rem;
+		text-align: left;
+	}
+
+	.step-num {
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--accent);
+		margin-bottom: 0.5rem;
+	}
+
+	.step-card h3 {
+		font-size: 1.05rem;
+		font-weight: 600;
+		margin: 0 0 0.4rem;
+		color: var(--ink);
+	}
+
+	.step-card p {
+		font-size: 0.9rem;
+		color: var(--muted);
+		margin: 0;
+		line-height: 1.55;
+	}
+</style>

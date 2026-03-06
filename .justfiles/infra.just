@@ -35,12 +35,16 @@ deploy-api:
             CertificateArn=$(just get-cert-arn) \
             DestEmail="$SAVETOINK_DEST_EMAIL" \
             DomainName="$SAVETOINK_DOMAIN" \
+            LoggingProvider=${SAVETOINK_LOGGING_PROVIDER} \
             MailBackend=${SAVETOINK_EMAIL_BACKEND} \
             MailjetAPIKey="$SAVETOINK_MAILJET_API_KEY" \
             MailjetAPISecret="$SAVETOINK_MAILJET_API_SECRET" \
             MailjetWebhookSecret=${SAVETOINK_MAILJET_WEBHOOK_SECRET} \
             ProjectName={{ project_name }} \
             SenderEmail="$SAVETOINK_SENDER_EMAIL" \
+            SentryDSN=${SAVETOINK_SENTRY_DSN} \
+            SentryEnvironment=${SAVETOINK_SENTRY_ENVIRONMENT} \
+            SentrySampleRate=${SAVETOINK_SENTRY_SAMPLE_RATE} \
             SourceBucketKey={{ lambda_archive }} \
             SourceBucketName=${SAVETOINK_BUCKET} \
             Debug="true"

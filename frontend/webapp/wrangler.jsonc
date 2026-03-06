@@ -1,0 +1,19 @@
+{
+	"name": "savetoink",
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_date": "2026-02-17",
+	"workers_dev": false,
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"env": {
+		"dev": {
+			"name": "savetoink-dev"
+		},
+		"prod": {
+			"name": "savetoink-prod"
+		}
+	}
+}

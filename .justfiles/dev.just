@@ -1,10 +1,10 @@
 server-http:
-    reflex -r '\.(env|go)$' -s -- go run -ldflags "{{ build_flags }}=$(just version)" ./cmd/http/main.go
+    reflex -r '\.(env|go)$' -s -- go run -ldflags "{{ build_flags }}=$(just version)" backend/cmd/http/main.go
 
-[working-directory('cmd/webapp')]
+[working-directory('frontend/webapp')]
 server-webapp:
     bun run dev --open
 
-[working-directory('cmd/website')]
+[working-directory('frontend/website')]
 server-website:
-    npm run dev
+    bun run dev

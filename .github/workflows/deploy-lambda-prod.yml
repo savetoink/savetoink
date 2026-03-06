@@ -1,4 +1,4 @@
-name: Deploy Lambda - Production
+name: Deploy Lambda - Prod
 
 on:
   workflow_dispatch:
@@ -6,11 +6,11 @@ on:
     branches:
       - master
     paths:
-      - cmd/lambda/**
+      - backend/cmd/lambda/**
+      - backend/internal/**
       - go.mod
       - go.sum
       - infra/**
-      - internal/**
       - VERSION
 
 permissions:

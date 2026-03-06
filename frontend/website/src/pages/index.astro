@@ -1,0 +1,39 @@
+---
+import Layout from "../layouts/Layout.astro";
+import SiteNav from "../components/SiteNav.astro";
+import Hero from "../components/Hero.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+import Features from "../components/Features.astro";
+import Pricing from "../components/Pricing.astro";
+import OpenSourceBand from "../components/OpenSourceBand.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+---
+
+<Layout>
+  <!-- ══ NAV ══════════════════════════════════════════ -->
+  <SiteNav />
+
+  <!-- ══ HERO ═════════════════════════════════════════ -->
+  <Hero />
+
+  <hr class="section-divider" />
+
+  <!-- ══ HOW IT WORKS ══════════════════════════════════ -->
+  <HowItWorks />
+
+  <hr class="section-divider" />
+
+  <!-- ══ FEATURES ══════════════════════════════════════ -->
+  <Features />
+
+  <hr class="section-divider" />
+
+  <!-- ══ PRICING ═══════════════════════════════════════ -->
+  <Pricing />
+
+  <!-- ══ OPEN SOURCE BAND ══════════════════════════════ -->
+  <OpenSourceBand />
+
+  <!-- ══ FOOTER ════════════════════════════════════════ -->
+  <SiteFooter />
+</Layout>

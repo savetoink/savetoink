@@ -1,0 +1,159 @@
+/* ─────────────────────────────────────────────
+   SaveToInk · Global styles (PicoCSS v2 override)
+   ───────────────────────────────────────────── */
+
+/* Fonts */
+:root {
+	--font-display: 'Instrument Serif', Georgia, serif;
+	--font-body: 'DM Sans', system-ui, sans-serif;
+
+	/* Brand colours — ink on paper */
+	--ink: #1a1a1a;
+	--paper: #f5f0eb;
+	--accent: #2563eb; /* blue — Kindle-ish */
+	--accent-hover: #1d4ed8;
+	--muted: #6b7280;
+	--border: rgba(0, 0, 0, 0.08);
+
+	/* Spacing helpers */
+	--section-gap: 5rem;
+	--card-radius: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--ink: #e8e3dc;
+		--paper: #131211;
+		--border: rgba(255, 255, 255, 0.07);
+		--muted: #9ca3af;
+	}
+}
+
+/* Base */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	font-family: var(--font-body);
+	font-size: 1rem;
+	line-height: 1.65;
+	color: var(--ink);
+	background: var(--paper);
+	-webkit-font-smoothing: antialiased;
+}
+
+/* ── Pico overrides ────────────────────────── */
+:root {
+	--pico-font-family: var(--font-body);
+	--pico-border-radius: var(--card-radius);
+}
+
+/* ── Shared utilities ─────────────────────── */
+.container {
+	max-width: 72rem;
+	margin: 0 auto;
+	padding: 0 1.5rem;
+}
+
+.section {
+	padding: var(--section-gap) 0;
+}
+
+.section-label {
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--accent);
+	margin-bottom: 0.5rem;
+}
+
+.section-heading {
+	font-family: var(--font-display);
+	font-size: clamp(1.7rem, 4vw, 2.4rem);
+	font-weight: 400;
+	letter-spacing: -0.02em;
+	color: var(--ink);
+	margin-bottom: 0.75rem;
+	line-height: 1.2;
+}
+
+.section-sub {
+	font-size: 1rem;
+	color: var(--muted);
+	max-width: 52ch;
+	line-height: 1.6;
+}
+
+.hero-actions {
+	display: flex;
+	gap: 0.75rem;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+.btn-primary {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	background: var(--accent);
+	color: #fff !important;
+	font-weight: 600;
+	font-size: 0.95rem;
+	padding: 0.7rem 1.4rem;
+	border-radius: 0.5rem;
+	text-decoration: none;
+	border: none;
+	transition:
+		background 0.15s,
+		transform 0.1s;
+}
+
+.btn-primary:hover {
+	background: var(--accent-hover);
+	transform: translateY(-1px);
+}
+
+.btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	background: transparent;
+	color: var(--ink) !important;
+	font-weight: 500;
+	font-size: 0.95rem;
+	padding: 0.7rem 1.4rem;
+	border-radius: 0.5rem;
+	text-decoration: none;
+	border: 1px solid var(--border);
+	transition:
+		background 0.15s,
+		border-color 0.15s;
+}
+
+.btn-secondary:hover {
+	background: var(--border);
+	border-color: var(--muted);
+}
+
+/* ── Dividers ──────────────────────────────── */
+hr.section-divider {
+	border: none;
+	border-top: 1px solid var(--border);
+	margin: 0;
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 640px) {
+	.btn-primary,
+	.btn-secondary {
+		justify-content: center;
+	}
+}

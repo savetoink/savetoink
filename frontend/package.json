@@ -1,0 +1,11 @@
+{
+  "name": "savetoink-web",
+  "private": true,
+  "workspaces": [
+    "webapp",
+    "extension",
+    "website",
+    "shared"
+  ]
+}
+

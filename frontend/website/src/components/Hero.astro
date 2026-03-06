@@ -1,0 +1,95 @@
+---
+---
+
+<section class="hero">
+  <div class="container">
+      <h1>Send any article<br /><em>straight to your<br />e-reader</em></h1>
+
+    <p class="hero-sub">
+      Save to Ink converts any URL into a clean EPUB and delivers it to your
+      Kindle, Kobo, or any other e-reader — in one click.
+    </p>
+
+    <div class="hero-actions">
+      <a href="https://app.saveto.ink/" class="btn-primary">
+        Start for free
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 8h10M9 4l4 4-4 4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener" class="btn-secondary">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        View on GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+	.hero {
+		padding: 6rem 0 5rem;
+		text-align: center;
+	}
+
+	.hero-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.8rem;
+		font-weight: 500;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 10%, transparent);
+		border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+		border-radius: 100px;
+		padding: 0.3rem 0.85rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.hero h1 {
+		font-family: var(--font-display);
+		font-size: clamp(2.4rem, 6vw, 4rem);
+		font-weight: 400;
+		line-height: 1.12;
+		letter-spacing: -0.02em;
+		color: var(--ink);
+		margin-bottom: 1.25rem;
+		max-width: 18ch;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	.hero h1 em {
+		font-style: italic;
+		color: var(--accent);
+	}
+
+	.hero-sub {
+		font-size: 1.15rem;
+		color: var(--muted);
+		max-width: 46ch;
+		margin: 0 auto 2.5rem;
+		line-height: 1.6;
+	}
+
+	.hero-actions {
+		display: flex;
+		gap: 0.75rem;
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+
+	@media (max-width: 640px) {
+		.hero {
+			padding: 4rem 0 3.5rem;
+		}
+
+		.hero-actions {
+			flex-direction: column;
+			align-items: stretch;
+		}
+	}
+</style>
