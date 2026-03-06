@@ -24,18 +24,10 @@ type Sender interface {
 
 // Request contains the data required to send an email.
 type Request struct {
-	// Article is the article to be sent.
-	Article *model.Article
-
-	// EPUBData is the EPUB data to be sent as attachment.
-	EPUBData []byte
-
-	// DestEmail is the email address of the recipient, typically a
-	// Kindle Personal Document Service address like "abcd@kindle.com".
+	Article   *model.Article
+	EPUBData  []byte
 	DestEmail string
-
-	// AppURL is the base URL for the application, used in email body.
-	AppURL string
+	Body      string
 }
 
 // GenerateFilename creates a sanitized filename from the article title.
@@ -44,6 +36,16 @@ func GenerateFilename(article *model.Article) string {
 		return sanitizeFilename(article.Title) + ".epub"
 	}
 	return "article.epub"
+}
+
+// NewRequest creates a new email request with the provided data.
+func NewRequest(article *model.Article, epubData []byte, destEmail, appURL string) *Request {
+	return &Request{
+		Article:   article,
+		EPUBData:  epubData,
+		DestEmail: destEmail,
+		Body:      consts.BuildEmailBody(appURL),
+	}
 }
 
 // BuildSubject creates an email subject in the format "[Save to Ink] <Title>".

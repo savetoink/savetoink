@@ -182,10 +182,14 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	addLogAttr(r.Context(), slog.String("article_title", article.Title))
 
-	emailResp, err := h.service.SendArticle(r.Context(), article, accountID)
+	emailResp, err := h.service.SendArticle(r.Context(), article, accountID, "")
 	if err != nil {
 		handleServiceError(w, r, err, "send article")
 		return
+	}
+
+	if dbErr := h.service.GetDBError(); dbErr != nil {
+		addRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
 	}
 
 	if emailResp != nil {

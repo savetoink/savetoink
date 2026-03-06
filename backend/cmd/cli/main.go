@@ -77,7 +77,7 @@ func runConvert(_ *cobra.Command, args []string) error {
 
 	var resp *email.SendEmailResponse
 	if sendEmail {
-		resp, err = sendToKindle(ctx, svc, result, destEmail)
+		resp, err = svc.SendArticle(ctx, result.Article(), "", destEmail)
 		if err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}
@@ -99,19 +99,6 @@ func printVerboseOutput(result *servicetypes.ProcessResult) {
 		fmt.Println("--- End of Extracted Content ---")
 		fmt.Println()
 	}
-}
-
-func sendToKindle(
-	ctx context.Context,
-	svc *service.Service,
-	result *servicetypes.ProcessResult,
-	destEmail string,
-) (*email.SendEmailResponse, error) {
-	resp, err := svc.Send(ctx, result, destEmail)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send: %w", err)
-	}
-	return resp, nil
 }
 
 func printResult(resp *email.SendEmailResponse) {

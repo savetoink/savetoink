@@ -1,6 +1,9 @@
 package consts
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // EmailProvider defines the email provider type.
 type EmailProvider string
@@ -42,3 +45,23 @@ const (
 	// LandingURL is the URL for the landing page.
 	LandingURL = "https://www.saveto.ink"
 )
+
+// BuildEmailBody creates the email body text with the app URL and landing URL.
+func BuildEmailBody(appURL string) string {
+	return fmt.Sprintf(`EPUB document attached.
+
+To disable email delivery update your account settings at %s
+
+---
+Save to Ink - %s
+ `, appURL, LandingURL)
+}
+
+// BuildCLIEmailBody creates a simpler email body for CLI mode.
+func BuildCLIEmailBody() string {
+	return fmt.Sprintf(`EPUB document attached.
+
+---
+Save to Ink - %s
+ `, LandingURL)
+}

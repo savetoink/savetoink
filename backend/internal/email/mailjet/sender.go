@@ -9,7 +9,6 @@ import (
 
 	mailjetLib "github.com/mailjet/mailjet-apiv3-go/v4"
 
-	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/email"
 )
 
@@ -56,13 +55,7 @@ func (s *Sender) SendEmail(ctx context.Context, req *email.Request) (*email.Send
 func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV31 {
 	filename := email.GenerateFilename(req.Article)
 	subject := email.BuildSubject(req.Article.Title)
-	bodyText := fmt.Sprintf(`EPUB document attached.
-
-To disable email delivery update your account settings at %s
-
----
-Save to Ink - %s
- `, req.AppURL, consts.LandingURL)
+	bodyText := req.Body
 
 	base64Content := base64.StdEncoding.EncodeToString(req.EPUBData)
 
@@ -135,6 +128,9 @@ func (s *Sender) validateRequest(req *email.Request) error {
 	}
 	if req.Article == nil {
 		return errors.New("article is required")
+	}
+	if req.Body == "" {
+		return errors.New("email body is required")
 	}
 	return nil
 }

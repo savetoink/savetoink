@@ -7,7 +7,6 @@ import (
 	"time"
 
 	awstypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/shaftoe/savetoink/backend/internal/config"
 	"github.com/shaftoe/savetoink/backend/internal/model"
 	repoimpl "github.com/shaftoe/savetoink/backend/internal/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/internal/service/servicetypes"
@@ -383,55 +382,6 @@ func TestDeleteAllArticles_NoRepo(t *testing.T) {
 
 	if result.Deleted != 0 {
 		t.Errorf("expected 0 deleted with no repo, got %d", result.Deleted)
-	}
-}
-
-func TestSend_NilResult(t *testing.T) {
-	cfg := &config.Config{
-		SenderEmail:      "sender@example.com",
-		MailjetAPIKey:    "api-key",
-		MailjetAPISecret: "api-secret",
-	}
-	svc := NewFromConfig(cfg)
-
-	_, err := svc.Send(context.Background(), nil, "test@kindle.com")
-
-	if err == nil {
-		t.Error("expected error for nil result, got nil")
-	}
-}
-
-func TestSend_NilArticle(t *testing.T) {
-	cfg := &config.Config{
-		SenderEmail:      "sender@example.com",
-		MailjetAPIKey:    "api-key",
-		MailjetAPISecret: "api-secret",
-	}
-	svc := NewFromConfig(cfg)
-
-	result := servicetypes.NewProcessResult(nil, []byte("test"), "https://example.com")
-
-	_, err := svc.Send(context.Background(), result, "test@kindle.com")
-
-	if err == nil {
-		t.Error("expected error for nil article, got nil")
-	}
-}
-
-func TestSend_NoSenderConfigured(t *testing.T) {
-	cfg := &config.Config{}
-	svc := NewFromConfig(cfg)
-
-	article := &model.Article{
-		Title: "Test Article",
-		URL:   "https://example.com",
-	}
-	result := servicetypes.NewProcessResult(article, []byte("test"), "https://example.com")
-
-	_, err := svc.Send(context.Background(), result, "test@kindle.com")
-
-	if err == nil {
-		t.Error("expected error when sender not configured, got nil")
 	}
 }
 

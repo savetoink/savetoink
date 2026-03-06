@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/internal/config"
@@ -226,65 +225,212 @@ func (s *ArticleService) ToggleFavorite(ctx context.Context, accountID, articleI
 }
 
 // SendArticle sends an article to the user's device email.
+// Routes to mode-specific implementation based on cliMode flag.
 func (s *ArticleService) SendArticle(
 	ctx context.Context,
 	article *model.Article,
 	accountID string,
+	destEmail string,
+	cliMode bool,
 ) (*email.SendEmailResponse, error) {
 	if err := s.validateArticleForSend(article); err != nil {
 		return nil, err
 	}
 
-	destEmail, _, getErr := s.userProfile.GetUserDeviceEmail(ctx, accountID)
-	if getErr != nil {
-		return nil, fmt.Errorf("failed to get user device email: %w", getErr)
+	if cliMode {
+		return s.sendArticleCLIMode(ctx, article, destEmail)
 	}
+	return s.sendArticleServerMode(ctx, article, accountID)
+}
 
+func (s *ArticleService) sendArticleCLIMode(
+	ctx context.Context,
+	article *model.Article,
+	destEmail string,
+) (*email.SendEmailResponse, error) {
 	if destEmail == "" {
-		return nil, errors.New("user email not configured")
+		return nil, errors.New("destination email is required in CLI mode")
 	}
 
-	epubData, epubErr := s.processor.Generator.Generate(article)
-	if epubErr != nil {
-		return nil, fmt.Errorf("failed to generate EPUB: %w", epubErr)
-	}
-
-	result := servicetypes.NewProcessResult(article, epubData, article.URL)
-
-	if s.sendsRepo != nil {
-		if storeErr := s.sendsRepo.CreateSendRecord(ctx, accountID, article.ID, article.Title, destEmail); storeErr != nil {
-			return nil, fmt.Errorf("failed to store send record: %w", storeErr)
-		}
+	result, processErr := s.processArticleToResult(article)
+	if processErr != nil {
+		return nil, processErr
 	}
 
 	emailReq := &email.Request{
 		Article:   result.Article(),
 		EPUBData:  result.EPUBData(),
 		DestEmail: destEmail,
-		AppURL:    s.cfg.AppURL,
+		Body:      consts.BuildCLIEmailBody(),
 	}
 
-	emailResp, err := s.sender.SendEmail(ctx, emailReq)
-	if err != nil {
-		updateErr := s.sendsRepo.UpdateSendRecord(ctx, accountID, article.ID, "failed", "", err.Error())
-		if updateErr != nil {
-			slog.Warn("failed to update send record", "error", updateErr)
-		}
-		return nil, fmt.Errorf("failed to send email: %w", err)
-	}
-
-	updateErr := s.sendsRepo.UpdateSendRecord(ctx, accountID, article.ID, "success", emailResp.MessageID, "")
-	if updateErr != nil {
-		slog.Warn("failed to update send record", "error", updateErr)
-	}
-
-	if s.repo != nil {
-		if storeErr := s.repo.Store(ctx, article); storeErr != nil {
-			slog.Warn("failed to update article in database", "error", storeErr)
-		}
+	emailResp, sendErr := s.sender.SendEmail(ctx, emailReq)
+	if sendErr != nil {
+		return nil, fmt.Errorf("failed to send email: %w", sendErr)
 	}
 
 	return emailResp, nil
+}
+
+func (s *ArticleService) sendArticleServerMode(
+	ctx context.Context,
+	article *model.Article,
+	accountID string,
+) (*email.SendEmailResponse, error) {
+	destEmail, _, getErr := s.userProfile.GetUserDeviceEmail(ctx, accountID)
+	if getErr != nil {
+		return nil, fmt.Errorf("failed to get user device email: %w", getErr)
+	}
+	if destEmail == "" {
+		return nil, errors.New("user email not configured")
+	}
+
+	result, processErr := s.processArticleToResult(article)
+	if processErr != nil {
+		return nil, processErr
+	}
+
+	emailReq := &email.Request{
+		Article:   result.Article(),
+		EPUBData:  result.EPUBData(),
+		DestEmail: destEmail,
+		Body:      consts.BuildEmailBody(s.cfg.AppURL),
+	}
+
+	emailResp, sendErr, dbError := s.sendEmailAndCreateRecord(ctx, emailReq, accountID, article, destEmail)
+	if dbError != nil {
+		s.dbErrors = errors.Join(s.dbErrors, dbError)
+	}
+
+	if sendErr != nil {
+		dbError = s.updateSendRecordOnFailure(ctx, accountID, article.ID, sendErr)
+		if dbError != nil {
+			s.dbErrors = errors.Join(s.dbErrors, dbError)
+		}
+		return nil, sendErr
+	}
+
+	dbError = s.updateSendRecordAndArticleOnSuccess(ctx, accountID, article, emailResp.MessageID)
+	if dbError != nil {
+		s.dbErrors = errors.Join(s.dbErrors, dbError)
+	}
+
+	return emailResp, nil
+}
+
+func (s *ArticleService) sendEmailAndCreateRecord(
+	ctx context.Context,
+	emailReq *email.Request,
+	accountID string,
+	article *model.Article,
+	destEmail string,
+) (*email.SendEmailResponse, error, error) {
+	eg, _ := errgroup.WithContext(ctx)
+	var emailResp *email.SendEmailResponse
+	var sendErr error
+	var dbError error
+
+	eg.Go(func() error {
+		var err error
+		emailResp, err = s.sender.SendEmail(ctx, emailReq)
+		if err != nil {
+			sendErr = fmt.Errorf("failed to send email: %w", err)
+		}
+		return nil
+	})
+
+	eg.Go(func() error {
+		if s.sendsRepo == nil {
+			return nil
+		}
+		createErr := s.sendsRepo.CreateSendRecord(
+			ctx,
+			accountID,
+			article.ID,
+			article.Title,
+			destEmail,
+		)
+		if createErr != nil {
+			dbError = fmt.Errorf("failed to create send record: %w", createErr)
+		}
+		return nil
+	})
+
+	_ = eg.Wait()
+	return emailResp, sendErr, dbError
+}
+
+func (s *ArticleService) updateSendRecordOnFailure(
+	ctx context.Context,
+	accountID string,
+	articleID string,
+	sendErr error,
+) error {
+	if s.sendsRepo == nil {
+		return nil
+	}
+	updateErr := s.sendsRepo.UpdateSendRecord(
+		ctx,
+		accountID,
+		articleID,
+		"failed",
+		"",
+		sendErr.Error(),
+	)
+	if updateErr != nil {
+		return fmt.Errorf("failed to update send record: %w", updateErr)
+	}
+	return nil
+}
+
+func (s *ArticleService) updateSendRecordAndArticleOnSuccess(
+	ctx context.Context,
+	accountID string,
+	article *model.Article,
+	messageID string,
+) error {
+	eg, _ := errgroup.WithContext(ctx)
+	var dbError error
+
+	eg.Go(func() error {
+		if s.sendsRepo == nil {
+			return nil
+		}
+		updateErr := s.sendsRepo.UpdateSendRecord(
+			ctx,
+			accountID,
+			article.ID,
+			"success",
+			messageID,
+			"",
+		)
+		if updateErr != nil {
+			dbError = fmt.Errorf("failed to update send record: %w", updateErr)
+		}
+		return nil
+	})
+
+	eg.Go(func() error {
+		if s.repo == nil {
+			return nil
+		}
+		storeErr := s.repo.Store(ctx, article)
+		if storeErr != nil {
+			dbError = errors.Join(dbError, fmt.Errorf("failed to store article: %w", storeErr))
+		}
+		return nil
+	})
+
+	_ = eg.Wait()
+	return dbError
+}
+
+func (s *ArticleService) processArticleToResult(article *model.Article) (*servicetypes.ProcessResult, error) {
+	epubData, err := s.processor.Generator.Generate(article)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate EPUB: %w", err)
+	}
+	return servicetypes.NewProcessResult(article, epubData, article.URL), nil
 }
 
 // CountSendsByAccountDateRange counts the number of sends within a date range.
