@@ -249,7 +249,10 @@ export interface components {
             favorite?: boolean;
         };
         ArticleRequest: {
-            /** @description URL of the article to save */
+            /**
+             * Format: uri
+             * @description URL of the article to save (http or https only, private IPs blocked)
+             */
             url: string;
         };
         ArticleResponse: {
@@ -310,7 +313,10 @@ export interface components {
             error: string;
         };
         DeviceRequest: {
-            /** @description Kindle device email address */
+            /**
+             * Format: email
+             * @description Kindle device email address (must end with @kindle.com or @free.kindle.com)
+             */
             device_email: string;
             /** @description Whether to auto-send articles to device */
             auto_send: boolean;
@@ -347,7 +353,10 @@ export interface components {
             expires_in: number;
         };
         ErrorResponse: {
-            /** @description Error message */
+            /**
+             * @description Error message
+             * @example invalid URL: URL points to private/internal network
+             */
             error: string;
         };
         HealthResponse: {
