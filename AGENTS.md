@@ -4,10 +4,10 @@ This repository contains the code for the savetoink application, composed of:
 
 - Golang API HTTP backend in [cmd/http](cmd/http).
   - Lambda function wrapper in [cmd/lambda](cmd/lambda).
-- Frontend SvelteKit application in [cmd/web/webapp](cmd/web/webapp).
-- Browser WXT extension in [cmd/web/extension](cmd/web/extension).
-- Landing page Astro website in [cmd/web/website](cmd/web/website).
-- Shared TypeScript web library in [cmd/web/shared](cmd/web/shared).
+- Frontend SvelteKit application in [frontend/webapp](frontend/webapp).
+- Browser WXT extension in [frontend/extension](frontend/extension).
+- Landing page Astro website in [frontend/website](frontend/website).
+- Shared TypeScript web library in [frontend/shared](frontend/shared).
 
 ## Development Guidelines
 

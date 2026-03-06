@@ -1,2 +1,2 @@
 bootstrap-website:
-    npm create astro@latest cmd/web/website
+    npm create astro@latest frontend/website

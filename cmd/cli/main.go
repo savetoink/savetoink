@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/shaftoe/savetoink/internal/config"
-	"github.com/shaftoe/savetoink/internal/consts"
-	"github.com/shaftoe/savetoink/internal/email"
-	"github.com/shaftoe/savetoink/internal/service"
+	"github.com/shaftoe/savetoink/backend/config"
+	"github.com/shaftoe/savetoink/backend/consts"
+	"github.com/shaftoe/savetoink/backend/email"
+	"github.com/shaftoe/savetoink/backend/service"
 	"github.com/spf13/cobra"
 )
 

@@ -8,7 +8,7 @@
  *
  * CSV format:
  *   type,path,size
- *   svg,cmd/webapp/src/lib/assets/favicon.svg
+ *   svg,frontend/app/src/lib/assets/favicon.svg
  *   png,cmd/extension/public/icon/16.png,16
  *
  * Note: 'size' is optional for SVG type
@@ -40,7 +40,7 @@ Arguments:
 
 CSV format:
   type,path,size
-  svg,cmd/webapp/src/lib/assets/favicon.svg
+  svg,frontend/app/src/lib/assets/favicon.svg
   png,cmd/extension/public/icon/16.png,16
 
   Note: 'size' is optional for SVG type

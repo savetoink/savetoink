@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/shaftoe/savetoink/internal/config"
-	"github.com/shaftoe/savetoink/internal/consts"
-	"github.com/shaftoe/savetoink/internal/server"
+	"github.com/shaftoe/savetoink/backend/config"
+	"github.com/shaftoe/savetoink/backend/consts"
+	"github.com/shaftoe/savetoink/backend/server"
 )
 
 func main() {

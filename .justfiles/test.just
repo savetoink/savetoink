@@ -12,18 +12,18 @@ test: test-go test-webapp test-extension test-website
 # Run linter and tests
 check: lint test
 
-[working-directory('cmd/web/webapp')]
+[working-directory('frontend/webapp')]
 test-webapp:
     bun run check
     bun run lint
     bun run test
 
-[working-directory('cmd/web/extension')]
+[working-directory('frontend/extension')]
 test-extension:
     bun run check
     bun run lint
 
-[working-directory('cmd/web/website')]
+[working-directory('frontend/website')]
 test-website:
     bun run check
     bun run lint

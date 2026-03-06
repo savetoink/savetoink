@@ -8,21 +8,21 @@ tools-init:
 # Generate icons from https://www.svgrepo.com/svg/168917/ereader SVG source
 generate-icons: tools-init generate-icons-webapp generate-icons-website generate-icons-extension
 
-[working-directory("cmd/web/webapp")]
+[working-directory("frontend/webapp")]
 generate-icons-webapp:
     @bun run icons:generate
 
-[working-directory("cmd/web/website")]
+[working-directory("frontend/website")]
 generate-icons-website:
     @bun run icons:generate
 
-[working-directory("cmd/web/extension")]
+[working-directory("frontend/extension")]
 generate-icons-extension:
     @bun run icons:generate
 
 # Generate TypeScript types from OpenAPI specification
 gen-api-types:
-    @bunx openapi-typescript internal/server/openapi.yaml -o cmd/web/shared/src/types/api-generated.ts
+    @bunx openapi-typescript internal/server/openapi.yaml -o frontend/shared/src/types/api-generated.ts
 
 # Update VERSION file and all package.json files with new version
 [working-directory("tools")]

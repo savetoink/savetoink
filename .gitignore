@@ -35,19 +35,10 @@ go.work.sum
 # Content
 *.epub
 bin/*
-cmd/function/function
-cmd/cli/cli
 dump/*
 
 **/node_modules
-
-# SvelteKit
-cmd/webapp/.svelte-kit
-cmd/webapp/build
-cmd/webapp/package-lock.json
-cmd/webapp/.env
-
-# macOS
+cmd/webfrontendfrontendfrontendfrontend
 .DS_Store
 
 # Agents
