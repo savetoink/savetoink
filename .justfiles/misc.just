@@ -26,8 +26,12 @@ gen-api-types:
 
 # Update VERSION file and all package.json files with new version
 [working-directory("tools")]
-bump-versions version_type:
+update-versions version_type:
     @bun run update_versions.ts {{ version_type }}
+
+bump-version version_type:
+    @just update-versions {{ version_type }}
+    @git commit -m "chore: bump versions to $(cat VERSION)" .
 
 install-hooks:
     @lefthook install
