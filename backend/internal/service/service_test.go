@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	awstypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/backend/internal/config"
 	"github.com/shaftoe/savetoink/backend/internal/model"
 	repoimpl "github.com/shaftoe/savetoink/backend/internal/repository/dynamodb"
+	"github.com/shaftoe/savetoink/backend/internal/service/servicetypes"
 )
 
 type MockRepository struct {
@@ -35,7 +36,7 @@ func (m *MockRepository) GetMetadataByAccount(
 	account string,
 	page, pageSize int,
 	favoriteFilter *bool,
-) (articles []*model.Article, lastEvaluatedKey map[string]types.AttributeValue, total int, err error) {
+) (articles []*model.Article, lastEvaluatedKey map[string]awstypes.AttributeValue, total int, err error) {
 	var result []*model.Article
 	for _, article := range m.articles {
 		if article.Account == account {
@@ -60,9 +61,9 @@ func (m *MockRepository) GetMetadataByAccount(
 	end := min(skip+pageSize, total)
 
 	if end < total {
-		lastEvaluatedKey = map[string]types.AttributeValue{
-			"account":   &types.AttributeValueMemberS{Value: account},
-			"createdAt": &types.AttributeValueMemberS{Value: result[end-1].CreatedAt.Format(time.RFC3339)},
+		lastEvaluatedKey = map[string]awstypes.AttributeValue{
+			"account":   &awstypes.AttributeValueMemberS{Value: account},
+			"createdAt": &awstypes.AttributeValueMemberS{Value: result[end-1].CreatedAt.Format(time.RFC3339)},
 		}
 	}
 
@@ -408,7 +409,7 @@ func TestSend_NilArticle(t *testing.T) {
 	}
 	svc := NewFromConfig(cfg)
 
-	result := NewProcessResult(nil, []byte("test"), "https://example.com")
+	result := servicetypes.NewProcessResult(nil, []byte("test"), "https://example.com")
 
 	_, err := svc.Send(context.Background(), result, "test@kindle.com")
 
@@ -425,7 +426,7 @@ func TestSend_NoSenderConfigured(t *testing.T) {
 		Title: "Test Article",
 		URL:   "https://example.com",
 	}
-	result := NewProcessResult(article, []byte("test"), "https://example.com")
+	result := servicetypes.NewProcessResult(article, []byte("test"), "https://example.com")
 
 	_, err := svc.Send(context.Background(), result, "test@kindle.com")
 
@@ -447,7 +448,7 @@ func TestWriteToFile_NilResult(t *testing.T) {
 func TestWriteToFile_NilArticle(t *testing.T) {
 	svc := New(&Dependencies{})
 
-	result := NewProcessResult(nil, []byte("test"), "https://example.com")
+	result := servicetypes.NewProcessResult(nil, []byte("test"), "https://example.com")
 
 	err := svc.WriteToFile(result, "/tmp/test.epub")
 
@@ -462,7 +463,7 @@ func TestWriteToFile_EmptyPath(t *testing.T) {
 	article := &model.Article{
 		Title: "Test Article",
 	}
-	result := NewProcessResult(article, []byte("test"), "https://example.com")
+	result := servicetypes.NewProcessResult(article, []byte("test"), "https://example.com")
 
 	err := svc.WriteToFile(result, "")
 

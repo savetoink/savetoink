@@ -12,6 +12,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/email"
 	"github.com/shaftoe/savetoink/backend/internal/service"
+	"github.com/shaftoe/savetoink/backend/internal/service/servicetypes"
 	"github.com/spf13/cobra"
 )
 
@@ -91,7 +92,7 @@ func runConvert(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-func printVerboseOutput(result *service.ProcessResult) {
+func printVerboseOutput(result *servicetypes.ProcessResult) {
 	if verbose {
 		fmt.Println("\n--- Extracted Content (HTML) ---")
 		fmt.Println(result.Article().Content)
@@ -103,7 +104,7 @@ func printVerboseOutput(result *service.ProcessResult) {
 func sendToKindle(
 	ctx context.Context,
 	svc *service.Service,
-	result *service.ProcessResult,
+	result *servicetypes.ProcessResult,
 	destEmail string,
 ) (*email.SendEmailResponse, error) {
 	resp, err := svc.Send(ctx, result, destEmail)
