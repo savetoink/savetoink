@@ -28,7 +28,7 @@ export const getProfile = (fetch: typeof globalThis.fetch, token: string) =>
 
 export const getArticles = (
 	fetch: typeof globalThis.fetch,
-	params: { page?: number; pageSize?: number; favorite?: boolean },
+	params: { page?: number; page_size?: number; favorite?: boolean },
 	token: string
 ) => withSvelteKitError(() => createSvelteKitClient(fetch).getArticles(params, token));
 

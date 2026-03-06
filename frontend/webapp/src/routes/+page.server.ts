@@ -10,7 +10,11 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
 	const pageSize = pageSizeParam ? parseInt(pageSizeParam, 10) : 10;
 	const favFilter = favoriteParam === 'true';
 
-	const data = await getArticles(fetch, { page, pageSize, favorite: favFilter }, locals.auth ?? '');
+	const data = await getArticles(
+		fetch,
+		{ page, page_size: pageSize, favorite: favFilter },
+		locals.auth ?? ''
+	);
 
 	return { ...data, user: locals.user };
 };
