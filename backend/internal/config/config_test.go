@@ -11,6 +11,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMain(m *testing.M) {
+	_ = os.Unsetenv("SAVETOINK_API_KEY")
+	_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
+	_ = os.Unsetenv("SAVETOINK_USER_PROFILE_TABLE_NAME")
+	_ = os.Unsetenv("SAVETOINK_SENDS_TABLE_NAME")
+	_ = os.Unsetenv("SAVETOINK_APP_URL")
+	_ = os.Unsetenv("SAVETOINK_EMAIL_BACKEND")
+	_ = os.Unsetenv("SAVETOINK_MAILJET_API_KEY")
+	_ = os.Unsetenv("SAVETOINK_MAILJET_API_SECRET")
+	_ = os.Unsetenv("SAVETOINK_MAILJET_WEBHOOK_SECRET")
+	_ = os.Unsetenv("SAVETOINK_SENDER_EMAIL")
+	_ = os.Unsetenv("SAVETOINK_AUTH_BACKEND")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_DOMAIN")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_AUDIENCE")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_ID")
+	_ = os.Unsetenv("SAVETOINK_AUTH0_CLIENT_SECRET")
+	_ = os.Unsetenv("SAVETOINK_LOGGING_PROVIDER")
+	_ = os.Unsetenv("SAVETOINK_SENTRY_DSN")
+	_ = os.Unsetenv("SAVETOINK_SENTRY_ENVIRONMENT")
+	_ = os.Unsetenv("SAVETOINK_SENTRY_SAMPLE_RATE")
+	_ = os.Unsetenv("SAVETOINK_DEBUG")
+	os.Exit(m.Run())
+}
+
 func TestLoad_CLI_Mode(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_DEBUG": "false",
