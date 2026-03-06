@@ -14,14 +14,18 @@ import (
 	"github.com/shaftoe/savetoink/backend/internal/model"
 )
 
-// CreateSend implements SendsRepository.CreateSend.
-func (d *DynamoDB) CreateSend(ctx context.Context, send *model.Send) error {
-	if send.PK == "" {
-		return errors.New("pk field is required")
-	}
-
-	if send.SK == "" {
-		return errors.New("sk field is required")
+// CreateSendRecord implements SendsRepository.CreateSendRecord.
+func (d *DynamoDB) CreateSendRecord(ctx context.Context, accountID, articleID, title, destEmail string) error {
+	now := time.Now().UTC()
+	send := &model.Send{
+		PK:        "USER#" + accountID,
+		SK:        "SEND#" + now.Format(time.RFC3339) + "#" + articleID,
+		Account:   accountID,
+		ArticleID: articleID,
+		SentAt:    now,
+		Title:     title,
+		DestEmail: destEmail,
+		Status:    "pending",
 	}
 
 	item, err := attributevalue.MarshalMap(send)
@@ -35,6 +39,45 @@ func (d *DynamoDB) CreateSend(ctx context.Context, send *model.Send) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to store send: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateSendRecord implements SendsRepository.UpdateSendRecord.
+func (d *DynamoDB) UpdateSendRecord(
+	ctx context.Context,
+	accountID, articleID, status, messageID, errorResponse string,
+) error {
+	sends, err := d.GetSendsByArticleID(ctx, articleID)
+	if err != nil {
+		return fmt.Errorf("failed to get send: %w", err)
+	}
+
+	if len(sends) == 0 {
+		return fmt.Errorf("send record not found for article %s", articleID)
+	}
+
+	send := sends[len(sends)-1]
+	if send.Account != accountID {
+		return errors.New("send record account mismatch")
+	}
+
+	send.Status = status
+	send.MessageID = messageID
+	send.ErrorResponse = errorResponse
+
+	item, err := attributevalue.MarshalMap(send)
+	if err != nil {
+		return fmt.Errorf("failed to marshal send: %w", err)
+	}
+
+	_, err = d.client.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(d.sendsTableName),
+		Item:      item,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update send: %w", err)
 	}
 
 	return nil
