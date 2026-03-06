@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -68,7 +69,7 @@ func (h *handlers) verifyMailjetSecret(r *http.Request) error {
 	}
 
 	secretQueryParam := r.URL.Query().Get("secret")
-	if secretQueryParam != h.cfg.MailjetWebhookSecret {
+	if subtle.ConstantTimeCompare([]byte(secretQueryParam), []byte(h.cfg.MailjetWebhookSecret)) != 1 {
 		return errors.New("invalid webhook secret")
 	}
 
