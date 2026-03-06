@@ -7,5 +7,7 @@ pre-commit:
 
 pre-push:
   jobs:
+    - name: install frontend dependencies
+      run: just install-extension-deps
     - name: Run all tests and linters
       run: just check

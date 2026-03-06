@@ -1,6 +1,10 @@
+[working-directory('frontend/extension')]
 bootstrap-extension:
     bunx wxt@latest init
-    cd frontend/extension && bun init
+
+[working-directory('frontend/extension')]
+init-extension:
+    bun init
 
 [working-directory('frontend/extension')]
 server-extension:

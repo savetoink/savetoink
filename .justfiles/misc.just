@@ -35,3 +35,5 @@ bump-version version_type:
 
 install-hooks:
     @lefthook install
+
+init-frontend: init-extension

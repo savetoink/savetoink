@@ -6,7 +6,7 @@ import { readFileSync } from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
 
-const version = readFileSync(path.resolve(__dirname, '../../../VERSION'), 'utf-8').trim();
+const version = readFileSync(path.resolve(__dirname, '../../VERSION'), 'utf-8').trim();
 const buildDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 const gitHash = execSync('git rev-parse --short HEAD', { cwd: path.resolve(__dirname, '../../') })
 	.toString()
