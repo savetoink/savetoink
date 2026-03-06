@@ -32,6 +32,7 @@ func NewSender(apiKey, apiSecret, senderEmail string) *Sender {
 	}
 }
 
+// TODO - check why context is ignored
 // SendEmail sends an email with the EPUB attachment via Mailjet.
 func (s *Sender) SendEmail(_ context.Context, req *email.Request) (*email.SendEmailResponse, error) {
 	if err := s.validateConfig(); err != nil {
