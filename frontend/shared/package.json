@@ -11,7 +11,7 @@
     ".": "./src/index.ts",
     "./types": "./src/types/index.ts",
     "./lib": "./src/lib/index.ts",
-    "./lib/build-config": "./src/lib/build-config.ts",
+    "./lib/build-config": "./src/lib/build-config.js",
     "./components": "./src/components/index.ts",
     "./css": "./src/css.ts"
   }
