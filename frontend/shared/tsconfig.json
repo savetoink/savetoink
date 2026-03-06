@@ -5,7 +5,8 @@
     "moduleResolution": "bundler",
     "strict": true,
     "noEmit": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "allowArbitraryExtensions": true
   },
   "include": ["src"]
 }

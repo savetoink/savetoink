@@ -1,5 +1,25 @@
 import { format } from "date-fns";
 
+declare const __APP_VERSION__: string;
+declare const __BUILD_DATE__: string;
+declare const __GIT_HASH__: string;
+
+export const APP_VERSION = __APP_VERSION__;
+export const BUILD_DATE = __BUILD_DATE__;
+export const GIT_HASH = __GIT_HASH__;
+
+export function getVersionText(isDev: boolean): string {
+	if (isDev) {
+		return `${APP_VERSION}-${BUILD_DATE}-${GIT_HASH}`;
+	}
+	return APP_VERSION;
+}
+
+export function getAppTitle(isDev: boolean): string {
+	const versionTxt = getVersionText(isDev);
+	return isDev ? `Save to Ink - ${versionTxt}` : 'Save to Ink';
+}
+
 export function formatDate(iso: string): string {
   return format(new Date(iso), "d MMM y");
 }

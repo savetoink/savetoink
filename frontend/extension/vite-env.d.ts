@@ -5,3 +5,7 @@ interface ImportMetaEnv {
 	readonly PUBLIC_AUTH0_DOMAIN: string;
 	readonly PUBLIC_AUTH0_AUDIENCE: string;
 }
+
+declare const __APP_VERSION__: string;
+declare const __BUILD_DATE__: string;
+declare const __GIT_HASH__: string;

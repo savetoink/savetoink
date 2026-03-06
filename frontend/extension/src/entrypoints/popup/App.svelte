@@ -2,9 +2,10 @@
 	import { onMount } from 'svelte';
 	import Account from './Account.svelte';
 	import Post from './Post.svelte';
+	import { Footer } from '@savetoink/shared/components';
 	import { getAPIKey, getUserProfile } from '../../lib/storage';
-	import type { UserProfile } from '@savetoink/shared';
 	import '@savetoink/shared/css';
+	import type { UserProfile } from '@savetoink/shared';
 
 	if (import.meta.env.DEV) {
 		import('@savetoink/shared/css-dev');
@@ -29,6 +30,7 @@
 	<section>
 		<Account bind:profile bind:apiKey />
 	</section>
+	<Footer />
 </main>
 
 <style>

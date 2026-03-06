@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import NavItem from './NavItem.svelte';
-	import Landing from './Landing.svelte';
+	import { Landing } from '@savetoink/shared/components';
 
 	let { loggedIn }: { loggedIn: boolean } = $props();
 </script>

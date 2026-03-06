@@ -2,15 +2,9 @@ import { sentrySvelteKit } from '@sentry/sveltekit';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { readFileSync } from 'fs';
-import { execSync } from 'child_process';
-import path from 'path';
+import { getBuildConfig } from '@savetoink/shared/lib/build-config';
 
-const version = readFileSync(path.resolve(__dirname, '../../VERSION'), 'utf-8').trim();
-const buildDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-const gitHash = execSync('git rev-parse --short HEAD', { cwd: path.resolve(__dirname, '../../') })
-	.toString()
-	.trim();
+const { version, buildDate, gitHash } = getBuildConfig();
 
 export default defineConfig({
 	plugins: [

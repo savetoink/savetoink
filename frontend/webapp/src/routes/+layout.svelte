@@ -1,19 +1,15 @@
 <script lang="ts">
 	import { navigating } from '$app/state';
 	import Nav from '$lib/components/Nav.svelte';
-	import Landing from '$lib/components/Landing.svelte';
+	import { Footer } from '@savetoink/shared/components';
 	import { isDev } from '$lib/consts';
+	import { getAppTitle } from '@savetoink/shared';
 	import '@savetoink/shared/css';
 
 	if (isDev) {
 		import('@savetoink/shared/css-dev');
 	}
-
-	const version = __APP_VERSION__;
-	const buildDate = __BUILD_DATE__;
-	const gitHash = __GIT_HASH__;
-	const versionTxt = isDev ? `${version}-${buildDate}-${gitHash}` : version;
-	const title = isDev ? `Save to Ink - ${versionTxt}` : 'Save to Ink';
+	const title = getAppTitle(isDev);
 
 	let { children, data } = $props();
 	const loggedIn = $derived(data.isLoggedIn);
@@ -44,22 +40,4 @@
 	{/if}
 </main>
 
-<footer class="container">
-	<hr />
-	<small>
-		<Landing />
-		- {versionTxt} - Source on
-		<a
-			href="https://github.com/savetoink/savetoink"
-			target="_blank"
-			rel="external noopener noreferrer">GitHub</a
-		></small
-	>
-</footer>
-
-<style>
-	footer {
-		text-align: center;
-		margin-bottom: 1rem;
-	}
-</style>
+<Footer />
