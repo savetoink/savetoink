@@ -1,5 +1,5 @@
 import { PUBLIC_API_URL } from '$env/static/public';
-import { error } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import { createApiClient, ApiError } from '@savetoink/shared';
 import type { ApiClientOptions } from '@savetoink/shared';
 
@@ -11,6 +11,19 @@ function withSvelteKitError<T>(fn: () => Promise<T>): Promise<T> {
 			error(e.status, e.message);
 		}
 		error(500, e instanceof Error ? e.message : 'Unknown error');
+	}
+}
+
+export async function withActionFail<T>(
+	fn: () => Promise<T>
+): Promise<ReturnType<typeof fail> | T> {
+	try {
+		return await fn();
+	} catch (e) {
+		if (e instanceof ApiError) {
+			return fail(e.status, { message: e.message });
+		}
+		throw e;
 	}
 }
 
