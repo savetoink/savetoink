@@ -2,7 +2,7 @@ set dotenv-filename := ".env"
 
 project_name := 'savetoink'
 lambda_archive := 'lambda-source.zip'
-build_flags := "-X github.com/shaftoe/savetoink/backend/consts.version"
+build_flags := "-X github.com/shaftoe/savetoink/backend/internal/consts.version"
 
 import '.justfiles/auth0.just'
 import '.justfiles/aws.just'

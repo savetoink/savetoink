@@ -38,7 +38,6 @@ bin/*
 dump/*
 
 **/node_modules
-cmd/webfrontendfrontendfrontendfrontend
 .DS_Store
 
 # Agents

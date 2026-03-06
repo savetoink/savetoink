@@ -22,7 +22,7 @@ generate-icons-extension:
 
 # Generate TypeScript types from OpenAPI specification
 gen-api-types:
-    @bunx openapi-typescript internal/server/openapi.yaml -o frontend/shared/src/types/api-generated.ts
+    @bunx openapi-typescript backend/internal/server/openapi.yaml -o frontend/shared/src/types/api-generated.ts
 
 # Update VERSION file and all package.json files with new version
 [working-directory("tools")]

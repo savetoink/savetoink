@@ -53,7 +53,7 @@ The CLI tool allows you to convert web articles to EPUB format and send them to 
 ### Installation
 
 ```bash
-go build -o bin/savetoink cmd/cli
+go build -o bin/savetoink backend/cmd/cli
 ```
 
 ### Usage

@@ -1,5 +1,5 @@
 server-http:
-    reflex -r '\.(env|go)$' -s -- go run -ldflags "{{ build_flags }}=$(just version)" ./cmd/http/main.go
+    reflex -r '\.(env|go)$' -s -- go run -ldflags "{{ build_flags }}=$(just version)" backend/cmd/http/main.go
 
 [working-directory('frontend/webapp')]
 server-webapp:
