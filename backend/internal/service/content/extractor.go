@@ -16,6 +16,7 @@ import (
 	"github.com/markusmobius/go-trafilatura"
 	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/model"
+	"github.com/shaftoe/savetoink/backend/internal/validation"
 	"golang.org/x/net/html"
 )
 
@@ -230,22 +231,8 @@ func countWords(text string) int {
 }
 
 func validateURL(urlStr string) error {
-	if urlStr == "" {
-		return errors.New("url cannot be empty")
+	if err := validation.ValidateURLOnlyFormat(urlStr); err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
 	}
-
-	u, err := url.Parse(urlStr)
-	if err != nil {
-		return fmt.Errorf("failed to parse URL: %w", err)
-	}
-
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return errors.New("url must use http or https scheme")
-	}
-
-	if u.Host == "" {
-		return errors.New("url must have a host")
-	}
-
 	return nil
 }

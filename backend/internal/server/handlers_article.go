@@ -12,6 +12,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/model"
 	"github.com/shaftoe/savetoink/backend/internal/server/auth"
+	"github.com/shaftoe/savetoink/backend/internal/validation"
 )
 
 func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
@@ -25,6 +26,12 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 	if req.URL == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "missing URL in request body"})
+		return
+	}
+
+	if err := validation.ValidateURL(req.URL); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 		return
 	}
 

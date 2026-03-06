@@ -5,13 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/mail"
-	"strings"
 	"time"
 
-	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/model"
 	"github.com/shaftoe/savetoink/backend/internal/repository"
+	"github.com/shaftoe/savetoink/backend/internal/validation"
 )
 
 // UserProfileService manages user profiles and device email settings.
@@ -137,6 +135,10 @@ func (s *UserProfileService) GetUserProfile(ctx context.Context, accountID strin
 
 // SetUserEmail sets the user's email address.
 func (s *UserProfileService) SetUserEmail(ctx context.Context, accountID, userEmail string) error {
+	if err := validation.ValidateEmail(userEmail); err != nil {
+		return fmt.Errorf("invalid email: %w", err)
+	}
+
 	if s.repo == nil {
 		return errors.New("user profile repository not configured")
 	}
@@ -251,22 +253,8 @@ func (s *UserProfileService) GetAccountIDByDeviceEmail(ctx context.Context, devi
 }
 
 func (s *UserProfileService) validateDeviceEmail(email string) error {
-	addr, err := mail.ParseAddress(email)
-	if err != nil {
-		return errors.New(
-			"invalid device email: must be a valid email address",
-		)
+	if err := validation.ValidateDeviceEmail(email); err != nil {
+		return fmt.Errorf("invalid device email: %w", err)
 	}
-
-	domains := consts.GetValidDeviceEmailDomains()
-	for _, domain := range domains {
-		if strings.HasSuffix(addr.Address, domain) {
-			return nil
-		}
-	}
-
-	return fmt.Errorf(
-		"invalid device email: must be a valid email ending with %s",
-		consts.ValidDeviceEmailDomainsJoined(),
-	)
+	return nil
 }

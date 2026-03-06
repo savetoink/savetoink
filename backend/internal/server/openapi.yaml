@@ -88,7 +88,9 @@ components:
       properties:
         url:
           type: string
-          description: URL of the article to save
+          format: uri
+          description: URL of the article to save (http or https only, private IPs blocked)
+          maxLength: 2000
 
     ArticleResponse:
       type: object
@@ -217,7 +219,9 @@ components:
       properties:
         device_email:
           type: string
-          description: Kindle device email address
+          format: email
+          description: Kindle device email address (must end with @kindle.com or @free.kindle.com)
+          maxLength: 320
         auto_send:
           type: boolean
           description: Whether to auto-send articles to device
@@ -286,6 +290,7 @@ components:
         error:
           type: string
           description: Error message
+          example: "invalid URL: URL points to private/internal network"
 
     HealthResponse:
       type: object
