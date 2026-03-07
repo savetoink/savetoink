@@ -27,31 +27,31 @@ go install github.com/shaftoe/savetoink/cli/savetoink@latest
 **Convert a URL to EPUB (save locally):**
 
 ```bash
-./savetoink convert https://example.com
+savetoink convert https://example.com
 ```
 
 **Send directly to Kindle via email (requires MailJet credentials as environment variables):**
 
 ```bash
-./savetoink convert https://example.com --send
+savetoink convert https://example.com --send
 ```
 
 **Specify an output file:**
 
 ```bash
-./savetoink convert https://example.com -o my-book.epub
+savetoink convert https://example.com -o my-book.epub
 ```
 
 **Set a custom timeout:**
 
 ```bash
-./savetoink convert https://example.com -t 1m
+savetoink convert https://example.com -t 1m
 ```
 
 **Show extracted HTML content (verbose mode):**
 
 ```bash
-./savetoink convert https://example.com -v
+savetoink convert https://example.com -v
 ```
 
 ### Examples
