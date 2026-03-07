@@ -452,7 +452,8 @@ func TestSetupRoutes_AuthRoute(t *testing.T) {
 		cfg.Auth0ClientID = "test-client-id"
 		cfg.Auth0ClientSecret = "test-client-secret"
 
-		router := newRouterWithClient(cfg, http.DefaultClient)
+		client := &http.Client{Timeout: 100 * time.Millisecond}
+		router := newRouterWithClient(cfg, client)
 
 		body := strings.NewReader(
 			`{"code":"test","redirect_uri":"http://localhost"}`,
