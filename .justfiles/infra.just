@@ -31,8 +31,9 @@ deploy-api:
             Auth0ClientId="$SAVETOINK_AUTH0_CLIENT_ID" \
             Auth0ClientSecret="$SAVETOINK_AUTH0_CLIENT_SECRET" \
             Auth0Domain="$SAVETOINK_AUTH0_DOMAIN" \
-            AuthBackend="auth0" \
+            AuthBackend="${SAVETOINK_AUTH_BACKEND}" \
             CertificateArn=$(just get-cert-arn) \
+            Debug="${SAVETOINK_DEBUG}" \
             DestEmail="$SAVETOINK_DEST_EMAIL" \
             DomainName="$SAVETOINK_DOMAIN" \
             LoggingProvider=${SAVETOINK_LOGGING_PROVIDER} \
@@ -46,8 +47,7 @@ deploy-api:
             SentryEnvironment=${SAVETOINK_SENTRY_ENVIRONMENT} \
             SentrySampleRate=${SAVETOINK_SENTRY_SAMPLE_RATE} \
             SourceBucketKey={{ lambda_archive }} \
-            SourceBucketName=${SAVETOINK_BUCKET} \
-            Debug="true"
+            SourceBucketName=${SAVETOINK_BUCKET}
 
 # Update Lambda function code only
 deploy-lambda: build-lambda-zip upload-zip

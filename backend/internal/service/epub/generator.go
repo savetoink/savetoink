@@ -42,6 +42,18 @@ func buildMetadataHeader(article *model.Article) string {
 func buildMetadataLines(article *model.Article) []string {
 	var metaLines []string
 
+	if article.Title != "" {
+		line := consts.HTMLTagStrongStart + "Title:" + article.Title
+		line += consts.HTMLTagStrongEnd + consts.HTMLTagPEnd
+		metaLines = append(metaLines, line)
+	}
+
+	if article.Author != "" {
+		line := consts.HTMLTagStrongStart + "Author:" + article.Author
+		line += consts.HTMLTagStrongEnd + consts.HTMLTagPEnd
+		metaLines = append(metaLines, line)
+	}
+
 	sourceInfo := buildSourceInfo(article)
 	if sourceInfo != "" {
 		line := consts.HTMLTagStrongStart + "Source:" + sourceInfo

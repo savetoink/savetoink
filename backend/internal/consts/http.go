@@ -11,3 +11,6 @@ const (
 	// IdleTimeout is the maximum amount of time to wait for the next request when keep-alives are enabled.
 	IdleTimeout = 15 * time.Second
 )
+
+// RequestIDFormat is the generated request ID format (YYYYMMDD-HHMMSS.mmm).
+const RequestIDFormat = "20060102-150405.000"

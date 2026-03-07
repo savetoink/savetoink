@@ -35,12 +35,6 @@ const (
 	// TitleSeparator is the separator used in article titles (space-dash-space).
 	TitleSeparator = " - "
 
-	// DateYearMonthDay is the RFC3339 year-month-day date format.
-	DateYearMonthDay = "2006-01-02"
-
-	// RequestIDFormat is the format for request IDs (YYYYMMDD-HHMMSS.mmm).
-	RequestIDFormat = "20060102-150405.000"
-
 	// MinTitleParts is the minimum number of parts needed for title parsing.
 	MinTitleParts = 2
 )
