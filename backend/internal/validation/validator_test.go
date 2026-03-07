@@ -303,6 +303,12 @@ func TestValidateURL_AdditionalCases(t *testing.T) {
 			wantErr: true,
 			errMsg:  "must use http or https scheme",
 		},
+		{
+			name:    "invalid URL format - malformed",
+			url:     "://example.com",
+			wantErr: true,
+			errMsg:  "failed to parse URL",
+		},
 	}
 
 	for _, tt := range tests {

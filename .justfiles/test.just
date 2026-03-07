@@ -4,10 +4,10 @@ lint:
     golangci-lint run
 
 test-go:
-    go test ./... -short
+    go test ./backend/... -short
 
 test-go-coverage:
-    go test -coverprofile=coverage.txt ./...
+    go test -coverprofile=coverage.txt ./backend/...
 
 # Run all tests
 test: test-go test-webapp test-extension test-website
