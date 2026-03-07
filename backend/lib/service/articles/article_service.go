@@ -69,6 +69,7 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 
 	eg, articlesChan := s.startBackgroundDBStore(ctx)
 
+	// store the pre-processing article metadata
 	article := &model.Article{
 		Account:   accountID,
 		ID:        articleID,
@@ -84,16 +85,23 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 		return nil, fmt.Errorf("failed to process article: %w", err)
 	}
 
-	if result.Article() == nil {
+	processedArticle := result.Article()
+	if processedArticle == nil {
 		articleErr := errors.New("failed to process article: article is nil")
 		article.Error = articleErr.Error()
 		articlesChan <- article
 		return nil, articleErr
 	}
 
-	processedArticle := result.Article()
-	processedArticle.Account = accountID
-	processedArticle.ID = articleID
+	if processedArticle.URL != article.URL {
+		logging.AddRequestError(ctx,
+			fmt.Errorf("input URL differs from processed URL: want %s, got %s", article.URL, processedArticle.URL))
+	}
+
+	// copy over pre-processing article fields, URL ignored because already set by the processor
+	processedArticle.Account = article.Account
+	processedArticle.ID = article.ID
+	processedArticle.CreatedAt = article.CreatedAt
 	articlesChan <- processedArticle
 
 	close(articlesChan)

@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -17,14 +16,8 @@ import (
 
 // Store saves an article to DynamoDB.
 func (d *DynamoDB) Store(ctx context.Context, article *model.Article) error {
-	now := time.Now().UTC()
-
 	if article.Account == "" {
 		return errors.New("account field is required")
-	}
-
-	if article.CreatedAt.IsZero() {
-		article.CreatedAt = now
 	}
 
 	item, err := attributevalue.MarshalMap(article)
