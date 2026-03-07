@@ -205,12 +205,23 @@ async function main(): Promise<void> {
   await fs.writeFile(versionFilePath, newVersionStr + "\n");
   console.log("✅ Updated VERSION file");
 
-  const goAppPath = path.join(repoRoot, "backend", "internal", "consts", "app.go");
+  const goAppPath = path.join(
+    repoRoot,
+    "backend",
+    "internal",
+    "consts",
+    "app.go",
+  );
   try {
     const goContent = await fs.readFile(goAppPath, "utf-8");
+    const date = new Date()
+      .toISOString()
+      .slice(0, 16)
+      .replace(/:/g, "")
+      .replace(/-/g, "");
     const newGoContent = goContent.replace(
       /var version = ".*"/,
-      `var version = "${newVersionStr}"`,
+      `var version = "${newVersionStr}-${date}Z"`,
     );
     if (goContent !== newGoContent) {
       await fs.writeFile(goAppPath, newGoContent);
