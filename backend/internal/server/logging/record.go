@@ -40,8 +40,6 @@ func finalizeLogRecord(ctx context.Context, record *slog.Record, start time.Time
 
 	requestError := logging.GetRequestError(ctx)
 	if requestError != nil {
-		record.Level = slog.LevelError
-
 		if joinedErr, ok := requestError.(interface{ Unwrap() []error }); ok {
 			for i, err := range joinedErr.Unwrap() {
 				record.AddAttrs(slog.String(fmt.Sprintf("error_%d", i), err.Error()))
@@ -53,6 +51,8 @@ func finalizeLogRecord(ctx context.Context, record *slog.Record, start time.Time
 
 	if statusCode >= http.StatusInternalServerError {
 		record.Level = slog.LevelError
+	} else if statusCode >= http.StatusBadRequest {
+		record.Level = slog.LevelInfo
 	}
 
 	record.AddAttrs(

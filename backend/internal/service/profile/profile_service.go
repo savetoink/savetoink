@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"time"
 
+	apperrors "github.com/shaftoe/savetoink/backend/internal/apperrors"
 	"github.com/shaftoe/savetoink/backend/internal/logging"
 	"github.com/shaftoe/savetoink/backend/internal/model"
 	"github.com/shaftoe/savetoink/backend/internal/repository"
@@ -80,7 +81,7 @@ func (s *UserProfileService) SetUserDeviceEmailWithAutoSend(
 	autoSend bool,
 ) error {
 	if err := s.validateDeviceEmail(deviceEmail); err != nil {
-		return err
+		return fmt.Errorf("%w: %s", apperrors.ErrInvalid, err.Error())
 	}
 
 	if s.repo == nil {
@@ -152,7 +153,7 @@ func (s *UserProfileService) GetUserProfile(ctx context.Context, accountID strin
 // SetUserEmail sets the user's email address.
 func (s *UserProfileService) SetUserEmail(ctx context.Context, accountID, userEmail string) error {
 	if err := validation.ValidateEmail(userEmail); err != nil {
-		return fmt.Errorf("invalid email: %w", err)
+		return fmt.Errorf("%w: %s", apperrors.ErrInvalid, err.Error())
 	}
 
 	if s.repo == nil {
@@ -200,7 +201,7 @@ func (s *UserProfileService) HandleBounce(ctx context.Context, deviceEmail, erro
 	}
 
 	if accountID == "" {
-		return fmt.Errorf("no account found for device email %s", deviceEmail)
+		return apperrors.ErrNotFound
 	}
 
 	profile, err := s.repo.GetUserProfile(ctx, accountID)
@@ -209,7 +210,7 @@ func (s *UserProfileService) HandleBounce(ctx context.Context, deviceEmail, erro
 	}
 
 	if profile == nil {
-		return fmt.Errorf("profile not found for account %s", accountID)
+		return apperrors.ErrNotFound
 	}
 
 	if profile.BouncedEmails == nil {

@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
+	apperrors "github.com/shaftoe/savetoink/backend/internal/apperrors"
 	"github.com/shaftoe/savetoink/backend/internal/config"
 	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/email"
@@ -31,6 +33,7 @@ type ArticleService struct {
 	cfg         *config.Config
 	sender      email.Sender
 	dbErrors    error
+	dbMu        sync.Mutex
 }
 
 // New creates a new ArticleService instance.
@@ -103,7 +106,7 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 // GetArticle retrieves an article by account ID and article ID.
 func (s *ArticleService) GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error) {
 	if articleID == "" {
-		return nil, errors.New(consts.ErrInvalidArticleID)
+		return nil, fmt.Errorf("%w: %s", apperrors.ErrInvalid, consts.ErrInvalidArticleID)
 	}
 
 	if s.repo == nil {
@@ -113,7 +116,7 @@ func (s *ArticleService) GetArticle(ctx context.Context, accountID, articleID st
 	article, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
 	if err != nil {
 		if errors.Is(err, repoimpl.ErrNotFound) {
-			return nil, errors.New("article not found")
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get article: %w", err)
 	}
@@ -162,7 +165,7 @@ func (s *ArticleService) DeleteArticle(
 	accountID, articleID string,
 ) (*servicetypes.DeleteArticleResult, error) {
 	if articleID == "" {
-		return nil, errors.New(consts.ErrInvalidArticleID)
+		return nil, fmt.Errorf("%w: %s", apperrors.ErrInvalid, consts.ErrInvalidArticleID)
 	}
 
 	if s.repo == nil {
@@ -211,7 +214,7 @@ func (s *ArticleService) ToggleFavorite(ctx context.Context, accountID, articleI
 	article, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
 	if err != nil {
 		if errors.Is(err, repoimpl.ErrNotFound) {
-			return false, errors.New("article not found")
+			return false, apperrors.ErrNotFound
 		}
 		return false, fmt.Errorf("failed to get article: %w", err)
 	}
@@ -251,7 +254,7 @@ func (s *ArticleService) sendArticleCLIMode(
 	destEmail string,
 ) (*email.SendEmailResponse, error) {
 	if destEmail == "" {
-		return nil, errors.New("destination email is required in CLI mode")
+		return nil, fmt.Errorf("%w: destination email is required in CLI mode", apperrors.ErrInvalid)
 	}
 
 	result, processErr := s.processArticleToResult(article)
@@ -284,7 +287,7 @@ func (s *ArticleService) sendArticleServerMode(
 		return nil, fmt.Errorf("failed to get user device email: %w", getErr)
 	}
 	if destEmail == "" {
-		return nil, errors.New("user email not configured")
+		return nil, fmt.Errorf("%w: user email not configured", apperrors.ErrInvalid)
 	}
 
 	result, processErr := s.processArticleToResult(article)
@@ -301,20 +304,26 @@ func (s *ArticleService) sendArticleServerMode(
 
 	emailResp, sendErr, dbError := s.sendEmailAndCreateRecord(ctx, emailReq, accountID, article, destEmail)
 	if dbError != nil {
+		s.dbMu.Lock()
 		s.dbErrors = errors.Join(s.dbErrors, dbError)
+		s.dbMu.Unlock()
 	}
 
 	if sendErr != nil {
 		dbError = s.updateSendRecordOnFailure(ctx, accountID, article.ID, sendErr)
 		if dbError != nil {
+			s.dbMu.Lock()
 			s.dbErrors = errors.Join(s.dbErrors, dbError)
+			s.dbMu.Unlock()
 		}
 		return nil, sendErr
 	}
 
 	dbError = s.updateSendRecordAndArticleOnSuccess(ctx, accountID, article, emailResp.MessageID)
 	if dbError != nil {
+		s.dbMu.Lock()
 		s.dbErrors = errors.Join(s.dbErrors, dbError)
+		s.dbMu.Unlock()
 	}
 
 	return emailResp, nil
@@ -410,7 +419,9 @@ func (s *ArticleService) updateSendRecordAndArticleOnSuccess(
 			"",
 		)
 		if updateErr != nil {
+			s.dbMu.Lock()
 			dbError = fmt.Errorf("failed to update send record: %w", updateErr)
+			s.dbMu.Unlock()
 		}
 		return nil
 	})
@@ -421,7 +432,9 @@ func (s *ArticleService) updateSendRecordAndArticleOnSuccess(
 		}
 		storeErr := s.repo.Store(ctx, article)
 		if storeErr != nil {
+			s.dbMu.Lock()
 			dbError = errors.Join(dbError, fmt.Errorf("failed to store article: %w", storeErr))
+			s.dbMu.Unlock()
 		}
 		return nil
 	})
@@ -478,7 +491,9 @@ func (s *ArticleService) startBackgroundDBStore(
 		}
 
 		if dbErrors != nil {
+			s.dbMu.Lock()
 			s.dbErrors = errors.Join(s.dbErrors, dbErrors)
+			s.dbMu.Unlock()
 		}
 
 		return nil
@@ -489,10 +504,10 @@ func (s *ArticleService) startBackgroundDBStore(
 
 func (s *ArticleService) validateArticleForSend(article *model.Article) error {
 	if article == nil {
-		return errors.New("article is nil")
+		return fmt.Errorf("%w: article is nil", apperrors.ErrInvalid)
 	}
 	if article.Content == "" {
-		return errors.New("article has no content")
+		return fmt.Errorf("%w: article has no content", apperrors.ErrInvalid)
 	}
 	return nil
 }
