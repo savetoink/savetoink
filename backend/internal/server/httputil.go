@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/shaftoe/savetoink/backend/internal/logging"
 	"github.com/shaftoe/savetoink/backend/internal/model"
 )
 
@@ -26,6 +27,6 @@ func decodeAndValidateRequest(w http.ResponseWriter, r *http.Request, req any) e
 
 // handleServiceError logs error and writes appropriate response.
 func handleServiceError(w http.ResponseWriter, r *http.Request, err error, context string) {
-	addRequestError(r.Context(), fmt.Errorf("%s: %w", context, err))
+	logging.AddRequestError(r.Context(), fmt.Errorf("%s: %w", context, err))
 	writeJSONError(w, http.StatusInternalServerError, err)
 }

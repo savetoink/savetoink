@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/shaftoe/savetoink/backend/internal/logging"
 )
 
 const (
@@ -42,26 +44,26 @@ func (h *handlers) handleMailjetWebhook(w http.ResponseWriter, r *http.Request) 
 
 	body, readErr := readRequestBody(r)
 	if readErr != nil {
-		addRequestError(r.Context(), readErr)
+		logging.AddRequestError(r.Context(), readErr)
 		return
 	}
 
 	if verifyErr := h.verifyMailjetSecret(r); verifyErr != nil {
-		addRequestError(r.Context(), verifyErr)
+		logging.AddRequestError(r.Context(), verifyErr)
 		return
 	}
 
 	var events []mailjetEvent
 	if unmarshalErr := json.Unmarshal(body, &events); unmarshalErr != nil {
-		addRequestError(r.Context(), unmarshalErr)
+		logging.AddRequestError(r.Context(), unmarshalErr)
 		return
 	}
 
-	addLogAttr(r.Context(), slog.Int("webhook_event_count", len(events)))
+	logging.AddLogAttr(r.Context(), slog.Int("webhook_event_count", len(events)))
 
 	processErrors := h.processBounceEvents(r, events)
 	if processErrors != nil {
-		addRequestError(r.Context(), processErrors)
+		logging.AddRequestError(r.Context(), processErrors)
 		return
 	}
 }
@@ -107,29 +109,29 @@ func (h *handlers) processBounceEvents(r *http.Request, events []mailjetEvent) e
 		}
 
 		processedCount++
-		addLogAttr(r.Context(), slog.String("bounced_email", event.Email))
+		logging.AddLogAttr(r.Context(), slog.String("bounced_email", event.Email))
 
 		accountID, accountErr := h.service.GetAccountIDByDeviceEmail(r.Context(), event.Email)
 		if accountErr == nil && accountID != "" {
-			addLogAttr(r.Context(), slog.String("account_id", accountID))
+			logging.AddLogAttr(r.Context(), slog.String("account_id", accountID))
 		}
 
 		if errorMessage != "" {
-			addLogAttr(r.Context(), slog.String("bounce_error", errorMessage))
+			logging.AddLogAttr(r.Context(), slog.String("bounce_error", errorMessage))
 		}
 
 		if event.HardBounce {
-			addLogAttr(r.Context(), slog.Bool("hard_bounce", true))
+			logging.AddLogAttr(r.Context(), slog.Bool("hard_bounce", true))
 		}
 
 		if event.Time > 0 {
 			bounceTime := time.Unix(event.Time, 0).UTC()
-			addLogAttr(r.Context(), slog.Time("bounce_timestamp", bounceTime))
+			logging.AddLogAttr(r.Context(), slog.Time("bounce_timestamp", bounceTime))
 		}
 	}
 
-	addLogAttr(r.Context(), slog.Int("processed_count", processedCount))
-	addLogAttr(r.Context(), slog.Int("failed_count", failedCount))
+	logging.AddLogAttr(r.Context(), slog.Int("processed_count", processedCount))
+	logging.AddLogAttr(r.Context(), slog.Int("failed_count", failedCount))
 
 	return err
 }

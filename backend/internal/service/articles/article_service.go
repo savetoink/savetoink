@@ -5,11 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/internal/config"
 	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/email"
+	"github.com/shaftoe/savetoink/backend/internal/logging"
 	"github.com/shaftoe/savetoink/backend/internal/model"
 	"github.com/shaftoe/savetoink/backend/internal/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/internal/repository/dynamodb"
@@ -335,6 +337,9 @@ func (s *ArticleService) sendEmailAndCreateRecord(
 		emailResp, err = s.sender.SendEmail(ctx, emailReq)
 		if err != nil {
 			sendErr = fmt.Errorf("failed to send email: %w", err)
+		} else {
+			logging.AddLogAttr(ctx, slog.String("email_message_id", emailResp.MessageID))
+			logging.AddLogAttr(ctx, slog.String("email_destination", destEmail))
 		}
 		return nil
 	})

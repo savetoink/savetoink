@@ -5,8 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/internal/logging"
 	"github.com/shaftoe/savetoink/backend/internal/model"
 	"github.com/shaftoe/savetoink/backend/internal/repository"
 	"github.com/shaftoe/savetoink/backend/internal/validation"
@@ -90,6 +92,11 @@ func (s *UserProfileService) SetUserDeviceEmailWithAutoSend(
 		return fmt.Errorf("failed to get user profile: %w", getErr)
 	}
 
+	oldEmail := ""
+	if profile != nil {
+		oldEmail = profile.DeviceEmail
+	}
+
 	if profile == nil {
 		profile = &model.UserProfile{
 			Account: accountID,
@@ -103,6 +110,10 @@ func (s *UserProfileService) SetUserDeviceEmailWithAutoSend(
 		return fmt.Errorf("failed to set user profile: %w", putErr)
 	}
 
+	logging.AddLogAttr(ctx, slog.String("old_device_email", oldEmail))
+	logging.AddLogAttr(ctx, slog.String("new_device_email", deviceEmail))
+	logging.AddLogAttr(ctx, slog.Bool("auto_send", autoSend))
+
 	return nil
 }
 
@@ -112,9 +123,14 @@ func (s *UserProfileService) DeleteUserDeviceEmail(ctx context.Context, accountI
 		return errors.New("user profile repository not configured")
 	}
 
+	oldDeviceEmail, _, _ := s.GetUserDeviceEmail(ctx, accountID)
+
 	if err := s.repo.DeleteUserDeviceEmail(ctx, accountID); err != nil {
 		return fmt.Errorf("failed to delete user device email: %w", err)
 	}
+
+	logging.AddLogAttr(ctx, slog.String("old_device_email", oldDeviceEmail))
+	logging.AddLogAttr(ctx, slog.String("action", "delete_device_email"))
 
 	return nil
 }
@@ -200,7 +216,9 @@ func (s *UserProfileService) HandleBounce(ctx context.Context, deviceEmail, erro
 		profile.BouncedEmails = make(map[string]model.BounceInfo)
 	}
 
+	hardBounce := false
 	if _, exists := profile.BouncedEmails[deviceEmail]; !exists {
+		hardBounce = true
 		profile.BouncedEmails[deviceEmail] = model.BounceInfo{
 			Timestamp: time.Now().UTC(),
 			Error:     errorMessage,
@@ -216,6 +234,11 @@ func (s *UserProfileService) HandleBounce(ctx context.Context, deviceEmail, erro
 	if putErr := s.repo.PutUserProfile(ctx, profile); putErr != nil {
 		return fmt.Errorf("failed to update user profile: %w", putErr)
 	}
+
+	logging.AddLogAttr(ctx, slog.String("bounced_email", deviceEmail))
+	logging.AddLogAttr(ctx, slog.String("bounce_error", errorMessage))
+	logging.AddLogAttr(ctx, slog.Bool("hard_bounce", hardBounce))
+	logging.AddLogAttr(ctx, slog.Time("bounce_timestamp", time.Now().UTC()))
 
 	return nil
 }

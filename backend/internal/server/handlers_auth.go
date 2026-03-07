@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/shaftoe/savetoink/backend/internal/logging"
 )
 
 const (
@@ -39,13 +41,13 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 		req.GrantType = "authorization_code"
 	}
 
-	addLogAttr(r.Context(), slog.String("redirect_uri", req.RedirectURI))
+	logging.AddLogAttr(r.Context(), slog.String("redirect_uri", req.RedirectURI))
 
 	tokenReq := h.buildTokenRequest(req)
 	//nolint:bodyclose // response is closed in executeTokenExchange
 	resp, body, execErr := h.executeTokenExchange(tokenReq)
 	if execErr != nil {
-		addRequestError(r.Context(), execErr)
+		logging.AddRequestError(r.Context(), execErr)
 		writeJSONError(w, http.StatusInternalServerError, fmt.Errorf("failed to exchange token with Auth0: %w", execErr))
 		return
 	}
@@ -57,22 +59,22 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 
 	var tokenResp authTokenExchangeResponse
 	if unmarshalErr := json.Unmarshal(body, &tokenResp); unmarshalErr != nil {
-		addRequestError(r.Context(), unmarshalErr)
+		logging.AddRequestError(r.Context(), unmarshalErr)
 		writeJSONError(w, http.StatusInternalServerError, fmt.Errorf("failed to decode token response: %w", unmarshalErr))
 		return
 	}
 
-	addLogAttr(r.Context(), slog.String("token_type", tokenResp.TokenType))
-	addLogAttr(r.Context(), slog.Int("expires_in", tokenResp.ExpiresIn))
+	logging.AddLogAttr(r.Context(), slog.String("token_type", tokenResp.TokenType))
+	logging.AddLogAttr(r.Context(), slog.Int("expires_in", tokenResp.ExpiresIn))
 
 	if tokenResp.IDToken != "" {
 		email, extractErr := extractEmailFromIDToken(tokenResp.IDToken)
 		if extractErr != nil {
-			addRequestError(r.Context(), fmt.Errorf("failed to extract email from id_token: %w", extractErr))
+			logging.AddRequestError(r.Context(), fmt.Errorf("failed to extract email from id_token: %w", extractErr))
 		} else {
 			tokenResp.Email = email
 			if storeErr := h.storeUserEmail(r.Context(), email, tokenResp.AccessToken); storeErr != nil {
-				addRequestError(r.Context(), fmt.Errorf("failed to store user email: %w", storeErr))
+				logging.AddRequestError(r.Context(), fmt.Errorf("failed to store user email: %w", storeErr))
 			}
 		}
 	}
@@ -122,7 +124,7 @@ func (h *handlers) handleAuth0Error(ctx context.Context, w http.ResponseWriter, 
 		ErrorDescription string `json:"error_description"`
 	}
 	_ = json.Unmarshal(body, &errResp)
-	addLogAttr(ctx, slog.String("auth0_error", errResp.Error))
+	logging.AddLogAttr(ctx, slog.String("auth0_error", errResp.Error))
 
 	if errResp.ErrorDescription != "" {
 		writeJSONError(w, http.StatusUnauthorized, errors.New(errResp.ErrorDescription))

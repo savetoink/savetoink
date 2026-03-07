@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/model"
 	"github.com/shaftoe/savetoink/backend/internal/server/auth"
+	"github.com/shaftoe/savetoink/backend/internal/server/logging"
 	"github.com/shaftoe/savetoink/backend/internal/service"
 )
 
@@ -44,7 +44,7 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(auth.NewAccountIDMiddleware(cfg))
 	r.Use(requestIDMiddleware)
-	r.Use(loggingMiddleware)
+	r.Use(logging.Middleware)
 	r.Use(corsMiddleware)
 	r.Use(jsonContentTypeMiddleware)
 
@@ -151,32 +151,4 @@ func setupLogging(cfg *config.Config) {
 
 	multiHandler := slog.NewMultiHandler(sentryHandler, defaultHandler)
 	slog.SetDefault(slog.New(multiHandler))
-}
-
-const logRecordKey = contextKey("log_record")
-
-func addLogAttr(ctx context.Context, attr slog.Attr) {
-	if record, ok := ctx.Value(logRecordKey).(*logRecord); ok {
-		record.AddAttrs(attr)
-	}
-}
-
-func addRequestError(ctx context.Context, err error) {
-	if err == nil {
-		return
-	}
-	if errPtr, ok := ctx.Value(requestErrorKey).(*error); ok && errPtr != nil {
-		if *errPtr != nil {
-			*errPtr = errors.Join(*errPtr, err)
-		} else {
-			*errPtr = err
-		}
-	}
-}
-
-func getRequestError(ctx context.Context) error {
-	if errPtr, ok := ctx.Value(requestErrorKey).(*error); ok && errPtr != nil {
-		return *errPtr
-	}
-	return nil
 }

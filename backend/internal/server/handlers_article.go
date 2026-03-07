@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/shaftoe/savetoink/backend/internal/consts"
+	"github.com/shaftoe/savetoink/backend/internal/logging"
 	"github.com/shaftoe/savetoink/backend/internal/server/auth"
 	"github.com/shaftoe/savetoink/backend/internal/validation"
 )
@@ -31,7 +32,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addLogAttr(r.Context(), slog.String("url", req.URL))
+	logging.AddLogAttr(r.Context(), slog.String("url", req.URL))
 
 	article, err := h.service.CreateArticle(r.Context(), req.URL, auth.GetAccountID(r.Context()))
 	if err != nil {
@@ -39,10 +40,10 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addLogAttr(r.Context(), slog.String("article_id", article.ID))
+	logging.AddLogAttr(r.Context(), slog.String("article_id", article.ID))
 
 	if dbErr := h.service.GetDBError(); dbErr != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
+		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -83,9 +84,9 @@ func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addLogAttr(r.Context(), slog.Int("page", page))
-	addLogAttr(r.Context(), slog.Int("page_size", pageSize))
-	addLogAttr(r.Context(), slog.Int("total", result.Total))
+	logging.AddLogAttr(r.Context(), slog.Int("page", page))
+	logging.AddLogAttr(r.Context(), slog.Int("page_size", pageSize))
+	logging.AddLogAttr(r.Context(), slog.Int("total", result.Total))
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(listArticlesResponse{
@@ -101,16 +102,16 @@ func (h *handlers) handleGetArticle(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountID(r.Context())
 	articleID := chi.URLParam(r, "id")
 
-	addLogAttr(r.Context(), slog.String("article_id", articleID))
+	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
 
 	article, err := h.service.GetArticle(r.Context(), accountID, articleID)
 	if err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
+		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		writeJSONError(w, http.StatusNotFound, err)
 		return
 	}
 
-	addLogAttr(r.Context(), slog.String("article_title", article.Title))
+	logging.AddLogAttr(r.Context(), slog.String("article_title", article.Title))
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(article)
@@ -120,7 +121,7 @@ func (h *handlers) handleDeleteArticle(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountID(r.Context())
 	articleID := chi.URLParam(r, "id")
 
-	addLogAttr(r.Context(), slog.String("article_id", articleID))
+	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
 
 	result, err := h.service.DeleteArticle(r.Context(), accountID, articleID)
 	if err != nil {
@@ -128,7 +129,7 @@ func (h *handlers) handleDeleteArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addLogAttr(r.Context(), slog.Int("deleted", result.Deleted))
+	logging.AddLogAttr(r.Context(), slog.Int("deleted", result.Deleted))
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(deleteArticleResponse{Deleted: result.Deleted})
@@ -143,7 +144,7 @@ func (h *handlers) handleDeleteAllArticles(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	addLogAttr(r.Context(), slog.Int("deleted", result.Deleted))
+	logging.AddLogAttr(r.Context(), slog.Int("deleted", result.Deleted))
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(deleteArticleResponse{Deleted: result.Deleted})
@@ -153,7 +154,7 @@ func (h *handlers) handleToggleFavorite(w http.ResponseWriter, r *http.Request) 
 	accountID := auth.GetAccountID(r.Context())
 	articleID := chi.URLParam(r, "id")
 
-	addLogAttr(r.Context(), slog.String("article_id", articleID))
+	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
 
 	newStatus, err := h.service.ToggleFavorite(r.Context(), accountID, articleID)
 	if err != nil {
@@ -161,7 +162,7 @@ func (h *handlers) handleToggleFavorite(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	addLogAttr(r.Context(), slog.Bool("favorite", newStatus))
+	logging.AddLogAttr(r.Context(), slog.Bool("favorite", newStatus))
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(favoriteResponse{Favorite: newStatus})
@@ -171,16 +172,16 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountID(r.Context())
 	articleID := chi.URLParam(r, "id")
 
-	addLogAttr(r.Context(), slog.String("article_id", articleID))
+	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
 
 	article, err := h.service.GetArticle(r.Context(), accountID, articleID)
 	if err != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", err))
+		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", err))
 		writeJSONError(w, http.StatusNotFound, err)
 		return
 	}
 
-	addLogAttr(r.Context(), slog.String("article_title", article.Title))
+	logging.AddLogAttr(r.Context(), slog.String("article_title", article.Title))
 
 	emailResp, err := h.service.SendArticle(r.Context(), article, accountID, "")
 	if err != nil {
@@ -189,16 +190,16 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if dbErr := h.service.GetDBError(); dbErr != nil {
-		addRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
+		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
 	}
 
 	if emailResp != nil {
-		addLogAttr(r.Context(), slog.String("message_id", emailResp.MessageID))
+		logging.AddLogAttr(r.Context(), slog.String("message_id", emailResp.MessageID))
 	}
 
 	deviceEmail, _, getErr := h.service.GetUserDeviceEmail(r.Context(), accountID)
 	if getErr == nil && deviceEmail != "" {
-		addLogAttr(r.Context(), slog.String("destination_email", deviceEmail))
+		logging.AddLogAttr(r.Context(), slog.String("destination_email", deviceEmail))
 	}
 
 	w.WriteHeader(http.StatusOK)

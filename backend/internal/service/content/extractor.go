@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -39,9 +38,7 @@ func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.A
 		return nil, err
 	}
 	defer func() {
-		if closeErr := body.Close(); closeErr != nil {
-			log.Printf("warning: failed to close response body: %v", closeErr)
-		}
+		_ = body.Close()
 	}()
 
 	htmlBytes, err := io.ReadAll(body)
@@ -93,17 +90,13 @@ func (e *Extractor) fetchURL(ctx context.Context, urlStr string) (*url.URL, io.R
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			log.Printf("warning: failed to close response body: %v", closeErr)
-		}
+		_ = resp.Body.Close()
 		return nil, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "text/html") {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			log.Printf("warning: failed to close response body: %v", closeErr)
-		}
+		_ = resp.Body.Close()
 		return nil, nil, fmt.Errorf("expected HTML content, got: %s", contentType)
 	}
 

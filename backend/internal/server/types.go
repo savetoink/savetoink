@@ -1,7 +1,6 @@
 package server
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/shaftoe/savetoink/backend/internal/config"
@@ -77,14 +76,4 @@ type handlers struct {
 	cfg     *config.Config
 	service service.Interface
 	client  *http.Client
-}
-
-type contextKey string
-
-const (
-	requestErrorKey contextKey = "request_error"
-)
-
-type logRecord struct {
-	*slog.Record
 }
