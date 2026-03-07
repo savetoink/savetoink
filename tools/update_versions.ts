@@ -214,14 +214,16 @@ async function main(): Promise<void> {
   );
   try {
     const goContent = await fs.readFile(goAppPath, "utf-8");
-    const date = new Date()
-      .toISOString()
-      .slice(0, 16)
-      .replace(/:/g, "")
-      .replace(/-/g, "");
+    const commitHash = (
+      await git.resolveRef({
+        fs,
+        dir: repoRoot,
+        ref: "HEAD",
+      })
+    ).slice(0, 7);
     const newGoContent = goContent.replace(
       /var version = ".*"/,
-      `var version = "${newVersionStr}-${date}Z"`,
+      `var version = "${newVersionStr}-${commitHash}"`,
     );
     if (goContent !== newGoContent) {
       await fs.writeFile(goAppPath, newGoContent);
