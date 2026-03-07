@@ -37,7 +37,7 @@
 	<section>
 		<Account bind:profile bind:apiKey />
 	</section>
-	<Footer />
+	<Footer {isDev} />
 </main>
 
 <style>

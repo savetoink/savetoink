@@ -40,4 +40,4 @@
 	{/if}
 </main>
 
-<Footer />
+<Footer {isDev} />
