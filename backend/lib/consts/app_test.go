@@ -1,6 +1,8 @@
 package consts
 
 import (
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,6 +22,17 @@ func TestVersion_MultipleCalls(t *testing.T) {
 	v2 := Version()
 
 	assert.Equal(t, v1, v2, "Version() should return the same pointer on multiple calls")
+}
+
+func TestVersionFileIsVersionString(t *testing.T) {
+	version := Version()
+	require.NotNil(t, version, "Version() should not be nil")
+
+	versionFile, err := os.ReadFile("../../../VERSION")
+	require.NoError(t, err, "VERSION file should exist")
+	versionFileStr := strings.TrimSuffix(string(versionFile), "\n")
+
+	assert.Contains(t, *version, versionFileStr, "VERSION file should prefix the Version() string")
 }
 
 func TestRunMode_Constants(t *testing.T) {
