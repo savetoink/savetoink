@@ -3,8 +3,13 @@
 lint:
     golangci-lint run
 
-test-go:
+test-go: test-go-backend test-go-cli
+
+test-go-backend:
     go test ./backend/... -short
+
+test-go-cli:
+    go test ./cli/... -short
 
 test-go-coverage:
     go test -coverprofile=coverage.txt ./backend/...

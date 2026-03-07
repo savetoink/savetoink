@@ -1,0 +1,54 @@
+// Package logging provides request-scoped wide event logging middleware.
+package logging
+
+import (
+	"context"
+	"net/http"
+	"time"
+
+	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/logging"
+	"github.com/shaftoe/savetoink/backend/lib/server/auth"
+)
+
+type responseStatusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *responseStatusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+// Middleware creates a logging middleware that captures request lifecycle information
+// and emits a single wide event log per request.
+func Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var (
+			start        = time.Now()
+			accountID    = auth.GetAccountID(r.Context())
+			requestID    = getRequestIDFromContext(r.Context())
+			version      = consts.Version()
+			requestError error
+		)
+
+		record := createLogRecord(r, accountID, requestID, version)
+
+		ctx := context.WithValue(r.Context(), logging.LogRecordKey, &logging.LogRecord{Record: &record})
+		ctx = context.WithValue(ctx, logging.RequestErrorKey, &requestError)
+
+		recorder := &responseStatusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(recorder, r.WithContext(ctx))
+
+		finalizeLogRecord(ctx, &record, start, recorder.status)
+	})
+}
+
+func getRequestIDFromContext(ctx context.Context) *string {
+	requestID, ok := ctx.Value(logging.RequestIDKey).(string)
+	if !ok {
+		return nil
+	}
+	return &requestID
+}

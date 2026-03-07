@@ -9,9 +9,9 @@ import (
 	"github.com/akrylysov/algnhsa"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/shaftoe/savetoink/backend/internal/config"
-	"github.com/shaftoe/savetoink/backend/internal/consts"
-	"github.com/shaftoe/savetoink/backend/internal/server"
+	"github.com/shaftoe/savetoink/backend/lib/config"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/server"
 )
 
 func main() {

@@ -19,7 +19,7 @@ The CLI tool allows you to convert web articles to EPUB format and send them to 
 ### Installation
 
 ```bash
-go build -o ./savetoink backend/cmd/cli
+go install github.com/shaftoe/savetoink/cli/savetoink@latest
 ```
 
 ### Usage
@@ -91,7 +91,7 @@ Email sent successfully. Message ID: 1234567890, UUID: abc123-def456-ghi789
 
 1. Install AWS CLI and configure credentials
 1. Install [Just command runner](https://just.systems/)
-1. Set required environment variables in `.env` (see [internal/config/config.go](internal/config/config.go) for details)
+1. Set required environment variables in `.env` (see [backend/lib/config/config.go](backend/lib/config/config.go) for details)
 
 ### Frontend
 

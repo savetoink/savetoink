@@ -18,6 +18,6 @@ This repository contains the code for the savetoink application, composed of:
 
 ## API Documentation
 
-- The OpenAPI specification is maintained in [backend/internal/server/openapi.yaml](backend/internal/server/openapi.yaml)
-- **When modifying API routes, handlers, or request/response models in `backend/internal/server/`, you MUST update the OpenAPI specification to reflect the changes**
+- The OpenAPI specification is maintained in [backend/lib/server/openapi.yaml](backend/lib/server/openapi.yaml)
+- **When modifying API routes, handlers, or request/response models in `backend/lib/server/`, you MUST update the OpenAPI specification to reflect the changes**
 - The OpenAPI spec should always accurately reflect the current state of the API implementation
