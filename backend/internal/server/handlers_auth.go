@@ -80,7 +80,7 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(tokenResp)
+	_ = json.NewEncoder(w).Encode(tokenResp) //nolint:gosec // returning OAuth access token, not a secret
 }
 
 func (h *handlers) buildTokenRequest(req authTokenExchangeRequest) *http.Request {

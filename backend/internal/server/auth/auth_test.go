@@ -49,7 +49,7 @@ func TestSharedAPIKeyMiddleware_ValidAPIKey(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer valid-key")
 	w := httptest.NewRecorder()
 
@@ -65,7 +65,7 @@ func TestSharedAPIKeyMiddleware_MissingAPIKey(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	middlewareChain := EnsureAutheticatedMiddleware(sharedAPIKeyMiddleware("valid-key")(next))
@@ -81,7 +81,7 @@ func TestSharedAPIKeyMiddleware_WrongAPIKey(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer wrong-key")
 	w := httptest.NewRecorder()
 
@@ -98,7 +98,7 @@ func TestSharedAPIKeyMiddleware_EmptyAPIKey(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer ")
 	w := httptest.NewRecorder()
 
@@ -115,7 +115,7 @@ func TestSharedAPIKeyMiddleware_InvalidBearerFormat(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "valid-key")
 	w := httptest.NewRecorder()
 
@@ -139,7 +139,7 @@ func TestNewMiddleware_DefaultBackend(t *testing.T) {
 
 	middleware := NewAccountIDMiddleware(cfg)
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer valid-key")
 	w := httptest.NewRecorder()
 
@@ -170,7 +170,7 @@ func TestGetAuthError_HasError(t *testing.T) {
 		}
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	sharedAPIKeyMiddleware("valid-key")(next).ServeHTTP(w, req)
@@ -214,7 +214,7 @@ func TestSharedAPIKeyMiddleware_ErrorMessages(t *testing.T) {
 				}
 			})
 
-			req := httptest.NewRequest("GET", "/test", http.NoBody)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 			if tt.authHeader != "" {
 				req.Header.Set("Authorization", tt.authHeader)
 			}
@@ -263,7 +263,7 @@ func TestSharedAPIKeyMiddleware_ErrorMessageInResponse(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			})
 
-			req := httptest.NewRequest("GET", "/test", http.NoBody)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 			if tt.authHeader != "" {
 				req.Header.Set("Authorization", tt.authHeader)
 			}
@@ -293,7 +293,7 @@ func TestEnsureAutheticatedMiddleware_AuthErrorInContext(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	middlewareChain := sharedAPIKeyMiddleware("valid-key")(EnsureAutheticatedMiddleware(next))

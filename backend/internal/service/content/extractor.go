@@ -84,7 +84,7 @@ func (e *Extractor) fetchURL(ctx context.Context, urlStr string) (*url.URL, io.R
 	}
 	req.Header.Set("User-Agent", consts.GetRandomUserAgent())
 
-	resp, err := e.client.Do(req) //nolint:gosec // SSRF is acceptable for fetching article content from user-provided URLs
+	resp, err := e.client.Do(req)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch URL: %w", err)
 	}

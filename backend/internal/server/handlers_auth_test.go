@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -32,7 +33,7 @@ func TestAuthTokenExchange_MissingCode(t *testing.T) {
 		RedirectURI: "http://localhost/callback",
 	}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest("POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -57,7 +58,7 @@ func TestAuthTokenExchange_MissingRedirectURI(t *testing.T) {
 		Code: "test-code",
 	}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest("POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -78,7 +79,12 @@ func TestAuthTokenExchange_InvalidJSON(t *testing.T) {
 	}
 	h := newHandlers(cfg, nil, http.DefaultClient)
 
-	req := httptest.NewRequest("POST", "/v1/auth/token", bytes.NewReader([]byte("invalid json")))
+	req := httptest.NewRequestWithContext(
+		context.Background(),
+		"POST",
+		"/v1/auth/token",
+		bytes.NewReader([]byte("invalid json")),
+	)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -99,7 +105,7 @@ func TestNewRouter_AuthTokenRoute(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(authTokenExchangeResponse{
+		_ = json.NewEncoder(w).Encode(authTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
 			AccessToken: "test-access-token",
 			TokenType:   "Bearer",
 			ExpiresIn:   3600,
@@ -128,7 +134,7 @@ func TestNewRouter_AuthTokenRoute(t *testing.T) {
 		RedirectURI: "http://localhost/callback",
 	}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest("POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -149,7 +155,7 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(authTokenExchangeResponse{
+		_ = json.NewEncoder(w).Encode(authTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
 			AccessToken: "test-access-token",
 			TokenType:   "Bearer",
 			ExpiresIn:   3600,
@@ -178,7 +184,7 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 		GrantType:   "authorization_code",
 	}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest("POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -208,7 +214,7 @@ func TestAuthTokenRoute_Registered(t *testing.T) {
 		RedirectURI: "http://localhost/callback",
 	}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest("POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 

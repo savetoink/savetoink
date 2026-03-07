@@ -54,8 +54,8 @@ type authTokenExchangeRequest struct {
 }
 
 type authTokenExchangeResponse struct {
-	AccessToken  string `json:"access_token"`            //nolint:gosec // OAuth2 access token, not a secret
-	RefreshToken string `json:"refresh_token,omitempty"` //nolint:gosec // OAuth2 refresh token, not a secret
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 	IDToken      string `json:"id_token,omitempty"`
 	Email        string `json:"email,omitempty"`
 	TokenType    string `json:"token_type"`
