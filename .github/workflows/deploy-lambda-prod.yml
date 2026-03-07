@@ -17,8 +17,12 @@ permissions:
   contents: read
 
 jobs:
+  tests:
+    uses: ./.github/workflows/test-backend.yml
+
   deploy:
     uses: ./.github/workflows/deploy-lambda.yml
+    needs: tests
     with:
       bucket: ${{ vars.SAVETOINK_BUCKET }}
       aws_role_arn: ${{ vars.AWS_ROLE_ARN }}

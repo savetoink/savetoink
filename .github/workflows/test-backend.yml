@@ -1,6 +1,7 @@
 name: Run backend tests and upload coverage
 
 on:
+  workflow_call:
   workflow_dispatch:
   pull_request:
     paths:
