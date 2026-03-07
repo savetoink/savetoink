@@ -28,32 +28,73 @@ import (
 
 // Interface defines the contract for service operations.
 type Interface interface {
+	// Fetch fetches the HTML content of a given URL.
 	Fetch(ctx context.Context, url string) ([]byte, error)
+
+	// Extract extracts the clean article content from HTML bytes.
 	Extract(ctx context.Context, htmlBytes []byte) ([]byte, error)
+
+	// GenerateEPUB generates an EPUB document from an article.
 	GenerateEPUB(article *model.Article) ([]byte, error)
+
+	// SendArticle sends an EPUB document as attechment to a given email address.
 	SendArticle(
 		ctx context.Context,
 		destEmail string,
 		epubBytes []byte,
 	) (*email.SendEmailResponse, error)
+
+	// CreateArticle stores a new article from a given URL and account ID in the database.
 	CreateArticle(ctx context.Context, rawURL, accountID string) (*model.Article, error)
+
+	// GetArticle retrieves an article by account ID and article ID from the database.
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
+
+	// GetArticlesMetadata retrieves all articles metadata by account ID and pagination parameters.
 	GetArticlesMetadata(
 		ctx context.Context, accountID string, page, pageSize int, favoriteFilter *bool,
 	) (*servicetypes.GetArticlesResult, error)
+
+	// DeleteArticle deletes an article by account ID and article ID from the database.
 	DeleteArticle(ctx context.Context, accountID, articleID string) (*servicetypes.DeleteArticleResult, error)
+
+	// DeleteAllArticles deletes all articles by account ID from the database.
 	DeleteAllArticles(ctx context.Context, accountID string) (*servicetypes.DeleteArticleResult, error)
+
+	// GetDBError returns the database error.
 	GetDBError() error
+
+	// GetUserDeviceEmail retrieves the device email and auto-send preference for a given account.
 	GetUserDeviceEmail(ctx context.Context, accountID string) (string, bool, error)
+
+	// SetUserDeviceEmailWithAutoSend sets the device email and auto-send preference for a given account.
 	SetUserDeviceEmailWithAutoSend(ctx context.Context, accountID, deviceEmail string, autoSend bool) error
+
+	// DeleteUserDeviceEmail deletes the device email for a given account.
 	DeleteUserDeviceEmail(ctx context.Context, accountID string) error
+
+	// GetUserProfile retrieves the user profile for a given account.
 	GetUserProfile(ctx context.Context, accountID string) (*model.UserProfile, error)
+
+	// SetUserEmail sets the user email for a given account.
 	SetUserEmail(ctx context.Context, accountID, email string) error
+
+	// DeleteUserProfile deletes the user profile for a given account.
 	DeleteUserProfile(ctx context.Context, accountID string) error
+
+	// ToggleFavorite toggles the favorite status of an article.
 	ToggleFavorite(ctx context.Context, accountID string, articleID string) (bool, error)
+
+	// CountSendsByAccountDateRange counts the number of sends for a given account within a date range.
 	CountSendsByAccountDateRange(ctx context.Context, accountID string, startDate, endDate time.Time) (int, error)
+
+	// HandleBounce handles a bounce notification for a given device email.
 	HandleBounce(ctx context.Context, deviceEmail, errorMessage string) error
+
+	// IsEmailBouncing checks if an email address is currently bouncing.
 	IsEmailBouncing(ctx context.Context, accountID, deviceEmail string) (bool, error)
+
+	// GetAccountIDByDeviceEmail retrieves the account ID associated with a device email.
 	GetAccountIDByDeviceEmail(ctx context.Context, deviceEmail string) (string, error)
 }
 
