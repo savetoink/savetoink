@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-shiori/go-epub"
 	"github.com/shaftoe/savetoink/backend/internal/consts"
@@ -26,37 +28,7 @@ func NewGenerator() *Generator {
 }
 
 func buildMetadataHeader(article *model.Article) string {
-	var metaLines []string
-
-	sourceInfo := ""
-	if article.SiteName != "" {
-		sourceInfo = article.SiteName
-	}
-	if article.SourceDomain != "" {
-		if sourceInfo != "" {
-			sourceInfo += " (" + article.SourceDomain + ")"
-		} else {
-			sourceInfo = article.SourceDomain
-		}
-	}
-	if sourceInfo != "" {
-		metaLines = append(metaLines, fmt.Sprintf("<p><strong>Source:</strong> %s</p>", sourceInfo))
-	}
-
-	if article.ReadingTimeMinutes > 0 {
-		metaLines = append(metaLines, fmt.Sprintf("<p><strong>Reading time:</strong> %d min</p>", article.ReadingTimeMinutes))
-	}
-
-	if article.PublishedAt != nil && !article.PublishedAt.IsZero() {
-		metaLines = append(metaLines,
-			fmt.Sprintf("<p><strong>Published:</strong> %s</p>", article.PublishedAt.Format("2006-01-02")))
-	}
-
-	if !article.CreatedAt.IsZero() {
-		metaLines = append(metaLines,
-			fmt.Sprintf("<p><strong>Added:</strong> %s</p>", article.CreatedAt.Format("2006-01-02")))
-	}
-
+	metaLines := buildMetadataLines(article)
 	if len(metaLines) == 0 {
 		return ""
 	}
@@ -65,6 +37,47 @@ func buildMetadataHeader(article *model.Article) string {
 		`padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;">
 ` + strings.Join(metaLines, "") + `
 </div>`
+}
+
+func buildMetadataLines(article *model.Article) []string {
+	var metaLines []string
+
+	sourceInfo := buildSourceInfo(article)
+	if sourceInfo != "" {
+		line := consts.HTMLTagStrongStart + "Source:" + sourceInfo
+		line += consts.HTMLTagStrongEnd + consts.HTMLTagPEnd
+		metaLines = append(metaLines, line)
+	}
+
+	if article.ReadingTimeMinutes > 0 {
+		metaLines = append(metaLines, consts.HTMLTagStrongStart+"Reading time:"+
+			strconv.Itoa(article.ReadingTimeMinutes)+" min"+consts.HTMLTagStrongEnd+consts.HTMLTagPEnd)
+	}
+
+	if article.PublishedAt != nil && !article.PublishedAt.IsZero() {
+		metaLines = append(metaLines, consts.HTMLTagStrongStart+"Published:"+
+			article.PublishedAt.Format(time.RFC3339)+consts.HTMLTagStrongEnd+consts.HTMLTagPEnd)
+	}
+
+	if !article.CreatedAt.IsZero() {
+		metaLines = append(metaLines, consts.HTMLTagStrongStart+"Added:"+
+			article.CreatedAt.Format(time.RFC3339)+consts.HTMLTagStrongEnd+consts.HTMLTagPEnd)
+	}
+
+	return metaLines
+}
+
+func buildSourceInfo(article *model.Article) string {
+	if article.SiteName == "" && article.SourceDomain == "" {
+		return ""
+	}
+	if article.SiteName != "" && article.SourceDomain != "" {
+		return article.SiteName + " (" + article.SourceDomain + ")"
+	}
+	if article.SiteName != "" {
+		return article.SiteName
+	}
+	return article.SourceDomain
 }
 
 // Generate creates an EPUB file from the given article and returns its bytes.

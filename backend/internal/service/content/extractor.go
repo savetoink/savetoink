@@ -165,12 +165,12 @@ func extractTitleFromHTML(htmlBytes []byte) string {
 // portion when the title extraction fails and we fall back to parsing the
 // <title> tag directly.
 func cleanTitle(fullTitle string) string {
-	parts := strings.Split(fullTitle, " - ")
-	if len(parts) < 2 { //nolint:mnd // Need at least 2 parts: article title and site name
+	parts := strings.Split(fullTitle, consts.TitleSeparator)
+	if len(parts) < consts.MinTitleParts {
 		return ""
 	}
 
-	articleTitle := strings.Join(parts[:len(parts)-1], " - ")
+	articleTitle := strings.Join(parts[:len(parts)-1], consts.TitleSeparator)
 	articleTitle = strings.TrimSpace(articleTitle)
 
 	if articleTitle == "" {
@@ -189,13 +189,12 @@ func toTimePtr(t time.Time) *time.Time {
 
 func stripHTML(s string) string {
 	re := strings.NewReplacer(
-		"<p>", " ",
-		"</p>", " ",
-		"<div>", " ",
-		"</div>", " ",
-		"<br>", " ",
-		"<br/>", " ",
-		"<br />", " ",
+		consts.HTMLTagP, " ",
+		consts.HTMLTagPEnd, " ",
+		consts.HTMLTagDiv, " ",
+		consts.HTMLTagDivEnd, " ",
+		consts.HTMLTagBr, " ",
+		consts.HTMLTagBrSelfClosing, " ",
 	)
 
 	result := re.Replace(s)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/shaftoe/savetoink/backend/internal/consts"
 	"github.com/shaftoe/savetoink/backend/internal/logging"
 )
 
@@ -56,7 +57,7 @@ func requestIDMiddleware(next http.Handler) http.Handler {
 }
 
 func generateRequestID() string {
-	return strings.ReplaceAll(time.Now().Format("20060102-150405.000"), ".", "")
+	return strings.ReplaceAll(time.Now().Format(consts.RequestIDFormat), ".", "")
 }
 
 func jsonContentTypeMiddleware(next http.Handler) http.Handler {
