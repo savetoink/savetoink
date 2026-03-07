@@ -1,7 +1,9 @@
-# Run linter
-[working-directory('backend')]
+# Run linters
 lint:
-    golangci-lint run
+    golangci-lint run cli/... backend/...
+
+lint-go:
+    golangci-lint run backend/... cli/...
 
 test-go: test-go-backend test-go-cli
 

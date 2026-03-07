@@ -86,8 +86,6 @@ func runCLI(t *testing.T, args ...string) (stdout, stderr string, err error) {
 // -----------------------------------------------------------------
 // Helpers for EPUB inspection.
 // -----------------------------------------------------------------.
-//
-//nolint:gocyclo // Complexity is due to proper error handling in test helper
 func compareEpubs(t *testing.T, path1, path2 string) bool {
 	t.Helper()
 	r1, openErr1 := zip.OpenReader(path1)

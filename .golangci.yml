@@ -106,3 +106,4 @@ linters:
         linters:
           - funlen
           - gocognit
+          - gocyclo
