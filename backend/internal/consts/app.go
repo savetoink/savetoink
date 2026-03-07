@@ -5,7 +5,7 @@ import "time"
 
 var version = "0.0.0"
 
-// Version returns the current version of the savetoink application, to be overridden by the build process.
+// Version returns the current version of the savetoink application.
 func Version() *string {
 	return &version
 }

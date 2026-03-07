@@ -205,6 +205,24 @@ async function main(): Promise<void> {
   await fs.writeFile(versionFilePath, newVersionStr + "\n");
   console.log("✅ Updated VERSION file");
 
+  const goAppPath = path.join(repoRoot, "backend", "internal", "consts", "app.go");
+  try {
+    const goContent = await fs.readFile(goAppPath, "utf-8");
+    const newGoContent = goContent.replace(
+      /var version = ".*"/,
+      `var version = "${newVersionStr}"`,
+    );
+    if (goContent !== newGoContent) {
+      await fs.writeFile(goAppPath, newGoContent);
+      console.log(`✅ ${path.relative(repoRoot, goAppPath)} (version updated)`);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(
+      `⚠️  Could not update ${path.relative(repoRoot, goAppPath)}: ${message}`,
+    );
+  }
+
   let updatedCount = 0;
 
   for (const filePath of packageJsonFiles) {
@@ -260,7 +278,7 @@ async function main(): Promise<void> {
 
   console.log(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Done! Updated VERSION, ${packageCount} package.json files, and ${updatedCount - packageCount} bun.lock workspace versions
+ Done! Updated VERSION, Go version constant, ${packageCount} package.json files, and ${updatedCount - packageCount} bun.lock workspace versions
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
 }
