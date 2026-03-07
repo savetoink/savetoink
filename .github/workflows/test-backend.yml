@@ -1,4 +1,4 @@
-name: Run backend tests and upload coverage
+name: Tests and upload coverage
 
 on:
   workflow_call:
@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   test:
-    name: Run tests and collect coverage
+    name: Run backend tests and collect coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
