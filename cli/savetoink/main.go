@@ -11,18 +11,18 @@ import (
 
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
-	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/service"
-	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/spf13/cobra"
 )
 
-const defaultTimeoutSeconds = 30
+const (
+	defaultTimeoutSeconds = 30
+	defaultFilePerms      = 0o600
+)
 
 var (
 	outputPath string
 	timeout    time.Duration
-	verbose    bool
 
 	sendEmail bool
 	destEmail string
@@ -76,62 +76,48 @@ func runConvert(_ *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	fmt.Printf("Fetching article from: %s\n", url)
+	fmt.Printf("Processing article from: %s\n", url)
 
 	svc := service.NewFromConfig(cfg)
 
 	start := time.Now()
-	result, err := svc.Process(ctx, url)
+
+	htmlBytes, err := svc.Fetch(ctx, url)
 	if err != nil {
-		return fmt.Errorf("failed to process article: %w", err)
+		return fmt.Errorf("failed to fetch article: %w", err)
 	}
+
+	epubData, err := svc.Extract(ctx, htmlBytes)
+	if err != nil {
+		return fmt.Errorf("failed to extract article: %w", err)
+	}
+
 	fmt.Printf("Processed in %v\n", time.Since(start))
 
-	printVerboseOutput(result)
-
-	var resp *email.SendEmailResponse
 	if sendEmail {
-		resp, err = svc.SendArticle(ctx, result.Article(), "", destEmail)
-		if err != nil {
-			return fmt.Errorf("failed to send email: %w", err)
+		resp, emailErr := svc.SendArticle(ctx, destEmail, epubData)
+		if emailErr != nil {
+			return fmt.Errorf("failed to send email: %w", emailErr)
 		}
-	} else if outputPath != "" {
-		if writeErr := svc.WriteToFile(result, outputPath); writeErr != nil {
-			return fmt.Errorf("failed to write EPUB: %w", writeErr)
-		}
-	}
-
-	printResult(resp)
-
-	return nil
-}
-
-func printVerboseOutput(result *servicetypes.ProcessResult) {
-	if verbose {
-		fmt.Println("\n--- Extracted Content (HTML) ---")
-		fmt.Println(result.Article().Content)
-		fmt.Println("--- End of Extracted Content ---")
-		fmt.Println()
-	}
-}
-
-func printResult(resp *email.SendEmailResponse) {
-	if !sendEmail {
+		fmt.Printf("\n✓ Article sent to e-reader device (email ID: %s)\n", resp.MessageID)
+	} else {
 		if outputPath == "" {
 			outputPath = "article.epub"
 		}
+		if writeErr := os.WriteFile(outputPath, epubData, defaultFilePerms); writeErr != nil {
+			return fmt.Errorf("failed to write EPUB: %w", writeErr)
+		}
 		absPath, _ := filepath.Abs(outputPath)
 		fmt.Printf("\n✓ EPUB saved to: %s\n", absPath)
-	} else if resp != nil {
-		fmt.Printf("\n✓ Article sent to Kindle (email ID: %s)\n", resp.MessageID)
 	}
+
+	return nil
 }
 
 func main() {
 	convertCmd.Flags().StringVarP(&outputPath, "output", "o", "article.epub", "Output file path")
 	convertCmd.Flags().DurationVarP(&timeout, "timeout", "t",
 		defaultTimeoutSeconds*time.Second, "Timeout for HTTP requests")
-	convertCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show extracted HTML content")
 
 	convertCmd.Flags().BoolVar(&sendEmail, "send", false, "Send EPUB to Kindle via email instead of saving locally")
 	convertCmd.Flags().StringVar(&destEmail, "dest-email", "", "Destination Kindle email address")

@@ -31,6 +31,12 @@ func NewExtractor() *Extractor {
 	}
 }
 
+// Fetch fetches HTML content from a URL.
+func (e *Extractor) Fetch(ctx context.Context, urlStr string) (io.ReadCloser, error) {
+	_, body, err := e.fetchURL(ctx, urlStr)
+	return body, err
+}
+
 // ExtractFromURL fetches and extracts article content from given URL.
 func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.Article, error) {
 	parsedURL, body, err := e.fetchURL(ctx, urlStr)
@@ -46,6 +52,36 @@ func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.A
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	opts := trafilatura.Options{
+		OriginalURL:    parsedURL,
+		EnableFallback: true,
+		Config: &trafilatura.Config{
+			MinExtractedSize: consts.MinimumExtractedSize,
+			MinOutputSize:    consts.MinimumOutputSize,
+		},
+	}
+
+	result, err := trafilatura.Extract(strings.NewReader(string(htmlBytes)), opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract article content: %w", err)
+	}
+
+	if result.ContentNode == nil {
+		return nil, errors.New("no content extracted")
+	}
+
+	article := e.buildArticle(result, htmlBytes)
+	return article, nil
+}
+
+// ExtractFromReader extracts article content from HTML reader.
+func (e *Extractor) ExtractFromReader(_ context.Context, htmlReader io.Reader) (*model.Article, error) {
+	htmlBytes, err := io.ReadAll(htmlReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read html: %w", err)
+	}
+
+	parsedURL, _ := url.Parse("https://example.com")
 	opts := trafilatura.Options{
 		OriginalURL:    parsedURL,
 		EnableFallback: true,

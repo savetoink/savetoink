@@ -9,6 +9,7 @@ import (
 
 	mailjetLib "github.com/mailjet/mailjet-apiv3-go/v4"
 
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
 )
 
@@ -53,8 +54,14 @@ func (s *Sender) SendEmail(ctx context.Context, req *email.Request) (*email.Send
 }
 
 func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV31 {
-	filename := email.GenerateFilename(req.Article)
-	subject := email.BuildSubject(req.Article.Title)
+	filename := "article.epub"
+	if req.Subject != "" {
+		filename = req.Subject + ".epub"
+	}
+	subject := req.Subject
+	if subject == "" {
+		subject = consts.DefaultEmailSubject
+	}
 	bodyText := req.Body
 
 	base64Content := base64.StdEncoding.EncodeToString(req.EPUBData)
@@ -129,9 +136,6 @@ func (s *Sender) validateRequest(req *email.Request) error {
 	}
 	if len(req.EPUBData) == 0 {
 		return errors.New("epub data is empty")
-	}
-	if req.Article == nil {
-		return errors.New("article is required")
 	}
 	if req.Body == "" {
 		return errors.New("email body is required")

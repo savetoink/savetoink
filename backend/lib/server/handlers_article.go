@@ -183,7 +183,25 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	logging.AddLogAttr(r.Context(), slog.String("article_title", article.Title))
 
-	emailResp, err := h.service.SendArticle(r.Context(), article, accountID, "")
+	epubBytes, err := h.service.GenerateEPUB(article)
+	if err != nil {
+		handleServiceError(w, r, err, "generate epub")
+		return
+	}
+
+	deviceEmail, _, getErr := h.service.GetUserDeviceEmail(r.Context(), accountID)
+	if getErr != nil {
+		handleServiceError(w, r, getErr, "get user device email")
+		return
+	}
+	if deviceEmail == "" {
+		writeJSONError(w, http.StatusBadRequest, errors.New("user device email not configured"))
+		return
+	}
+
+	logging.AddLogAttr(r.Context(), slog.String("destination_email", deviceEmail))
+
+	emailResp, err := h.service.SendArticle(r.Context(), deviceEmail, epubBytes)
 	if err != nil {
 		handleServiceError(w, r, err, "send article")
 		return
@@ -195,11 +213,6 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	if emailResp != nil {
 		logging.AddLogAttr(r.Context(), slog.String("message_id", emailResp.MessageID))
-	}
-
-	deviceEmail, _, getErr := h.service.GetUserDeviceEmail(r.Context(), accountID)
-	if getErr == nil && deviceEmail != "" {
-		logging.AddLogAttr(r.Context(), slog.String("destination_email", deviceEmail))
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -31,18 +31,22 @@ type webhookMockService struct {
 	getAccountIDByDeviceEmailErr error
 }
 
-func (m *webhookMockService) Process(_ context.Context, _ string) (*servicetypes.ProcessResult, error) {
+func (m *webhookMockService) Fetch(_ context.Context, _ string) ([]byte, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *webhookMockService) Extract(_ context.Context, _ []byte) ([]byte, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *webhookMockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
 	return nil, errors.New("not implemented")
 }
 
 func (m *webhookMockService) SendArticle(
-	_ context.Context, _ *model.Article, _, _ string,
+	_ context.Context, _ string, _ []byte,
 ) (*email.SendEmailResponse, error) {
 	return nil, errors.New("not implemented")
-}
-
-func (m *webhookMockService) WriteToFile(_ *servicetypes.ProcessResult, _ string) error {
-	return errors.New("not implemented")
 }
 
 func (m *webhookMockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {

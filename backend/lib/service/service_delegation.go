@@ -1,8 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/lib/consts"
@@ -11,21 +13,64 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )
 
-// Process delegates to ArticleProcessingService.
-func (s *Service) Process(ctx context.Context, url string) (*servicetypes.ProcessResult, error) {
-	result, err := s.processor.Process(ctx, url)
+// Fetch fetches HTML content from a URL.
+func (s *Service) Fetch(ctx context.Context, url string) ([]byte, error) {
+	htmlReader, err := s.processor.Fetch(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to process article: %w", err)
+		return nil, fmt.Errorf("failed to fetch url: %w", err)
 	}
-	return result, nil
+	defer func() {
+		_ = htmlReader.Close()
+	}()
+
+	htmlBytes, err := io.ReadAll(htmlReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read html: %w", err)
+	}
+
+	return htmlBytes, nil
 }
 
-// WriteToFile delegates to ArticleProcessingService.
-func (s *Service) WriteToFile(result *servicetypes.ProcessResult, outputPath string) error {
-	if err := s.processor.WriteToFile(result, outputPath); err != nil {
-		return fmt.Errorf("failed to write to file: %w", err)
+// Extract converts HTML to EPUB format.
+func (s *Service) Extract(ctx context.Context, htmlBytes []byte) ([]byte, error) {
+	article, err := s.processor.Extract(ctx, bytes.NewReader(htmlBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract: %w", err)
 	}
-	return nil
+
+	epubData, err := s.processor.Generator.Generate(article)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate epub: %w", err)
+	}
+
+	return epubData, nil
+}
+
+// GenerateEPUB generates an EPUB from an existing article.
+func (s *Service) GenerateEPUB(article *model.Article) ([]byte, error) {
+	epubData, err := s.processor.Generator.Generate(article)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate epub: %w", err)
+	}
+	return epubData, nil
+}
+
+// SendArticle sends an EPUB via email.
+func (s *Service) SendArticle(
+	ctx context.Context,
+	destEmail string,
+	epubBytes []byte,
+) (*email.SendEmailResponse, error) {
+	req := &email.Request{
+		EPUBData:  epubBytes,
+		DestEmail: destEmail,
+		Body:      consts.BuildCLIEmailBody(),
+	}
+	resp, err := s.sender.SendEmail(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send email: %w", err)
+	}
+	return resp, nil
 }
 
 // CreateArticle delegates to ArticleService.
@@ -91,21 +136,6 @@ func (s *Service) ToggleFavorite(ctx context.Context, accountID, articleID strin
 		return false, fmt.Errorf("failed to toggle favorite: %w", err)
 	}
 	return favorite, nil
-}
-
-// SendArticle delegates to ArticleService.
-func (s *Service) SendArticle(
-	ctx context.Context,
-	article *model.Article,
-	accountID string,
-	destEmail string,
-) (*email.SendEmailResponse, error) {
-	cliMode := s.cfg.Mode == consts.ModeCLI
-	resp, err := s.articles.SendArticle(ctx, article, accountID, destEmail, cliMode)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send article: %w", err)
-	}
-	return resp, nil
 }
 
 // CountSendsByAccountDateRange delegates to ArticleService.

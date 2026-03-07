@@ -18,34 +18,3 @@ type GetArticlesResult struct {
 type DeleteArticleResult struct {
 	Deleted int
 }
-
-// ProcessResult holds the result of processing an article.
-type ProcessResult struct {
-	article  *model.Article
-	epubData []byte
-	url      string
-}
-
-// Article returns the extracted article.
-func (r *ProcessResult) Article() *model.Article {
-	return r.article
-}
-
-// EPUBData returns the generated EPUB data.
-func (r *ProcessResult) EPUBData() []byte {
-	return r.epubData
-}
-
-// URL returns the URL that was processed.
-func (r *ProcessResult) URL() string {
-	return r.url
-}
-
-// NewProcessResult creates a new ProcessResult for testing purposes.
-func NewProcessResult(article *model.Article, epubData []byte, url string) *ProcessResult {
-	return &ProcessResult{
-		article:  article,
-		epubData: epubData,
-		url:      url,
-	}
-}

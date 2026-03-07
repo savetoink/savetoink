@@ -28,14 +28,14 @@ import (
 
 // Interface defines the contract for service operations.
 type Interface interface {
-	Process(ctx context.Context, url string) (*servicetypes.ProcessResult, error)
+	Fetch(ctx context.Context, url string) ([]byte, error)
+	Extract(ctx context.Context, htmlBytes []byte) ([]byte, error)
+	GenerateEPUB(article *model.Article) ([]byte, error)
 	SendArticle(
 		ctx context.Context,
-		article *model.Article,
-		accountID string,
 		destEmail string,
+		epubBytes []byte,
 	) (*email.SendEmailResponse, error)
-	WriteToFile(result *servicetypes.ProcessResult, outputPath string) error
 	CreateArticle(ctx context.Context, rawURL, accountID string) (*model.Article, error)
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
 	GetArticlesMetadata(
@@ -48,7 +48,7 @@ type Interface interface {
 	SetUserDeviceEmailWithAutoSend(ctx context.Context, accountID, deviceEmail string, autoSend bool) error
 	DeleteUserDeviceEmail(ctx context.Context, accountID string) error
 	GetUserProfile(ctx context.Context, accountID string) (*model.UserProfile, error)
-	SetUserEmail(ctx context.Context, accountID string, email string) error
+	SetUserEmail(ctx context.Context, accountID, email string) error
 	DeleteUserProfile(ctx context.Context, accountID string) error
 	ToggleFavorite(ctx context.Context, accountID string, articleID string) (bool, error)
 	CountSendsByAccountDateRange(ctx context.Context, accountID string, startDate, endDate time.Time) (int, error)

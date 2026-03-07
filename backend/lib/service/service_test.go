@@ -9,7 +9,6 @@ import (
 	awstypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
-	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )
 
 type MockRepository struct {
@@ -388,19 +387,7 @@ func TestDeleteAllArticles_NoRepo(t *testing.T) {
 func TestWriteToFile_NilResult(t *testing.T) {
 	svc := New(&Dependencies{})
 
-	err := svc.WriteToFile(nil, "/tmp/test.epub")
-
-	if err == nil {
-		t.Error("expected error for nil result, got nil")
-	}
-}
-
-func TestWriteToFile_NilArticle(t *testing.T) {
-	svc := New(&Dependencies{})
-
-	result := servicetypes.NewProcessResult(nil, []byte("test"), "https://example.com")
-
-	err := svc.WriteToFile(result, "/tmp/test.epub")
+	err := svc.processor.WriteToFile(nil, "/tmp/test.epub")
 
 	if err == nil {
 		t.Error("expected error for nil article, got nil")
@@ -413,9 +400,7 @@ func TestWriteToFile_EmptyPath(t *testing.T) {
 	article := &model.Article{
 		Title: "Test Article",
 	}
-	result := servicetypes.NewProcessResult(article, []byte("test"), "https://example.com")
-
-	err := svc.WriteToFile(result, "")
+	err := svc.processor.WriteToFile(article, "")
 
 	if err == nil {
 		t.Error("expected error for empty path, got nil")

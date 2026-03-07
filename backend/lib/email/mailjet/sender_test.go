@@ -8,12 +8,13 @@ import (
 
 	mailjetLib "github.com/mailjet/mailjet-apiv3-go/v4"
 
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
-	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
 const (
 	attachmentContentType = "application/epub+zip"
+	defaultFilename       = "article.epub"
 )
 
 func TestNewSender(t *testing.T) {
@@ -91,62 +92,50 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name: "valid request",
 			req: &email.Request{
-				Article: &model.Article{
-					Title: "Test Article",
-				},
 				EPUBData:  []byte("test epub data"),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
+				Subject:   "Test Subject",
 			},
 			wantErr: false,
 		},
 		{
 			name: "missing device email",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  []byte("data"),
 				DestEmail: "",
 				Body:      "email body",
+				Subject:   "Test Subject",
 			},
 			wantErr: true,
 		},
 		{
 			name: "missing epub data",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  nil,
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
-			},
-			wantErr: true,
-		},
-		{
-			name: "missing article",
-			req: &email.Request{
-				Article:   nil,
-				EPUBData:  []byte("data"),
-				DestEmail: "kindle@kindle.com",
-				Body:      "email body",
+				Subject:   "Test Subject",
 			},
 			wantErr: true,
 		},
 		{
 			name: "missing body",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  []byte("data"),
 				DestEmail: "kindle@kindle.com",
 				Body:      "",
+				Subject:   "Test Subject",
 			},
 			wantErr: true,
 		},
 		{
 			name: "empty epub data",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  []byte{},
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
+				Subject:   "Test Subject",
 			},
 			wantErr: true,
 		},
@@ -160,34 +149,6 @@ func TestValidateRequest(t *testing.T) {
 				t.Errorf("validateRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
-	}
-}
-
-func TestValidateRequest_EmptyArticleTitle(t *testing.T) {
-	sender := NewSender("key", "secret", "test@example.com")
-	req := &email.Request{
-		Article:   &model.Article{Title: ""},
-		EPUBData:  []byte("data"),
-		DestEmail: "kindle@kindle.com",
-		Body:      "email body",
-	}
-	err := sender.validateRequest(req)
-	if err != nil {
-		t.Errorf("validateRequest() unexpected error = %v", err)
-	}
-}
-
-func TestValidateRequest_NonEmptyArticleTitle(t *testing.T) {
-	sender := NewSender("key", "secret", "test@example.com")
-	req := &email.Request{
-		Article:   &model.Article{Title: "Test Article"},
-		EPUBData:  []byte("data"),
-		DestEmail: "kindle@kindle.com",
-		Body:      "email body",
-	}
-	err := sender.validateRequest(req)
-	if err != nil {
-		t.Errorf("validateRequest() unexpected error = %v", err)
 	}
 }
 
@@ -207,10 +168,10 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "secret",
 			senderEmail: "test@example.com",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  []byte("data"),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
+				Subject:   "Test Subject",
 			},
 			wantErr:    true,
 			expectResp: nil,
@@ -221,10 +182,10 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "",
 			senderEmail: "test@example.com",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  []byte("data"),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
+				Subject:   "Test Subject",
 			},
 			wantErr:    true,
 			expectResp: nil,
@@ -235,10 +196,10 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "secret",
 			senderEmail: "",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  []byte("data"),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
+				Subject:   "Test Subject",
 			},
 			wantErr:    true,
 			expectResp: nil,
@@ -249,10 +210,10 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "secret",
 			senderEmail: "test@example.com",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  []byte("data"),
 				DestEmail: "",
 				Body:      "email body",
+				Subject:   "Test Subject",
 			},
 			wantErr:    true,
 			expectResp: nil,
@@ -263,24 +224,10 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "secret",
 			senderEmail: "test@example.com",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  nil,
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
-			},
-			wantErr:    true,
-			expectResp: nil,
-		},
-		{
-			name:        "missing article in request",
-			apiKey:      "key",
-			apiSecret:   "secret",
-			senderEmail: "test@example.com",
-			req: &email.Request{
-				Article:   nil,
-				EPUBData:  []byte("data"),
-				DestEmail: "kindle@kindle.com",
-				Body:      "email body",
+				Subject:   "Test Subject",
 			},
 			wantErr:    true,
 			expectResp: nil,
@@ -291,10 +238,10 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "secret",
 			senderEmail: "test@example.com",
 			req: &email.Request{
-				Article:   &model.Article{Title: "Test"},
 				EPUBData:  []byte("data"),
 				DestEmail: "kindle@kindle.com",
 				Body:      "",
+				Subject:   "Test Subject",
 			},
 			wantErr:    true,
 			expectResp: nil,
@@ -343,36 +290,20 @@ func TestBuildMessageInfo(t *testing.T) {
 		{
 			name: "valid request builds correct message info",
 			req: &email.Request{
-				Article: &model.Article{
-					Title: "Test Article",
-				},
 				EPUBData:  []byte("test epub data"),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
+				Subject:   "Test Article",
 			},
 			senderEmail: "test@example.com",
 		},
 		{
-			name: "request with empty title",
+			name: "request with empty subject",
 			req: &email.Request{
-				Article: &model.Article{
-					Title: "",
-				},
 				EPUBData:  []byte("data"),
 				DestEmail: "user@kindle.com",
 				Body:      "body",
-			},
-			senderEmail: "test@example.com",
-		},
-		{
-			name: "request with special characters in title",
-			req: &email.Request{
-				Article: &model.Article{
-					Title: "Test: What's New?",
-				},
-				EPUBData:  []byte("data"),
-				DestEmail: "user@kindle.com",
-				Body:      "body",
+				Subject:   "",
 			},
 			senderEmail: "test@example.com",
 		},
@@ -404,7 +335,10 @@ func TestBuildMessageInfo(t *testing.T) {
 				t.Errorf("buildMessageInfo() To[0].Email = %v, want %v", (*msg.To)[0].Email, tt.req.DestEmail)
 			}
 
-			expectedSubject := email.BuildSubject(tt.req.Article.Title)
+			expectedSubject := tt.req.Subject
+			if expectedSubject == "" {
+				expectedSubject = consts.DefaultEmailSubject
+			}
 			if msg.Subject != expectedSubject {
 				t.Errorf("buildMessageInfo() Subject = %v, want %v", msg.Subject, expectedSubject)
 			}
@@ -424,7 +358,10 @@ func TestBuildMessageInfo(t *testing.T) {
 					t.Errorf("buildMessageInfo() Attachment.ContentType = %v, want %v", att.ContentType, attachmentContentType)
 				}
 
-				expectedFilename := email.GenerateFilename(tt.req.Article)
+				expectedFilename := defaultFilename
+				if tt.req.Subject != "" {
+					expectedFilename = tt.req.Subject + ".epub"
+				}
 				if att.Filename != expectedFilename {
 					t.Errorf("buildMessageInfo() Attachment.Filename = %v, want %v", att.Filename, expectedFilename)
 				}
@@ -440,12 +377,10 @@ func TestBuildMessageInfo(t *testing.T) {
 func TestBuildMessageInfo_LongTitle(t *testing.T) {
 	longTitle := strings.Repeat("a", 150)
 	req := &email.Request{
-		Article: &model.Article{
-			Title: longTitle,
-		},
 		EPUBData:  []byte("data"),
 		DestEmail: "user@kindle.com",
 		Body:      "body",
+		Subject:   longTitle,
 	}
 	sender := NewSender("key", "secret", "test@example.com")
 	messages := sender.buildMessageInfo(req)
@@ -455,20 +390,18 @@ func TestBuildMessageInfo_LongTitle(t *testing.T) {
 	}
 
 	msg := messages[0]
-	expectedSubject := email.BuildSubject(longTitle)
-	if msg.Subject != expectedSubject {
-		t.Errorf("buildMessageInfo() Subject = %v, want %v", msg.Subject, expectedSubject)
+	if msg.Subject != longTitle {
+		t.Errorf("buildMessageInfo() Subject = %v, want %v", msg.Subject, longTitle)
 	}
 }
 
 func TestBuildMessageInfo_UnicodeTitle(t *testing.T) {
+	title := "Test article"
 	req := &email.Request{
-		Article: &model.Article{
-			Title: "こんにちは世界 - 你好世界",
-		},
 		EPUBData:  []byte("data"),
 		DestEmail: "user@kindle.com",
 		Body:      "body",
+		Subject:   title,
 	}
 	sender := NewSender("key", "secret", "test@example.com")
 	messages := sender.buildMessageInfo(req)
@@ -478,9 +411,8 @@ func TestBuildMessageInfo_UnicodeTitle(t *testing.T) {
 	}
 
 	msg := messages[0]
-	expectedSubject := email.BuildSubject(req.Article.Title)
-	if msg.Subject != expectedSubject {
-		t.Errorf("buildMessageInfo() Subject = %v, want %v", msg.Subject, expectedSubject)
+	if msg.Subject != title {
+		t.Errorf("buildMessageInfo() Subject = %v, want %v", msg.Subject, title)
 	}
 
 	switch {
@@ -490,7 +422,7 @@ func TestBuildMessageInfo_UnicodeTitle(t *testing.T) {
 		t.Fatal("buildMessageInfo() should have exactly one attachment")
 	default:
 		att := (*msg.Attachments)[0]
-		expectedFilename := email.GenerateFilename(req.Article)
+		expectedFilename := title + ".epub"
 		if att.Filename != expectedFilename {
 			t.Errorf("buildMessageInfo() Attachment.Filename = %v, want %v", att.Filename, expectedFilename)
 		}
@@ -515,12 +447,10 @@ func TestBuildMessageInfo_VaryingEPUBSizes(t *testing.T) {
 			}
 
 			req := &email.Request{
-				Article: &model.Article{
-					Title: "Test Article",
-				},
 				EPUBData:  epubData,
 				DestEmail: "user@kindle.com",
 				Body:      "body",
+				Subject:   "Test Article",
 			}
 			sender := NewSender("key", "secret", "test@example.com")
 			messages := sender.buildMessageInfo(req)
@@ -555,12 +485,10 @@ func TestBuildMessageInfo_VaryingEPUBSizes(t *testing.T) {
 
 func TestBuildMessageInfo_BodyWithNewlines(t *testing.T) {
 	req := &email.Request{
-		Article: &model.Article{
-			Title: "Test Article",
-		},
 		EPUBData:  []byte("data"),
 		DestEmail: "user@kindle.com",
 		Body:      "Line 1\nLine 2\nLine 3",
+		Subject:   "Test Article",
 	}
 	sender := NewSender("key", "secret", "test@example.com")
 	messages := sender.buildMessageInfo(req)
@@ -589,12 +517,10 @@ func TestBuildMessageInfo_SenderEmailVariations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := &email.Request{
-				Article: &model.Article{
-					Title: "Test Article",
-				},
 				EPUBData:  []byte("data"),
 				DestEmail: "user@kindle.com",
 				Body:      "body",
+				Subject:   "Test Article",
 			}
 			sender := NewSender("key", "secret", tt.senderEmail)
 			messages := sender.buildMessageInfo(req)
@@ -625,12 +551,10 @@ func TestBuildMessageInfo_DestEmailVariations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := &email.Request{
-				Article: &model.Article{
-					Title: "Test Article",
-				},
 				EPUBData:  []byte("data"),
 				DestEmail: tt.destEmail,
 				Body:      "body",
+				Subject:   "Test Article",
 			}
 			sender := NewSender("key", "secret", "test@example.com")
 			messages := sender.buildMessageInfo(req)
@@ -647,60 +571,6 @@ func TestBuildMessageInfo_DestEmailVariations(t *testing.T) {
 				t.Fatalf("buildMessageInfo() should have exactly one recipient")
 			case (*msg.To)[0].Email != tt.destEmail:
 				t.Errorf("buildMessageInfo() To[0].Email = %v, want %v", (*msg.To)[0].Email, tt.destEmail)
-			}
-		})
-	}
-}
-
-func TestBuildMessageInfo_TitleVariations(t *testing.T) {
-	tests := []struct {
-		name  string
-		title string
-	}{
-		{"whitespace: leading", "  Test Title"},
-		{"whitespace: trailing", "Test Title  "},
-		{"whitespace: both", "  Test Title  "},
-		{"whitespace: only", "   "},
-		{"special: only chars", "!!!@@@###"},
-		{"special: after sanitization", "---article---"},
-		{"special: mixed alphanumeric", "Test@Article#123"},
-		{"special: emojis", "Article 📚 ✨"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := &email.Request{
-				Article: &model.Article{
-					Title: tt.title,
-				},
-				EPUBData:  []byte("data"),
-				DestEmail: "user@kindle.com",
-				Body:      "body",
-			}
-			sender := NewSender("key", "secret", "test@example.com")
-			messages := sender.buildMessageInfo(req)
-
-			if len(messages) != 1 {
-				t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
-			}
-
-			msg := messages[0]
-			expectedSubject := email.BuildSubject(tt.title)
-			if msg.Subject != expectedSubject {
-				t.Errorf("buildMessageInfo() Subject = %v, want %v", msg.Subject, expectedSubject)
-			}
-
-			switch {
-			case msg.Attachments == nil:
-				t.Fatal("buildMessageInfo() should have exactly one attachment")
-			case len(*msg.Attachments) != 1:
-				t.Fatal("buildMessageInfo() should have exactly one attachment")
-			default:
-				att := (*msg.Attachments)[0]
-				expectedFilename := email.GenerateFilename(req.Article)
-				if att.Filename != expectedFilename {
-					t.Errorf("buildMessageInfo() Attachment.Filename = %v, want %v", att.Filename, expectedFilename)
-				}
 			}
 		})
 	}

@@ -134,6 +134,7 @@ func TestEmail_Constants(t *testing.T) {
 		{"EmailBackendMailjet", string(EmailBackendMailjet), "mailjet"},
 		{"MailSubjectPrefix", MailSubjectPrefix, "[Save to Ink] "},
 		{"LandingURL", LandingURL, "https://www.saveto.ink"},
+		{"DefaultEmailSubject", DefaultEmailSubject, MailSubjectPrefix + "Article"},
 	}
 
 	for _, tt := range tests {

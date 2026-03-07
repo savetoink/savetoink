@@ -38,18 +38,22 @@ const (
 
 type mockService struct{}
 
-func (m *mockService) Process(_ context.Context, _ string) (*servicetypes.ProcessResult, error) {
+func (m *mockService) Fetch(_ context.Context, _ string) ([]byte, error) {
 	return nil, errors.New("not implemented in mock")
 }
 
-func (m *mockService) SendArticle(_ context.Context, _ *model.Article, _, _ string) (*email.SendEmailResponse, error) {
+func (m *mockService) Extract(_ context.Context, _ []byte) ([]byte, error) {
+	return nil, errors.New("not implemented in mock")
+}
+
+func (m *mockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
+	return []byte("epub data"), nil
+}
+
+func (m *mockService) SendArticle(_ context.Context, _ string, _ []byte) (*email.SendEmailResponse, error) {
 	return &email.SendEmailResponse{
 		MessageID: "test-message-id",
 	}, nil
-}
-
-func (m *mockService) WriteToFile(_ *servicetypes.ProcessResult, _ string) error {
-	return errors.New("not implemented in mock")
 }
 
 func (m *mockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {

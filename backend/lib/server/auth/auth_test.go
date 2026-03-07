@@ -31,15 +31,19 @@ type MockService struct {
 	accountIDByDeviceEmailErr error
 }
 
-func (m *MockService) Process(_ context.Context, _ string) (*servicetypes.ProcessResult, error) {
+func (m *MockService) Fetch(_ context.Context, _ string) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (m *MockService) SendArticle(_ context.Context, _ *model.Article, _, _ string) (*email.SendEmailResponse, error) {
+func (m *MockService) Extract(_ context.Context, _ []byte) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (m *MockService) WriteToFile(_ *servicetypes.ProcessResult, _ string) error {
+func (m *MockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
+	panic("not implemented")
+}
+
+func (m *MockService) SendArticle(_ context.Context, _ string, _ []byte) (*email.SendEmailResponse, error) {
 	panic("not implemented")
 }
 

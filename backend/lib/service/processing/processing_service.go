@@ -5,10 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 
+	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/epub"
-	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )
 
 // ArticleProcessingService handles article extraction and EPUB generation.
@@ -25,40 +26,35 @@ func New(extractor *content.Extractor, generator *epub.Generator) *ArticleProces
 	}
 }
 
-// Process extracts an article from a URL and generates an EPUB.
-func (s *ArticleProcessingService) Process(ctx context.Context, url string) (*servicetypes.ProcessResult, error) {
-	article, err := s.extractor.ExtractFromURL(ctx, url)
+// Fetch fetches HTML content from a URL.
+func (s *ArticleProcessingService) Fetch(ctx context.Context, url string) (io.ReadCloser, error) {
+	reader, err := s.extractor.Fetch(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract article: %w", err)
+		return nil, fmt.Errorf("failed to fetch url: %w", err)
 	}
-
-	if article.Title == "" {
-		article.Title = "Untitled"
-	}
-
-	epubData, err := s.Generator.Generate(article)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate EPUB: %w", err)
-	}
-
-	return servicetypes.NewProcessResult(article, epubData, url), nil
+	return reader, nil
 }
 
-// WriteToFile writes the processed article as an EPUB file to disk.
-func (s *ArticleProcessingService) WriteToFile(result *servicetypes.ProcessResult, outputPath string) error {
-	if result == nil {
-		return errors.New("result is nil, must call Process first")
+// Extract extracts an article from HTML content.
+func (s *ArticleProcessingService) Extract(ctx context.Context, htmlReader io.Reader) (*model.Article, error) {
+	article, err := s.extractor.ExtractFromReader(ctx, htmlReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract from reader: %w", err)
 	}
+	return article, nil
+}
 
-	if result.Article() == nil {
-		return errors.New("article is nil, must call Process first")
+// WriteToFile writes an article as an EPUB file to disk.
+func (s *ArticleProcessingService) WriteToFile(article *model.Article, outputPath string) error {
+	if article == nil {
+		return errors.New("article is nil")
 	}
 
 	if outputPath == "" {
 		return errors.New("output path is empty")
 	}
 
-	err := s.Generator.GenerateAndWrite(result.Article(), outputPath)
+	err := s.Generator.GenerateAndWrite(article, outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to write EPUB document: %w", err)
 	}

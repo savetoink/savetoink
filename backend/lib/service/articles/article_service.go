@@ -69,7 +69,6 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 
 	eg, articlesChan := s.startBackgroundDBStore(ctx)
 
-	// store the pre-processing article metadata
 	article := &model.Article{
 		Account:   accountID,
 		ID:        articleID,
@@ -78,14 +77,23 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 	}
 	articlesChan <- article
 
-	result, err := s.processor.Process(ctx, cleanURL)
+	htmlReader, err := s.processor.Fetch(ctx, cleanURL)
 	if err != nil {
 		article.Error = err.Error()
 		articlesChan <- article
-		return nil, fmt.Errorf("failed to process article: %w", err)
+		return nil, fmt.Errorf("failed to fetch article: %w", err)
+	}
+	defer func() {
+		_ = htmlReader.Close()
+	}()
+
+	processedArticle, err := s.processor.Extract(ctx, htmlReader)
+	if err != nil {
+		article.Error = err.Error()
+		articlesChan <- article
+		return nil, fmt.Errorf("failed to extract article: %w", err)
 	}
 
-	processedArticle := result.Article()
 	if processedArticle == nil {
 		articleErr := errors.New("failed to process article: article is nil")
 		article.Error = articleErr.Error()
@@ -98,7 +106,6 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 			fmt.Errorf("input URL differs from processed URL: want %s, got %s", article.URL, processedArticle.URL))
 	}
 
-	// copy over pre-processing article fields, URL ignored because already set by the processor
 	processedArticle.Account = article.Account
 	processedArticle.ID = article.ID
 	processedArticle.CreatedAt = article.CreatedAt
@@ -264,16 +271,16 @@ func (s *ArticleService) sendArticleCLIMode(
 		return nil, fmt.Errorf("%w: destination email is required in CLI mode", apperrors.ErrInvalid)
 	}
 
-	result, processErr := s.processArticleToResult(article)
+	epubData, processErr := s.processArticleToResult(article)
 	if processErr != nil {
 		return nil, processErr
 	}
 
 	emailReq := &email.Request{
-		Article:   result.Article(),
-		EPUBData:  result.EPUBData(),
+		EPUBData:  epubData,
 		DestEmail: destEmail,
 		Body:      consts.BuildCLIEmailBody(),
+		Subject:   article.Title,
 	}
 
 	emailResp, sendErr := s.sender.SendEmail(ctx, emailReq)
@@ -297,16 +304,16 @@ func (s *ArticleService) sendArticleServerMode(
 		return nil, fmt.Errorf("%w: user email not configured", apperrors.ErrInvalid)
 	}
 
-	result, processErr := s.processArticleToResult(article)
+	epubData, processErr := s.processArticleToResult(article)
 	if processErr != nil {
 		return nil, processErr
 	}
 
 	emailReq := &email.Request{
-		Article:   result.Article(),
-		EPUBData:  result.EPUBData(),
+		EPUBData:  epubData,
 		DestEmail: destEmail,
 		Body:      consts.BuildEmailBody(s.cfg.AppURL),
+		Subject:   article.Title,
 	}
 
 	emailResp, sendErr, dbError := s.sendEmailAndCreateRecord(ctx, emailReq, accountID, article, destEmail)
@@ -455,12 +462,12 @@ func (s *ArticleService) updateSendRecordAndArticleOnSuccess(
 	return dbError
 }
 
-func (s *ArticleService) processArticleToResult(article *model.Article) (*servicetypes.ProcessResult, error) {
+func (s *ArticleService) processArticleToResult(article *model.Article) ([]byte, error) {
 	epubData, err := s.processor.Generator.Generate(article)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate EPUB: %w", err)
 	}
-	return servicetypes.NewProcessResult(article, epubData, article.URL), nil
+	return epubData, nil
 }
 
 // CountSendsByAccountDateRange counts the number of sends within a date range.
