@@ -1,0 +1,46 @@
+name: Run backend tests and upload coverage
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - backend/**
+      - go.mod
+      - go.sum
+      - infra/**
+  push:
+    paths:
+      - backend/**
+      - go.mod
+      - go.sum
+      - infra/**
+
+permissions:
+  id-token: write
+
+jobs:
+  test:
+    name: Run tests and collect coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+
+      - name: Set up Just
+        uses: extractions/setup-just@v3
+
+      - name: Run tests
+        run: just test-go-coverage
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          use_oidc: true

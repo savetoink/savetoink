@@ -3,9 +3,11 @@
 lint:
     golangci-lint run
 
-# Run tests (skip DynamoDB integration tests)
 test-go:
     go test ./... -short
+
+test-go-coverage:
+    go test -coverprofile=coverage.txt ./...
 
 # Run all tests
 test: test-go test-webapp test-extension test-website
