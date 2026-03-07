@@ -4,6 +4,7 @@ This repository contains the code for the savetoink application, composed of:
 
 - Golang API HTTP backend in [backend/cmd/http](backend/cmd/http).
   - Lambda function wrapper in [backend/cmd/lambda](backend/cmd/lambda).
+- Golang CLI tool in [cli/savetoink](cli/savetoink).
 - Frontend SvelteKit application in [frontend/webapp](frontend/webapp).
 - Browser WXT extension in [frontend/extension](frontend/extension).
 - Landing page Astro website in [frontend/website](frontend/website).
@@ -12,7 +13,8 @@ This repository contains the code for the savetoink application, composed of:
 ## Development Guidelines
 
 - APIs currently unstable so no need to keep any backward compatibility
-- **ALWAYS** run `just lint test` and fix issues before considering a change ready for user review.
+- **ALWAYS** add new (unit) tests for new features.
+- **ALWAYS** run `just check` and fix issues before considering a change ready for user review.
 - **NEVER** ignore linting errors via `//nolint` statements or similar tricks without prompting the user for permission.
 - prefer lowercase log and error messages
 

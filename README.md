@@ -59,7 +59,7 @@ savetoink convert https://example.com -v
 **Save to local file:**
 
 ```bash
-$ ./bin/savetoink convert https://golang.org/doc/effective_go.html -o effective_go.epub
+$ savetoink convert https://golang.org/doc/effective_go.html -o effective_go.epub
 Fetching article from: https://golang.org/doc/effective_go.html
 Extracted in 828ms
 Title: Effective Go
@@ -72,7 +72,7 @@ Generated in 7ms
 **Send to Kindle via email:**
 
 ```bash
-$ ./bin/savetoink convert https://golang.org/doc/effective_go.html --send
+$ savetoink convert https://golang.org/doc/effective_go.html --send
 Fetching article from: https://golang.org/doc/effective_go.html
 Extracted in 828ms
 Title: Effective Go
@@ -89,9 +89,9 @@ Email sent successfully. Message ID: 1234567890, UUID: abc123-def456-ghi789
 
 ### Prerequisites
 
-1. Install AWS CLI and configure credentials
 1. Install [Just command runner](https://just.systems/)
 1. Set required environment variables in `.env` (see [backend/lib/config/config.go](backend/lib/config/config.go) for details)
+1. Install AWS CLI and configure credentials (optional, only for AWS Lambda deployment)
 
 ### Frontend
 
