@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/lib/config"
@@ -57,6 +58,19 @@ func runConvert(_ *cobra.Command, args []string) error {
 	cfg, err := config.Load(consts.ModeCLI, nil)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
+	}
+
+	if sendEmail {
+		if cfg.EmailProvider != consts.EmailBackendMailjet {
+			return fmt.Errorf("missing or unsupported email provider: '%s'", cfg.EmailProvider)
+		}
+
+		var missing []string
+		cfg.ValidateEmailProviderConfigCli(&missing)
+
+		if len(missing) > 0 {
+			return fmt.Errorf("missing email provider config: %s", strings.Join(missing, ", "))
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)

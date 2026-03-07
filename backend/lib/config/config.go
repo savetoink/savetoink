@@ -210,15 +210,21 @@ func (c *Config) validateAuthBackendConfig(missing *[]string) error {
 }
 
 func (c *Config) validateEmailProviderConfig(missing *[]string) {
+	c.ValidateEmailProviderConfigCli(missing)
+	if c.EmailProvider == consts.EmailBackendMailjet {
+		if c.MailjetWebhookSecret == "" {
+			*missing = append(*missing, "SAVETOINK_MAILJET_WEBHOOK_SECRET")
+		}
+	}
+}
+
+func (c *Config) ValidateEmailProviderConfigCli(missing *[]string) {
 	if c.EmailProvider == consts.EmailBackendMailjet {
 		if c.MailjetAPIKey == "" {
 			*missing = append(*missing, "SAVETOINK_MAILJET_API_KEY")
 		}
 		if c.MailjetAPISecret == "" {
 			*missing = append(*missing, "SAVETOINK_MAILJET_API_SECRET")
-		}
-		if c.MailjetWebhookSecret == "" {
-			*missing = append(*missing, "SAVETOINK_MAILJET_WEBHOOK_SECRET")
 		}
 		if c.SenderEmail == "" {
 			*missing = append(*missing, "SAVETOINK_SENDER_EMAIL")
