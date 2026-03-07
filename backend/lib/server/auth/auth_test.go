@@ -701,3 +701,351 @@ func TestActiveSubscriptionMiddleware_DefaultBackend(t *testing.T) {
 		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 }
+
+func TestGetAuthError(t *testing.T) {
+	tests := []struct {
+		name     string
+		setupCtx func() context.Context
+		expected error
+	}{
+		{
+			name:     "auth error in context",
+			setupCtx: func() context.Context { return context.WithValue(context.Background(), authErrorKey, "test error") },
+			expected: errors.New("test error"),
+		},
+		{
+			name:     "no auth error in context",
+			setupCtx: context.Background,
+			expected: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := tt.setupCtx()
+			result := GetAuthError(ctx)
+			if !errors.Is(result, tt.expected) && result != nil && tt.expected != nil && result.Error() != tt.expected.Error() {
+				t.Errorf("expected %v, got %v", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestNewAccountIDMiddleware(t *testing.T) {
+	tests := []struct {
+		name        string
+		authBackend consts.AuthBackend
+	}{
+		{
+			name:        "shared API key backend",
+			authBackend: consts.AuthBackendSharedAPIKey,
+		},
+		{
+			name:        "auth0 backend",
+			authBackend: consts.AuthBackendAuth0,
+		},
+		{
+			name:        "default backend",
+			authBackend: consts.AuthBackend("unknown"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.Config{
+				AuthBackend:   tt.authBackend,
+				APIKeySecret:  "test-secret",
+				Auth0Domain:   "test.auth0.com",
+				Auth0Audience: "test-audience",
+			}
+			middleware := NewAccountIDMiddleware(cfg)
+
+			next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+			w := httptest.NewRecorder()
+
+			middleware(next).ServeHTTP(w, req)
+
+			if tt.authBackend == consts.AuthBackendAuth0 {
+				if w.Code != http.StatusOK {
+					t.Errorf("expected status %d for auth0, got %d", http.StatusOK, w.Code)
+				}
+			}
+		})
+	}
+}
+
+func TestSharedAPIKeyMiddleware(t *testing.T) {
+	tests := []struct {
+		name         string
+		apiKeySecret string
+		authHeader   string
+		expectError  bool
+		expectedCode int
+	}{
+		{
+			name:         "valid API key",
+			apiKeySecret: "secret123",
+			authHeader:   "Bearer secret123",
+			expectError:  false,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "missing auth header",
+			apiKeySecret: "secret123",
+			authHeader:   "",
+			expectError:  true,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "malformed auth header",
+			apiKeySecret: "secret123",
+			authHeader:   "Basic secret123",
+			expectError:  true,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "invalid API key",
+			apiKeySecret: "secret123",
+			authHeader:   "Bearer wrong-secret",
+			expectError:  true,
+			expectedCode: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			middleware := sharedAPIKeyMiddleware(tt.apiKeySecret)
+
+			var capturedContext context.Context
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				capturedContext = r.Context()
+				w.WriteHeader(tt.expectedCode)
+			})
+
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+			if tt.authHeader != "" {
+				req.Header.Set(authHeader, tt.authHeader)
+			}
+			w := httptest.NewRecorder()
+
+			middleware(next).ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("expected status %d, got %d", tt.expectedCode, w.Code)
+			}
+
+			if tt.expectError {
+				err := GetAuthError(capturedContext)
+				if err == nil {
+					t.Error("expected auth error in context")
+				}
+			} else {
+				accountID := GetAccountID(capturedContext)
+				if accountID != adminAccountID {
+					t.Errorf("expected account ID %s, got %s", adminAccountID, accountID)
+				}
+			}
+		})
+	}
+}
+
+func TestAuth0Middleware(t *testing.T) {
+	t.Run("missing auth header continues", func(t *testing.T) {
+		middleware := auth0Middleware("test.auth0.com", "test-audience")
+
+		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+		}
+	})
+
+	t.Run("invalid JWT token adds error to context", func(t *testing.T) {
+		middleware := auth0Middleware("test.auth0.com", "test-audience")
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+		req.Header.Set(authHeader, authHeaderPrefix+"invalid.jwt.token")
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+		}
+
+		err := GetAuthError(capturedContext)
+		if err == nil {
+			t.Error("expected auth error in context")
+		}
+	})
+
+	t.Run("JWT with invalid signature adds error to context", func(t *testing.T) {
+		jwksServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			jwksResponse := `{
+				"keys": [{
+					"kty": "RSA",
+					"kid": "test-key-id",
+					"n": "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1` +
+				`L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-` +
+				`65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08q` +
+				`NLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awap` +
+				`JzKnqDKgw",
+					"e": "AQAB",
+					"alg": "RS256"
+				}]
+			}`
+			if _, err := w.Write([]byte(jwksResponse)); err != nil {
+				t.Fatalf("failed to write JWKS response: %v", err)
+			}
+		}))
+		defer jwksServer.Close()
+
+		middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+		token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0." +
+			"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
+			"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature"
+		req.Header.Set(authHeader, authHeaderPrefix+token)
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+		}
+
+		err := GetAuthError(capturedContext)
+		if err == nil {
+			t.Error("expected auth error for invalid signature")
+		}
+	})
+}
+
+func TestHandleAuthError(t *testing.T) {
+	tests := []struct {
+		name     string
+		errorMsg string
+	}{
+		{
+			name:     "error added to context",
+			errorMsg: "test error message",
+		},
+		{
+			name:     "empty error message",
+			errorMsg: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var capturedContext context.Context
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				capturedContext = r.Context()
+				w.WriteHeader(http.StatusOK)
+			})
+
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+			w := httptest.NewRecorder()
+
+			handleAuthError(context.Background(), next, w, req, tt.errorMsg)
+
+			if w.Code != http.StatusOK {
+				t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+			}
+
+			err := GetAuthError(capturedContext)
+			if err == nil && tt.errorMsg != "" {
+				t.Error("expected auth error in context")
+			}
+			if err != nil && err.Error() != tt.errorMsg {
+				t.Errorf("expected error message '%s', got '%s'", tt.errorMsg, err.Error())
+			}
+		})
+	}
+}
+
+func TestEnsureAuthenticatedMiddleware_WithAuthError(t *testing.T) {
+	tests := []struct {
+		name     string
+		setupCtx func() context.Context
+	}{
+		{
+			name: "auth error in context",
+			setupCtx: func() context.Context {
+				return context.WithValue(context.Background(), authErrorKey, "authentication failed")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+
+			ctx := tt.setupCtx()
+			req := httptest.NewRequestWithContext(ctx, "GET", "/test", http.NoBody)
+			w := httptest.NewRecorder()
+
+			middlewareChain := EnsureAutheticatedMiddleware(next)
+			middlewareChain.ServeHTTP(w, req)
+
+			if w.Code != http.StatusUnauthorized {
+				t.Errorf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
+			}
+
+			var resp model.ErrorResponse
+			if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+				t.Fatalf("failed to decode response: %v", err)
+			}
+
+			expectedMsg := "authentication failed"
+			if resp.Error != expectedMsg {
+				t.Errorf("expected error message '%s', got '%s'", expectedMsg, resp.Error)
+			}
+		})
+	}
+}
+
+func TestEnsureAuthenticatedMiddleware_WithAccountID(t *testing.T) {
+	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	ctx := addAccountIDToContext(context.Background(), "test-account")
+	req := httptest.NewRequestWithContext(ctx, "GET", "/test", http.NoBody)
+	w := httptest.NewRecorder()
+
+	middlewareChain := EnsureAutheticatedMiddleware(next)
+	middlewareChain.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+}
