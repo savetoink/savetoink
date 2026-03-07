@@ -5,9 +5,8 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
-	"time"
+	"text/template"
 
 	"github.com/go-shiori/go-epub"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
@@ -17,6 +16,21 @@ import (
 const (
 	// fileModeReadWrite is the file permission for EPUB files (readable by user).
 	fileModeReadWrite = 0o644
+
+	// metadataTemplate is the template used to generate the metadata header.
+	metadataTemplate = `<div style="font-size: 0.85em; color: #666; margin-bottom: 2em; ` +
+		`padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;">
+` + `{{- if .Title}}<p><strong>Title: {{.Title}}</strong></p>
+` + `{{- end}}{{- if .Author}}<p><strong>Author: {{.Author}}</strong></p>
+` + `{{- end}}{{- if (sourceInfo .)}}<p><strong>Source: {{sourceInfo .}}</strong></p>
+` + `{{- end}}{{- if gt .ReadingTimeMinutes 0}}<p><strong>Reading time: ` +
+		`{{.ReadingTimeMinutes}} min</strong></p>
+` + `{{- end}}{{- if and .PublishedAt (not .PublishedAt.IsZero)}}<p><strong>Published: ` +
+		`{{.PublishedAt.Format "2006-01-02T15:04:05Z07:00"}}</strong></p>
+` + `{{- end}}{{- if not .CreatedAt.IsZero}}<p><strong>Added: ` +
+		`{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}</strong></p>
+` + `{{- end}}
+</div>`
 )
 
 // Generator handles EPUB file generation from article content.
@@ -28,68 +42,36 @@ func NewGenerator() *Generator {
 }
 
 func buildMetadataHeader(article *model.Article) string {
-	metaLines := buildMetadataLines(article)
-	if len(metaLines) == 0 {
+	tmpl := template.Must(template.New("metadata").Funcs(template.FuncMap{
+		"sourceInfo": func(a *model.Article) string {
+			if a.SiteName == "" && a.SourceDomain == "" {
+				return ""
+			}
+			if a.SiteName != "" && a.SourceDomain != "" {
+				return a.SiteName + " (" + a.SourceDomain + ")"
+			}
+			if a.SiteName != "" {
+				return a.SiteName
+			}
+			return a.SourceDomain
+		},
+	}).Parse(metadataTemplate))
+
+	var buf strings.Builder
+	err := tmpl.Execute(&buf, article)
+	if err != nil {
 		return ""
 	}
 
-	return `<div style="font-size: 0.85em; color: #666; margin-bottom: 2em; ` +
+	result := buf.String()
+	emptyDiv := `<div style="font-size: 0.85em; color: #666; margin-bottom: 2em; ` +
 		`padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;">
-` + strings.Join(metaLines, "") + `
 </div>`
-}
-
-func buildMetadataLines(article *model.Article) []string {
-	var metaLines []string
-
-	if article.Title != "" {
-		line := consts.HTMLTagStrongStart + "Title:" + article.Title
-		line += consts.HTMLTagStrongEnd + consts.HTMLTagPEnd
-		metaLines = append(metaLines, line)
-	}
-
-	if article.Author != "" {
-		line := consts.HTMLTagStrongStart + "Author:" + article.Author
-		line += consts.HTMLTagStrongEnd + consts.HTMLTagPEnd
-		metaLines = append(metaLines, line)
-	}
-
-	sourceInfo := buildSourceInfo(article)
-	if sourceInfo != "" {
-		line := consts.HTMLTagStrongStart + "Source:" + sourceInfo
-		line += consts.HTMLTagStrongEnd + consts.HTMLTagPEnd
-		metaLines = append(metaLines, line)
-	}
-
-	if article.ReadingTimeMinutes > 0 {
-		metaLines = append(metaLines, consts.HTMLTagStrongStart+"Reading time:"+
-			strconv.Itoa(article.ReadingTimeMinutes)+" min"+consts.HTMLTagStrongEnd+consts.HTMLTagPEnd)
-	}
-
-	if article.PublishedAt != nil && !article.PublishedAt.IsZero() {
-		metaLines = append(metaLines, consts.HTMLTagStrongStart+"Published:"+
-			article.PublishedAt.Format(time.RFC3339)+consts.HTMLTagStrongEnd+consts.HTMLTagPEnd)
-	}
-
-	if !article.CreatedAt.IsZero() {
-		metaLines = append(metaLines, consts.HTMLTagStrongStart+"Added:"+
-			article.CreatedAt.Format(time.RFC3339)+consts.HTMLTagStrongEnd+consts.HTMLTagPEnd)
-	}
-
-	return metaLines
-}
-
-func buildSourceInfo(article *model.Article) string {
-	if article.SiteName == "" && article.SourceDomain == "" {
+	if result == emptyDiv {
 		return ""
 	}
-	if article.SiteName != "" && article.SourceDomain != "" {
-		return article.SiteName + " (" + article.SourceDomain + ")"
-	}
-	if article.SiteName != "" {
-		return article.SiteName
-	}
-	return article.SourceDomain
+
+	return result
 }
 
 // Generate creates an EPUB file from the given article and returns its bytes.

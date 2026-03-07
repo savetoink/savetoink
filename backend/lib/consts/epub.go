@@ -26,12 +26,6 @@ const (
 	// HTMLTagBrSelfClosing is the self-closing line break HTML tag.
 	HTMLTagBrSelfClosing = "<br />"
 
-	// HTMLTagStrongStart is the opening strong HTML tag.
-	HTMLTagStrongStart = "<strong>"
-
-	// HTMLTagStrongEnd is the closing strong HTML tag.
-	HTMLTagStrongEnd = "</strong>"
-
 	// TitleSeparator is the separator used in article titles (space-dash-space).
 	TitleSeparator = " - "
 
