@@ -218,6 +218,7 @@ func (c *Config) validateEmailProviderConfig(missing *[]string) {
 	}
 }
 
+// ValidateEmailProviderConfigCli validates the email provider config for the CLI.
 func (c *Config) ValidateEmailProviderConfigCli(missing *[]string) {
 	if c.EmailProvider == consts.EmailBackendMailjet {
 		if c.MailjetAPIKey == "" {

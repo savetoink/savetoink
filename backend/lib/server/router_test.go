@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -11,9 +12,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/server/auth"
+	"github.com/shaftoe/savetoink/backend/lib/server/logging"
+	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,6 +35,139 @@ const (
 	testSentryEnvironment    = "test"
 	testDeviceEmail          = "test@kindle.com"
 )
+
+type mockService struct{}
+
+func (m *mockService) Process(_ context.Context, _ string) (*servicetypes.ProcessResult, error) {
+	return nil, errors.New("not implemented in mock")
+}
+
+func (m *mockService) SendArticle(_ context.Context, _ *model.Article, _, _ string) (*email.SendEmailResponse, error) {
+	return &email.SendEmailResponse{
+		MessageID: "test-message-id",
+	}, nil
+}
+
+func (m *mockService) WriteToFile(_ *servicetypes.ProcessResult, _ string) error {
+	return errors.New("not implemented in mock")
+}
+
+func (m *mockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
+	return nil, errors.New("not implemented in mock")
+}
+
+func (m *mockService) GetArticle(_ context.Context, _, articleID string) (*model.Article, error) {
+	if articleID == "test-id" {
+		return &model.Article{
+			ID:    "test-id",
+			Title: "Test Article",
+			URL:   "https://example.com",
+		}, nil
+	}
+	return nil, errors.New("article not found")
+}
+
+func (m *mockService) GetArticlesMetadata(
+	_ context.Context, _ string, _, _ int, _ *bool,
+) (*servicetypes.GetArticlesResult, error) {
+	return &servicetypes.GetArticlesResult{
+		Articles: []*model.Article{},
+		Page:     1,
+		PageSize: 10,
+		Total:    0,
+		HasMore:  false,
+	}, nil
+}
+
+func (m *mockService) DeleteArticle(_ context.Context, _, _ string) (*servicetypes.DeleteArticleResult, error) {
+	return nil, errors.New("not implemented in mock")
+}
+
+func (m *mockService) DeleteAllArticles(_ context.Context, _ string) (*servicetypes.DeleteArticleResult, error) {
+	return &servicetypes.DeleteArticleResult{Deleted: 0}, nil
+}
+
+func (m *mockService) GetDBError() error {
+	return nil
+}
+
+func (m *mockService) GetUserDeviceEmail(_ context.Context, _ string) (deviceEmail string, autoSend bool, err error) {
+	return "", false, nil
+}
+
+func (m *mockService) SetUserDeviceEmailWithAutoSend(_ context.Context, _, _ string, _ bool) error {
+	return errors.New("not implemented in mock")
+}
+
+func (m *mockService) DeleteUserDeviceEmail(_ context.Context, _ string) error {
+	return errors.New("not implemented in mock")
+}
+
+func (m *mockService) GetUserProfile(_ context.Context, _ string) (*model.UserProfile, error) {
+	return &model.UserProfile{Email: "test@example.com"}, nil
+}
+
+func (m *mockService) SetUserEmail(_ context.Context, _, _ string) error {
+	return errors.New("not implemented in mock")
+}
+
+func (m *mockService) DeleteUserProfile(_ context.Context, _ string) error {
+	return errors.New("not implemented in mock")
+}
+
+func (m *mockService) ToggleFavorite(_ context.Context, _, _ string) (bool, error) {
+	return false, errors.New("not implemented in mock")
+}
+
+func (m *mockService) CountSendsByAccountDateRange(_ context.Context, _ string, _, _ time.Time) (int, error) {
+	return 0, nil
+}
+
+func (m *mockService) HandleBounce(_ context.Context, _, _ string) error {
+	return errors.New("not implemented in mock")
+}
+
+func (m *mockService) IsEmailBouncing(_ context.Context, _, _ string) (bool, error) {
+	return false, nil
+}
+
+func (m *mockService) GetAccountIDByDeviceEmail(_ context.Context, _ string) (string, error) {
+	return "", errors.New("not implemented in mock")
+}
+
+func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
+	setupLogging(cfg)
+
+	r := chi.NewRouter()
+	svc := &mockService{}
+
+	handlers := newHandlers(
+		cfg,
+		svc,
+		client,
+	)
+
+	r.Use(middleware.Recoverer)
+	r.Use(auth.NewAccountIDMiddleware(cfg))
+	r.Use(requestIDMiddleware)
+	r.Use(logging.Middleware)
+	r.Use(corsMiddleware)
+	r.Use(jsonContentTypeMiddleware)
+
+	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "not_found"})
+	})
+
+	r.MethodNotAllowed(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "method_not_allowed"})
+	})
+
+	setupRoutes(r, handlers, cfg, svc)
+
+	return r
+}
 
 func setupMinimalConfig(t *testing.T) *config.Config {
 	t.Helper()
@@ -168,7 +308,7 @@ func TestSetupRoutes_BaseRoutes(t *testing.T) {
 
 func TestSetupRoutes_ArticleRoutes(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := newRouterWithClient(cfg, http.DefaultClient)
+	router := newTestRouter(cfg, http.DefaultClient)
 
 	authHeader := "Bearer " + testAPIKeySecret
 
@@ -292,7 +432,7 @@ func TestSetupRoutes_SendArticleRoute(t *testing.T) {
 		cfg.MailjetWebhookSecret = testMailjetWebhookSecret
 		cfg.SenderEmail = testSenderEmail
 
-		router := newRouterWithClient(cfg, http.DefaultClient)
+		router := newTestRouter(cfg, http.DefaultClient)
 		authHeader := "Bearer " + testAPIKeySecret
 
 		req := httptest.NewRequestWithContext(
@@ -313,7 +453,7 @@ func TestSetupRoutes_SendArticleRoute(t *testing.T) {
 		cfg := setupMinimalConfig(t)
 		cfg.EmailProvider = ""
 
-		router := newRouterWithClient(cfg, http.DefaultClient)
+		router := newTestRouter(cfg, http.DefaultClient)
 		authHeader := "Bearer " + testAPIKeySecret
 
 		req := httptest.NewRequestWithContext(
@@ -336,7 +476,7 @@ func TestSetupRoutes_SendArticleRoute(t *testing.T) {
 
 func TestSetupRoutes_UserProfileRoutes(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := newRouterWithClient(cfg, http.DefaultClient)
+	router := newTestRouter(cfg, http.DefaultClient)
 	authHeader := "Bearer " + testAPIKeySecret
 
 	t.Run("GET /v1/user/profile requires authentication", func(t *testing.T) {
@@ -372,7 +512,7 @@ func TestSetupRoutes_UserProfileRoutes(t *testing.T) {
 
 func TestSetupRoutes_DeviceRoutes(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := newRouterWithClient(cfg, http.DefaultClient)
+	router := newTestRouter(cfg, http.DefaultClient)
 	authHeader := "Bearer " + testAPIKeySecret
 
 	t.Run("PUT /v1/devices requires authentication", func(t *testing.T) {
@@ -453,7 +593,7 @@ func TestSetupRoutes_AuthRoute(t *testing.T) {
 		cfg.Auth0ClientSecret = "test-client-secret"
 
 		client := &http.Client{Timeout: 100 * time.Millisecond}
-		router := newRouterWithClient(cfg, client)
+		router := newTestRouter(cfg, client)
 
 		body := strings.NewReader(
 			`{"code":"test","redirect_uri":"http://localhost"}`,
@@ -477,7 +617,7 @@ func TestSetupRoutes_AuthRoute(t *testing.T) {
 		cfg := setupMinimalConfig(t)
 		cfg.AuthBackend = consts.AuthBackendSharedAPIKey
 
-		router := newRouterWithClient(cfg, http.DefaultClient)
+		router := newTestRouter(cfg, http.DefaultClient)
 
 		body := strings.NewReader(
 			`{"code":"test","redirect_uri":"http://localhost"}`,
@@ -506,7 +646,7 @@ func TestSetupRoutes_WebhookRoute(t *testing.T) {
 		cfg.MailjetWebhookSecret = testMailjetWebhookSecret
 		cfg.SenderEmail = testSenderEmail
 
-		router := newRouterWithClient(cfg, http.DefaultClient)
+		router := newTestRouter(cfg, http.DefaultClient)
 
 		req := httptest.NewRequestWithContext(
 			context.Background(),
@@ -527,7 +667,7 @@ func TestSetupRoutes_WebhookRoute(t *testing.T) {
 		cfg := setupMinimalConfig(t)
 		cfg.EmailProvider = ""
 
-		router := newRouterWithClient(cfg, http.DefaultClient)
+		router := newTestRouter(cfg, http.DefaultClient)
 
 		req := httptest.NewRequestWithContext(
 			context.Background(),
@@ -552,7 +692,7 @@ func TestSetupLogging_LogLevel(t *testing.T) {
 		cfg.Debug = false
 		cfg.LoggingProvider = consts.LoggingBackendNone
 
-		_ = newRouterWithClient(cfg, http.DefaultClient)
+		_ = newTestRouter(cfg, http.DefaultClient)
 	})
 
 	t.Run("sets debug level when debug is true", func(t *testing.T) {
@@ -560,7 +700,7 @@ func TestSetupLogging_LogLevel(t *testing.T) {
 		cfg.Debug = true
 		cfg.LoggingProvider = consts.LoggingBackendNone
 
-		_ = newRouterWithClient(cfg, http.DefaultClient)
+		_ = newTestRouter(cfg, http.DefaultClient)
 	})
 }
 
@@ -570,7 +710,7 @@ func TestSetupLogging_WithoutSentry(t *testing.T) {
 	cfg := setupMinimalConfig(t)
 	cfg.LoggingProvider = consts.LoggingBackendNone
 
-	_ = newRouterWithClient(cfg, http.DefaultClient)
+	_ = newTestRouter(cfg, http.DefaultClient)
 }
 
 func TestSetupLogging_WithSentry(t *testing.T) {
@@ -582,7 +722,7 @@ func TestSetupLogging_WithSentry(t *testing.T) {
 	cfg.SentryEnvironment = testSentryEnvironment
 	cfg.SentrySampleRate = 1.0
 
-	_ = newRouterWithClient(cfg, http.DefaultClient)
+	_ = newTestRouter(cfg, http.DefaultClient)
 }
 
 func TestSetupLogging_WithSentryAndDebug(t *testing.T) {
@@ -595,7 +735,7 @@ func TestSetupLogging_WithSentryAndDebug(t *testing.T) {
 	cfg.SentryEnvironment = testSentryEnvironment
 	cfg.SentrySampleRate = 1.0
 
-	_ = newRouterWithClient(cfg, http.DefaultClient)
+	_ = newTestRouter(cfg, http.DefaultClient)
 }
 
 func TestSetupLogging_SentryInitializationError(t *testing.T) {
@@ -607,12 +747,12 @@ func TestSetupLogging_SentryInitializationError(t *testing.T) {
 	cfg.SentryEnvironment = "test"
 	cfg.SentrySampleRate = 1.0
 
-	_ = newRouterWithClient(cfg, http.DefaultClient)
+	_ = newTestRouter(cfg, http.DefaultClient)
 }
 
 func TestIntegration_HealthEndpointAccessible(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := NewRouter(cfg)
+	router := newTestRouter(cfg, http.DefaultClient)
 
 	req := httptest.NewRequestWithContext(
 		context.Background(),
@@ -634,7 +774,7 @@ func TestIntegration_HealthEndpointAccessible(t *testing.T) {
 
 func TestIntegration_AuthenticatedRouteRequiresAuth(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := NewRouter(cfg)
+	router := newTestRouter(cfg, http.DefaultClient)
 
 	t.Run("articles endpoint without auth returns 401", func(t *testing.T) {
 		req := httptest.NewRequestWithContext(
