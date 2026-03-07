@@ -14,7 +14,7 @@ This repository contains the code for the savetoink application, composed of:
 
 - APIs currently unstable so no need to keep any backward compatibility
 - **ALWAYS** add new (unit) tests for new features.
-- **ALWAYS** run `just check` and fix issues before considering a change ready for user review.
+- **ALWAYS** run `just check` and fix issues before considering a change ready for user review. Strive for 100% test coverage, use `go tool cover` to check coverage.
 - **NEVER** ignore linting errors via `//nolint` statements or similar tricks without prompting the user for permission.
 - prefer lowercase log and error messages
 

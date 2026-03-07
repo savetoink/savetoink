@@ -2,6 +2,7 @@ package consts
 
 import (
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -9,6 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// regexPattern is the regular expression pattern used to validate a semver string.
+// Ref: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+const regexPattern = `^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`
 
 func TestVersion(t *testing.T) {
 	got := Version()
@@ -33,6 +38,15 @@ func TestVersionFileIsVersionString(t *testing.T) {
 	versionFileStr := strings.TrimSuffix(string(versionFile), "\n")
 
 	assert.Contains(t, *version, versionFileStr, "VERSION file should prefix the Version() string")
+}
+
+func TestVersionIsSemVer(t *testing.T) {
+	version := Version()
+	require.NotNil(t, version, "Version() should not be nil")
+
+	re := regexp.MustCompile(regexPattern)
+	matched := re.MatchString(*version)
+	assert.True(t, matched, "Version() should return a valid semver string")
 }
 
 func TestRunMode_Constants(t *testing.T) {
