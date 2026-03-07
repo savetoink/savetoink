@@ -82,17 +82,21 @@ func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV
 	}
 }
 
+const (
+	statusSuccess = "success"
+)
+
 func (s *Sender) parseResponse(resp *mailjetLib.ResultsV31) (*email.SendEmailResponse, error) {
 	if len(resp.ResultsV31) == 0 {
 		return nil, errors.New("no messages in response")
 	}
 
-	if resp.ResultsV31[0].Status != "success" {
+	if resp.ResultsV31[0].Status != statusSuccess {
 		return nil, fmt.Errorf("email send failed with status: %s", resp.ResultsV31[0].Status)
 	}
 
 	result := &email.SendEmailResponse{
-		Status:  "success",
+		Status:  statusSuccess,
 		Message: "Email sent successfully",
 	}
 
