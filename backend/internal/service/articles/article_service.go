@@ -68,10 +68,6 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 	}
 
 	eg, articlesChan := s.startBackgroundDBStore(ctx)
-	defer func() {
-		close(articlesChan)
-		_ = eg.Wait()
-	}()
 
 	article := &model.Article{
 		Account:   accountID,
@@ -99,6 +95,9 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 	processedArticle.Account = accountID
 	processedArticle.ID = articleID
 	articlesChan <- processedArticle
+
+	close(articlesChan)
+	_ = eg.Wait()
 
 	return processedArticle, nil
 }
@@ -340,12 +339,15 @@ func (s *ArticleService) sendEmailAndCreateRecord(
 	var emailResp *email.SendEmailResponse
 	var sendErr error
 	var dbError error
+	var mu sync.Mutex
 
 	eg.Go(func() error {
 		var err error
 		emailResp, err = s.sender.SendEmail(ctx, emailReq)
 		if err != nil {
+			mu.Lock()
 			sendErr = fmt.Errorf("failed to send email: %w", err)
+			mu.Unlock()
 		} else {
 			logging.AddLogAttr(ctx, slog.String("email_message_id", emailResp.MessageID))
 			logging.AddLogAttr(ctx, slog.String("email_destination", destEmail))
@@ -365,7 +367,9 @@ func (s *ArticleService) sendEmailAndCreateRecord(
 			destEmail,
 		)
 		if createErr != nil {
+			mu.Lock()
 			dbError = fmt.Errorf("failed to create send record: %w", createErr)
+			mu.Unlock()
 		}
 		return nil
 	})
@@ -482,21 +486,21 @@ func (s *ArticleService) startBackgroundDBStore(
 	var dbErrors error
 
 	eg.Go(func() error {
-		for article := range articles {
-			if s.repo != nil {
-				if storeErr := s.repo.Store(groupCtx, article); storeErr != nil {
-					dbErrors = errors.Join(dbErrors, storeErr)
+		for {
+			select {
+			case article, ok := <-articles:
+				if !ok {
+					return nil
 				}
+				if s.repo != nil {
+					if storeErr := s.repo.Store(groupCtx, article); storeErr != nil {
+						dbErrors = errors.Join(dbErrors, storeErr)
+					}
+				}
+			case <-groupCtx.Done():
+				return groupCtx.Err()
 			}
 		}
-
-		if dbErrors != nil {
-			s.dbMu.Lock()
-			s.dbErrors = errors.Join(s.dbErrors, dbErrors)
-			s.dbMu.Unlock()
-		}
-
-		return nil
 	})
 
 	return
