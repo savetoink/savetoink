@@ -1,4 +1,5 @@
 # Run linter
+[working-directory('backend')]
 lint:
     golangci-lint run
 
