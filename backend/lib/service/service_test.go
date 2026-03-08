@@ -383,26 +383,3 @@ func TestDeleteAllArticles_NoRepo(t *testing.T) {
 		t.Errorf("expected 0 deleted with no repo, got %d", result.Deleted)
 	}
 }
-
-func TestWriteToFile_NilResult(t *testing.T) {
-	svc := New(&Dependencies{})
-
-	err := svc.processor.WriteToFile(nil, "/tmp/test.epub")
-
-	if err == nil {
-		t.Error("expected error for nil article, got nil")
-	}
-}
-
-func TestWriteToFile_EmptyPath(t *testing.T) {
-	svc := New(&Dependencies{})
-
-	article := &model.Article{
-		Title: "Test Article",
-	}
-	err := svc.processor.WriteToFile(article, "")
-
-	if err == nil {
-		t.Error("expected error for empty path, got nil")
-	}
-}

@@ -21,7 +21,6 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/articles"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/epub"
-	"github.com/shaftoe/savetoink/backend/lib/service/processing"
 	"github.com/shaftoe/savetoink/backend/lib/service/profile"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )
@@ -111,7 +110,8 @@ type Dependencies struct {
 
 // Service orchestrator composes sub-services and implements the Interface.
 type Service struct {
-	processor *processing.ArticleProcessingService
+	extractor *content.Extractor
+	generator *epub.Generator
 	articles  *articles.ArticleService
 	profile   *profile.UserProfileService
 	sender    email.Sender
@@ -120,19 +120,22 @@ type Service struct {
 
 // New creates a Service instance with the provided dependencies.
 func New(deps *Dependencies) *Service {
-	processor := processing.New(deps.Extractor, deps.Generator)
+	extractor := deps.Extractor
+	generator := deps.Generator
 	userProfile := profile.New(deps.UserProfileRepo)
 	articleSvc := articles.New(
 		deps.ArticlesRepo,
 		deps.SendsRepo,
-		processor,
+		extractor,
+		generator,
 		userProfile,
 		deps.Config,
 		deps.Sender,
 	)
 
 	return &Service{
-		processor: processor,
+		extractor: extractor,
+		generator: generator,
 		articles:  articleSvc,
 		profile:   userProfile,
 		sender:    deps.Sender,

@@ -18,7 +18,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/service/processing"
+	"github.com/shaftoe/savetoink/backend/lib/service/epub"
 	"github.com/shaftoe/savetoink/backend/lib/service/profile"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"golang.org/x/sync/errgroup"
@@ -28,7 +28,8 @@ import (
 type ArticleService struct {
 	repo        repository.ArticlesRepository
 	sendsRepo   repository.SendsRepository
-	processor   *processing.ArticleProcessingService
+	extractor   *content.Extractor
+	generator   *epub.Generator
 	userProfile *profile.UserProfileService
 	cfg         *config.Config
 	sender      email.Sender
@@ -40,7 +41,8 @@ type ArticleService struct {
 func New(
 	repo repository.ArticlesRepository,
 	sendsRepo repository.SendsRepository,
-	processor *processing.ArticleProcessingService,
+	extractor *content.Extractor,
+	generator *epub.Generator,
 	userProfile *profile.UserProfileService,
 	cfg *config.Config,
 	sender email.Sender,
@@ -48,7 +50,8 @@ func New(
 	return &ArticleService{
 		repo:        repo,
 		sendsRepo:   sendsRepo,
-		processor:   processor,
+		extractor:   extractor,
+		generator:   generator,
 		userProfile: userProfile,
 		cfg:         cfg,
 		sender:      sender,
@@ -77,7 +80,7 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 	}
 	articlesChan <- article
 
-	htmlReader, err := s.processor.Fetch(ctx, cleanURL)
+	htmlReader, err := s.extractor.Fetch(ctx, cleanURL)
 	if err != nil {
 		article.Error = err.Error()
 		articlesChan <- article
@@ -87,7 +90,7 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 		_ = htmlReader.Close()
 	}()
 
-	processedArticle, err := s.processor.Extract(ctx, htmlReader)
+	processedArticle, err := s.extractor.ExtractFromReader(ctx, htmlReader)
 	if err != nil {
 		article.Error = err.Error()
 		articlesChan <- article
@@ -463,7 +466,7 @@ func (s *ArticleService) updateSendRecordAndArticleOnSuccess(
 }
 
 func (s *ArticleService) processArticleToResult(article *model.Article) ([]byte, error) {
-	epubData, err := s.processor.Generator.Generate(article)
+	epubData, err := s.generator.Generate(article)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate EPUB: %w", err)
 	}

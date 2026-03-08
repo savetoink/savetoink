@@ -15,7 +15,7 @@ import (
 
 // Fetch fetches HTML content from a URL.
 func (s *Service) Fetch(ctx context.Context, url string) ([]byte, error) {
-	htmlReader, err := s.processor.Fetch(ctx, url)
+	htmlReader, err := s.extractor.Fetch(ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch url: %w", err)
 	}
@@ -33,12 +33,12 @@ func (s *Service) Fetch(ctx context.Context, url string) ([]byte, error) {
 
 // Extract converts HTML to EPUB format.
 func (s *Service) Extract(ctx context.Context, htmlBytes []byte) ([]byte, error) {
-	article, err := s.processor.Extract(ctx, bytes.NewReader(htmlBytes))
+	article, err := s.extractor.ExtractFromReader(ctx, bytes.NewReader(htmlBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract: %w", err)
 	}
 
-	epubData, err := s.processor.Generator.Generate(article)
+	epubData, err := s.generator.Generate(article)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate epub: %w", err)
 	}
@@ -48,7 +48,7 @@ func (s *Service) Extract(ctx context.Context, htmlBytes []byte) ([]byte, error)
 
 // GenerateEPUB generates an EPUB from an existing article.
 func (s *Service) GenerateEPUB(article *model.Article) ([]byte, error) {
-	epubData, err := s.processor.Generator.Generate(article)
+	epubData, err := s.generator.Generate(article)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate epub: %w", err)
 	}
