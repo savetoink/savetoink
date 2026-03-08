@@ -32,6 +32,8 @@ func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte) (*mode
 	opts := trafilatura.Options{
 		OriginalURL:    parsedURL,
 		EnableFallback: true,
+		IncludeImages:  true,
+		IncludeLinks:   true,
 		Config: &trafilatura.Config{
 			MinExtractedSize: consts.MinimumExtractedSize,
 			MinOutputSize:    consts.MinimumOutputSize,
