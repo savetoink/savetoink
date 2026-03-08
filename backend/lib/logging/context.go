@@ -4,6 +4,7 @@ package logging
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 )
@@ -81,5 +82,37 @@ func AddRequestError(ctx context.Context, err error) {
 		} else {
 			*errPtr = err
 		}
+	}
+}
+
+// GetRequestID retrieves the request ID from context.
+func GetRequestID(ctx context.Context) string {
+	if id, ok := ctx.Value(RequestIDKey).(string); ok {
+		return id
+	}
+	return ""
+}
+
+// LogArticleProcessing logs article processing events.
+func LogArticleProcessing(ctx context.Context, message string, inheritedAttrs []slog.Attr, extraAttr slog.Attr) {
+	record := slog.NewRecord(time.Now(), slog.LevelInfo, message, 0)
+	for _, attr := range inheritedAttrs {
+		record.AddAttrs(attr)
+	}
+	record.AddAttrs(extraAttr)
+
+	if requestError := GetRequestError(ctx); requestError != nil {
+		if joinedErr, ok := requestError.(interface{ Unwrap() []error }); ok {
+			for i, err := range joinedErr.Unwrap() {
+				record.AddAttrs(slog.String(fmt.Sprintf("error_%d", i), err.Error()))
+			}
+		} else {
+			record.AddAttrs(slog.String("error", requestError.Error()))
+		}
+		record.Level = slog.LevelError
+	}
+
+	if err := slog.Default().Handler().Handle(ctx, record); err != nil {
+		slog.Error("failed to log article processing", "error", err)
 	}
 }

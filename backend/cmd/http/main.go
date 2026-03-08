@@ -29,7 +29,7 @@ func main() {
 		router  = server.NewRouter(cfg)
 	)
 
-	slog.Info("starting Save to Ink development HTTP server", "port", port, "version", *version)
+	slog.Info("starting Save to Ink HTTP server", "port", port, "version", *version)
 	srv := &http.Server{
 		Addr:         ":" + port,
 		Handler:      router,

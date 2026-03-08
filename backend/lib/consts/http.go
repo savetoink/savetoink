@@ -25,3 +25,6 @@ var HTMLErrorPatterns = []string{
 	"This website is using a security service to protect itself from online attacks. " +
 		"The action you just performed triggered the security solution.",
 }
+
+// ArticleProcessingTimeout is the maximum duration for processing an article.
+const ArticleProcessingTimeout = 30 * time.Second

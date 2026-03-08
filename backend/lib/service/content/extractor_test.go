@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewExtractor(t *testing.T) {
@@ -385,4 +387,123 @@ func TestUserAgentHeader(t *testing.T) {
 	if !strings.HasPrefix(receivedUA, "Mozilla/5.0") {
 		t.Errorf("Expected User-Agent to start with 'Mozilla/5.0', got: %s", receivedUA)
 	}
+}
+
+func TestValidateHTMLContent_ValidHTML(t *testing.T) {
+	validHTML := `<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body><p>Content</p></body>
+</html>`
+
+	err := validateHTMLContent([]byte(validHTML))
+	assert.NoError(t, err)
+}
+
+func TestValidateHTMLContent_HTML5NoDoctype(t *testing.T) {
+	html5NoDoctype := `<html>
+<head><title>Test</title></head>
+<body><p>Content</p></body>
+</html>`
+
+	err := validateHTMLContent([]byte(html5NoDoctype))
+	assert.NoError(t, err)
+}
+
+func TestValidateHTMLContent_XHTML(t *testing.T) {
+	xhtml := `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>Test</title></head>
+<body><p>Content</p></body>
+</html>`
+
+	err := validateHTMLContent([]byte(xhtml))
+	assert.NoError(t, err)
+}
+
+func TestValidateHTMLContent_ErrorPattern(t *testing.T) {
+	pattern := "This website is using a security service to protect itself " +
+		"from online attacks. The action you just performed triggered the " +
+		"security solution."
+	errorPatternHTML := `<html>
+<head><title>Error</title></head>
+<body>
+<p>` + pattern + `</p>
+</body>
+</html>`
+
+	err := validateHTMLContent([]byte(errorPatternHTML))
+	assert.Error(t, err)
+	if err != nil {
+		assert.Contains(t, err.Error(), "error page")
+	}
+}
+
+func TestValidateHTMLContent_MissingHTMLTag(t *testing.T) {
+	noHTMLTag := `<head><title>Test</title></head>
+<body><p>Content</p></body>`
+
+	err := validateHTMLContent([]byte(noHTMLTag))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "does not appear to be valid HTML")
+}
+
+func TestValidateHTMLContent_EmptyContent(t *testing.T) {
+	emptyContent := []byte("")
+
+	err := validateHTMLContent(emptyContent)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "does not appear to be valid HTML")
+}
+
+func TestValidateHTMLContent_PlainText(t *testing.T) {
+	plainText := []byte("This is just plain text without any HTML tags.")
+
+	err := validateHTMLContent(plainText)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "does not appear to be valid HTML")
+}
+
+func TestValidateHTMLContent_JSONContent(t *testing.T) {
+	jsonContent := []byte(`{"title": "Test Article", "content": "Some content"}`)
+
+	err := validateHTMLContent(jsonContent)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "does not appear to be valid HTML")
+}
+
+func TestValidateHTMLContent_MinimalHTML(t *testing.T) {
+	minimalHTML := `<!DOCTYPE html><html><body>Minimal</body></html>`
+
+	err := validateHTMLContent([]byte(minimalHTML))
+	assert.NoError(t, err)
+}
+
+func TestValidateHTMLContent_HTMLWithScript(t *testing.T) {
+	htmlWithScript := `<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+<script>alert('test');</script>
+<p>Content</p>
+</body>
+</html>`
+
+	err := validateHTMLContent([]byte(htmlWithScript))
+	assert.NoError(t, err)
+}
+
+func TestValidateHTMLContent_HTMLWithStyle(t *testing.T) {
+	htmlWithStyle := `<!DOCTYPE html>
+<html>
+<head>
+<style>body { color: red; }</style>
+</head>
+<body><p>Content</p></body>
+</html>`
+
+	err := validateHTMLContent([]byte(htmlWithStyle))
+	assert.NoError(t, err)
 }

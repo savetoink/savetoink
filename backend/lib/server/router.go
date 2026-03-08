@@ -34,11 +34,13 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 
 	r := chi.NewRouter()
 	srv := service.NewFromConfig(cfg)
+	proc := newProcessor(cfg, srv)
 
 	handlers := newHandlers(
 		cfg,
 		srv,
 		client,
+		proc,
 	)
 
 	r.Use(middleware.Recoverer)

@@ -14,10 +14,6 @@ deploy-cert:
         --region us-east-1 \
         --parameter-overrides ProjectName={{ project_name }} DomainName="$SAVETOINK_DOMAIN"
 
-# Upload Lambda source zip to S3
-upload-zip:
-    aws s3 cp bin/{{ lambda_archive }} s3://${SAVETOINK_BUCKET}/{{ lambda_archive }}
-
 # Deploy Lambda infrastructure
 deploy-api:
     aws cloudformation deploy \
@@ -42,6 +38,7 @@ deploy-api:
             MailjetAPIKey="$SAVETOINK_MAILJET_API_KEY" \
             MailjetAPISecret="$SAVETOINK_MAILJET_API_SECRET" \
             MailjetWebhookSecret=${SAVETOINK_MAILJET_WEBHOOK_SECRET} \
+            ProcessorSourceBucketKey={{ lambda_processor_archive }} \
             ProjectName={{ project_name }} \
             SenderEmail="$SAVETOINK_SENDER_EMAIL" \
             SentryDSN=${SAVETOINK_SENTRY_DSN} \
@@ -50,10 +47,44 @@ deploy-api:
             SourceBucketKey={{ lambda_archive }} \
             SourceBucketName=${SAVETOINK_BUCKET}
 
+# Upload API Lambda source zip to S3
+upload-zip-api:
+    aws s3 cp bin/{{ lambda_archive }} s3://${SAVETOINK_BUCKET}/{{ lambda_archive }}
+
+# Build Lambda binary for Linux
+build-lambda-api:
+    GOOS=linux GOARCH=amd64 go build -o bin/bootstrap ./backend/cmd/lambda
+
+# Build Lambda zip for deployment
+[working-directory('bin')]
+build-lambda-zip-api: build-lambda-api
+    zip {{ lambda_archive }} bootstrap
+
 # Update Lambda function code only
-deploy-lambda: build-lambda-zip upload-zip
+deploy-lambda-api: build-lambda-zip-api upload-zip-api
     aws lambda update-function-code \
         --function-name {{ project_name }}-api \
         --s3-bucket ${SAVETOINK_BUCKET} \
         --s3-key {{ lambda_archive }} \
+        --publish
+
+# Upload Processor Lambda source zip to S3
+upload-zip-processor:
+    aws s3 cp bin/{{ lambda_processor_archive }} s3://${SAVETOINK_BUCKET}/{{ lambda_processor_archive }}
+
+# Build Lambda binary for Linux
+build-lambda-processor:
+    GOOS=linux GOARCH=amd64 go build -o bin/bootstrap ./backend/cmd/lambda/processor
+
+# Build Lambda zip for deployment
+[working-directory('bin')]
+build-lambda-zip-processor: build-lambda-processor
+    zip {{ lambda_processor_archive }} bootstrap
+
+# Update Lambda function code only
+deploy-lambda-processor: build-lambda-zip-processor upload-zip-processor
+    aws lambda update-function-code \
+        --function-name {{ project_name }}-processor \
+        --s3-bucket ${SAVETOINK_BUCKET} \
+        --s3-key {{ lambda_processor_archive }} \
         --publish

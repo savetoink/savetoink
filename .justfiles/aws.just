@@ -19,9 +19,12 @@ get-github-role:
         --query "Stacks[0].Outputs[?OutputKey=='GitHubActionsRoleArn'].OutputValue" \
         --output text
 
-# View Lambda function logs
-logs:
+# View API Lambda function logs
+logs-api:
     aws logs tail /aws/lambda/{{ project_name }}-api --follow
+
+logs-processor:
+    aws logs tail /aws/lambda/{{ project_name }}-processor --follow
 
 # Get certificate ARN
 get-cert-arn:
