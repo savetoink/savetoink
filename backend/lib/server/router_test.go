@@ -50,7 +50,7 @@ func (m *mockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
 	return []byte("epub data"), nil
 }
 
-func (m *mockService) SendArticle(_ context.Context, _ string, _ []byte) (*email.SendEmailResponse, error) {
+func (m *mockService) SendArticle(_ context.Context, _ string, _ []byte, _ string) (*email.SendEmailResponse, error) {
 	return &email.SendEmailResponse{
 		MessageID: "test-message-id",
 	}, nil

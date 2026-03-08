@@ -112,13 +112,13 @@ func runConvert(_ *cobra.Command, args []string) error {
 
 	svc := service.NewFromConfig(cfg)
 
-	_, epubData, err := processArticle(ctx, url, svc)
+	article, epubData, err := processArticle(ctx, url, svc)
 	if err != nil {
 		return err
 	}
 
 	if sendEmail {
-		resp, emailErr := svc.SendArticle(ctx, destEmail, epubData)
+		resp, emailErr := svc.SendArticle(ctx, destEmail, epubData, article.Title)
 		if emailErr != nil {
 			return fmt.Errorf("failed to send email: %w", emailErr)
 		}

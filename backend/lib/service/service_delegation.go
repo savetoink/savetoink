@@ -44,11 +44,13 @@ func (s *Service) SendArticle(
 	ctx context.Context,
 	destEmail string,
 	epubBytes []byte,
+	title string,
 ) (*email.SendEmailResponse, error) {
 	req := &email.Request{
 		EPUBData:  epubBytes,
 		DestEmail: destEmail,
 		Body:      consts.BuildCLIEmailBody(),
+		Subject:   email.BuildSubject(title),
 	}
 	resp, err := s.sender.SendEmail(ctx, req)
 	if err != nil {

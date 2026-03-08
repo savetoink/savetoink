@@ -32,6 +32,7 @@ deploy-api:
             Auth0ClientSecret="$SAVETOINK_AUTH0_CLIENT_SECRET" \
             Auth0Domain="$SAVETOINK_AUTH0_DOMAIN" \
             AuthBackend="${SAVETOINK_AUTH_BACKEND}" \
+            BrowserlessKey="${SAVETOINK_BROWSERLESS_KEY}" \
             CertificateArn=$(just get-cert-arn) \
             Debug="${SAVETOINK_DEBUG}" \
             DestEmail="$SAVETOINK_DEST_EMAIL" \

@@ -43,7 +43,7 @@ func (m *MockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (m *MockService) SendArticle(_ context.Context, _ string, _ []byte) (*email.SendEmailResponse, error) {
+func (m *MockService) SendArticle(_ context.Context, _ string, _ []byte, _ string) (*email.SendEmailResponse, error) {
 	panic("not implemented")
 }
 

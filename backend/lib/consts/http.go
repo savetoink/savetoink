@@ -1,6 +1,8 @@
 package consts
 
-import "time"
+import (
+	"time"
+)
 
 // HTTP server timeout constants.
 const (
@@ -14,3 +16,12 @@ const (
 
 // RequestIDFormat is the generated request ID format (YYYYMMDD-HHMMSS.mmm).
 const RequestIDFormat = "20060102-150405.000"
+
+// BrowserlessContentURL is the URL for the Browserless content API.
+const BrowserlessContentURL = "https://production-sfo.browserless.io/content"
+
+// HTMLErrorPatterns contains patterns that indicate invalid HTML content or error pages.
+var HTMLErrorPatterns = []string{
+	"This website is using a security service to protect itself from online attacks. " +
+		"The action you just performed triggered the security solution.",
+}

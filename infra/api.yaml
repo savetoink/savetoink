@@ -102,6 +102,12 @@ Parameters:
     Description: Sentry sample rate (0.0 to 1.0)
     Default: "1.0"
 
+  BrowserlessKey:
+    Type: String
+    NoEcho: true
+    Description: Browserless API key for fallback content fetching
+    Default: ""
+
   DomainName:
     Type: String
     Description: Custom domain name for the API (e.g. api.saveto.ink)
@@ -172,6 +178,7 @@ Resources:
           SAVETOINK_SENTRY_DSN: !Ref SentryDSN
           SAVETOINK_SENTRY_ENVIRONMENT: !Ref SentryEnvironment
           SAVETOINK_SENTRY_SAMPLE_RATE: !Ref SentrySampleRate
+          SAVETOINK_BROWSERLESS_KEY: !Ref BrowserlessKey
 
       TracingConfig:
         Mode: PassThrough

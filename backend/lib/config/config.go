@@ -41,6 +41,9 @@ type Config struct {
 	SentryDSN         string
 	SentryEnvironment string
 	SentrySampleRate  float64
+
+	// Content Fetching
+	BrowserlessKey string
 }
 
 // AWSConfigLoader is a function type for loading AWS configuration.
@@ -96,6 +99,7 @@ func bindEnvVars() error {
 		{"sentry-dsn", "SAVETOINK_SENTRY_DSN"},
 		{"sentry-environment", "SAVETOINK_SENTRY_ENVIRONMENT"},
 		{"sentry-sample-rate", "SAVETOINK_SENTRY_SAMPLE_RATE"},
+		{"browserless-key", "SAVETOINK_BROWSERLESS_KEY"},
 	}
 
 	for _, ev := range envVars {
@@ -129,6 +133,7 @@ func loadConfig(mode consts.RunMode) *Config {
 		SentryDSN:            viper.GetString("sentry-dsn"),
 		SentryEnvironment:    viper.GetString("sentry-environment"),
 		SentrySampleRate:     viper.GetFloat64("sentry-sample-rate"),
+		BrowserlessKey:       viper.GetString("browserless-key"),
 	}
 
 	return cfg

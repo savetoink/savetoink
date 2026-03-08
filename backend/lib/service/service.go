@@ -41,6 +41,7 @@ type Interface interface {
 		ctx context.Context,
 		destEmail string,
 		epubBytes []byte,
+		title string,
 	) (*email.SendEmailResponse, error)
 
 	// CreateArticle stores a new partial metadata article from a given URL and account ID in the database.
@@ -168,7 +169,7 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 	}
 
 	return Dependencies{
-		Fetcher:         content.NewFetcher(),
+		Fetcher:         content.NewFetcher(cfg.BrowserlessKey),
 		Extractor:       content.NewExtractor(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          sender,

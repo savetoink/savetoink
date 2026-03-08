@@ -17,7 +17,7 @@ func TestNewExtractor(t *testing.T) {
 }
 
 func TestNewFetcher(t *testing.T) {
-	fetcher := NewFetcher()
+	fetcher := NewFetcher("")
 	if fetcher == nil {
 		t.Fatal("NewFetcher returned nil")
 	}

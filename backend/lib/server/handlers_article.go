@@ -329,7 +329,7 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	logging.AddLogAttr(r.Context(), slog.String("destination_email", deviceEmail))
 
-	emailResp, err := h.service.SendArticle(r.Context(), deviceEmail, epubBytes)
+	emailResp, err := h.service.SendArticle(r.Context(), deviceEmail, epubBytes, article.Title)
 	if err != nil {
 		handleServiceError(w, r, err, "send article")
 		return

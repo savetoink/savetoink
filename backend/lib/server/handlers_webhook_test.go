@@ -44,7 +44,7 @@ func (m *webhookMockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
 }
 
 func (m *webhookMockService) SendArticle(
-	_ context.Context, _ string, _ []byte,
+	_ context.Context, _ string, _ []byte, _ string,
 ) (*email.SendEmailResponse, error) {
 	return nil, errors.New("not implemented")
 }
