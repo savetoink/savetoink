@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/shaftoe/savetoink/backend/lib/server/auth"
+	"github.com/shaftoe/savetoink/backend/lib/auth"
 )
 
 type userProfileResponse struct {

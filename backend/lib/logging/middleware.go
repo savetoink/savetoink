@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
-	"github.com/shaftoe/savetoink/backend/lib/logging"
-	"github.com/shaftoe/savetoink/backend/lib/server/auth"
 )
 
 type responseStatusRecorder struct {
@@ -35,8 +34,8 @@ func Middleware(next http.Handler) http.Handler {
 
 		record := createLogRecord(r, accountID, requestID, version)
 
-		ctx := context.WithValue(r.Context(), logging.LogRecordKey, &logging.LogRecord{Record: &record})
-		ctx = context.WithValue(ctx, logging.RequestErrorKey, &requestError)
+		ctx := context.WithValue(r.Context(), LogRecordKey, &LogRecord{Record: &record})
+		ctx = context.WithValue(ctx, RequestErrorKey, &requestError)
 
 		recorder := &responseStatusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(recorder, r.WithContext(ctx))
@@ -46,7 +45,7 @@ func Middleware(next http.Handler) http.Handler {
 }
 
 func getRequestIDFromContext(ctx context.Context) *string {
-	requestID, ok := ctx.Value(logging.RequestIDKey).(string)
+	requestID, ok := ctx.Value(RequestIDKey).(string)
 	if !ok {
 		return nil
 	}

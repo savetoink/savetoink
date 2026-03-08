@@ -1,26 +1,18 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
-	"os"
-	"time"
 
-	"github.com/getsentry/sentry-go"
-	sentryslog "github.com/getsentry/sentry-go/slog"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/server/auth"
-	"github.com/shaftoe/savetoink/backend/lib/server/logging"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
-
-const sentryTimeout = 5 * time.Second
 
 // NewRouter creates and configures a new chi router with all middleware and routes.
 func NewRouter(cfg *config.Config) *chi.Mux {
@@ -30,7 +22,7 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 }
 
 func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
-	setupLogging(cfg)
+	logging.SetupLogging(cfg)
 
 	r := chi.NewRouter()
 	srv := service.NewFromConfig(cfg)
@@ -105,52 +97,4 @@ func setupRoutes(r *chi.Mux, handlers *handlers, cfg *config.Config, srv service
 			r.Post("/webhooks/mailjet", handlers.handleMailjetWebhook)
 		}
 	})
-}
-
-func setupLogging(cfg *config.Config) {
-	level := slog.LevelInfo
-	if cfg.Debug {
-		level = slog.LevelDebug
-	}
-
-	defaultHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: level,
-	})
-
-	slog.SetDefault(slog.New(defaultHandler))
-
-	if cfg.LoggingProvider == consts.LoggingBackendNone {
-		return
-	}
-
-	err := sentry.Init(sentry.ClientOptions{
-		Dsn:              cfg.SentryDSN,
-		Debug:            cfg.Debug,
-		Environment:      cfg.SentryEnvironment,
-		SampleRate:       cfg.SentrySampleRate,
-		AttachStacktrace: true,
-		EnableLogs:       true,
-		Transport: &sentry.HTTPSyncTransport{
-			Timeout: sentryTimeout,
-		},
-	})
-
-	if err != nil {
-		slog.Error("failed to initialize Sentry, fall back to default logger", "error", err)
-
-		return
-	}
-
-	logLevels := []slog.Level{slog.LevelInfo, slog.LevelWarn, slog.LevelError}
-	if cfg.Debug {
-		logLevels = append(logLevels, slog.LevelDebug)
-	}
-
-	sentryHandler := sentryslog.Option{
-		EventLevel: []slog.Level{slog.LevelWarn, slog.LevelError, sentryslog.LevelFatal},
-		LogLevel:   logLevels,
-	}.NewSentryHandler(context.Background())
-
-	multiHandler := slog.NewMultiHandler(sentryHandler, defaultHandler)
-	slog.SetDefault(slog.New(multiHandler))
 }

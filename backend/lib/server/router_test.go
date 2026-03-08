@@ -17,9 +17,9 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
+	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/server/auth"
-	"github.com/shaftoe/savetoink/backend/lib/server/logging"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -144,7 +144,7 @@ func (m *mockService) GetAccountIDByDeviceEmail(_ context.Context, _ string) (st
 }
 
 func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
-	setupLogging(cfg)
+	logging.SetupLogging(cfg)
 
 	r := chi.NewRouter()
 	svc := &mockService{}

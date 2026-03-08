@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shaftoe/savetoink/backend/lib/logging"
-	"github.com/shaftoe/savetoink/backend/lib/server/auth"
+	"github.com/shaftoe/savetoink/backend/lib/auth"
 )
 
 func createLogRecord(r *http.Request, accountID string, requestID, version *string) slog.Record {
@@ -38,7 +37,7 @@ func finalizeLogRecord(ctx context.Context, record *slog.Record, start time.Time
 		record.AddAttrs(slog.String("auth_result", authResult.Error()))
 	}
 
-	requestError := logging.GetRequestError(ctx)
+	requestError := GetRequestError(ctx)
 	if requestError != nil {
 		if joinedErr, ok := requestError.(interface{ Unwrap() []error }); ok {
 			for i, err := range joinedErr.Unwrap() {

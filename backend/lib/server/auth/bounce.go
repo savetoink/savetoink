@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
@@ -16,7 +17,7 @@ import (
 func NewBouncingEmailMiddleware(svc service.Interface) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			accountID := GetAccountID(r.Context())
+			accountID := auth.GetAccountID(r.Context())
 			if accountID == "" {
 				next.ServeHTTP(w, r)
 				return

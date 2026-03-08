@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
@@ -157,7 +158,7 @@ func TestGetAccountID(t *testing.T) {
 		},
 		{
 			name:     "wrong type in context",
-			setupCtx: func() context.Context { return context.WithValue(context.Background(), accountIDKey, 123) },
+			setupCtx: func() context.Context { return context.WithValue(context.Background(), auth.AccountIDKey, 123) },
 			expected: "",
 		},
 	}
@@ -165,7 +166,7 @@ func TestGetAccountID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := tt.setupCtx()
-			result := GetAccountID(ctx)
+			result := auth.GetAccountID(ctx)
 			if result != tt.expected {
 				t.Errorf("expected %q, got %q", tt.expected, result)
 			}
@@ -236,7 +237,7 @@ func TestAuth0Middleware(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 		}
 
-		err := GetAuthError(capturedContext)
+		err := auth.GetAuthError(capturedContext)
 		if err == nil {
 			t.Error("expected auth error in context")
 		}
@@ -267,7 +268,7 @@ func TestAuth0Middleware(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 		}
 
-		err := GetAuthError(capturedContext)
+		err := auth.GetAuthError(capturedContext)
 		if err == nil {
 			t.Error("expected auth error for invalid signature")
 		}
@@ -306,7 +307,7 @@ func TestHandleAuthError(t *testing.T) {
 				t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 			}
 
-			err := GetAuthError(capturedContext)
+			err := auth.GetAuthError(capturedContext)
 			if err == nil && tt.errorMsg != "" {
 				t.Error("expected auth error in context")
 			}
@@ -325,7 +326,7 @@ func TestEnsureAuthenticatedMiddleware_WithAuthError(t *testing.T) {
 		{
 			name: "auth error in context",
 			setupCtx: func() context.Context {
-				return context.WithValue(context.Background(), authErrorKey, "authentication failed")
+				return context.WithValue(context.Background(), auth.AuthErrorKey, "authentication failed")
 			},
 		},
 	}
@@ -411,7 +412,7 @@ func TestGetSendsCount(t *testing.T) {
 	}{
 		{
 			name:     "sends count in context",
-			setupCtx: func() context.Context { return context.WithValue(context.Background(), sendsCountKey, 5) },
+			setupCtx: func() context.Context { return context.WithValue(context.Background(), auth.SendsCountKey, 5) },
 			expected: 5,
 		},
 		{
@@ -420,8 +421,10 @@ func TestGetSendsCount(t *testing.T) {
 			expected: 0,
 		},
 		{
-			name:     "wrong type in context",
-			setupCtx: func() context.Context { return context.WithValue(context.Background(), sendsCountKey, "not-an-int") },
+			name: "wrong type in context",
+			setupCtx: func() context.Context {
+				return context.WithValue(context.Background(), auth.SendsCountKey, "not-an-int")
+			},
 			expected: 0,
 		},
 	}
@@ -429,7 +432,7 @@ func TestGetSendsCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := tt.setupCtx()
-			result := GetSendsCount(ctx)
+			result := auth.GetSendsCount(ctx)
 			if result != tt.expected {
 				t.Errorf("expected %d, got %d", tt.expected, result)
 			}
@@ -445,7 +448,7 @@ func TestHasSendsCount(t *testing.T) {
 	}{
 		{
 			name:     "sends count in context",
-			setupCtx: func() context.Context { return context.WithValue(context.Background(), sendsCountKey, 5) },
+			setupCtx: func() context.Context { return context.WithValue(context.Background(), auth.SendsCountKey, 5) },
 			expected: true,
 		},
 		{
@@ -454,8 +457,10 @@ func TestHasSendsCount(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "wrong type in context",
-			setupCtx: func() context.Context { return context.WithValue(context.Background(), sendsCountKey, "not-an-int") },
+			name: "wrong type in context",
+			setupCtx: func() context.Context {
+				return context.WithValue(context.Background(), auth.SendsCountKey, "not-an-int")
+			},
 			expected: false,
 		},
 	}
@@ -463,7 +468,7 @@ func TestHasSendsCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := tt.setupCtx()
-			result := HasSendsCount(ctx)
+			result := auth.HasSendsCount(ctx)
 			if result != tt.expected {
 				t.Errorf("expected %t, got %t", tt.expected, result)
 			}
@@ -536,12 +541,12 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, w.Code)
 			}
 
-			accountID := GetAccountID(capturedContext)
+			accountID := auth.GetAccountID(capturedContext)
 			if accountID != tt.expectedAccID {
 				t.Errorf("expected account ID '%s', got '%s'", tt.expectedAccID, accountID)
 			}
 
-			authErr := GetAuthError(capturedContext)
+			authErr := auth.GetAuthError(capturedContext)
 			if tt.expectedError == "" && authErr != nil {
 				t.Errorf("expected no auth error, got '%v'", authErr)
 			}
@@ -617,7 +622,7 @@ func TestNewAccountIDMiddleware(t *testing.T) {
 			}
 
 			if tt.authBackend == consts.AuthBackendSharedAPIKey && tt.authHeader != "" {
-				accountID := GetAccountID(capturedContext)
+				accountID := auth.GetAccountID(capturedContext)
 				if accountID != adminAccountID {
 					t.Errorf("expected account ID '%s', got '%s'", adminAccountID, accountID)
 				}
@@ -1182,13 +1187,13 @@ func TestNewActiveSubscriptionMiddleware(t *testing.T) {
 			}
 
 			if tt.expectedStatus == http.StatusOK {
-				count := GetSendsCount(capturedContext)
+				count := auth.GetSendsCount(capturedContext)
 				if count != tt.expectedCount {
 					t.Errorf("expected sends count %d, got %d", tt.expectedCount, count)
 				}
 
 				if tt.expectedError != "" {
-					authErr := GetAuthError(capturedContext)
+					authErr := auth.GetAuthError(capturedContext)
 					if authErr == nil || authErr.Error() != tt.expectedError {
 						t.Errorf("expected auth error '%s', got '%v'", tt.expectedError, authErr)
 					}

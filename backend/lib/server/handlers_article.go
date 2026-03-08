@@ -11,9 +11,9 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
-	"github.com/shaftoe/savetoink/backend/lib/server/auth"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/validation"
 )

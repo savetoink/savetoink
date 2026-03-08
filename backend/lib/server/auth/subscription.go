@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/model"
@@ -27,12 +28,13 @@ func NewActiveSubscriptionMiddleware(cfg *config.Config, svc service.Interface) 
 	case consts.AuthBackendAuth0:
 		return func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				accountID := GetAccountID(r.Context())
+				accountID := auth.GetAccountID(r.Context())
 				startDate := time.Now().AddDate(0, 0, -consts.FreeTierSendPeriodDays)
 
 				count, err := svc.CountSendsByAccountDateRange(r.Context(), accountID, startDate, time.Now())
 				if err != nil {
-					r = r.WithContext(context.WithValue(r.Context(), authErrorKey, "failed to check subscription limit: "+err.Error()))
+					errorMsg := "failed to check subscription limit: " + err.Error()
+					r = r.WithContext(context.WithValue(r.Context(), auth.AuthErrorKey, errorMsg))
 					next.ServeHTTP(w, r)
 					return
 				}
@@ -43,7 +45,7 @@ func NewActiveSubscriptionMiddleware(cfg *config.Config, svc service.Interface) 
 					return
 				}
 
-				ctx := context.WithValue(r.Context(), sendsCountKey, count)
+				ctx := context.WithValue(r.Context(), auth.SendsCountKey, count)
 				next.ServeHTTP(w, r.WithContext(ctx))
 			})
 		}

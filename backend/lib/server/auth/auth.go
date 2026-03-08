@@ -4,7 +4,6 @@ package auth
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/auth0/go-jwt-middleware/v3/jwks"
 	"github.com/auth0/go-jwt-middleware/v3/validator"
+	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/model"
@@ -22,14 +22,6 @@ const (
 	authHeaderPrefix = "Bearer "
 	adminAccountID   = "admin"
 	allowedClockSkew = 30 * time.Second
-)
-
-type contextKey string
-
-const (
-	accountIDKey  contextKey = "account_id"
-	authErrorKey  contextKey = "auth_error"
-	sendsCountKey contextKey = "sends_count"
 )
 
 // NewAccountIDMiddleware returns authentication middleware based on the configured auth backend.
@@ -50,13 +42,13 @@ func NewAccountIDMiddleware(cfg *config.Config) func(http.Handler) http.Handler 
 // proceeding to the next handler.
 func EnsureAutheticatedMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := GetAuthError(r.Context()); err != nil {
+		if err := auth.GetAuthError(r.Context()); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 			return
 		}
 
-		accountID := GetAccountID(r.Context())
+		accountID := auth.GetAccountID(r.Context())
 		if accountID == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "unauthorized"})
@@ -67,42 +59,15 @@ func EnsureAutheticatedMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// GetAccountID retrieves the authenticated account ID from the context.
-func GetAccountID(ctx context.Context) string {
-	accountID, _ := ctx.Value(accountIDKey).(string)
-	return accountID
-}
-
-// GetAuthError retrieves the authentication error from the context, if any.
-func GetAuthError(ctx context.Context) error {
-	authError, found := ctx.Value(authErrorKey).(string)
-	if found {
-		return errors.New(authError)
-	}
-	return nil
-}
-
-// GetSendsCount retrieves the sends count from the context, if any.
-func GetSendsCount(ctx context.Context) int {
-	count, _ := ctx.Value(sendsCountKey).(int)
-	return count
-}
-
-// HasSendsCount checks if a sends count was set in the context.
-func HasSendsCount(ctx context.Context) bool {
-	_, exists := ctx.Value(sendsCountKey).(int)
-	return exists
-}
-
 func sharedAPIKeyMiddleware(apiKeySecret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			auth := r.Header.Get(authHeader)
-			if auth == "" || !strings.HasPrefix(auth, authHeaderPrefix) {
+			authHeader := r.Header.Get(authHeader)
+			if authHeader == "" || !strings.HasPrefix(authHeader, authHeaderPrefix) {
 				handleAuthError(r.Context(), next, w, r, "missing or malformed auth header")
 				return
 			}
-			token := strings.TrimPrefix(auth, authHeaderPrefix)
+			token := strings.TrimPrefix(authHeader, authHeaderPrefix)
 			if token != apiKeySecret {
 				handleAuthError(r.Context(), next, w, r, "invalid API key")
 				return
@@ -139,13 +104,13 @@ func auth0Middleware(domain, audience string) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			auth := r.Header.Get(authHeader)
-			if auth == "" || !strings.HasPrefix(auth, authHeaderPrefix) {
+			authHeader := r.Header.Get(authHeader)
+			if authHeader == "" || !strings.HasPrefix(authHeader, authHeaderPrefix) {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			token := strings.TrimPrefix(auth, authHeaderPrefix)
+			token := strings.TrimPrefix(authHeader, authHeaderPrefix)
 			claims, validateErr := jwtValidator.ValidateToken(r.Context(), token)
 			if validateErr != nil {
 				handleAuthError(r.Context(), next, w, r, "invalid JWT token: "+validateErr.Error())
@@ -165,10 +130,10 @@ func auth0Middleware(domain, audience string) func(http.Handler) http.Handler {
 }
 
 func addAccountIDToContext(ctx context.Context, accountID string) context.Context {
-	return context.WithValue(ctx, accountIDKey, accountID)
+	return context.WithValue(ctx, auth.AccountIDKey, accountID)
 }
 
 func handleAuthError(ctx context.Context, next http.Handler, w http.ResponseWriter, r *http.Request, msg string) {
-	ctx = context.WithValue(ctx, authErrorKey, msg)
+	ctx = context.WithValue(ctx, auth.AuthErrorKey, msg)
 	next.ServeHTTP(w, r.WithContext(ctx))
 }

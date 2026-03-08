@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLogging(cfg)
+	logging.SetupLogging(cfg)
 	svc := service.NewFromConfig(cfg)
 	lambda.Start(func(ctx context.Context, event *content.ProcessArticleEvent) error {
 		if event == nil {
@@ -63,17 +63,4 @@ func handleRequest(ctx context.Context, event *content.ProcessArticleEvent, svc 
 	processor.ProcessArticle(processCtx, svc, event)
 
 	return nil
-}
-
-func setupLogging(cfg *config.Config) {
-	level := slog.LevelInfo
-	if cfg.Debug {
-		level = slog.LevelDebug
-	}
-
-	defaultHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: level,
-	})
-
-	slog.SetDefault(slog.New(defaultHandler))
 }

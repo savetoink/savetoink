@@ -9,9 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	testRequestID = "req-12345"
 )
 
 func TestCreateLogRecord_Basic(t *testing.T) {
@@ -187,7 +190,7 @@ func TestFinalizeLogRecord_WithRequestError(t *testing.T) {
 	start := time.Now()
 
 	testErr := errors.New("request failed")
-	ctx := context.WithValue(context.Background(), logging.RequestErrorKey, &testErr)
+	ctx := context.WithValue(context.Background(), RequestErrorKey, &testErr)
 
 	finalizeLogRecord(ctx, &record, start, http.StatusOK)
 
@@ -212,7 +215,7 @@ func TestFinalizeLogRecord_WithJoinedErrors(t *testing.T) {
 	err1 := errors.New("error one")
 	err2 := errors.New("error two")
 	joinedErr := errors.Join(err1, err2)
-	ctx := context.WithValue(context.Background(), logging.RequestErrorKey, &joinedErr)
+	ctx := context.WithValue(context.Background(), RequestErrorKey, &joinedErr)
 
 	finalizeLogRecord(ctx, &record, start, http.StatusOK)
 
@@ -356,16 +359,16 @@ func TestMiddleware_WithContextValues(t *testing.T) {
 
 	assert.NotNil(t, capturedContext)
 
-	logRecord := capturedContext.Value(logging.LogRecordKey)
+	logRecord := capturedContext.Value(LogRecordKey)
 	assert.NotNil(t, logRecord)
 
-	requestError := capturedContext.Value(logging.RequestErrorKey)
+	requestError := capturedContext.Value(RequestErrorKey)
 	assert.NotNil(t, requestError)
 }
 
 func TestGetRequestIDFromContext_Present(t *testing.T) {
-	requestID := "req-12345"
-	ctx := context.WithValue(context.Background(), logging.RequestIDKey, requestID)
+	requestID := testRequestID
+	ctx := context.WithValue(context.Background(), RequestIDKey, requestID)
 
 	result := getRequestIDFromContext(ctx)
 
@@ -382,7 +385,7 @@ func TestGetRequestIDFromContext_Missing(t *testing.T) {
 }
 
 func TestGetRequestIDFromContext_WrongType(t *testing.T) {
-	ctx := context.WithValue(context.Background(), logging.RequestIDKey, 12345)
+	ctx := context.WithValue(context.Background(), RequestIDKey, 12345)
 
 	result := getRequestIDFromContext(ctx)
 
@@ -391,7 +394,7 @@ func TestGetRequestIDFromContext_WrongType(t *testing.T) {
 
 func TestMiddleware_WithRequestID(t *testing.T) {
 	requestID := "test-request-id"
-	ctx := context.WithValue(context.Background(), logging.RequestIDKey, requestID)
+	ctx := context.WithValue(context.Background(), RequestIDKey, requestID)
 	req := httptest.NewRequestWithContext(ctx, "GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
