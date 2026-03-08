@@ -40,8 +40,9 @@ const (
 	MaxSubjectLength = 100
 
 	// MailSubjectPrefix is the prefix for email subjects.
-	MailSubjectPrefix   = "[Save to Ink] "
-	DefaultEmailSubject = MailSubjectPrefix + "Article"
+	MailSubjectPrefix    = "[Save to Ink] "
+	DefaultEmailSubject  = MailSubjectPrefix + "Article"
+	DefaultEmailFilename = "article.epub"
 
 	// LandingURL is the URL for the landing page.
 	LandingURL = "https://www.saveto.ink"

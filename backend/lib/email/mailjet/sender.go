@@ -54,7 +54,7 @@ func (s *Sender) SendEmail(ctx context.Context, req *email.Request) (*email.Send
 }
 
 func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV31 {
-	filename := "article.epub"
+	filename := consts.DefaultEmailFilename
 	if req.Subject != "" {
 		filename = req.Subject + ".epub"
 	}

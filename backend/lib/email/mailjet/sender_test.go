@@ -576,6 +576,96 @@ func TestBuildMessageInfo_DestEmailVariations(t *testing.T) {
 	}
 }
 
+func TestBuildMessageInfo_SubjectEdgeCases(t *testing.T) {
+	tests := []struct {
+		name           string
+		subject        string
+		expectFilename string
+	}{
+		{"subject with colon", "Test: Article", "Test: Article.epub"},
+		{"subject with slash", "Test/Article", "Test/Article.epub"},
+		{"subject with backslash", "Test\\Article", "Test\\Article.epub"},
+		{"subject with leading spaces", "   Test Article", "   Test Article.epub"},
+		{"subject with trailing spaces", "Test Article   ", "Test Article   .epub"},
+		{"subject with quotes", "\"Test Article\"", "\"Test Article\".epub"},
+		{"subject with multiple dots", "Test...Article", "Test...Article.epub"},
+		{"subject with unicode and emoji", "Test 中文 😊", "Test 中文 😊.epub"},
+		{"subject with mixed case", "TeSt ArTiClE", "TeSt ArTiClE.epub"},
+		{"subject with numbers", "Test Article 2024", "Test Article 2024.epub"},
+		{"subject with brackets", "Test (Article) [2024]", "Test (Article) [2024].epub"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &email.Request{
+				EPUBData:  []byte("data"),
+				DestEmail: "user@kindle.com",
+				Body:      "body",
+				Subject:   tt.subject,
+			}
+			sender := NewSender("key", "secret", "test@example.com")
+			messages := sender.buildMessageInfo(req)
+
+			if len(messages) != 1 {
+				t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
+			}
+
+			msg := messages[0]
+			if msg.Subject != tt.subject {
+				t.Errorf("buildMessageInfo() Subject = %v, want %v", msg.Subject, tt.subject)
+			}
+
+			switch {
+			case msg.Attachments == nil:
+				t.Fatal("buildMessageInfo() Attachments should not be nil")
+			case len(*msg.Attachments) != 1:
+				t.Fatal("buildMessageInfo() should have exactly one attachment")
+			default:
+				att := (*msg.Attachments)[0]
+				if att.Filename != tt.expectFilename {
+					t.Errorf("buildMessageInfo() Attachment.Filename = %v, want %v", att.Filename, tt.expectFilename)
+				}
+			}
+		})
+	}
+}
+
+func TestBuildMessageInfo_BodySpecialCharacters(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{"body with unicode", "Hello 世界"},
+		{"body with emoji", "Hello 😊"},
+		{"body with multiple languages", "Hello 世界 Bonjour 😊"},
+		{"body with tabs", "Line1\tLine2"},
+		{"body with special symbols", "Hello @#$%^&*()"},
+		{"body with quotes", `He said "Hello"`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &email.Request{
+				EPUBData:  []byte("data"),
+				DestEmail: "user@kindle.com",
+				Body:      tt.body,
+				Subject:   "Test",
+			}
+			sender := NewSender("key", "secret", "test@example.com")
+			messages := sender.buildMessageInfo(req)
+
+			if len(messages) != 1 {
+				t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
+			}
+
+			msg := messages[0]
+			if msg.TextPart != tt.body {
+				t.Errorf("buildMessageInfo() TextPart = %v, want %v", msg.TextPart, tt.body)
+			}
+		})
+	}
+}
+
 func TestParseResponse(t *testing.T) {
 	tests := []struct {
 		name      string
