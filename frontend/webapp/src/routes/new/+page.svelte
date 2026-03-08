@@ -29,7 +29,7 @@
 			{#if data.user?.device_email != ''}
 				<label>
 					<input type="checkbox" name="sendToDevice" bind:checked={sendToDevice} />
-					Send to device (<code>{user?.device_email}</code>)
+					Send to device: <code>{user?.device_email}</code>
 				</label>
 			{/if}
 		</fieldset>
