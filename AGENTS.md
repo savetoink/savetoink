@@ -21,6 +21,7 @@ This repository contains the code for the savetoink application, composed of:
 ### Backend / SSR
 
 - prefer wide event logging: collect all relevant fields in a single event rather than multiple events, log once when all the processing is done
+- prefer keeping constant values in the dedicated `consts` package
 
 ## API Documentation
 

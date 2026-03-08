@@ -143,10 +143,10 @@ func TestValidateRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sender := NewSender("key", "secret", "test@example.com")
-			err := sender.validateRequest(tt.req)
+			ctx := context.Background()
+			err := email.ValidateRequest(ctx, tt.req)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("validateRequest() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ValidateRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -283,9 +283,10 @@ func TestSendEmailValidation(t *testing.T) {
 
 func TestBuildMessageInfo(t *testing.T) {
 	tests := []struct {
-		name        string
-		req         *email.Request
-		senderEmail string
+		name           string
+		req            *email.Request
+		senderEmail    string
+		expectFilename string
 	}{
 		{
 			name: "valid request builds correct message info",
@@ -295,7 +296,8 @@ func TestBuildMessageInfo(t *testing.T) {
 				Body:      "email body",
 				Subject:   "Test Article",
 			},
-			senderEmail: "test@example.com",
+			senderEmail:    "test@example.com",
+			expectFilename: "Test Article.epub",
 		},
 		{
 			name: "request with empty subject",
@@ -305,7 +307,8 @@ func TestBuildMessageInfo(t *testing.T) {
 				Body:      "body",
 				Subject:   "",
 			},
-			senderEmail: "test@example.com",
+			senderEmail:    "test@example.com",
+			expectFilename: "article.epub",
 		},
 	}
 
@@ -358,12 +361,8 @@ func TestBuildMessageInfo(t *testing.T) {
 					t.Errorf("buildMessageInfo() Attachment.ContentType = %v, want %v", att.ContentType, attachmentContentType)
 				}
 
-				expectedFilename := defaultFilename
-				if tt.req.Subject != "" {
-					expectedFilename = tt.req.Subject + ".epub"
-				}
-				if att.Filename != expectedFilename {
-					t.Errorf("buildMessageInfo() Attachment.Filename = %v, want %v", att.Filename, expectedFilename)
+				if att.Filename != tt.expectFilename {
+					t.Errorf("buildMessageInfo() Attachment.Filename = %v, want %v", att.Filename, tt.expectFilename)
 				}
 
 				if att.Base64Content == "" {
@@ -422,7 +421,7 @@ func TestBuildMessageInfo_UnicodeTitle(t *testing.T) {
 		t.Fatal("buildMessageInfo() should have exactly one attachment")
 	default:
 		att := (*msg.Attachments)[0]
-		expectedFilename := title + ".epub"
+		expectedFilename := "Test article.epub"
 		if att.Filename != expectedFilename {
 			t.Errorf("buildMessageInfo() Attachment.Filename = %v, want %v", att.Filename, expectedFilename)
 		}
@@ -582,14 +581,14 @@ func TestBuildMessageInfo_SubjectEdgeCases(t *testing.T) {
 		subject        string
 		expectFilename string
 	}{
-		{"subject with colon", "Test: Article", "Test: Article.epub"},
-		{"subject with slash", "Test/Article", "Test/Article.epub"},
-		{"subject with backslash", "Test\\Article", "Test\\Article.epub"},
-		{"subject with leading spaces", "   Test Article", "   Test Article.epub"},
-		{"subject with trailing spaces", "Test Article   ", "Test Article   .epub"},
-		{"subject with quotes", "\"Test Article\"", "\"Test Article\".epub"},
-		{"subject with multiple dots", "Test...Article", "Test...Article.epub"},
-		{"subject with unicode and emoji", "Test 中文 😊", "Test 中文 😊.epub"},
+		{"subject with colon", "Test: Article", "Test Article.epub"},
+		{"subject with slash", "Test/Article", "Test Article.epub"},
+		{"subject with backslash", "Test\\Article", "Test Article.epub"},
+		{"subject with leading spaces", "   Test Article", "Test Article.epub"},
+		{"subject with trailing spaces", "Test Article   ", "Test Article.epub"},
+		{"subject with quotes", "\"Test Article\"", "Test Article.epub"},
+		{"subject with multiple dots", "Test...Article", "Test Article.epub"},
+		{"subject with unicode and emoji", "Test 中文 😊", "Test.epub"},
 		{"subject with mixed case", "TeSt ArTiClE", "TeSt ArTiClE.epub"},
 		{"subject with numbers", "Test Article 2024", "Test Article 2024.epub"},
 		{"subject with brackets", "Test (Article) [2024]", "Test (Article) [2024].epub"},

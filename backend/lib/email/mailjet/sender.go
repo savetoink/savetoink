@@ -38,7 +38,7 @@ func (s *Sender) SendEmail(ctx context.Context, req *email.Request) (*email.Send
 		return nil, fmt.Errorf("invalid sender config: %w", err)
 	}
 
-	if err := s.validateRequest(req); err != nil {
+	if err := email.ValidateRequest(ctx, req); err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
@@ -54,10 +54,7 @@ func (s *Sender) SendEmail(ctx context.Context, req *email.Request) (*email.Send
 }
 
 func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV31 {
-	filename := consts.DefaultEmailFilename
-	if req.Subject != "" {
-		filename = req.Subject + ".epub"
-	}
+	filename := email.SanitizeFilename(req.Subject)
 	subject := req.Subject
 	if subject == "" {
 		subject = consts.DefaultEmailSubject
@@ -123,22 +120,6 @@ func (s *Sender) validateConfig() error {
 	}
 	if s.senderEmail == "" {
 		return errors.New("sender email is required")
-	}
-	return nil
-}
-
-func (s *Sender) validateRequest(req *email.Request) error {
-	if req.DestEmail == "" {
-		return errors.New("device email is required")
-	}
-	if req.EPUBData == nil {
-		return errors.New("epub data is required")
-	}
-	if len(req.EPUBData) == 0 {
-		return errors.New("epub data is empty")
-	}
-	if req.Body == "" {
-		return errors.New("email body is required")
 	}
 	return nil
 }
