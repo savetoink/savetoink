@@ -35,7 +35,7 @@ func (m *webhookMockService) Fetch(_ context.Context, _ string) ([]byte, error) 
 	return nil, errors.New("not implemented")
 }
 
-func (m *webhookMockService) Extract(_ context.Context, _ []byte) ([]byte, error) {
+func (m *webhookMockService) Extract(_ context.Context, _ []byte) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -51,6 +51,10 @@ func (m *webhookMockService) SendArticle(
 
 func (m *webhookMockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (m *webhookMockService) UpdateArticle(_ context.Context, _ *model.Article) error {
+	return nil
 }
 
 func (m *webhookMockService) GetArticle(_ context.Context, _, _ string) (*model.Article, error) {

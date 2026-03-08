@@ -19,124 +19,129 @@ import (
 	"golang.org/x/net/html"
 )
 
-// Extractor handles the extraction of article content from URLs and HTML.
-type Extractor struct {
+// Fetcher handles fetching HTML content from URLs.
+type Fetcher struct {
 	client *http.Client
 }
 
-// NewExtractor creates a new Extractor instance.
-func NewExtractor() *Extractor {
-	return &Extractor{
+// NewFetcher creates a new Fetcher instance.
+func NewFetcher() *Fetcher {
+	return &Fetcher{
 		client: &http.Client{},
 	}
 }
 
-// Fetch fetches HTML content from a URL.
-func (e *Extractor) Fetch(ctx context.Context, urlStr string) (io.ReadCloser, error) {
-	_, body, err := e.fetchURL(ctx, urlStr)
-	return body, err
-}
-
-// ExtractFromURL fetches and extracts article content from given URL.
-func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.Article, error) {
-	parsedURL, body, err := e.fetchURL(ctx, urlStr)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = body.Close()
-	}()
-
-	htmlBytes, err := io.ReadAll(body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	opts := trafilatura.Options{
-		OriginalURL:    parsedURL,
-		EnableFallback: true,
-		Config: &trafilatura.Config{
-			MinExtractedSize: consts.MinimumExtractedSize,
-			MinOutputSize:    consts.MinimumOutputSize,
-		},
-	}
-
-	result, err := trafilatura.Extract(strings.NewReader(string(htmlBytes)), opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract article content: %w", err)
-	}
-
-	if result.ContentNode == nil {
-		return nil, errors.New("no content extracted")
-	}
-
-	article := e.buildArticle(result, htmlBytes)
-	return article, nil
-}
-
-// ExtractFromReader extracts article content from HTML reader.
-func (e *Extractor) ExtractFromReader(_ context.Context, htmlReader io.Reader) (*model.Article, error) {
-	htmlBytes, err := io.ReadAll(htmlReader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read html: %w", err)
-	}
-
-	parsedURL, _ := url.Parse("https://example.com")
-	opts := trafilatura.Options{
-		OriginalURL:    parsedURL,
-		EnableFallback: true,
-		Config: &trafilatura.Config{
-			MinExtractedSize: consts.MinimumExtractedSize,
-			MinOutputSize:    consts.MinimumOutputSize,
-		},
-	}
-
-	result, err := trafilatura.Extract(strings.NewReader(string(htmlBytes)), opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract article content: %w", err)
-	}
-
-	if result.ContentNode == nil {
-		return nil, errors.New("no content extracted")
-	}
-
-	article := e.buildArticle(result, htmlBytes)
-	return article, nil
-}
-
-func (e *Extractor) fetchURL(ctx context.Context, urlStr string) (*url.URL, io.ReadCloser, error) {
+// Fetch fetches HTML content from a URL and returns the bytes.
+func (f *Fetcher) Fetch(ctx context.Context, urlStr string) ([]byte, error) {
 	if err := validateURL(urlStr); err != nil {
-		return nil, nil, fmt.Errorf("invalid URL: %w", err)
+		return nil, fmt.Errorf("invalid URL: %w", err)
 	}
 
-	parsedURL, err := url.Parse(urlStr)
+	_, err := url.Parse(urlStr)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse URL: %w", err)
+		return nil, fmt.Errorf("failed to parse URL: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, http.NoBody)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("User-Agent", consts.GetRandomUserAgent())
 
-	resp, err := e.client.Do(req)
+	resp, err := f.client.Do(req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch URL: %w", err)
+		return nil, fmt.Errorf("failed to fetch URL: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
-		return nil, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "text/html") {
 		_ = resp.Body.Close()
-		return nil, nil, fmt.Errorf("expected HTML content, got: %s", contentType)
+		return nil, fmt.Errorf("expected HTML content, got: %s", contentType)
 	}
 
-	return parsedURL, resp.Body, nil
+	htmlBytes, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	return htmlBytes, nil
+}
+
+// Extractor handles the extraction of article content from HTML.
+type Extractor struct{}
+
+// NewExtractor creates a new Extractor instance.
+func NewExtractor() *Extractor {
+	return &Extractor{}
+}
+
+// GenerateFromHTML extracts article content from HTML bytes.
+func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte) (*model.Article, error) {
+	parsedURL, _ := url.Parse("https://example.com")
+	_ = parsedURL
+	opts := trafilatura.Options{
+		OriginalURL:    parsedURL,
+		EnableFallback: true,
+		Config: &trafilatura.Config{
+			MinExtractedSize: consts.MinimumExtractedSize,
+			MinOutputSize:    consts.MinimumOutputSize,
+		},
+	}
+
+	result, err := trafilatura.Extract(strings.NewReader(string(htmlBytes)), opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract article content: %w", err)
+	}
+
+	if result.ContentNode == nil {
+		return nil, errors.New("no content extracted")
+	}
+
+	article := e.buildArticle(result, htmlBytes)
+	return article, nil
+}
+
+// ExtractFromURL fetches and extracts article content from a URL.
+// This is a convenience method for testing purposes. In production, callers
+// should use Fetcher.Fetch() followed by Extractor.GenerateFromHTML().
+func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.Article, error) {
+	fetcher := NewFetcher()
+	htmlBytes, err := fetcher.Fetch(ctx, urlStr)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse URL: %w", err)
+	}
+
+	opts := trafilatura.Options{
+		OriginalURL:    parsedURL,
+		EnableFallback: true,
+		Config: &trafilatura.Config{
+			MinExtractedSize: consts.MinimumExtractedSize,
+			MinOutputSize:    consts.MinimumOutputSize,
+		},
+	}
+
+	result, err := trafilatura.Extract(strings.NewReader(string(htmlBytes)), opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract article content: %w", err)
+	}
+
+	if result.ContentNode == nil {
+		return nil, errors.New("no content extracted")
+	}
+
+	article := e.buildArticle(result, htmlBytes)
+	return article, nil
 }
 
 func (e *Extractor) buildArticle(result *trafilatura.ExtractResult, htmlBytes []byte) *model.Article {

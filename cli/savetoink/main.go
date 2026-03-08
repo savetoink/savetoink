@@ -11,6 +11,7 @@ import (
 
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/spf13/cobra"
 )
@@ -52,6 +53,46 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+func validateEmailConfig(cfg *config.Config) error {
+	if cfg.EmailProvider != consts.EmailBackendMailjet {
+		return fmt.Errorf("missing or unsupported email provider: '%s'", cfg.EmailProvider)
+	}
+
+	var missing []string
+	cfg.ValidateEmailProviderConfigCli(&missing)
+
+	if len(missing) > 0 {
+		return fmt.Errorf("missing email provider config: %s", strings.Join(missing, ", "))
+	}
+
+	return nil
+}
+
+func processArticle(ctx context.Context, url string, svc *service.Service) (*model.Article, []byte, error) {
+	fmt.Printf("Processing article from: %s\n", url)
+
+	start := time.Now()
+
+	htmlBytes, err := svc.Fetch(ctx, url)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch article: %w", err)
+	}
+
+	article, err := svc.Extract(ctx, htmlBytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to extract article: %w", err)
+	}
+
+	fmt.Printf("Processed in %v\n", time.Since(start))
+
+	epubData, err := svc.GenerateEPUB(article)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate epub: %w", err)
+	}
+
+	return article, epubData, nil
+}
+
 func runConvert(_ *cobra.Command, args []string) error {
 	url := args[0]
 
@@ -61,38 +102,20 @@ func runConvert(_ *cobra.Command, args []string) error {
 	}
 
 	if sendEmail {
-		if cfg.EmailProvider != consts.EmailBackendMailjet {
-			return fmt.Errorf("missing or unsupported email provider: '%s'", cfg.EmailProvider)
-		}
-
-		var missing []string
-		cfg.ValidateEmailProviderConfigCli(&missing)
-
-		if len(missing) > 0 {
-			return fmt.Errorf("missing email provider config: %s", strings.Join(missing, ", "))
+		if validateErr := validateEmailConfig(cfg); validateErr != nil {
+			return validateErr
 		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	fmt.Printf("Processing article from: %s\n", url)
-
 	svc := service.NewFromConfig(cfg)
 
-	start := time.Now()
-
-	htmlBytes, err := svc.Fetch(ctx, url)
+	_, epubData, err := processArticle(ctx, url, svc)
 	if err != nil {
-		return fmt.Errorf("failed to fetch article: %w", err)
+		return err
 	}
-
-	epubData, err := svc.Extract(ctx, htmlBytes)
-	if err != nil {
-		return fmt.Errorf("failed to extract article: %w", err)
-	}
-
-	fmt.Printf("Processed in %v\n", time.Since(start))
 
 	if sendEmail {
 		resp, emailErr := svc.SendArticle(ctx, destEmail, epubData)

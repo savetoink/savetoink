@@ -2,18 +2,25 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/server/auth"
 	"github.com/shaftoe/savetoink/backend/lib/validation"
+)
+
+const (
+	// articleProcessingTimeout is the timeout for background article processing.
+	articleProcessingTimeout = 5 * time.Minute
 )
 
 func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
@@ -52,6 +59,127 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		Title: article.Title,
 		URL:   article.URL,
 	})
+
+	inheritedAttrs := extractInheritedLogAttrs(r.Context())
+	accountID := auth.GetAccountID(r.Context())
+	url := req.URL
+	articleID := article.ID
+
+	h.startArticleProcessing(url, articleID, accountID, inheritedAttrs)
+}
+
+func (h *handlers) startArticleProcessing(url, articleID, accountID string, inheritedAttrs []slog.Attr) {
+	go h.processArticleAsync(url, articleID, accountID, inheritedAttrs)
+}
+
+func extractInheritedLogAttrs(ctx context.Context) []slog.Attr {
+	logRecord, ok := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+	if !ok || logRecord == nil {
+		return nil
+	}
+
+	var attrs []slog.Attr
+	excludeKeys := map[string]bool{
+		"client_ip":  true,
+		"user_agent": true,
+		"path":       true,
+		"method":     true,
+		"url":        true,
+	}
+	logRecord.Attrs(func(a slog.Attr) bool {
+		if !excludeKeys[a.Key] {
+			attrs = append(attrs, a)
+		}
+		return true
+	})
+	return attrs
+}
+
+// processArticleAsync processes article in background goroutine.
+func (h *handlers) processArticleAsync(url, articleID, accountID string, inheritedAttrs []slog.Attr) {
+	var requestError error
+	processCtx := context.Background()
+	processCtx = context.WithValue(processCtx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
+	processCtx = context.WithValue(processCtx, logging.RequestErrorKey, &requestError)
+	processCtx, cancel := context.WithTimeout(processCtx, articleProcessingTimeout)
+	defer cancel()
+
+	htmlBytes, err := h.service.Fetch(processCtx, url)
+	if err != nil {
+		h.markArticleError(processCtx, accountID, articleID, "fetch", err)
+		h.logArticleProcessing(processCtx, inheritedAttrs, slog.String("status", "failed"))
+		return
+	}
+
+	extractedArticle, err := h.service.Extract(processCtx, htmlBytes)
+	if err != nil {
+		h.markArticleError(processCtx, accountID, articleID, "extract", err)
+		h.logArticleProcessing(processCtx, inheritedAttrs, slog.String("status", "failed"))
+		return
+	}
+
+	if extractedArticle == nil {
+		h.markArticleError(processCtx, accountID, articleID, "extract", errors.New("extracted article is nil"))
+		h.logArticleProcessing(processCtx, inheritedAttrs, slog.String("status", "failed"))
+		return
+	}
+
+	if extractedArticle.URL != articleID {
+		logging.AddLogAttr(processCtx, slog.String("url_mismatch",
+			fmt.Sprintf("want %s, got %s", url, extractedArticle.URL)))
+	}
+
+	extractedArticle.Account = accountID
+	extractedArticle.ID = articleID
+	extractedArticle.CreatedAt = time.Now().UTC()
+	extractedArticle.URL = url
+
+	if updateErr := h.service.UpdateArticle(processCtx, extractedArticle); updateErr != nil {
+		h.markArticleError(processCtx, accountID, articleID, "update", updateErr)
+		h.logArticleProcessing(processCtx, inheritedAttrs, slog.String("status", "failed"))
+		return
+	}
+
+	h.logArticleProcessing(processCtx, inheritedAttrs, slog.String("status", "success"))
+}
+
+func (h *handlers) logArticleProcessing(ctx context.Context, inheritedAttrs []slog.Attr, extraAttr slog.Attr) {
+	record := slog.NewRecord(time.Now(), slog.LevelInfo, "article processing completed", 0)
+	for _, attr := range inheritedAttrs {
+		record.AddAttrs(attr)
+	}
+	record.AddAttrs(extraAttr)
+
+	if requestError := logging.GetRequestError(ctx); requestError != nil {
+		if joinedErr, ok := requestError.(interface{ Unwrap() []error }); ok {
+			for i, err := range joinedErr.Unwrap() {
+				record.AddAttrs(slog.String(fmt.Sprintf("error_%d", i), err.Error()))
+			}
+		} else {
+			record.AddAttrs(slog.String("error", requestError.Error()))
+		}
+		record.Level = slog.LevelError
+	}
+
+	if err := slog.Default().Handler().Handle(ctx, record); err != nil {
+		slog.Error("failed to log article processing", "error", err)
+	}
+}
+
+// markArticleError logs error and updates article.Error field in DB.
+func (h *handlers) markArticleError(ctx context.Context, accountID, articleID, stage string, err error) {
+	logging.AddRequestError(ctx, fmt.Errorf("article %s: %s error: %w", articleID, stage, err))
+
+	article, getErr := h.service.GetArticle(ctx, accountID, articleID)
+	if getErr != nil {
+		logging.AddRequestError(ctx, fmt.Errorf("failed to get article %s for error update: %w", articleID, getErr))
+		return
+	}
+
+	article.Error = err.Error()
+	if updateErr := h.service.UpdateArticle(ctx, article); updateErr != nil {
+		logging.AddRequestError(ctx, fmt.Errorf("failed to update article %s error state: %w", articleID, updateErr))
+	}
 }
 
 func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {

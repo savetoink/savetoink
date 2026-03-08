@@ -42,7 +42,7 @@ func (m *mockService) Fetch(_ context.Context, _ string) ([]byte, error) {
 	return nil, errors.New("not implemented in mock")
 }
 
-func (m *mockService) Extract(_ context.Context, _ []byte) ([]byte, error) {
+func (m *mockService) Extract(_ context.Context, _ []byte) (*model.Article, error) {
 	return nil, errors.New("not implemented in mock")
 }
 
@@ -58,6 +58,10 @@ func (m *mockService) SendArticle(_ context.Context, _ string, _ []byte) (*email
 
 func (m *mockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
 	return nil, errors.New("not implemented in mock")
+}
+
+func (m *mockService) UpdateArticle(_ context.Context, _ *model.Article) error {
+	return nil
 }
 
 func (m *mockService) GetArticle(_ context.Context, _, articleID string) (*model.Article, error) {

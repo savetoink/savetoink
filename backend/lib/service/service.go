@@ -30,8 +30,8 @@ type Interface interface {
 	// Fetch fetches the HTML content of a given URL.
 	Fetch(ctx context.Context, url string) ([]byte, error)
 
-	// Extract extracts the clean article content from HTML bytes.
-	Extract(ctx context.Context, htmlBytes []byte) ([]byte, error)
+	// Extract extracts article metadata and content from HTML bytes.
+	Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error)
 
 	// GenerateEPUB generates an EPUB document from an article.
 	GenerateEPUB(article *model.Article) ([]byte, error)
@@ -43,8 +43,11 @@ type Interface interface {
 		epubBytes []byte,
 	) (*email.SendEmailResponse, error)
 
-	// CreateArticle stores a new article from a given URL and account ID in the database.
+	// CreateArticle stores a new partial metadata article from a given URL and account ID in the database.
 	CreateArticle(ctx context.Context, rawURL, accountID string) (*model.Article, error)
+
+	// UpdateArticle updates an existing article with full content and metadata.
+	UpdateArticle(ctx context.Context, article *model.Article) error
 
 	// GetArticle retrieves an article by account ID and article ID from the database.
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
@@ -99,8 +102,9 @@ type Interface interface {
 
 // Dependencies holds all external dependencies required by Service.
 type Dependencies struct {
+	Fetcher         *content.Fetcher
 	Extractor       *content.Extractor
-	Generator       *epub.Generator
+	Publisher       *epub.Publisher
 	Sender          email.Sender
 	ArticlesRepo    repository.ArticlesRepository
 	UserProfileRepo repository.UserProfileRepository
@@ -110,8 +114,9 @@ type Dependencies struct {
 
 // Service orchestrator composes sub-services and implements the Interface.
 type Service struct {
+	fetcher   *content.Fetcher
 	extractor *content.Extractor
-	generator *epub.Generator
+	publisher *epub.Publisher
 	articles  *articles.ArticleService
 	profile   *profile.UserProfileService
 	sender    email.Sender
@@ -120,22 +125,24 @@ type Service struct {
 
 // New creates a Service instance with the provided dependencies.
 func New(deps *Dependencies) *Service {
+	fetcher := deps.Fetcher
 	extractor := deps.Extractor
-	generator := deps.Generator
+	publisher := deps.Publisher
 	userProfile := profile.New(deps.UserProfileRepo)
 	articleSvc := articles.New(
 		deps.ArticlesRepo,
 		deps.SendsRepo,
 		extractor,
-		generator,
+		publisher,
 		userProfile,
 		deps.Config,
 		deps.Sender,
 	)
 
 	return &Service{
+		fetcher:   fetcher,
 		extractor: extractor,
-		generator: generator,
+		publisher: publisher,
 		articles:  articleSvc,
 		profile:   userProfile,
 		sender:    deps.Sender,
@@ -161,8 +168,9 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 	}
 
 	return Dependencies{
+		Fetcher:         content.NewFetcher(),
 		Extractor:       content.NewExtractor(),
-		Generator:       epub.NewGenerator(),
+		Publisher:       epub.NewPublisher(),
 		Sender:          sender,
 		ArticlesRepo:    articlesRepo,
 		UserProfileRepo: userProfileRepo,

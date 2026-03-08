@@ -35,7 +35,7 @@ func (m *MockService) Fetch(_ context.Context, _ string) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (m *MockService) Extract(_ context.Context, _ []byte) ([]byte, error) {
+func (m *MockService) Extract(_ context.Context, _ []byte) (*model.Article, error) {
 	panic("not implemented")
 }
 
@@ -49,6 +49,10 @@ func (m *MockService) SendArticle(_ context.Context, _ string, _ []byte) (*email
 
 func (m *MockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
 	panic("not implemented")
+}
+
+func (m *MockService) UpdateArticle(_ context.Context, _ *model.Article) error {
+	return nil
 }
 
 func (m *MockService) GetArticle(_ context.Context, _, _ string) (*model.Article, error) {

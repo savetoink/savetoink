@@ -14,8 +14,15 @@ func TestNewExtractor(t *testing.T) {
 	if extractor == nil {
 		t.Fatal("NewExtractor returned nil")
 	}
-	if extractor.client == nil {
-		t.Error("Extractor client is nil")
+}
+
+func TestNewFetcher(t *testing.T) {
+	fetcher := NewFetcher()
+	if fetcher == nil {
+		t.Fatal("NewFetcher returned nil")
+	}
+	if fetcher.client == nil {
+		t.Error("Fetcher client is nil")
 	}
 }
 

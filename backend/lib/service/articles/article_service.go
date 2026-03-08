@@ -29,7 +29,7 @@ type ArticleService struct {
 	repo        repository.ArticlesRepository
 	sendsRepo   repository.SendsRepository
 	extractor   *content.Extractor
-	generator   *epub.Generator
+	publisher   *epub.Publisher
 	userProfile *profile.UserProfileService
 	cfg         *config.Config
 	sender      email.Sender
@@ -42,7 +42,7 @@ func New(
 	repo repository.ArticlesRepository,
 	sendsRepo repository.SendsRepository,
 	extractor *content.Extractor,
-	generator *epub.Generator,
+	publisher *epub.Publisher,
 	userProfile *profile.UserProfileService,
 	cfg *config.Config,
 	sender email.Sender,
@@ -51,14 +51,14 @@ func New(
 		repo:        repo,
 		sendsRepo:   sendsRepo,
 		extractor:   extractor,
-		generator:   generator,
+		publisher:   publisher,
 		userProfile: userProfile,
 		cfg:         cfg,
 		sender:      sender,
 	}
 }
 
-// CreateArticle processes a URL and creates an article entry.
+// CreateArticle creates an article entry with minimal metadata.
 func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID string) (*model.Article, error) {
 	cleanURL, err := content.CleanURL(rawURL)
 	if err != nil {
@@ -70,54 +70,37 @@ func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID st
 		return nil, fmt.Errorf("failed to generate article id: %w", err)
 	}
 
-	eg, articlesChan := s.startBackgroundDBStore(ctx)
-
 	article := &model.Article{
 		Account:   accountID,
 		ID:        articleID,
 		URL:       cleanURL,
 		CreatedAt: time.Now().UTC(),
 	}
-	articlesChan <- article
 
-	htmlReader, err := s.extractor.Fetch(ctx, cleanURL)
-	if err != nil {
-		article.Error = err.Error()
-		articlesChan <- article
-		return nil, fmt.Errorf("failed to fetch article: %w", err)
-	}
-	defer func() {
-		_ = htmlReader.Close()
-	}()
-
-	processedArticle, err := s.extractor.ExtractFromReader(ctx, htmlReader)
-	if err != nil {
-		article.Error = err.Error()
-		articlesChan <- article
-		return nil, fmt.Errorf("failed to extract article: %w", err)
+	if s.repo != nil {
+		if storeErr := s.repo.Store(ctx, article); storeErr != nil {
+			return nil, fmt.Errorf("failed to store article: %w", storeErr)
+		}
 	}
 
-	if processedArticle == nil {
-		articleErr := errors.New("failed to process article: article is nil")
-		article.Error = articleErr.Error()
-		articlesChan <- article
-		return nil, articleErr
+	return article, nil
+}
+
+// UpdateArticle updates an existing article with full content and metadata.
+func (s *ArticleService) UpdateArticle(ctx context.Context, article *model.Article) error {
+	if article.Account == "" || article.ID == "" {
+		return errors.New("account and ID required for update")
 	}
 
-	if processedArticle.URL != article.URL {
-		logging.AddRequestError(ctx,
-			fmt.Errorf("input URL differs from processed URL: want %s, got %s", article.URL, processedArticle.URL))
+	if s.repo == nil {
+		return nil
 	}
 
-	processedArticle.Account = article.Account
-	processedArticle.ID = article.ID
-	processedArticle.CreatedAt = article.CreatedAt
-	articlesChan <- processedArticle
+	if err := s.repo.Store(ctx, article); err != nil {
+		return fmt.Errorf("failed to update article: %w", err)
+	}
 
-	close(articlesChan)
-	_ = eg.Wait()
-
-	return processedArticle, nil
+	return nil
 }
 
 // GetArticle retrieves an article by account ID and article ID.
@@ -466,7 +449,7 @@ func (s *ArticleService) updateSendRecordAndArticleOnSuccess(
 }
 
 func (s *ArticleService) processArticleToResult(article *model.Article) ([]byte, error) {
-	epubData, err := s.generator.Generate(article)
+	epubData, err := s.publisher.GenerateEPUB(article)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate EPUB: %w", err)
 	}
@@ -494,34 +477,6 @@ func (s *ArticleService) CountSendsByAccountDateRange(
 // GetDBError returns any database errors that occurred during background operations.
 func (s *ArticleService) GetDBError() error {
 	return s.dbErrors
-}
-
-func (s *ArticleService) startBackgroundDBStore(
-	ctx context.Context,
-) (eg *errgroup.Group, articles chan *model.Article) {
-	eg, groupCtx := errgroup.WithContext(ctx)
-	articles = make(chan *model.Article)
-	var dbErrors error
-
-	eg.Go(func() error {
-		for {
-			select {
-			case article, ok := <-articles:
-				if !ok {
-					return nil
-				}
-				if s.repo != nil {
-					if storeErr := s.repo.Store(groupCtx, article); storeErr != nil {
-						dbErrors = errors.Join(dbErrors, storeErr)
-					}
-				}
-			case <-groupCtx.Done():
-				return groupCtx.Err()
-			}
-		}
-	})
-
-	return
 }
 
 func (s *ArticleService) validateArticleForSend(article *model.Article) error {

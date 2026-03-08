@@ -1,10 +1,8 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/lib/consts"
@@ -15,40 +13,26 @@ import (
 
 // Fetch fetches HTML content from a URL.
 func (s *Service) Fetch(ctx context.Context, url string) ([]byte, error) {
-	htmlReader, err := s.extractor.Fetch(ctx, url)
+	htmlBytes, err := s.fetcher.Fetch(ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch url: %w", err)
-	}
-	defer func() {
-		_ = htmlReader.Close()
-	}()
-
-	htmlBytes, err := io.ReadAll(htmlReader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read html: %w", err)
 	}
 
 	return htmlBytes, nil
 }
 
-// Extract converts HTML to EPUB format.
-func (s *Service) Extract(ctx context.Context, htmlBytes []byte) ([]byte, error) {
-	article, err := s.extractor.ExtractFromReader(ctx, bytes.NewReader(htmlBytes))
+// Extract extracts article metadata and content from HTML bytes.
+func (s *Service) Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error) {
+	article, err := s.extractor.GenerateFromHTML(ctx, htmlBytes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract: %w", err)
 	}
-
-	epubData, err := s.generator.Generate(article)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate epub: %w", err)
-	}
-
-	return epubData, nil
+	return article, nil
 }
 
 // GenerateEPUB generates an EPUB from an existing article.
 func (s *Service) GenerateEPUB(article *model.Article) ([]byte, error) {
-	epubData, err := s.generator.Generate(article)
+	epubData, err := s.publisher.GenerateEPUB(article)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate epub: %w", err)
 	}
@@ -89,6 +73,14 @@ func (s *Service) GetArticle(ctx context.Context, accountID, articleID string) (
 		return nil, fmt.Errorf("failed to get article: %w", err)
 	}
 	return article, nil
+}
+
+// UpdateArticle delegates to ArticleService.
+func (s *Service) UpdateArticle(ctx context.Context, article *model.Article) error {
+	if err := s.articles.UpdateArticle(ctx, article); err != nil {
+		return fmt.Errorf("failed to update article: %w", err)
+	}
+	return nil
 }
 
 // GetArticlesMetadata delegates to ArticleService.

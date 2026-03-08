@@ -17,7 +17,7 @@ const (
 	// fileModeReadWrite is the file permission for EPUB files (readable by user).
 	fileModeReadWrite = 0o644
 
-	// metadataTemplate is the template used to generate the metadata header.
+	// metadataTemplate is template used to generate metadata header.
 	metadataTemplate = `<div style="font-size: 0.85em; color: #666; margin-bottom: 2em; ` +
 		`padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;">
 ` + `{{- if .Title}}<p><strong>Title: {{.Title}}</strong></p>
@@ -33,12 +33,12 @@ const (
 </div>`
 )
 
-// Generator handles EPUB file generation from article content.
-type Generator struct{}
+// Publisher handles EPUB file generation from article content.
+type Publisher struct{}
 
-// NewGenerator creates a new EPUB generator instance.
-func NewGenerator() *Generator {
-	return &Generator{}
+// NewPublisher creates a new EPUB publisher instance.
+func NewPublisher() *Publisher {
+	return &Publisher{}
 }
 
 func buildMetadataHeader(article *model.Article) string {
@@ -74,8 +74,8 @@ func buildMetadataHeader(article *model.Article) string {
 	return result
 }
 
-// Generate creates an EPUB file from the given article and returns its bytes.
-func (g *Generator) Generate(article *model.Article) ([]byte, error) {
+// GenerateEPUB creates an EPUB file from the given article and returns its bytes.
+func (p *Publisher) GenerateEPUB(article *model.Article) ([]byte, error) {
 	e, err := epub.NewEpub(article.Title)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create EPUB: %w", err)
@@ -116,9 +116,9 @@ func (g *Generator) Generate(article *model.Article) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// GenerateAndWrite generates an EPUB file and writes it to the specified path.
-func (g *Generator) GenerateAndWrite(article *model.Article, outputPath string) error {
-	data, err := g.Generate(article)
+// GenerateEPUBAndWrite generates an EPUB file and writes it to the specified path.
+func (p *Publisher) GenerateEPUBAndWrite(article *model.Article, outputPath string) error {
+	data, err := p.GenerateEPUB(article)
 	if err != nil {
 		return err
 	}
