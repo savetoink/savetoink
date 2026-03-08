@@ -45,11 +45,6 @@
 					>
 				</h2>
 			{/if}
-			{#if article.imageUrl}
-				<picture>
-					<img src={article.imageUrl} alt={article.title} />
-				</picture>
-			{/if}
 			{#if article.excerpt}
 				<p>{article.excerpt}</p>
 			{/if}

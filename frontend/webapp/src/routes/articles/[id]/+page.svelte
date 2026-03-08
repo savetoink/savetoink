@@ -26,6 +26,11 @@
 				{/if}
 				{title}</a
 			>
+			{#if data.imageUrl}
+				<picture>
+					<img src={data.imageUrl} alt={data.title} />
+				</picture>
+			{/if}
 		</h1>
 
 		<ArticleMetaAccordion article={data} />
@@ -36,3 +41,9 @@
 		{@html data.content}
 	</section>
 </article>
+
+<style>
+	img {
+		padding-top: 1rem;
+	}
+</style>

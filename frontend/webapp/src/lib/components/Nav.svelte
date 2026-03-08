@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import NavItem from './NavItem.svelte';
 	import { Landing } from '@savetoink/shared/components';
 
@@ -14,17 +13,9 @@
 			</strong>
 		</li>
 		{#if loggedIn}
-			{#if page.data?.total && page.data.total > 0 && !page.url.search.includes('favorite=true')}
-				<NavItem link="/" text="My List ({page.data.total})" />
-			{:else}
-				<NavItem link="/" text="My List" />
-			{/if}
+			<NavItem link="/" text="My List" />
 
-			{#if page.data?.total && page.data.total > 0 && page.url.search.includes('favorite=true')}
-				<NavItem link="/?favorite=true" text="Favorites ({page.data.total})" />
-			{:else}
-				<NavItem link="/?favorite=true" text="Favorites" />
-			{/if}
+			<NavItem link="/?favorite=true" text="Favorites" />
 
 			<NavItem link="/new" text="New" />
 		{/if}
