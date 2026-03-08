@@ -208,16 +208,9 @@ async function main(): Promise<void> {
   const goAppPath = path.join(repoRoot, "backend", "lib", "consts", "app.go");
   try {
     const goContent = await fs.readFile(goAppPath, "utf-8");
-    const commitHash = (
-      await git.resolveRef({
-        fs,
-        dir: repoRoot,
-        ref: "HEAD",
-      })
-    ).slice(0, 7);
     const newGoContent = goContent.replace(
       /var version = ".*"/,
-      `var version = "${newVersionStr}-${commitHash}"`,
+      `var version = "${newVersionStr}"`,
     );
     if (goContent !== newGoContent) {
       await fs.writeFile(goAppPath, newGoContent);
