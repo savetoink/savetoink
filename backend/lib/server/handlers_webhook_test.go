@@ -17,6 +17,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,8 +32,8 @@ type webhookMockService struct {
 	getAccountIDByDeviceEmailErr error
 }
 
-func (m *webhookMockService) Fetch(_ context.Context, _ string) ([]byte, error) {
-	return nil, errors.New("not implemented")
+func (m *webhookMockService) Fetch(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+	return nil, content.FetcherTypeGo, errors.New("not implemented")
 }
 
 func (m *webhookMockService) Extract(_ context.Context, _ []byte) (*model.Article, error) {

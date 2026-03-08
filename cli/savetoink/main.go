@@ -73,7 +73,7 @@ func processArticle(ctx context.Context, url string, svc *service.Service) (*mod
 
 	start := time.Now()
 
-	htmlBytes, err := svc.Fetch(ctx, url)
+	htmlBytes, _, err := svc.Fetch(ctx, url)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch article: %w", err)
 	}

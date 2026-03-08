@@ -16,7 +16,7 @@ import (
 
 // ArticleServiceInterface defines the service methods needed for article processing.
 type ArticleServiceInterface interface {
-	Fetch(ctx context.Context, url string) ([]byte, error)
+	Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error)
 	Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error)
 	UpdateArticle(ctx context.Context, article *model.Article) error
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
@@ -54,12 +54,14 @@ func ProcessArticle(
 	processCtx, cancel := context.WithTimeout(processCtx, consts.ArticleProcessingTimeout)
 	defer cancel()
 
-	htmlBytes, err := svc.Fetch(processCtx, event.URL)
+	htmlBytes, fetcherType, err := svc.Fetch(processCtx, event.URL)
 	if err != nil {
 		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "fetch", err)
 		logArticleResult(processCtx, event.InheritedAttrs, "failed")
 		return
 	}
+
+	logging.AddLogAttr(processCtx, slog.String("fetcher_type", fetcherType.String()))
 
 	extractedArticle, err := svc.Extract(processCtx, htmlBytes)
 	if err != nil {

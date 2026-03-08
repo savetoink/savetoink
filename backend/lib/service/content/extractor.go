@@ -2,6 +2,7 @@
 package content
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -55,7 +56,7 @@ func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte) (*mode
 // should use Fetcher.Fetch() followed by Extractor.GenerateFromHTML().
 func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.Article, error) {
 	fetcher := NewFetcher("")
-	htmlBytes, err := fetcher.Fetch(ctx, urlStr)
+	result, err := fetcher.Fetch(ctx, urlStr)
 	if err != nil {
 		return nil, err
 	}
@@ -74,16 +75,16 @@ func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.A
 		},
 	}
 
-	result, err := trafilatura.Extract(strings.NewReader(string(htmlBytes)), opts)
+	trafilaturaResult, err := trafilatura.Extract(bytes.NewReader(result.HTML), opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract article content: %w", err)
 	}
 
-	if result.ContentNode == nil {
+	if trafilaturaResult.ContentNode == nil {
 		return nil, errors.New("no content extracted")
 	}
 
-	article := e.buildArticle(result, htmlBytes)
+	article := e.buildArticle(trafilaturaResult, result.HTML)
 	return article, nil
 }
 

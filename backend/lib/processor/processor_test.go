@@ -38,17 +38,17 @@ func (h *testCaptureHandler) WithGroup(_ string) slog.Handler {
 }
 
 type mockArticleService struct {
-	fetchFunc      func(ctx context.Context, url string) ([]byte, error)
+	fetchFunc      func(ctx context.Context, url string) ([]byte, content.FetcherType, error)
 	extractFunc    func(ctx context.Context, htmlBytes []byte) (*model.Article, error)
 	updateFunc     func(ctx context.Context, article *model.Article) error
 	getArticleFunc func(ctx context.Context, accountID, articleID string) (*model.Article, error)
 }
 
-func (m *mockArticleService) Fetch(ctx context.Context, url string) ([]byte, error) {
+func (m *mockArticleService) Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error) {
 	if m.fetchFunc != nil {
 		return m.fetchFunc(ctx, url)
 	}
-	return []byte("<html><body>test</body></html>"), nil
+	return []byte("<html><body>test</body></html>"), content.FetcherTypeGo, nil
 }
 
 func (m *mockArticleService) Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error) {
@@ -109,8 +109,8 @@ func TestProcessArticle_Success(t *testing.T) {
 	var capturedArticle *model.Article
 
 	mockSvc := &mockArticleService{
-		fetchFunc: func(_ context.Context, _ string) ([]byte, error) {
-			return []byte("<html><body>test content</body></html>"), nil
+		fetchFunc: func(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+			return []byte("<html><body>test content</body></html>"), content.FetcherTypeGo, nil
 		},
 		extractFunc: func(_ context.Context, _ []byte) (*model.Article, error) {
 			return &model.Article{
@@ -146,8 +146,8 @@ func TestProcessArticle_FetchError(t *testing.T) {
 	var articleUpdated bool
 
 	mockSvc := &mockArticleService{
-		fetchFunc: func(_ context.Context, _ string) ([]byte, error) {
-			return nil, errors.New("fetch failed")
+		fetchFunc: func(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+			return nil, content.FetcherTypeGo, errors.New("fetch failed")
 		},
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
@@ -182,8 +182,8 @@ func TestProcessArticle_ExtractError(t *testing.T) {
 	var articleUpdated bool
 
 	mockSvc := &mockArticleService{
-		fetchFunc: func(_ context.Context, _ string) ([]byte, error) {
-			return []byte("<html><body>test</body></html>"), nil
+		fetchFunc: func(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+			return []byte("<html><body>test</body></html>"), content.FetcherTypeGo, nil
 		},
 		extractFunc: func(_ context.Context, _ []byte) (*model.Article, error) {
 			return nil, errors.New("extract failed")
@@ -221,8 +221,8 @@ func TestProcessArticle_NilExtractedArticle(t *testing.T) {
 	var articleUpdated bool
 
 	mockSvc := &mockArticleService{
-		fetchFunc: func(_ context.Context, _ string) ([]byte, error) {
-			return []byte("<html><body>test</body></html>"), nil
+		fetchFunc: func(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+			return []byte("<html><body>test</body></html>"), content.FetcherTypeGo, nil
 		},
 		extractFunc: func(_ context.Context, _ []byte) (*model.Article, error) {
 			return nil, nil
@@ -260,8 +260,8 @@ func TestProcessArticle_UpdateError(t *testing.T) {
 	var getArticleCalled bool
 
 	mockSvc := &mockArticleService{
-		fetchFunc: func(_ context.Context, _ string) ([]byte, error) {
-			return []byte("<html><body>test</body></html>"), nil
+		fetchFunc: func(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+			return []byte("<html><body>test</body></html>"), content.FetcherTypeGo, nil
 		},
 		extractFunc: func(_ context.Context, _ []byte) (*model.Article, error) {
 			return &model.Article{
@@ -302,8 +302,8 @@ func TestProcessArticle_URLMismatch(t *testing.T) {
 	var capturedArticle *model.Article
 
 	mockSvc := &mockArticleService{
-		fetchFunc: func(_ context.Context, _ string) ([]byte, error) {
-			return []byte("<html><body>test</body></html>"), nil
+		fetchFunc: func(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+			return []byte("<html><body>test</body></html>"), content.FetcherTypeGo, nil
 		},
 		extractFunc: func(_ context.Context, _ []byte) (*model.Article, error) {
 			return &model.Article{
@@ -337,12 +337,12 @@ func TestProcessArticle_URLMismatch(t *testing.T) {
 
 func TestProcessArticle_Timeout(t *testing.T) {
 	mockSvc := &mockArticleService{
-		fetchFunc: func(ctx context.Context, _ string) ([]byte, error) {
+		fetchFunc: func(ctx context.Context, _ string) ([]byte, content.FetcherType, error) {
 			select {
 			case <-ctx.Done():
-				return nil, ctx.Err()
+				return nil, content.FetcherTypeGo, ctx.Err()
 			case <-time.After(5 * time.Second):
-				return []byte("<html><body>test</body></html>"), nil
+				return []byte("<html><body>test</body></html>"), content.FetcherTypeGo, nil
 			}
 		},
 	}

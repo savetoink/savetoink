@@ -27,8 +27,8 @@ import (
 
 // Interface defines the contract for service operations.
 type Interface interface {
-	// Fetch fetches the HTML content of a given URL.
-	Fetch(ctx context.Context, url string) ([]byte, error)
+	// Fetch fetches the HTML content of a given URL and returns the fetcher type used.
+	Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error)
 
 	// Extract extracts article metadata and content from HTML bytes.
 	Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error)

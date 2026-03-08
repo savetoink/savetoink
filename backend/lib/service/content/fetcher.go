@@ -16,6 +16,33 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/validation"
 )
 
+// FetcherType indicates which fetch method was used.
+type FetcherType int
+
+const (
+	// FetcherTypeGo indicates the Go HTTP client was used.
+	FetcherTypeGo FetcherType = iota
+	// FetcherTypeBrowserless indicates the Browserless API was used.
+	FetcherTypeBrowserless
+)
+
+func (t FetcherType) String() string {
+	switch t {
+	case FetcherTypeGo:
+		return "go"
+	case FetcherTypeBrowserless:
+		return "browserless"
+	default:
+		return "unknown"
+	}
+}
+
+// FetchResult contains the fetched HTML content and the fetcher type used.
+type FetchResult struct {
+	HTML []byte
+	Type FetcherType
+}
+
 // Fetcher handles fetching HTML content from URLs.
 type Fetcher struct {
 	client         *http.Client
@@ -30,9 +57,9 @@ func NewFetcher(browserlessKey string) *Fetcher {
 	}
 }
 
-// Fetch fetches HTML content from a URL and returns the bytes.
+// Fetch fetches HTML content from a URL and returns the bytes with fetcher type.
 // Falls back to Browserless API if the simple HTTP fetch fails and a browserless key is configured.
-func (f *Fetcher) Fetch(ctx context.Context, urlStr string) ([]byte, error) {
+func (f *Fetcher) Fetch(ctx context.Context, urlStr string) (*FetchResult, error) {
 	if err := validateURL(urlStr); err != nil {
 		return nil, fmt.Errorf("invalid URL: %w", err)
 	}
@@ -82,11 +109,11 @@ func (f *Fetcher) Fetch(ctx context.Context, urlStr string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	return htmlBytes, nil
+	return &FetchResult{HTML: htmlBytes, Type: FetcherTypeGo}, nil
 }
 
 // fetchWithBrowserless fetches HTML content using the Browserless content API.
-func (f *Fetcher) fetchWithBrowserless(ctx context.Context, urlStr string) ([]byte, error) {
+func (f *Fetcher) fetchWithBrowserless(ctx context.Context, urlStr string) (*FetchResult, error) {
 	browserlessURL := fmt.Sprintf("%s?token=%s", consts.BrowserlessContentURL, f.browserlessKey)
 
 	requestBody := struct {
@@ -126,7 +153,7 @@ func (f *Fetcher) fetchWithBrowserless(ctx context.Context, urlStr string) ([]by
 		return nil, fmt.Errorf("browserless returned invalid content: %w", err)
 	}
 
-	return htmlBytes, nil
+	return &FetchResult{HTML: htmlBytes, Type: FetcherTypeBrowserless}, nil
 }
 
 func validateURL(urlStr string) error {

@@ -15,6 +15,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )
 
@@ -32,7 +33,7 @@ type MockService struct {
 	accountIDByDeviceEmailErr error
 }
 
-func (m *MockService) Fetch(_ context.Context, _ string) ([]byte, error) {
+func (m *MockService) Fetch(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
 	panic("not implemented")
 }
 

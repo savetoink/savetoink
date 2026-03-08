@@ -474,3 +474,46 @@ func TestLogArticleProcessing_NoInheritedAttrs(t *testing.T) {
 
 	assert.Equal(t, "success", attrMap["status"])
 }
+
+func TestLogArticleProcessing_WithLogRecordAttrs(t *testing.T) {
+	capture := &logCaptureHandler{records: make([]slog.Record, 0)}
+	logger := slog.New(capture)
+	defaultLogger := slog.Default()
+	slog.SetDefault(logger)
+	defer slog.SetDefault(defaultLogger)
+
+	logRecord := slog.NewRecord(time.Now(), slog.LevelInfo, "message", 0)
+	ctx := context.WithValue(context.Background(), LogRecordKey, &LogRecord{&logRecord})
+
+	AddString(ctx, "fetcher_type", "browserless")
+	AddInt(ctx, "response_time_ms", 250)
+
+	inheritedAttrs := []slog.Attr{
+		slog.String("request_id", "req-123"),
+	}
+	extraAttr := slog.String("status", "success")
+
+	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs, extraAttr)
+
+	require.Len(t, capture.records, 1)
+	record := capture.records[0]
+
+	assert.Equal(t, slog.LevelInfo, record.Level)
+	assert.Equal(t, "article processing completed", record.Message)
+
+	var attrs []slog.Attr
+	record.Attrs(func(a slog.Attr) bool {
+		attrs = append(attrs, a)
+		return true
+	})
+
+	attrMap := make(map[string]string)
+	for _, attr := range attrs {
+		attrMap[attr.Key] = attr.Value.String()
+	}
+
+	assert.Equal(t, "req-123", attrMap["request_id"])
+	assert.Equal(t, "success", attrMap["status"])
+	assert.Equal(t, "browserless", attrMap["fetcher_type"])
+	assert.Equal(t, "250", attrMap["response_time_ms"])
+}

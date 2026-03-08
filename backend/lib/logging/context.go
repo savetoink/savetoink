@@ -101,6 +101,13 @@ func LogArticleProcessing(ctx context.Context, message string, inheritedAttrs []
 	}
 	record.AddAttrs(extraAttr)
 
+	if logRecord := getLogRecord(ctx); logRecord != nil {
+		logRecord.Attrs(func(attr slog.Attr) bool {
+			record.AddAttrs(attr)
+			return true
+		})
+	}
+
 	if requestError := GetRequestError(ctx); requestError != nil {
 		if joinedErr, ok := requestError.(interface{ Unwrap() []error }); ok {
 			for i, err := range joinedErr.Unwrap() {

@@ -8,17 +8,18 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )
 
 // Fetch fetches HTML content from a URL.
-func (s *Service) Fetch(ctx context.Context, url string) ([]byte, error) {
-	htmlBytes, err := s.fetcher.Fetch(ctx, url)
+func (s *Service) Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error) {
+	result, err := s.fetcher.Fetch(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch url: %w", err)
+		return nil, content.FetcherTypeGo, fmt.Errorf("failed to fetch url: %w", err)
 	}
 
-	return htmlBytes, nil
+	return result.HTML, result.Type, nil
 }
 
 // Extract extracts article metadata and content from HTML bytes.
