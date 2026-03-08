@@ -12,7 +12,11 @@ Parameters:
 
   SourceBucketKey:
     Type: String
-    Description: S3 key for the Lambda source zip file
+    Description: S3 key for Lambda source zip file
+
+  ProcessorSourceBucketKey:
+    Type: String
+    Description: S3 key for Processor Lambda source zip file
 
   AppURL:
     Type: String
@@ -140,8 +144,20 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess # FIXME: use proper policy
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-lambda-invoke-processor"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !Sub "arn:aws:lambda:*:*:function:${ProjectName}-processor"
 
+  #############################
+  # Lambda function for the API
+  #############################
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -153,7 +169,7 @@ Resources:
       Code:
         S3Bucket: !Ref SourceBucketName
         S3Key: !Ref SourceBucketKey
-      Timeout: 540
+      Timeout: 30
       MemorySize: 256
       Environment:
         Variables:
@@ -166,19 +182,20 @@ Resources:
           SAVETOINK_AUTH0_CLIENT_SECRET: !Ref Auth0ClientSecret
           SAVETOINK_AUTH0_DOMAIN: !Ref Auth0Domain
           SAVETOINK_AUTH_BACKEND: !Ref AuthBackend
+          SAVETOINK_BROWSERLESS_KEY: !Ref BrowserlessKey
           SAVETOINK_DEBUG: !Ref Debug
           SAVETOINK_EMAIL_BACKEND: !Ref MailBackend
+          SAVETOINK_LOGGING_PROVIDER: !Ref LoggingProvider
           SAVETOINK_MAILJET_API_KEY: !Ref MailjetAPIKey
           SAVETOINK_MAILJET_API_SECRET: !Ref MailjetAPISecret
           SAVETOINK_MAILJET_WEBHOOK_SECRET: !Ref MailjetWebhookSecret
+          SAVETOINK_PROCESS_ARTICLE_LAMBDA: !Sub "${ProjectName}-processor"
           SAVETOINK_SENDER_EMAIL: !Ref SenderEmail
           SAVETOINK_SENDS_TABLE_NAME: !Ref SendsTable
-          SAVETOINK_USER_PROFILE_TABLE_NAME: !Ref UserProfileTable
-          SAVETOINK_LOGGING_PROVIDER: !Ref LoggingProvider
           SAVETOINK_SENTRY_DSN: !Ref SentryDSN
           SAVETOINK_SENTRY_ENVIRONMENT: !Ref SentryEnvironment
           SAVETOINK_SENTRY_SAMPLE_RATE: !Ref SentrySampleRate
-          SAVETOINK_BROWSERLESS_KEY: !Ref BrowserlessKey
+          SAVETOINK_USER_PROFILE_TABLE_NAME: !Ref UserProfileTable
 
       TracingConfig:
         Mode: PassThrough
@@ -210,6 +227,62 @@ Resources:
       FunctionName: !Ref LambdaFunction
       Action: lambda:InvokeFunction
       Principal: "*"
+
+  #############################
+  # Lambda function for Processor
+  #############################
+  ProcessorLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-processor"
+      Description: !Sub "${ProjectName} Processor - Async article processing service"
+      Runtime: provided.al2023
+      Handler: bootstrap
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref SourceBucketName
+        S3Key: !Ref ProcessorSourceBucketKey
+      Timeout: 30
+      MemorySize: 1024
+      Environment:
+        Variables: # TODO: update config validator to support subset of vars in processor
+          SAVETOINK_API_KEY: !Ref APIKeySecret
+          SAVETOINK_APP_URL: !Ref AppURL
+          SAVETOINK_ARTICLE_TABLE_NAME: !Ref ArticleTable
+          SAVETOINK_ARTICLE_TAGS_TABLE_NAME: !Ref ArticleTagsTable
+          SAVETOINK_AUTH0_AUDIENCE: !Ref Auth0Audience
+          SAVETOINK_AUTH0_CLIENT_ID: !Ref Auth0ClientId
+          SAVETOINK_AUTH0_CLIENT_SECRET: !Ref Auth0ClientSecret
+          SAVETOINK_AUTH0_DOMAIN: !Ref Auth0Domain
+          SAVETOINK_AUTH_BACKEND: !Ref AuthBackend
+          SAVETOINK_DEBUG: !Ref Debug
+          SAVETOINK_EMAIL_BACKEND: !Ref MailBackend
+          SAVETOINK_MAILJET_API_KEY: !Ref MailjetAPIKey
+          SAVETOINK_MAILJET_API_SECRET: !Ref MailjetAPISecret
+          SAVETOINK_MAILJET_WEBHOOK_SECRET: !Ref MailjetWebhookSecret
+          SAVETOINK_SENDER_EMAIL: !Ref SenderEmail
+          SAVETOINK_SENDS_TABLE_NAME: !Ref SendsTable
+          SAVETOINK_USER_PROFILE_TABLE_NAME: !Ref UserProfileTable
+          SAVETOINK_LOGGING_PROVIDER: !Ref LoggingProvider
+          SAVETOINK_SENTRY_DSN: !Ref SentryDSN
+          SAVETOINK_SENTRY_ENVIRONMENT: !Ref SentryEnvironment
+          SAVETOINK_SENTRY_SAMPLE_RATE: !Ref SentrySampleRate
+          SAVETOINK_BROWSERLESS_KEY: !Ref BrowserlessKey
+      TracingConfig:
+        Mode: PassThrough
+
+  ProcessorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ProcessorLambdaFunction}"
+      RetentionInDays: 30
+
+  ProcessorLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ProcessorLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: !GetAtt LambdaExecutionRole.Arn
 
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -289,6 +362,9 @@ Resources:
         Aliases:
           - !Ref DomainName
 
+  ##########
+  # DynamoDB
+  ##########
   ArticleTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -422,6 +498,9 @@ Resources:
               - !GetAtt SendsTable.Arn
               - !GetAtt UserProfileTable.Arn
 
+  #############################
+  # GitHub OIDC Provider
+  #############################
   GitHubOIDCProvider:
     Type: AWS::IAM::OIDCProvider
     Properties:
@@ -464,8 +543,15 @@ Resources:
             Resource: !Sub "arn:aws:s3:::${SourceBucketName}/${SourceBucketKey}"
           - Effect: Allow
             Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Sub "arn:aws:s3:::${SourceBucketName}/${ProcessorSourceBucketKey}"
+          - Effect: Allow
+            Action:
               - lambda:UpdateFunctionCode
-            Resource: !Sub "arn:aws:lambda:*:*:function:${ProjectName}-api"
+            Resource:
+              - !Sub "arn:aws:lambda:*:*:function:${ProjectName}-api"
+              - !Sub "arn:aws:lambda:*:*:function:${ProjectName}-processor"
 
 Outputs:
   FunctionName:
@@ -556,3 +642,15 @@ Outputs:
   GitHubOIDCProviderArn:
     Description: ARN of the GitHub OIDC provider
     Value: !GetAtt GitHubOIDCProvider.Arn
+
+  ProcessorFunctionName:
+    Description: Name of Processor Lambda function
+    Value: !Ref ProcessorLambdaFunction
+    Export:
+      Name: !Sub "${ProjectName}-processor-function-name"
+
+  ProcessorFunctionArn:
+    Description: ARN of Processor Lambda function
+    Value: !GetAtt ProcessorLambdaFunction.Arn
+    Export:
+      Name: !Sub "${ProjectName}-processor-function-arn"

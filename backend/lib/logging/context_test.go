@@ -276,3 +276,201 @@ func TestAddLogAttr_Integration(t *testing.T) {
 	assert.True(t, attrKeys["success"])
 	assert.True(t, attrKeys["created_at"])
 }
+
+func TestGetRequestID_Present(t *testing.T) {
+	requestID := "req-12345"
+	ctx := context.WithValue(context.Background(), RequestIDKey, requestID)
+
+	result := GetRequestID(ctx)
+
+	assert.Equal(t, requestID, result)
+}
+
+func TestGetRequestID_Missing(t *testing.T) {
+	ctx := context.Background()
+
+	result := GetRequestID(ctx)
+
+	assert.Empty(t, result)
+}
+
+func TestGetRequestID_WrongType(t *testing.T) {
+	ctx := context.WithValue(context.Background(), RequestIDKey, 12345)
+
+	result := GetRequestID(ctx)
+
+	assert.Empty(t, result)
+}
+
+type logCaptureHandler struct {
+	records []slog.Record
+}
+
+func (h *logCaptureHandler) Handle(_ context.Context, r slog.Record) error { //nolint:gocritic
+	h.records = append(h.records, r)
+	return nil
+}
+
+func (h *logCaptureHandler) Enabled(_ context.Context, _ slog.Level) bool {
+	return true
+}
+
+func (h *logCaptureHandler) WithAttrs(_ []slog.Attr) slog.Handler {
+	return h
+}
+
+func (h *logCaptureHandler) WithGroup(_ string) slog.Handler {
+	return h
+}
+
+func TestLogArticleProcessing_Success(t *testing.T) {
+	capture := &logCaptureHandler{records: make([]slog.Record, 0)}
+	logger := slog.New(capture)
+	defaultLogger := slog.Default()
+	slog.SetDefault(logger)
+	defer slog.SetDefault(defaultLogger)
+
+	inheritedAttrs := []slog.Attr{
+		slog.String("request_id", "req-123"),
+		slog.String("account_id", "acc-456"),
+	}
+	extraAttr := slog.String("status", "success")
+
+	ctx := context.Background()
+
+	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs, extraAttr)
+
+	require.Len(t, capture.records, 1)
+	record := capture.records[0]
+
+	assert.Equal(t, slog.LevelInfo, record.Level)
+	assert.Equal(t, "article processing completed", record.Message)
+
+	var attrs []slog.Attr
+	record.Attrs(func(a slog.Attr) bool {
+		attrs = append(attrs, a)
+		return true
+	})
+
+	attrMap := make(map[string]string)
+	for _, attr := range attrs {
+		attrMap[attr.Key] = attr.Value.String()
+	}
+
+	assert.Equal(t, "req-123", attrMap["request_id"])
+	assert.Equal(t, "acc-456", attrMap["account_id"])
+	assert.Equal(t, "success", attrMap["status"])
+	assert.NotContains(t, attrMap, "error")
+}
+
+func TestLogArticleProcessing_SingleError(t *testing.T) {
+	capture := &logCaptureHandler{records: make([]slog.Record, 0)}
+	logger := slog.New(capture)
+	defaultLogger := slog.Default()
+	slog.SetDefault(logger)
+	defer slog.SetDefault(defaultLogger)
+
+	testErr := errors.New("fetch failed")
+	ctx := context.WithValue(context.Background(), RequestErrorKey, &testErr)
+
+	inheritedAttrs := []slog.Attr{
+		slog.String("request_id", "req-123"),
+	}
+	extraAttr := slog.String("status", "failed")
+
+	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs, extraAttr)
+
+	require.Len(t, capture.records, 1)
+	record := capture.records[0]
+
+	assert.Equal(t, slog.LevelError, record.Level)
+	assert.Equal(t, "article processing completed", record.Message)
+
+	var attrs []slog.Attr
+	record.Attrs(func(a slog.Attr) bool {
+		attrs = append(attrs, a)
+		return true
+	})
+
+	attrMap := make(map[string]string)
+	for _, attr := range attrs {
+		attrMap[attr.Key] = attr.Value.String()
+	}
+
+	assert.Equal(t, "req-123", attrMap["request_id"])
+	assert.Equal(t, "failed", attrMap["status"])
+	assert.Equal(t, "fetch failed", attrMap["error"])
+}
+
+func TestLogArticleProcessing_JoinedErrors(t *testing.T) {
+	capture := &logCaptureHandler{records: make([]slog.Record, 0)}
+	logger := slog.New(capture)
+	defaultLogger := slog.Default()
+	slog.SetDefault(logger)
+	defer slog.SetDefault(defaultLogger)
+
+	err1 := errors.New("error 1")
+	err2 := errors.New("error 2")
+	joinedErr := errors.Join(err1, err2)
+	ctx := context.WithValue(context.Background(), RequestErrorKey, &joinedErr)
+
+	inheritedAttrs := []slog.Attr{
+		slog.String("request_id", "req-123"),
+	}
+	extraAttr := slog.String("status", "failed")
+
+	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs, extraAttr)
+
+	require.Len(t, capture.records, 1)
+	record := capture.records[0]
+
+	assert.Equal(t, slog.LevelError, record.Level)
+	assert.Equal(t, "article processing completed", record.Message)
+
+	var attrs []slog.Attr
+	record.Attrs(func(a slog.Attr) bool {
+		attrs = append(attrs, a)
+		return true
+	})
+
+	attrMap := make(map[string]string)
+	for _, attr := range attrs {
+		attrMap[attr.Key] = attr.Value.String()
+	}
+
+	assert.Equal(t, "req-123", attrMap["request_id"])
+	assert.Equal(t, "failed", attrMap["status"])
+	assert.Equal(t, "error 1", attrMap["error_0"])
+	assert.Equal(t, "error 2", attrMap["error_1"])
+}
+
+func TestLogArticleProcessing_NoInheritedAttrs(t *testing.T) {
+	capture := &logCaptureHandler{records: make([]slog.Record, 0)}
+	logger := slog.New(capture)
+	defaultLogger := slog.Default()
+	slog.SetDefault(logger)
+	defer slog.SetDefault(defaultLogger)
+
+	ctx := context.Background()
+	extraAttr := slog.String("status", "success")
+
+	LogArticleProcessing(ctx, "article processing completed", nil, extraAttr)
+
+	require.Len(t, capture.records, 1)
+	record := capture.records[0]
+
+	assert.Equal(t, slog.LevelInfo, record.Level)
+
+	var attrs []slog.Attr
+	record.Attrs(func(a slog.Attr) bool {
+		attrs = append(attrs, a)
+		return true
+	})
+
+	attrMap := make(map[string]string)
+	for _, attr := range attrs {
+		attrMap[attr.Key] = attr.Value.String()
+	}
+
+	assert.Equal(t, "success", attrMap["status"])
+}

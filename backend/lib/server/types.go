@@ -5,6 +5,7 @@ import (
 
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/processor"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
 
@@ -73,7 +74,8 @@ type deviceResponse struct {
 }
 
 type handlers struct {
-	cfg     *config.Config
-	service service.Interface
-	client  *http.Client
+	cfg       *config.Config
+	service   service.Interface
+	client    *http.Client
+	processor processor.Processor
 }

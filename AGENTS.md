@@ -18,6 +18,10 @@ This repository contains the code for the savetoink application, composed of:
 - **NEVER** ignore linting errors via `//nolint` statements or similar tricks without prompting the user for permission.
 - prefer lowercase log and error messages
 
+### Backend / SSR
+
+- prefer wide event logging: collect all relevant fields in a single event rather than multiple events, log once when all the processing is done
+
 ## API Documentation
 
 - The OpenAPI specification is maintained in [backend/lib/server/openapi.yaml](backend/lib/server/openapi.yaml)

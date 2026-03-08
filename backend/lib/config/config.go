@@ -44,6 +44,9 @@ type Config struct {
 
 	// Content Fetching
 	BrowserlessKey string
+
+	// Lambda
+	ProcessArticleLambda string
 }
 
 // AWSConfigLoader is a function type for loading AWS configuration.
@@ -90,16 +93,17 @@ func bindEnvVars() error {
 		{"auth0-client-id", "SAVETOINK_AUTH0_CLIENT_ID"},
 		{"auth0-client-secret", "SAVETOINK_AUTH0_CLIENT_SECRET"},
 		{"auth0-domain", "SAVETOINK_AUTH0_DOMAIN"},
+		{"browserless-key", "SAVETOINK_BROWSERLESS_KEY"},
 		{"debug", "SAVETOINK_DEBUG"},
 		{"email-backend", "SAVETOINK_EMAIL_BACKEND"},
+		{"logging-provider", "SAVETOINK_LOGGING_PROVIDER"},
+		{"process-article-lambda", "SAVETOINK_PROCESS_ARTICLE_LAMBDA"},
 		{"sender-email", "SAVETOINK_SENDER_EMAIL"},
 		{"sends-table", "SAVETOINK_SENDS_TABLE_NAME"},
-		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
-		{"logging-provider", "SAVETOINK_LOGGING_PROVIDER"},
 		{"sentry-dsn", "SAVETOINK_SENTRY_DSN"},
 		{"sentry-environment", "SAVETOINK_SENTRY_ENVIRONMENT"},
 		{"sentry-sample-rate", "SAVETOINK_SENTRY_SAMPLE_RATE"},
-		{"browserless-key", "SAVETOINK_BROWSERLESS_KEY"},
+		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
 	}
 
 	for _, ev := range envVars {
@@ -134,6 +138,7 @@ func loadConfig(mode consts.RunMode) *Config {
 		SentryEnvironment:    viper.GetString("sentry-environment"),
 		SentrySampleRate:     viper.GetFloat64("sentry-sample-rate"),
 		BrowserlessKey:       viper.GetString("browserless-key"),
+		ProcessArticleLambda: viper.GetString("process-article-lambda"),
 	}
 
 	return cfg

@@ -27,7 +27,7 @@ func TestAuthTokenExchange_MissingCode(t *testing.T) {
 		Auth0ClientSecret: "test-client-secret",
 		Auth0Audience:     "test-audience",
 	}
-	h := newHandlers(cfg, nil, http.DefaultClient)
+	h := newHandlers(cfg, nil, http.DefaultClient, nil)
 
 	body := authTokenExchangeRequest{
 		RedirectURI: "http://localhost/callback",
@@ -52,7 +52,7 @@ func TestAuthTokenExchange_MissingRedirectURI(t *testing.T) {
 		Auth0ClientSecret: "test-client-secret",
 		Auth0Audience:     "test-audience",
 	}
-	h := newHandlers(cfg, nil, http.DefaultClient)
+	h := newHandlers(cfg, nil, http.DefaultClient, nil)
 
 	body := authTokenExchangeRequest{
 		Code: "test-code",
@@ -77,7 +77,7 @@ func TestAuthTokenExchange_InvalidJSON(t *testing.T) {
 		Auth0ClientSecret: "test-client-secret",
 		Auth0Audience:     "test-audience",
 	}
-	h := newHandlers(cfg, nil, http.DefaultClient)
+	h := newHandlers(cfg, nil, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(
 		context.Background(),
@@ -176,7 +176,7 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 		Auth0ClientSecret: "test-client-secret",
 		Auth0Audience:     "test-audience",
 	}
-	h := newHandlers(cfg, nil, client)
+	h := newHandlers(cfg, nil, client, nil)
 
 	body := authTokenExchangeRequest{
 		Code:        "test-code",

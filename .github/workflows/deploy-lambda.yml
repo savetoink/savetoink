@@ -38,7 +38,12 @@ jobs:
           role-to-assume: ${{ inputs.aws_role_arn }}
           aws-region: ${{ inputs.aws_region }}
 
-      - name: Deploy Lambda (hide output to avoid leaking secrets)
-        run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda > /dev/null
+      - name: Deploy API Lambda (hide output to avoid leaking secrets)
+        run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda-api > /dev/null
+        env:
+          SAVETOINK_BUCKET: ${{ inputs.bucket }}
+
+      - name: Deploy Processor Lambda (hide output to avoid leaking secrets)
+        run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda-processor > /dev/null
         env:
           SAVETOINK_BUCKET: ${{ inputs.bucket }}

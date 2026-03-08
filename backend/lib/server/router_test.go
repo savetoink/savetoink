@@ -153,6 +153,7 @@ func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
 		cfg,
 		svc,
 		client,
+		nil,
 	)
 
 	r.Use(middleware.Recoverer)

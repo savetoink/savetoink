@@ -129,7 +129,7 @@ func (m *webhookMockService) GetAccountIDByDeviceEmail(_ context.Context, _ stri
 }
 
 func newWebhookTestHandlers(cfg *config.Config, svc *webhookMockService) *handlers {
-	return newHandlers(cfg, svc, http.DefaultClient)
+	return newHandlers(cfg, svc, http.DefaultClient, nil)
 }
 
 //nolint:gosec // test credentials, not real secrets
@@ -286,7 +286,7 @@ func TestVerifyMailjetSecret(t *testing.T) {
 		cfg := &config.Config{
 			MailjetWebhookSecret: "",
 		}
-		h := newHandlers(cfg, &webhookMockService{}, http.DefaultClient)
+		h := newHandlers(cfg, &webhookMockService{}, http.DefaultClient, nil)
 
 		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test?secret=some-secret", http.NoBody)
 		err := h.verifyMailjetSecret(req)
@@ -299,7 +299,7 @@ func TestVerifyMailjetSecret(t *testing.T) {
 		cfg := &config.Config{
 			MailjetWebhookSecret: "correct-secret",
 		}
-		h := newHandlers(cfg, &webhookMockService{}, http.DefaultClient)
+		h := newHandlers(cfg, &webhookMockService{}, http.DefaultClient, nil)
 
 		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test?secret=wrong-secret", http.NoBody)
 		err := h.verifyMailjetSecret(req)
@@ -312,7 +312,7 @@ func TestVerifyMailjetSecret(t *testing.T) {
 		cfg := &config.Config{
 			MailjetWebhookSecret: "correct-secret",
 		}
-		h := newHandlers(cfg, &webhookMockService{}, http.DefaultClient)
+		h := newHandlers(cfg, &webhookMockService{}, http.DefaultClient, nil)
 
 		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test?secret=correct-secret", http.NoBody)
 		err := h.verifyMailjetSecret(req)
@@ -324,7 +324,7 @@ func TestVerifyMailjetSecret(t *testing.T) {
 func TestProcessBounceEvents(t *testing.T) {
 	t.Run("successfully processes single valid bounce event", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -344,7 +344,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("successfully processes multiple valid bounce events", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -366,7 +366,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		svc := &webhookMockService{
 			handleBounceErr: errors.New("handle bounce failed"),
 		}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -384,7 +384,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("handles events with non-bounce event type", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -402,7 +402,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("handles events with empty email field", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -420,7 +420,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("handles mixed valid and invalid events", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -441,7 +441,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("logs bounced_email attribute", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -467,7 +467,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		svc := &webhookMockService{
 			getAccountIDByDeviceEmail: "account-123",
 		}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -493,7 +493,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		svc := &webhookMockService{
 			getAccountIDByDeviceEmail: "",
 		}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -517,7 +517,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("logs bounce_error attribute when errorMessage present", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -541,7 +541,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("logs bounce_error with default value when both error and comment empty", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -565,7 +565,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("logs hard_bounce attribute when HardBounce is true", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -589,7 +589,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("does not log hard_bounce when HardBounce is false", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -613,7 +613,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("logs bounce_timestamp attribute when Time > 0", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -640,7 +640,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("does not log bounce_timestamp when Time <= 0", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -664,7 +664,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("logs processed_count and failed_count correctly", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -698,7 +698,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		svc := &webhookMockService{
 			handleBounceErr: errors.New("handle bounce failed"),
 		}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -719,7 +719,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		svc := &webhookMockService{
 			getAccountIDByDeviceEmail: "account-123",
 		}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -742,7 +742,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("handles minimal required event fields", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
@@ -763,7 +763,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("handles empty events array", func(t *testing.T) {
 		svc := &webhookMockService{}
-		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient)
+		h := newHandlers(newWebhookTestConfig(), svc, http.DefaultClient, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
