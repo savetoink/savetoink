@@ -67,7 +67,7 @@ func TestLogProcessingStarted(t *testing.T) {
 
 	processor.logProcessingStarted(ctx, inheritedAttrs, "success")
 
-	assert.Equal(t, "article processing started with "+testFunctionName, capturedRecord.Message)
+	assert.Equal(t, "article processing delegated to "+testFunctionName, capturedRecord.Message)
 
 	var attrs []slog.Attr
 	capturedRecord.Attrs(func(a slog.Attr) bool {
@@ -105,7 +105,7 @@ func TestLogProcessingStarted_Failure(t *testing.T) {
 
 	processor.logProcessingStarted(ctx, inheritedAttrs, "failure")
 
-	assert.Equal(t, "article processing started with "+testFunctionName, capturedRecord.Message)
+	assert.Equal(t, "article processing delegated to "+testFunctionName, capturedRecord.Message)
 
 	var attrs []slog.Attr
 	capturedRecord.Attrs(func(a slog.Attr) bool {
@@ -140,7 +140,7 @@ func TestLogProcessingStarted_EmptyAttrs(t *testing.T) {
 
 	processor.logProcessingStarted(ctx, inheritedAttrs, "success")
 
-	assert.Equal(t, "article processing started with "+testFunctionName, capturedRecord.Message)
+	assert.Equal(t, "article processing delegated to "+testFunctionName, capturedRecord.Message)
 
 	var attrs []slog.Attr
 	capturedRecord.Attrs(func(a slog.Attr) bool {

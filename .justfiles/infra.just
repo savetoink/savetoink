@@ -53,7 +53,7 @@ upload-zip-api:
 
 # Build Lambda binary for Linux
 build-lambda-api:
-    GOOS=linux GOARCH=amd64 go build {{ build_flags }} -o bin/bootstrap ./backend/cmd/lambda
+    GOOS=linux GOARCH=amd64 go build -ldflags "{{ build_flags }}=$(just version)" -o bin/bootstrap ./backend/cmd/lambda
 
 # Build Lambda zip for deployment
 [working-directory('bin')]
@@ -74,7 +74,7 @@ upload-zip-processor:
 
 # Build Lambda binary for Linux
 build-lambda-processor:
-    GOOS=linux GOARCH=amd64 go build {{ build_flags }} -o bin/bootstrap ./backend/cmd/lambda/processor
+    GOOS=linux GOARCH=amd64 go build -ldflags "{{ build_flags }}=$(just version)" -o bin/bootstrap ./backend/cmd/lambda/processor
 
 # Build Lambda zip for deployment
 [working-directory('bin')]

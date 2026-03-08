@@ -60,7 +60,7 @@ func (p *Processor) StartProcessing(ctx context.Context, event *content.ProcessA
 func (p *Processor) logProcessingStarted(ctx context.Context, inheritedAttrs []slog.Attr, status string) {
 	logging.LogArticleProcessing(
 		ctx,
-		"article processing started with "+p.functionName,
+		"article processing delegated to "+p.functionName,
 		inheritedAttrs,
 		slog.String("status", status),
 	)
