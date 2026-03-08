@@ -1,10 +1,17 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import ArticleMetaItem from '$lib/components/ArticleMetaItem.svelte';
 	import Navigator from '$lib/components/Navigator.svelte';
+	import KeyboardNav from '$lib/components/KeyboardNav.svelte';
+	import {
+		LIST_BINDINGS,
+		toggleFavorite as toggleFavoriteAction,
+		deleteArticle as deleteArticleAction,
+		sendArticle as sendArticleAction
+	} from '@savetoink/shared';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -23,68 +30,60 @@
 
 	function toggleFavorite() {
 		if (selectedArticleIndex !== null && favoriteForm) {
-			favoriteForm.requestSubmit();
+			toggleFavoriteAction(favoriteForm);
 		}
 	}
 
 	async function deleteArticle() {
 		if (selectedArticleIndex === null) return;
 		if (!deleteForm) return;
-		if (!window.confirm('Are you sure you want to delete this article?')) {
-			return;
-		}
-		deleteForm.requestSubmit();
+		deleteArticleAction(deleteForm);
 	}
 
 	function sendArticle() {
 		if (selectedArticleIndex !== null && sendForm) {
-			sendForm.requestSubmit();
+			sendArticleAction(sendForm);
 		}
 	}
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (!data.articles.length) return;
-
-		switch (e.key) {
-			case 'ArrowUp':
-			case 'k':
-				e.preventDefault();
-				if (selectedArticleIndex === null || selectedArticleIndex > 0) {
-					selectedArticleIndex = selectedArticleIndex === null ? 0 : selectedArticleIndex - 1;
-				}
-				break;
-			case 'ArrowDown':
-			case 'j':
-				e.preventDefault();
-				if (selectedArticleIndex === null || selectedArticleIndex < data.articles.length - 1) {
-					selectedArticleIndex = selectedArticleIndex === null ? 0 : selectedArticleIndex + 1;
-				}
-				break;
-			case 'ArrowRight':
-			case 'Enter':
-				e.preventDefault();
-				if (selectedArticleIndex !== null) {
-					window.location.href = `/articles/${data.articles[selectedArticleIndex].id}`;
-				}
-				break;
-			case 'f':
-				e.preventDefault();
-				toggleFavorite();
-				break;
-			case 'd':
-				e.preventDefault();
-				deleteArticle();
-				break;
-			case 's':
-				e.preventDefault();
-				sendArticle();
-				break;
-			case 'n':
-				e.preventDefault();
-				goto(resolve('/new'));
-				break;
-		}
-	}
+	const keyboardCallbacks = {
+		ArrowUp: () => {
+			if (selectedArticleIndex === null || selectedArticleIndex > 0) {
+				selectedArticleIndex = selectedArticleIndex === null ? 0 : selectedArticleIndex - 1;
+			}
+		},
+		k: () => {
+			if (selectedArticleIndex === null || selectedArticleIndex > 0) {
+				selectedArticleIndex = selectedArticleIndex === null ? 0 : selectedArticleIndex - 1;
+			}
+		},
+		ArrowDown: () => {
+			if (selectedArticleIndex === null || selectedArticleIndex < data.articles.length - 1) {
+				selectedArticleIndex = selectedArticleIndex === null ? 0 : selectedArticleIndex + 1;
+			}
+		},
+		j: () => {
+			if (selectedArticleIndex === null || selectedArticleIndex < data.articles.length - 1) {
+				selectedArticleIndex = selectedArticleIndex === null ? 0 : selectedArticleIndex + 1;
+			}
+		},
+		ArrowRight: () => {
+			if (selectedArticleIndex !== null) {
+				window.location.href = `/articles/${data.articles[selectedArticleIndex].id}`;
+			}
+		},
+		Enter: () => {
+			if (selectedArticleIndex !== null) {
+				window.location.href = `/articles/${data.articles[selectedArticleIndex].id}`;
+			}
+		},
+		f: () => toggleFavorite(),
+		d: () => deleteArticle(),
+		s: () => sendArticle(),
+		n: () => goto(resolve('/new')),
+		h: () => goto(resolve('/')),
+		a: () => goto(resolve('/account'))
+	};
 
 	$effect(() => {
 		const index = selectedArticleIndex;
@@ -95,11 +94,6 @@
 				}
 			});
 		}
-	});
-
-	onMount(() => {
-		document.addEventListener('keydown', handleKeydown);
-		return () => document.removeEventListener('keydown', handleKeydown);
 	});
 </script>
 
@@ -119,6 +113,8 @@
 {/if}
 
 <Navigator page={data.page} hasMore={data.has_more} />
+
+<KeyboardNav bindings={LIST_BINDINGS} callbacks={keyboardCallbacks} />
 
 <form
 	bind:this={favoriteForm}

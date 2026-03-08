@@ -1,10 +1,19 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import type { UserProfile } from '@savetoink/shared';
+	import KeyboardNav from '$lib/components/KeyboardNav.svelte';
+	import { BASE_BINDINGS } from '@savetoink/shared';
 
 	let { data }: { data: PageData } = $props();
 	let user = $derived(data?.user as UserProfile | undefined);
 	let sendToDevice = $derived(user?.auto_send);
+
+	const keyboardCallbacks = {
+		h: () => goto(resolve('/')),
+		a: () => goto(resolve('/account'))
+	};
 </script>
 
 <section>
@@ -36,3 +45,5 @@
 		<button type="submit">Add</button>
 	</form>
 </section>
+
+<KeyboardNav bindings={BASE_BINDINGS} callbacks={keyboardCallbacks} enabledKeys={['h', 'a']} />

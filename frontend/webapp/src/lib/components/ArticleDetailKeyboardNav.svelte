@@ -32,6 +32,14 @@
 				e.preventDefault();
 				goto(resolve('/new'));
 				break;
+			case 'h':
+				e.preventDefault();
+				goto(resolve('/'));
+				break;
+			case 'a':
+				e.preventDefault();
+				goto(resolve('/account'));
+				break;
 		}
 	}
 

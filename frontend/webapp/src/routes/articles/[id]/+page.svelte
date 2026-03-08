@@ -1,16 +1,40 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { enhance } from '$app/forms';
 	import ArticleControls from '$lib/components/ArticleControls.svelte';
-	import ArticleDetailKeyboardNav from '$lib/components/ArticleDetailKeyboardNav.svelte';
+	import KeyboardNav from '$lib/components/KeyboardNav.svelte';
 	import ArticleMetaAccordion from '$lib/components/ArticleMetaAccordion.svelte';
+	import {
+		DETAIL_BINDINGS,
+		toggleFavorite as toggleFavoriteAction,
+		deleteArticle as deleteArticleAction,
+		sendArticle as sendArticleAction
+	} from '@savetoink/shared';
 	import type { Article, UserProfile } from '@savetoink/shared';
 
 	type ArticlePageData = Article & { user: UserProfile };
 
 	let { data }: { data: ArticlePageData } = $props();
 	const title = $derived(data.title || data.url);
+
+	let favoriteForm: HTMLFormElement;
+	let sendForm: HTMLFormElement;
+	let deleteForm: HTMLFormElement;
+
+	const keyboardCallbacks = {
+		f: () => toggleFavoriteAction(favoriteForm),
+		d: () => deleteArticleAction(deleteForm),
+		s: () => sendArticleAction(sendForm),
+		ArrowLeft: () => goto(resolve('/')),
+		Escape: () => goto(resolve('/')),
+		h: () => goto(resolve('/')),
+		n: () => goto(resolve('/new')),
+		a: () => goto(resolve('/account'))
+	};
 </script>
 
-<ArticleDetailKeyboardNav articleID={data.id} />
+<KeyboardNav bindings={DETAIL_BINDINGS} callbacks={keyboardCallbacks} />
 
 <article>
 	<header>
@@ -41,6 +65,15 @@
 		{@html data.content}
 	</section>
 </article>
+
+<form
+	bind:this={favoriteForm}
+	method="POST"
+	action="/articles/{data.id}?/favorite"
+	use:enhance
+></form>
+<form bind:this={sendForm} method="POST" action="/articles/{data.id}?/send" use:enhance></form>
+<form bind:this={deleteForm} method="POST" action="/articles/{data.id}?/delete" use:enhance></form>
 
 <style>
 	img {
