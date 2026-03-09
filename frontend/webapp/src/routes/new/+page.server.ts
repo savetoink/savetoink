@@ -1,27 +1,17 @@
 import { error, redirect } from '@sveltejs/kit';
-import { createArticle, sendArticle } from '$lib/server/apiClient';
-import type { Actions, PageServerLoad } from './$types';
-import type { UserProfile } from '@savetoink/shared';
-
-export const load: PageServerLoad = async ({ locals }) => {
-	return { user: locals.user as UserProfile | undefined };
-};
+import { createArticle } from '$lib/server/apiClient';
+import type { Actions } from './$types';
 
 export const actions: Actions = {
 	new: async ({ locals, request, fetch }) => {
 		const data = await request.formData();
 		const txt = data.get('url');
-		const sendToDevice = data.get('sendToDevice');
 
 		if (!txt || typeof txt !== 'string') {
 			error(400, 'URL is required');
 		}
 
-		const article = await createArticle(fetch, txt, locals.auth ?? '');
-
-		if (sendToDevice === 'on') {
-			await sendArticle(fetch, article.id, locals.auth ?? '');
-		}
+		await createArticle(fetch, txt, locals.auth ?? '');
 
 		redirect(303, '/');
 	}
