@@ -76,11 +76,6 @@ func ProcessArticle(
 		return
 	}
 
-	if extractedArticle.URL != event.ArticleID {
-		logging.AddLogAttr(processCtx, slog.String("url_mismatch",
-			"want "+event.URL+", got "+extractedArticle.URL))
-	}
-
 	extractedArticle.Account = event.AccountID
 	extractedArticle.ID = event.ArticleID
 	extractedArticle.CreatedAt = time.Now().UTC()

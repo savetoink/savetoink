@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 )
@@ -65,4 +67,17 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(w, r)
 	})
+}
+
+// processorInfoMiddleware adds a "processed_by" log attribute to the request context
+// indicating whether the request was processed by a lambda function.
+func processorInfoMiddleware(cfg *config.Config) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if cfg.ProcessArticleLambda != "" {
+				logging.AddLogAttr(r.Context(), slog.String("processed_by", cfg.ProcessArticleLambda))
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }

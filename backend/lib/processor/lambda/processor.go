@@ -34,7 +34,6 @@ func (p *Processor) StartProcessing(ctx context.Context, event *content.ProcessA
 	payload, err := json.Marshal(event)
 	if err != nil {
 		logging.AddRequestError(ctx, fmt.Errorf("failed to marshal event payload: %w", err))
-		p.logProcessingStarted(ctx, []slog.Attr{}, "failure")
 		return
 	}
 
@@ -47,23 +46,7 @@ func (p *Processor) StartProcessing(ctx context.Context, event *content.ProcessA
 		logging.AddRequestError(ctx, fmt.Errorf("failed to invoke process article lambda: %w", err))
 	}
 
-	attrs := make([]slog.Attr, len(event.InheritedAttrs))
-	for i, attrMap := range event.InheritedAttrs {
-		for k, v := range attrMap {
-			attrs[i] = slog.Any(k, v)
-		}
-	}
-
-	p.logProcessingStarted(ctx, attrs, "success")
-}
-
-func (p *Processor) logProcessingStarted(ctx context.Context, inheritedAttrs []slog.Attr, status string) {
-	logging.LogArticleProcessing(
-		ctx,
-		"article processing delegated to "+p.functionName,
-		inheritedAttrs,
-		slog.String("status", status),
-	)
+	logging.AddLogAttr(ctx, slog.String("processed_by", p.functionName))
 }
 
 var _ processor.Processor = (*Processor)(nil)

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,8 +10,10 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCorsMiddleware(t *testing.T) {
@@ -447,5 +450,276 @@ func TestJsonContentTypeMiddleware(t *testing.T) {
 				assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 			})
 		}
+	})
+}
+
+func TestProcessorInfoMiddleware(t *testing.T) {
+	t.Run("adds processed_by attribute when ProcessArticleLambda is set", func(t *testing.T) {
+		cfg := &config.Config{
+			ProcessArticleLambda: "article-processor-lambda",
+		}
+
+		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+		logRecord := &logging.LogRecord{&record}
+		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+
+		nextCalled := false
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			nextCalled = true
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/test", http.NoBody)
+		w := httptest.NewRecorder()
+
+		processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
+
+		assert.True(t, nextCalled, "next handler should be called")
+
+		var attrs []slog.Attr
+		record.Attrs(func(a slog.Attr) bool {
+			attrs = append(attrs, a)
+			return true
+		})
+
+		require.Len(t, attrs, 1)
+		assert.Equal(t, "processed_by", attrs[0].Key)
+		assert.Equal(t, "article-processor-lambda", attrs[0].Value.String())
+	})
+
+	t.Run("does not add processed_by attribute when ProcessArticleLambda is empty", func(t *testing.T) {
+		cfg := &config.Config{
+			ProcessArticleLambda: "",
+		}
+
+		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+		logRecord := &logging.LogRecord{&record}
+		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+
+		nextCalled := false
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			nextCalled = true
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/test", http.NoBody)
+		w := httptest.NewRecorder()
+
+		processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
+
+		assert.True(t, nextCalled, "next handler should be called")
+
+		var attrs []slog.Attr
+		record.Attrs(func(a slog.Attr) bool {
+			attrs = append(attrs, a)
+			return true
+		})
+
+		assert.Len(t, attrs, 0, "no attributes should be added when ProcessArticleLambda is empty")
+	})
+
+	t.Run("always calls next handler regardless of config", func(t *testing.T) {
+		testCases := []struct {
+			name                 string
+			processArticleLambda string
+		}{
+			{
+				name:                 "with lambda configured",
+				processArticleLambda: "article-processor-lambda",
+			},
+			{
+				name:                 "without lambda configured",
+				processArticleLambda: "",
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				cfg := &config.Config{
+					ProcessArticleLambda: tc.processArticleLambda,
+				}
+
+				nextCalled := false
+				next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					nextCalled = true
+					w.WriteHeader(http.StatusOK)
+				})
+
+				req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/test", http.NoBody)
+				w := httptest.NewRecorder()
+
+				processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
+
+				assert.True(t, nextCalled, "next handler should always be called")
+			})
+		}
+	})
+
+	t.Run("works with different HTTP methods", func(t *testing.T) {
+		cfg := &config.Config{
+			ProcessArticleLambda: "article-processor-lambda",
+		}
+
+		methods := []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			t.Run(method, func(t *testing.T) {
+				record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+				logRecord := &logging.LogRecord{&record}
+				ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+
+				next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+				})
+
+				req := httptest.NewRequestWithContext(ctx, method, "/test", http.NoBody)
+				w := httptest.NewRecorder()
+
+				processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
+
+				var attrs []slog.Attr
+				record.Attrs(func(a slog.Attr) bool {
+					attrs = append(attrs, a)
+					return true
+				})
+
+				require.Len(t, attrs, 1)
+				assert.Equal(t, "processed_by", attrs[0].Key)
+				assert.Equal(t, "article-processor-lambda", attrs[0].Value.String())
+			})
+		}
+	})
+
+	t.Run("gracefully handles request without LogRecord in context", func(t *testing.T) {
+		cfg := &config.Config{
+			ProcessArticleLambda: "article-processor-lambda",
+		}
+
+		nextCalled := false
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			nextCalled = true
+			w.WriteHeader(http.StatusOK)
+		})
+
+		ctx := context.Background()
+		req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/test", http.NoBody)
+		w := httptest.NewRecorder()
+
+		assert.NotPanics(t, func() {
+			processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
+		})
+
+		assert.True(t, nextCalled, "next handler should be called even without LogRecord")
+	})
+
+	t.Run("preserves existing attributes in LogRecord", func(t *testing.T) {
+		cfg := &config.Config{
+			ProcessArticleLambda: "article-processor-lambda",
+		}
+
+		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+		logRecord := &logging.LogRecord{&record}
+		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+
+		logging.AddString(ctx, "existing_key", "existing_value")
+
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/test", http.NoBody)
+		w := httptest.NewRecorder()
+
+		processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
+
+		var attrs []slog.Attr
+		record.Attrs(func(a slog.Attr) bool {
+			attrs = append(attrs, a)
+			return true
+		})
+
+		require.Len(t, attrs, 2)
+
+		attrMap := make(map[string]string)
+		for _, attr := range attrs {
+			attrMap[attr.Key] = attr.Value.String()
+		}
+
+		assert.Equal(t, "existing_value", attrMap["existing_key"])
+		assert.Equal(t, "article-processor-lambda", attrMap["processed_by"])
+	})
+
+	t.Run("uses correct lambda function name from config", func(t *testing.T) {
+		testCases := []struct {
+			name       string
+			lambdaName string
+		}{
+			{
+				name:       "standard lambda name",
+				lambdaName: "article-processor-lambda",
+			},
+			{
+				name:       "lambda name with version",
+				lambdaName: "article-processor-lambda:prod",
+			},
+			{
+				name:       "lambda name with ARN",
+				lambdaName: "arn:aws:lambda:us-east-1:123456789012:function:article-processor",
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				cfg := &config.Config{
+					ProcessArticleLambda: tc.lambdaName,
+				}
+
+				record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+				logRecord := &logging.LogRecord{&record}
+				ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+
+				next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+				})
+
+				req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/test", http.NoBody)
+				w := httptest.NewRecorder()
+
+				processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
+
+				var attrs []slog.Attr
+				record.Attrs(func(a slog.Attr) bool {
+					attrs = append(attrs, a)
+					return true
+				})
+
+				require.Len(t, attrs, 1)
+				assert.Equal(t, tc.lambdaName, attrs[0].Value.String())
+			})
+		}
+	})
+
+	t.Run("preserves request context and response", func(t *testing.T) {
+		cfg := &config.Config{
+			ProcessArticleLambda: "article-processor-lambda",
+		}
+
+		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+		logRecord := &logging.LogRecord{&record}
+		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+
+		customHeaderValue := "custom-request-value"
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Custom-Header", customHeaderValue)
+			w.WriteHeader(http.StatusCreated)
+		})
+
+		req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/test", http.NoBody)
+		w := httptest.NewRecorder()
+
+		processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+		assert.Equal(t, customHeaderValue, w.Header().Get("X-Custom-Header"))
 	})
 }

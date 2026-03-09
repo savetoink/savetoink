@@ -63,7 +63,7 @@ func setupRoutes(r *chi.Mux, handlers *handlers, cfg *config.Config, srv service
 
 		r.Route("/articles", func(r chi.Router) {
 			r.Use(auth.EnsureAutheticatedMiddleware)
-			r.Post("/", handlers.handleCreateArticle)
+			r.With(processorInfoMiddleware(cfg)).Post("/", handlers.handleCreateArticle)
 			r.Get("/", handlers.handleGetArticles)
 			r.Delete("/", handlers.handleDeleteAllArticles)
 			r.Get("/{id}", handlers.handleGetArticle)
