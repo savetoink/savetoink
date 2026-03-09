@@ -48,12 +48,6 @@ savetoink convert https://example.com -o my-book.epub
 savetoink convert https://example.com -t 1m
 ```
 
-**Show extracted HTML content (verbose mode):**
-
-```bash
-savetoink convert https://example.com -v
-```
-
 ### Examples
 
 **Save to local file:**
