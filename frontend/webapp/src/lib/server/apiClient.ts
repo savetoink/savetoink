@@ -48,8 +48,12 @@ export const getArticles = (
 export const getArticle = (fetch: typeof globalThis.fetch, id: string, token: string) =>
 	withSvelteKitError(() => createSvelteKitClient(fetch).getArticle(id, token));
 
-export const createArticle = (fetch: typeof globalThis.fetch, url: string, token: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).createArticle(url, token));
+export const createArticle = (
+	fetch: typeof globalThis.fetch,
+	url: string,
+	sendToDevice: boolean,
+	token: string
+) => withSvelteKitError(() => createSvelteKitClient(fetch).createArticle(url, sendToDevice, token));
 
 export const sendArticle = (fetch: typeof globalThis.fetch, id: string, token: string) =>
 	withSvelteKitError(() => createSvelteKitClient(fetch).sendArticle(id, token));

@@ -1,9 +1,17 @@
-import type { UserProfile, Article, ArticleResponse, AuthTokenExchangeResponse } from "../types";
+import type {
+  UserProfile,
+  Article,
+  ArticleResponse,
+  AuthTokenExchangeResponse,
+  AuthTokenExchangeRequest,
+  ArticleRequest,
+  DeviceRequest,
+} from "../types";
 
 export class ApiError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -18,7 +26,7 @@ export interface ApiClient {
       page_size?: number;
       favorite?: boolean;
     },
-    token: string
+    token: string,
   ): Promise<{
     articles: Article[];
     page: number;
@@ -26,13 +34,11 @@ export interface ApiClient {
     total: number;
     has_more: boolean;
   }>;
-  getArticle(
-    id: string,
-    token: string
-  ): Promise<Article>;
+  getArticle(id: string, token: string): Promise<Article>;
   createArticle(
     url: string,
-    token: string
+    sendToDevice: boolean,
+    token: string,
   ): Promise<ArticleResponse>;
   sendArticle(id: string, token: string): Promise<void>;
   favoriteArticle(id: string, token: string): Promise<void>;
@@ -40,12 +46,12 @@ export interface ApiClient {
   updateDevice(
     deviceEmail: string,
     autoSend: boolean,
-    token: string
+    token: string,
   ): Promise<void>;
   deleteDevice(token: string): Promise<void>;
   exchangeCodeForToken(
     code: string,
-    redirectUri: string
+    redirectUri: string,
   ): Promise<AuthTokenExchangeResponse>;
 }
 
@@ -54,14 +60,17 @@ export interface ApiClientOptions {
   fetch?: typeof globalThis.fetch;
 }
 
-export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient {
+export function createApiClient({
+  baseUrl,
+  fetch,
+}: ApiClientOptions): ApiClient {
   const fetchFn = fetch || globalThis.fetch;
 
   async function request<T>(
     method: string,
     path: string,
     token?: string,
-    body?: unknown
+    body?: unknown,
   ): Promise<T> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -79,7 +88,10 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new ApiError(res.status, err.error ?? err.message ?? res.statusText);
+      throw new ApiError(
+        res.status,
+        err.error ?? err.message ?? res.statusText,
+      );
     }
 
     const text = await res.text();
@@ -88,11 +100,7 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
 
   return {
     getProfile: (token: string) =>
-      request<UserProfile>(
-        "GET",
-        "/v1/user/profile",
-        token
-      ),
+      request<UserProfile>("GET", "/v1/user/profile", token),
 
     getArticles: (
       params: {
@@ -100,7 +108,7 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
         page_size?: number;
         favorite?: boolean;
       },
-      token: string
+      token: string,
     ) => {
       const queryParams = new URLSearchParams();
       if (params.page !== undefined) {
@@ -123,21 +131,13 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
     },
 
     getArticle: (id: string, token: string) =>
-      request<Article>(
-        "GET",
-        `/v1/articles/${id}`,
-        token
-      ),
+      request<Article>("GET", `/v1/articles/${id}`, token),
 
-    createArticle: (url: string, token: string) =>
-      request<ArticleResponse>(
-        "POST",
-        "/v1/articles",
-        token,
-        {
-          url,
-        }
-      ),
+    createArticle: (url: string, sendToDevice: boolean, token: string) =>
+      request<ArticleResponse>("POST", "/v1/articles", token, {
+        url,
+        send_on_complete: sendToDevice,
+      } as ArticleRequest),
 
     sendArticle: (id: string, token: string) =>
       request<void>("POST", `/v1/articles/${id}/send`, token),
@@ -152,20 +152,15 @@ export function createApiClient({ baseUrl, fetch }: ApiClientOptions): ApiClient
       request<void>("PUT", "/v1/devices", token, {
         device_email: deviceEmail,
         auto_send: autoSend,
-      }),
+      } as DeviceRequest),
 
     deleteDevice: (token: string) =>
       request<void>("DELETE", "/v1/devices", token),
 
     exchangeCodeForToken: (code: string, redirectUri: string) =>
-      request<AuthTokenExchangeResponse>(
-        "POST",
-        "/v1/auth/token",
-        undefined,
-        {
-          code,
-          redirect_uri: redirectUri,
-        }
-      ),
+      request<AuthTokenExchangeResponse>("POST", "/v1/auth/token", undefined, {
+        code,
+        redirect_uri: redirectUri,
+      } as AuthTokenExchangeRequest),
   };
 }

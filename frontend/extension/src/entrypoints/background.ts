@@ -1,4 +1,4 @@
-import { createArticle, sendArticle } from '../lib/api';
+import { createArticle } from '../lib/api';
 import { getAPIKey, getUserProfile } from '../lib/storage';
 
 export default defineBackground(() => {
@@ -54,11 +54,8 @@ export default defineBackground(() => {
 
 			const profile = await getUserProfile();
 
-			const article = await createArticle(url, apiKey);
-
+			await createArticle(url, profile?.auto_send || false, apiKey);
 			if (profile?.auto_send) {
-				await sendArticle(article.id, apiKey);
-
 				await showToast('Success', 'Article saved and sent to device', 'success');
 			} else {
 				await showToast('Success', 'Article saved to your reading list', 'success');

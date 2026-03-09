@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { createArticle, sendArticle } from '$lib/server/apiClient';
+import { createArticle } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad } from './$types';
 import type { UserProfile } from '@savetoink/shared';
 
@@ -17,11 +17,7 @@ export const actions: Actions = {
 			error(400, 'URL is required');
 		}
 
-		const article = await createArticle(fetch, txt, locals.auth ?? '');
-
-		if (sendToDevice === 'on') {
-			await sendArticle(fetch, article.id, locals.auth ?? '');
-		}
+		await createArticle(fetch, txt, sendToDevice === 'on', locals.auth ?? '');
 
 		redirect(303, '/');
 	}

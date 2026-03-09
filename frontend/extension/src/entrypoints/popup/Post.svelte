@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createArticle, sendArticle } from '../../lib/api';
+	import { createArticle } from '../../lib/api';
 	import { getAPIKey } from '../../lib/storage';
 	import type { UserProfile } from '@savetoink/shared';
 
@@ -87,11 +87,7 @@
 				return;
 			}
 
-			const article = await createArticle(url, apiKey);
-
-			if (sendToDevice) {
-				await sendArticle(article.id, apiKey);
-			}
+			await createArticle(url, sendToDevice, apiKey);
 
 			status = 'success';
 
