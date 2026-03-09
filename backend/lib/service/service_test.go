@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"sort"
 	"strings"
 	"testing"
@@ -678,11 +680,18 @@ func TestNewFromConfig(t *testing.T) {
 
 func TestFetch(t *testing.T) {
 	t.Run("successful fetch", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("<html><body>Test Content</body></html>"))
+		}))
+		defer server.Close()
+
 		fetcher := content.NewFetcher("")
 		deps := &Dependencies{Fetcher: fetcher}
 		svc := New(deps)
 
-		htmlBytes, fetchType, err := svc.Fetch(context.Background(), "https://example.com")
+		htmlBytes, fetchType, err := svc.Fetch(context.Background(), server.URL)
 
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
