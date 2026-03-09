@@ -507,3 +507,227 @@ func TestValidateHTMLContent_HTMLWithStyle(t *testing.T) {
 	err := validateHTMLContent([]byte(htmlWithStyle))
 	assert.NoError(t, err)
 }
+
+func TestGenerateFromHTML_Success(t *testing.T) {
+	ctx := context.Background()
+	html := `<!DOCTYPE html>
+<html>
+<head>
+	<title>Test Article</title>
+	<meta name="author" content="Test Author">
+	<meta name="description" content="Test excerpt">
+</head>
+<body>
+	<article>
+		<h1>Test Article</h1>
+		<p>This is test content with multiple words.</p>
+	</article>
+</body>
+</html>`
+
+	extractor := NewExtractor()
+	article, err := extractor.GenerateFromHTML(ctx, []byte(html))
+
+	if err != nil {
+		t.Fatalf("GenerateFromHTML() error = %v", err)
+	}
+
+	if article == nil {
+		t.Fatal("Expected article but got nil")
+	}
+
+	if article.Title == "" {
+		t.Error("Expected title to be set")
+	}
+
+	if article.Content == "" {
+		t.Error("Expected content to be set")
+	}
+
+	if article.WordCount == 0 {
+		t.Error("Expected word count to be set")
+	}
+
+	if article.ReadingTimeMinutes == 0 {
+		t.Error("Expected reading time to be set")
+	}
+}
+
+func TestGenerateFromHTML_TitleEqualsSitename(t *testing.T) {
+	ctx := context.Background()
+	html := `<!DOCTYPE html>
+<html>
+<head>
+	<title>My Site</title>
+	<meta property="og:site_name" content="My Site">
+	<meta name="author" content="Test Author">
+</head>
+<body>
+	<h2>Real Article Title</h2>
+	<article>
+		<p>Content goes here.</p>
+	</article>
+</body>
+</html>`
+
+	extractor := NewExtractor()
+	article, err := extractor.GenerateFromHTML(ctx, []byte(html))
+
+	if err != nil {
+		t.Fatalf("GenerateFromHTML() error = %v", err)
+	}
+
+	if article.Title == "" {
+		t.Error("Expected title to be set")
+	}
+
+	if article.Title == "My Site" {
+		t.Errorf("Expected fallback title from h2, got sitename: %q", article.Title)
+	}
+
+	expectedTitle := "Real Article Title"
+	if article.Title != expectedTitle {
+		t.Errorf("Expected title %q, got %q", expectedTitle, article.Title)
+	}
+}
+
+func TestExtractFromURL_InvalidURLFormat(t *testing.T) {
+	ctx := context.Background()
+	extractor := NewExtractor()
+
+	invalidURLs := []string{
+		"http://%00invalid.com",
+		"https://[invalid-hostname]",
+	}
+
+	for _, url := range invalidURLs {
+		_, err := extractor.ExtractFromURL(ctx, url)
+		if err == nil {
+			t.Errorf("Expected error for invalid URL %s, got nil", url)
+		}
+	}
+}
+
+func TestExtractTitleFromHTML_ParseError(t *testing.T) {
+	invalidHTML := []byte("<html><body>unclosed tag")
+
+	title := extractTitleFromHTML(invalidHTML)
+
+	if title != "" {
+		t.Errorf("Expected empty string for unparsable HTML, got %q", title)
+	}
+}
+
+func TestExtractTitleFromHTML_EmptyTitleTag(t *testing.T) {
+	html := []byte("<!DOCTYPE html><html><head><title></title></head><body><p>Content</p></body></html>")
+
+	title := extractTitleFromHTML(html)
+
+	if title != "" {
+		t.Errorf("Expected empty string for empty title tag, got %q", title)
+	}
+}
+
+func TestExtractTitleFromHTML_EmptyH2(t *testing.T) {
+	html := []byte(
+		"<!DOCTYPE html><html><head><title>Site Name</title>" +
+			"</head><body><h2>  </h2><p>Content</p></body></html>",
+	)
+
+	title := extractTitleFromHTML(html)
+
+	if title != "" {
+		t.Errorf("Expected empty string for empty h2 tag, got %q", title)
+	}
+}
+
+func TestExtractTitleFromHTML_TitleBecomesEmptyAfterClean(t *testing.T) {
+	html := []byte("<!DOCTYPE html><html><head><title> - </title></head><body><p>Content</p></body></html>")
+
+	title := extractTitleFromHTML(html)
+
+	if title != "" {
+		t.Errorf("Expected empty string when title becomes empty after clean, got %q", title)
+	}
+}
+
+func TestGenerateFromHTML_WithFallbackToH2(t *testing.T) {
+	ctx := context.Background()
+	html := `<!DOCTYPE html>
+<html>
+<head>
+	<title>My Blog</title>
+	<meta property="og:site_name" content="My Blog">
+	<meta name="author" content="John Doe">
+	<meta name="description" content="A blog post">
+</head>
+<body>
+	<h2>The Actual Article Title</h2>
+	<article>
+		<p>This is the content of the article.</p>
+		<p>Second paragraph with more content.</p>
+	</article>
+</body>
+</html>`
+
+	extractor := NewExtractor()
+	article, err := extractor.GenerateFromHTML(ctx, []byte(html))
+
+	if err != nil {
+		t.Fatalf("GenerateFromHTML() error = %v", err)
+	}
+
+	if article.Title == "" {
+		t.Fatal("Expected title to be set")
+	}
+
+	if article.Title == "My Blog" {
+		t.Error("Expected fallback to H2 title when metadata title equals sitename")
+	}
+
+	expectedTitle := "The Actual Article Title"
+	if article.Title != expectedTitle {
+		t.Errorf("Expected title %q, got %q", expectedTitle, article.Title)
+	}
+}
+
+func TestExtractTitleFromHTML_NoTitleOrH2(t *testing.T) {
+	html := []byte("<!DOCTYPE html><html><head></head><body><p>No title here</p></body></html>")
+
+	title := extractTitleFromHTML(html)
+
+	if title != "" {
+		t.Errorf("Expected empty string when no title or h2 tags, got %q", title)
+	}
+}
+
+func TestCleanTitle_InsufficientParts(t *testing.T) {
+	singlePart := "SingleTitle"
+
+	title := cleanTitle(singlePart)
+
+	if title != "" {
+		t.Errorf("Expected empty string for single part title, got %q", title)
+	}
+}
+
+func TestCleanTitle_EmptyAfterTrim(t *testing.T) {
+	onlyWhitespace := " - "
+
+	title := cleanTitle(onlyWhitespace)
+
+	if title != "" {
+		t.Errorf("Expected empty string for whitespace-only title, got %q", title)
+	}
+}
+
+func TestCleanTitle_ThreeParts(t *testing.T) {
+	threePartTitle := "Part 1 - Part 2 - Part 3"
+
+	title := cleanTitle(threePartTitle)
+
+	expected := "Part 1 - Part 2"
+	if title != expected {
+		t.Errorf("Expected %q, got %q", expected, title)
+	}
+}

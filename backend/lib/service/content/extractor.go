@@ -27,10 +27,7 @@ func NewExtractor() *Extractor {
 
 // GenerateFromHTML extracts article content from HTML bytes.
 func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte) (*model.Article, error) {
-	parsedURL, _ := url.Parse("https://example.com")
-	_ = parsedURL
 	opts := trafilatura.Options{
-		OriginalURL:    parsedURL,
 		EnableFallback: true,
 		IncludeImages:  true,
 		IncludeLinks:   true,
@@ -40,7 +37,7 @@ func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte) (*mode
 		},
 	}
 
-	result, err := trafilatura.Extract(strings.NewReader(string(htmlBytes)), opts)
+	result, err := trafilatura.Extract(bytes.NewReader(htmlBytes), opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract article content: %w", err)
 	}
