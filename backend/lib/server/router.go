@@ -52,6 +52,11 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "method_not_allowed"})
 	})
 
+	r.Get("/robots.txt", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("User-agent: *\nDisallow: /"))
+	})
+
 	setupRoutes(r, handlers, cfg, srv)
 
 	return r
