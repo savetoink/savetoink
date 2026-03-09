@@ -109,7 +109,7 @@ func (m *userprofileMockService) GetDBError() error {
 	return nil
 }
 
-//nolint:gocritic,unnamedresult // mock function with named returns is OK
+//nolint:gocritic // mock function with named returns is OK
 func (m *userprofileMockService) GetUserDeviceEmail(
 	ctx context.Context,
 	accountID string,

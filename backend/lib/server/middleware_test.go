@@ -460,11 +460,11 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 		}
 
 		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
-		logRecord := &logging.LogRecord{&record}
+		logRecord := &logging.LogRecord{Record: &record}
 		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
 
 		nextCalled := false
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			nextCalled = true
 			w.WriteHeader(http.StatusOK)
 		})
@@ -493,11 +493,11 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 		}
 
 		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
-		logRecord := &logging.LogRecord{&record}
+		logRecord := &logging.LogRecord{Record: &record}
 		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
 
 		nextCalled := false
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			nextCalled = true
 			w.WriteHeader(http.StatusOK)
 		})
@@ -540,7 +540,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 				}
 
 				nextCalled := false
-				next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					nextCalled = true
 					w.WriteHeader(http.StatusOK)
 				})
@@ -565,10 +565,10 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 		for _, method := range methods {
 			t.Run(method, func(t *testing.T) {
 				record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
-				logRecord := &logging.LogRecord{&record}
+				logRecord := &logging.LogRecord{Record: &record}
 				ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
 
-				next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.WriteHeader(http.StatusOK)
 				})
 
@@ -596,7 +596,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 		}
 
 		nextCalled := false
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			nextCalled = true
 			w.WriteHeader(http.StatusOK)
 		})
@@ -618,12 +618,12 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 		}
 
 		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
-		logRecord := &logging.LogRecord{&record}
+		logRecord := &logging.LogRecord{Record: &record}
 		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
 
 		logging.AddString(ctx, "existing_key", "existing_value")
 
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		})
 
@@ -675,10 +675,10 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 				}
 
 				record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
-				logRecord := &logging.LogRecord{&record}
+				logRecord := &logging.LogRecord{Record: &record}
 				ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
 
-				next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.WriteHeader(http.StatusOK)
 				})
 
@@ -705,11 +705,11 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 		}
 
 		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
-		logRecord := &logging.LogRecord{&record}
+		logRecord := &logging.LogRecord{Record: &record}
 		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
 
 		customHeaderValue := "custom-request-value"
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("X-Custom-Header", customHeaderValue)
 			w.WriteHeader(http.StatusCreated)
 		})
