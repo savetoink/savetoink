@@ -10,6 +10,9 @@ on:
       - go.sum
       - infra/**
   push:
+    branches:
+      - main
+      - dev
     paths:
       - backend/**
       - go.mod
