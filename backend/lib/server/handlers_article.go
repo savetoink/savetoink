@@ -44,10 +44,6 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	logging.AddLogAttr(r.Context(), slog.String("article_id", article.ID))
 
-	if dbErr := h.service.GetDBError(); dbErr != nil {
-		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
-	}
-
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(articleResponse{
 		ID:    article.ID,
@@ -236,10 +232,6 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 	logging.AddLogAttr(r.Context(), slog.String("destination_email", result.DeviceEmail))
 	if result.EmailResp != nil {
 		logging.AddLogAttr(r.Context(), slog.String("message_id", result.EmailResp.MessageID))
-	}
-
-	if dbErr := h.service.GetDBError(); dbErr != nil {
-		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
 	}
 
 	w.WriteHeader(http.StatusOK)

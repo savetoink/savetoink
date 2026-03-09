@@ -134,26 +134,22 @@ func (s *Service) ToggleFavorite(ctx context.Context, accountID, articleID strin
 	return favorite, nil
 }
 
-// CountSendsByAccountDateRange delegates to ArticleService.
+// CountSendsByAccountDateRange counts the number of sends for a given account within a date range.
 func (s *Service) CountSendsByAccountDateRange(
 	ctx context.Context,
 	accountID string,
 	startDate, endDate time.Time,
 ) (int, error) {
-	count, err := s.articles.CountSendsByAccountDateRange(ctx, accountID, startDate, endDate)
+	if s.sendsRepo == nil {
+		return 0, nil
+	}
+
+	count, err := s.sendsRepo.CountSendsByAccountDateRange(ctx, accountID, startDate, endDate)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count sends: %w", err)
 	}
-	return count, nil
-}
 
-// GetDBError delegates to ArticleService.
-func (s *Service) GetDBError() error {
-	err := s.articles.GetDBError()
-	if err != nil {
-		return fmt.Errorf("failed to get db error: %w", err)
-	}
-	return nil
+	return count, nil
 }
 
 // GetUserDeviceEmail delegates to UserProfileService.
@@ -268,9 +264,31 @@ func (s *Service) SendArticleByID(
 		return nil, err
 	}
 
+	if s.sendsRepo != nil {
+		createErr := s.sendsRepo.CreateSendRecord(
+			ctx, accountID, articleID, article.Title, deviceEmail,
+		)
+		if createErr != nil {
+			return nil, fmt.Errorf("failed to create send record: %w", createErr)
+		}
+	}
+
 	emailResp, err := s.SendArticle(ctx, deviceEmail, epubBytes, article.Title)
 	if err != nil {
+		if s.sendsRepo != nil {
+			updateErr := s.sendsRepo.UpdateSendRecord(ctx, accountID, articleID, "failed", "", err.Error())
+			if updateErr != nil {
+				return nil, fmt.Errorf("%w and failed to update send record: %w", err, updateErr)
+			}
+		}
 		return nil, err
+	}
+
+	if s.sendsRepo != nil {
+		updateErr := s.sendsRepo.UpdateSendRecord(ctx, accountID, articleID, "success", emailResp.MessageID, "")
+		if updateErr != nil {
+			return nil, fmt.Errorf("failed to update send record: %w", updateErr)
+		}
 	}
 
 	return &servicetypes.SendArticleResult{

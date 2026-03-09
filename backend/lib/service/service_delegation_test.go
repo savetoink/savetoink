@@ -24,7 +24,6 @@ type testArticlesRepo struct {
 	metadataErr  error
 	deleteErr    error
 	updateFavErr error
-	dbErr        error
 }
 
 func (r *testArticlesRepo) Store(_ context.Context, article *model.Article) error {
@@ -365,28 +364,6 @@ func TestCountSendsByAccountDateRange_Error(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
-	}
-}
-
-func TestGetDBError_NoError(t *testing.T) {
-	repo := &testArticlesRepo{dbErr: nil}
-	profileRepo := &testUserProfileRepo{}
-	sendsRepo := &testSendsRepo{}
-
-	svc := New(&Dependencies{
-		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
-		Publisher:       epub.NewPublisher(),
-		Sender:          &emailSenderMock{},
-		ArticlesRepo:    repo,
-		UserProfileRepo: profileRepo,
-		SendsRepo:       sendsRepo,
-	})
-
-	err := svc.GetDBError()
-
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
 	}
 }
 

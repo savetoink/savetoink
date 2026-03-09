@@ -64,9 +64,6 @@ type Interface interface {
 	// DeleteAllArticles deletes all articles by account ID from the database.
 	DeleteAllArticles(ctx context.Context, accountID string) (*servicetypes.DeleteArticleResult, error)
 
-	// GetDBError returns the database error.
-	GetDBError() error
-
 	// GetUserDeviceEmail retrieves the device email and auto-send preference for a given account.
 	GetUserDeviceEmail(ctx context.Context, accountID string) (string, bool, error)
 
@@ -125,6 +122,7 @@ type Service struct {
 	articles  *articles.ArticleService
 	profile   *profile.UserProfileService
 	sender    email.Sender
+	sendsRepo repository.SendsRepository
 	cfg       *config.Config
 }
 
@@ -136,12 +134,9 @@ func New(deps *Dependencies) *Service {
 	userProfile := profile.New(deps.UserProfileRepo)
 	articleSvc := articles.New(
 		deps.ArticlesRepo,
-		deps.SendsRepo,
 		extractor,
 		publisher,
 		userProfile,
-		deps.Config,
-		deps.Sender,
 	)
 
 	return &Service{
@@ -151,6 +146,7 @@ func New(deps *Dependencies) *Service {
 		articles:  articleSvc,
 		profile:   userProfile,
 		sender:    deps.Sender,
+		sendsRepo: deps.SendsRepo,
 		cfg:       deps.Config,
 	}
 }

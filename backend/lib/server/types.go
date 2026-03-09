@@ -11,6 +11,9 @@ import (
 
 type articleRequest struct {
 	URL string `json:"url"`
+
+	// Whether to send the article after processing is complete.
+	SendOnComplete bool `json:"send_on_complete"`
 }
 
 type articleResponse struct {

@@ -89,7 +89,7 @@ func TestUpdateArticle_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{},
 	}
-	svc := New(mockRepo, nil, content.NewExtractor(), epub.NewPublisher(), nil, nil, nil)
+	svc := New(mockRepo, content.NewExtractor(), epub.NewPublisher(), nil)
 
 	ctx := context.Background()
 
@@ -137,7 +137,7 @@ func TestUpdateArticle_Success(t *testing.T) {
 }
 
 func TestUpdateArticle_NilRepo(t *testing.T) {
-	svc := New(nil, nil, content.NewExtractor(), epub.NewPublisher(), nil, nil, nil)
+	svc := New(nil, content.NewExtractor(), epub.NewPublisher(), nil)
 
 	article := &model.Article{
 		Account: "user1",
@@ -153,7 +153,7 @@ func TestUpdateArticle_MissingFields(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{},
 	}
-	svc := New(mockRepo, nil, content.NewExtractor(), epub.NewPublisher(), nil, nil, nil)
+	svc := New(mockRepo, content.NewExtractor(), epub.NewPublisher(), nil)
 
 	ctx := context.Background()
 
