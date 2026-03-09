@@ -19,6 +19,6 @@ export const actions: Actions = {
 
 		await createArticle(fetch, txt, sendToDevice === 'on', locals.auth ?? '');
 
-		redirect(303, '/');
+		redirect(303, '/articles');
 	}
 } satisfies Actions;

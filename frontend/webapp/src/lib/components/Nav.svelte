@@ -7,12 +7,18 @@
 <nav>
 	<ul>
 		{#if loggedIn}
-			<NavItem link="/" text="My List" />
+			<NavItem link="/new" text="Add new article" />
 
-			<NavItem link="/?favorite=true" text="Favorites" />
+			<NavItem link="/articles" text="All" />
 
-			<NavItem link="/new" text="New" />
+			<NavItem link="/articles?favorite=true" text="Favorites" />
 		{/if}
-		<NavItem link="/account" text="Account" />
+		<NavItem link="/account" text="My account" />
 	</ul>
 </nav>
+
+<style>
+	ul {
+		gap: 1rem;
+	}
+</style>

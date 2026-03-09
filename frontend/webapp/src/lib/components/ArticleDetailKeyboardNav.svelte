@@ -26,7 +26,7 @@
 			case 'ArrowLeft':
 			case 'Escape':
 				e.preventDefault();
-				goto(resolve('/'));
+				goto(resolve('/articles'));
 				break;
 			case 'n':
 				e.preventDefault();
@@ -34,7 +34,7 @@
 				break;
 			case 'h':
 				e.preventDefault();
-				goto(resolve('/'));
+				goto(resolve('/articles'));
 				break;
 			case 'a':
 				e.preventDefault();

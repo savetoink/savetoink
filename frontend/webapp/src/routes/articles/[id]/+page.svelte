@@ -26,9 +26,9 @@
 		f: () => toggleFavoriteAction(favoriteForm),
 		d: () => deleteArticleAction(deleteForm),
 		s: () => sendArticleAction(sendForm),
-		ArrowLeft: () => goto(resolve('/')),
-		Escape: () => goto(resolve('/')),
-		h: () => goto(resolve('/')),
+		ArrowLeft: () => goto(resolve('/articles')),
+		Escape: () => goto(resolve('/articles')),
+		h: () => goto(resolve('/articles')),
 		n: () => goto(resolve('/new')),
 		a: () => goto(resolve('/account'))
 	};
