@@ -10,7 +10,12 @@ export function getVersion() {
 }
 
 export function getBuildDate() {
-	return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+	const now = new Date();
+	const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+	const day = String(now.getUTCDate()).padStart(2, '0');
+	const hour = String(now.getUTCHours()).padStart(2, '0');
+	const minute = String(now.getUTCMinutes()).padStart(2, '0');
+	return `${month}${day}${hour}${minute}`;
 }
 
 export function getGitHash() {
