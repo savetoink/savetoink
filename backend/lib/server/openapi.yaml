@@ -321,6 +321,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
 
+  /openapi.yaml:
+    get:
+      summary: OpenAPI specification
+      description: Get the OpenAPI 3.0 specification in YAML format
+      operationId: openapiSpec
+      tags:
+        - System
+      responses:
+        '200':
+          description: OpenAPI specification
+          content:
+            text/yaml:
+              schema:
+                type: string
+
   /articles:
     get:
       summary: List articles
