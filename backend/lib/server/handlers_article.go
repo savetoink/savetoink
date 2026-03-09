@@ -35,6 +35,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logging.AddLogAttr(r.Context(), slog.String("url", req.URL))
+	logging.AddLogAttr(r.Context(), slog.Bool("send_on_complete", req.SendOnComplete))
 
 	article, err := h.service.CreateArticle(r.Context(), req.URL, auth.GetAccountID(r.Context()))
 	if err != nil {
@@ -58,12 +59,12 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 	reqID := logging.GetRequestID(r.Context())
 
 	event := &content.ProcessArticleEvent{
-		RequestID:        reqID,
-		URL:              url,
-		ArticleID:        articleID,
-		AccountID:        accountID,
-		InheritedAttrs:   convertSlogAttrsToMap(inheritedAttrs),
-		SendAfterProcess: req.SendOnComplete,
+		RequestID:      reqID,
+		URL:            url,
+		ArticleID:      articleID,
+		AccountID:      accountID,
+		InheritedAttrs: convertSlogAttrsToMap(inheritedAttrs),
+		SendOnComplete: req.SendOnComplete,
 	}
 
 	h.processor.StartProcessing(context.Background(), event)
