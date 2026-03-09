@@ -310,16 +310,30 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 }
 
 func TestAuthTokenRoute_Registered(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(authTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
+			AccessToken: "test-access-token",
+			TokenType:   "Bearer",
+			ExpiresIn:   3600,
+		})
+	}))
+	defer server.Close()
+
+	parsedURL, _ := url.Parse(server.URL)
+	client := server.Client()
+	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
 	cfg := &config.Config{
 		APIKeySecret:      "test-key",
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       "test.auth0.com",
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
 		Auth0ClientID:     "test-client-id",
 		Auth0ClientSecret: "test-client-secret",
 		Auth0Audience:     "test-audience",
-	}
-	client := &http.Client{
-		Timeout: 1 * time.Second,
 	}
 	r := newRouterWithClient(cfg, client)
 

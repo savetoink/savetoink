@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -595,14 +596,30 @@ func TestSetupRoutes_DeviceRoutes(t *testing.T) {
 
 func TestSetupRoutes_AuthRoute(t *testing.T) {
 	t.Run("auth/token route registered when auth0 is configured", func(t *testing.T) {
+		server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"access_token": "test-token",
+				"token_type":   "Bearer",
+				"expires_in":   "3600",
+			})
+		}))
+		defer server.Close()
+
+		parsedURL, _ := url.Parse(server.URL)
+		client := server.Client()
+		client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+
 		cfg := setupMinimalConfig(t)
 		cfg.AuthBackend = consts.AuthBackendAuth0
-		cfg.Auth0Domain = "test.auth0.com"
+		cfg.Auth0Domain = strings.TrimPrefix(parsedURL.Host, "https://")
 		cfg.Auth0Audience = "test-audience"
 		cfg.Auth0ClientID = "test-client-id"
 		cfg.Auth0ClientSecret = "test-client-secret"
 
-		client := &http.Client{Timeout: 100 * time.Millisecond}
 		router := newTestRouter(cfg, client)
 
 		body := strings.NewReader(
