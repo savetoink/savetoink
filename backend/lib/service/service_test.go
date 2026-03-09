@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -834,6 +835,178 @@ func TestSendArticle(t *testing.T) {
 
 			if !tt.expectErr && resp != nil && resp.Status != "success" {
 				t.Errorf("expected status 'success', got %q", resp.Status)
+			}
+		})
+	}
+}
+
+func TestSendArticleByID(t *testing.T) {
+	tests := []struct {
+		name         string
+		setupRepo    func() *MockRepository
+		setupProfile func() *MockUserProfileRepository
+		accountID    string
+		articleID    string
+		sendFunc     func(ctx context.Context, req *email.Request) (*email.SendEmailResponse, error)
+		expectErr    bool
+		errContains  string
+		expectResult bool
+	}{
+		{
+			name: "successful send",
+			setupRepo: func() *MockRepository {
+				repo := &MockRepository{}
+				repo.articles = []*model.Article{
+					{
+						ID:      "article-123",
+						Account: testUser1,
+						Title:   "Test Article",
+						Content: "Test content",
+						URL:     "https://example.com/article",
+					},
+				}
+				return repo
+			},
+			setupProfile: func() *MockUserProfileRepository {
+				profileRepo := NewMockUserProfileRepository()
+				profileRepo.profiles[testUser1] = &model.UserProfile{
+					Account:     testUser1,
+					DeviceEmail: testDeviceEmail,
+				}
+				return profileRepo
+			},
+			accountID: testUser1,
+			articleID: "article-123",
+			sendFunc: func(_ context.Context, _ *email.Request) (*email.SendEmailResponse, error) {
+				return &email.SendEmailResponse{Status: "success", MessageID: "msg-123"}, nil
+			},
+			expectErr:    false,
+			expectResult: true,
+		},
+		{
+			name: "article not found",
+			setupRepo: func() *MockRepository {
+				return &MockRepository{}
+			},
+			setupProfile: func() *MockUserProfileRepository {
+				profileRepo := NewMockUserProfileRepository()
+				profileRepo.profiles[testUser1] = &model.UserProfile{
+					Account:     testUser1,
+					DeviceEmail: testDeviceEmail,
+				}
+				return profileRepo
+			},
+			accountID:   testUser1,
+			articleID:   "nonexistent",
+			expectErr:   true,
+			errContains: "not found",
+		},
+		{
+			name: "device email not configured",
+			setupRepo: func() *MockRepository {
+				repo := &MockRepository{}
+				repo.articles = []*model.Article{
+					{
+						ID:      "article-123",
+						Account: testUser1,
+						Title:   "Test Article",
+						Content: "Test content",
+						URL:     "https://example.com/article",
+					},
+				}
+				return repo
+			},
+			setupProfile: func() *MockUserProfileRepository {
+				profileRepo := NewMockUserProfileRepository()
+				profileRepo.profiles[testUser1] = &model.UserProfile{
+					Account:     testUser1,
+					DeviceEmail: "",
+				}
+				return profileRepo
+			},
+			accountID:   testUser1,
+			articleID:   "article-123",
+			expectErr:   true,
+			errContains: "device email not configured",
+		},
+		{
+			name: "send email error",
+			setupRepo: func() *MockRepository {
+				repo := &MockRepository{}
+				repo.articles = []*model.Article{
+					{
+						ID:      "article-123",
+						Account: testUser1,
+						Title:   "Test Article",
+						Content: "Test content",
+						URL:     "https://example.com/article",
+					},
+				}
+				return repo
+			},
+			setupProfile: func() *MockUserProfileRepository {
+				profileRepo := NewMockUserProfileRepository()
+				profileRepo.profiles[testUser1] = &model.UserProfile{
+					Account:     testUser1,
+					DeviceEmail: testDeviceEmail,
+				}
+				return profileRepo
+			},
+			accountID: testUser1,
+			articleID: "article-123",
+			sendFunc: func(_ context.Context, _ *email.Request) (*email.SendEmailResponse, error) {
+				return nil, context.Canceled
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockSender := &MockSender{
+				sendFunc: tt.sendFunc,
+			}
+
+			deps := &Dependencies{
+				Sender:          mockSender,
+				ArticlesRepo:    tt.setupRepo(),
+				UserProfileRepo: tt.setupProfile(),
+				Extractor:       content.NewExtractor(),
+				Publisher:       epub.NewPublisher(),
+			}
+
+			svc := New(deps)
+
+			result, err := svc.SendArticleByID(context.Background(), tt.accountID, tt.articleID)
+
+			if tt.expectErr && err == nil {
+				t.Error("expected error but got none")
+			}
+
+			if !tt.expectErr && err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+			if tt.errContains != "" && err != nil && !strings.Contains(err.Error(), tt.errContains) {
+				t.Errorf("expected error to contain %q, got %q", tt.errContains, err.Error())
+			}
+
+			if tt.expectResult && result == nil {
+				t.Error("expected result to be returned")
+			}
+			if !tt.expectResult && result != nil {
+				t.Error("expected no result but got one")
+			}
+			if result != nil {
+				if result.Article == nil {
+					t.Error("expected article to be in result")
+				}
+				if result.DeviceEmail != testDeviceEmail {
+					t.Errorf("expected device email %q, got %q", testDeviceEmail, result.DeviceEmail)
+				}
+				if result.EmailResp == nil {
+					t.Error("expected email response to be in result")
+				}
 			}
 		})
 	}

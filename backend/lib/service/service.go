@@ -99,6 +99,10 @@ type Interface interface {
 
 	// GetAccountIDByDeviceEmail retrieves the account ID associated with a device email.
 	GetAccountIDByDeviceEmail(ctx context.Context, deviceEmail string) (string, error)
+
+	// SendArticleByID retrieves an article by account ID and article ID,
+	// generates an EPUB, and sends it to the user's device email.
+	SendArticleByID(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error)
 }
 
 // Dependencies holds all external dependencies required by Service.

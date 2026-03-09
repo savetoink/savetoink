@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	apperrors "github.com/shaftoe/savetoink/backend/lib/apperrors"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
@@ -241,4 +242,40 @@ func (s *Service) GetAccountIDByDeviceEmail(ctx context.Context, deviceEmail str
 		return "", fmt.Errorf("failed to get account id by device email: %w", err)
 	}
 	return accountID, nil
+}
+
+// SendArticleByID retrieves an article, generates an EPUB, and sends it to the user's device email.
+func (s *Service) SendArticleByID(
+	ctx context.Context,
+	accountID,
+	articleID string,
+) (*servicetypes.SendArticleResult, error) {
+	deviceEmail, _, err := s.GetUserDeviceEmail(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	if deviceEmail == "" {
+		return nil, fmt.Errorf("%w: user device email not configured", apperrors.ErrInvalid)
+	}
+
+	article, err := s.GetArticle(ctx, accountID, articleID)
+	if err != nil {
+		return nil, err
+	}
+
+	epubBytes, err := s.GenerateEPUB(article)
+	if err != nil {
+		return nil, err
+	}
+
+	emailResp, err := s.SendArticle(ctx, deviceEmail, epubBytes, article.Title)
+	if err != nil {
+		return nil, err
+	}
+
+	return &servicetypes.SendArticleResult{
+		Article:     article,
+		DeviceEmail: deviceEmail,
+		EmailResp:   emailResp,
+	}, nil
 }

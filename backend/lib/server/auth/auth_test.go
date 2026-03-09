@@ -49,6 +49,10 @@ func (m *MockService) SendArticle(_ context.Context, _ string, _ []byte, _ strin
 	panic("not implemented")
 }
 
+func (m *MockService) SendArticleByID(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
+	panic("not implemented")
+}
+
 func (m *MockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
 	panic("not implemented")
 }

@@ -54,6 +54,10 @@ func (m *MockService) SendArticle(_ context.Context, _ string, _ []byte, _ strin
 	return nil, errors.New("not implemented")
 }
 
+func (m *MockService) SendArticleByID(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (m *MockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }

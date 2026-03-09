@@ -226,45 +226,20 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
 
-	article, err := h.service.GetArticle(r.Context(), accountID, articleID)
-	if err != nil {
-		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		writeJSONError(w, http.StatusNotFound, err)
-		return
-	}
-
-	logging.AddLogAttr(r.Context(), slog.String("article_title", article.Title))
-
-	epubBytes, err := h.service.GenerateEPUB(article)
-	if err != nil {
-		handleServiceError(w, r, err, "generate epub")
-		return
-	}
-
-	deviceEmail, _, getErr := h.service.GetUserDeviceEmail(r.Context(), accountID)
-	if getErr != nil {
-		handleServiceError(w, r, getErr, "get user device email")
-		return
-	}
-	if deviceEmail == "" {
-		writeJSONError(w, http.StatusBadRequest, errors.New("user device email not configured"))
-		return
-	}
-
-	logging.AddLogAttr(r.Context(), slog.String("destination_email", deviceEmail))
-
-	emailResp, err := h.service.SendArticle(r.Context(), deviceEmail, epubBytes, article.Title)
+	result, err := h.service.SendArticleByID(r.Context(), accountID, articleID)
 	if err != nil {
 		handleServiceError(w, r, err, "send article")
 		return
 	}
 
-	if dbErr := h.service.GetDBError(); dbErr != nil {
-		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
+	logging.AddLogAttr(r.Context(), slog.String("article_title", result.Article.Title))
+	logging.AddLogAttr(r.Context(), slog.String("destination_email", result.DeviceEmail))
+	if result.EmailResp != nil {
+		logging.AddLogAttr(r.Context(), slog.String("message_id", result.EmailResp.MessageID))
 	}
 
-	if emailResp != nil {
-		logging.AddLogAttr(r.Context(), slog.String("message_id", emailResp.MessageID))
+	if dbErr := h.service.GetDBError(); dbErr != nil {
+		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", dbErr))
 	}
 
 	w.WriteHeader(http.StatusOK)

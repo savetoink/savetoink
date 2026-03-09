@@ -164,6 +164,11 @@ type articleMockService struct {
 		epubBytes []byte,
 		title string,
 	) (*email.SendEmailResponse, error)
+	sendArticleByIDFunc func(
+		ctx context.Context,
+		accountID string,
+		articleID string,
+	) (*servicetypes.SendArticleResult, error)
 	getUserDeviceEmailFunc func(
 		ctx context.Context,
 		accountID string,
@@ -197,6 +202,21 @@ func (m *articleMockService) SendArticle(ctx context.Context, destEmail string, 
 		return m.sendArticleFunc(ctx, destEmail, epubBytes, title)
 	}
 	return &email.SendEmailResponse{MessageID: "test-msg-id"}, nil
+}
+
+func (m *articleMockService) SendArticleByID(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error) { //nolint:lll // long function signature
+	if m.sendArticleByIDFunc != nil {
+		return m.sendArticleByIDFunc(ctx, accountID, articleID)
+	}
+	return &servicetypes.SendArticleResult{
+		Article: &model.Article{
+			ID:    articleID,
+			URL:   "https://example.com/article",
+			Title: "Test Article",
+		},
+		DeviceEmail: testArticleDeviceEmail,
+		EmailResp:   &email.SendEmailResponse{MessageID: "test-msg-id"},
+	}, nil
 }
 
 func (m *articleMockService) CreateArticle(ctx context.Context, url, accountID string) (*model.Article, error) {
@@ -1024,7 +1044,7 @@ func TestHandleSendArticle_WithSendsCount(t *testing.T) {
 
 func TestHandleSendArticle_ArticleNotFound(t *testing.T) {
 	mockSvc := &articleMockService{
-		getArticleFunc: func(_ context.Context, _, _ string) (*model.Article, error) {
+		sendArticleByIDFunc: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
 			return nil, apperrors.ErrNotFound
 		},
 	}
@@ -1045,13 +1065,7 @@ func TestHandleSendArticle_ArticleNotFound(t *testing.T) {
 
 func TestHandleSendArticle_GenerateEPUBError(t *testing.T) {
 	mockSvc := &articleMockService{
-		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
-			return &model.Article{
-				ID:    articleID,
-				Title: "Test Article",
-			}, nil
-		},
-		generateEPUBFunc: func(_ *model.Article) ([]byte, error) {
+		sendArticleByIDFunc: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
 			return nil, errors.New("epub generation failed")
 		},
 	}
@@ -1072,17 +1086,8 @@ func TestHandleSendArticle_GenerateEPUBError(t *testing.T) {
 
 func TestHandleSendArticle_GetDeviceEmailError(t *testing.T) {
 	mockSvc := &articleMockService{
-		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
-			return &model.Article{
-				ID:    articleID,
-				Title: "Test Article",
-			}, nil
-		},
-		generateEPUBFunc: func(_ *model.Article) ([]byte, error) {
-			return []byte("epub content"), nil
-		},
-		getUserDeviceEmailFunc: func(_ context.Context, _ string) (string, bool, error) {
-			return "", false, apperrors.ErrNotFound
+		sendArticleByIDFunc: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
+			return nil, apperrors.ErrNotFound
 		},
 	}
 
@@ -1102,17 +1107,8 @@ func TestHandleSendArticle_GetDeviceEmailError(t *testing.T) {
 
 func TestHandleSendArticle_NoDeviceEmail(t *testing.T) {
 	mockSvc := &articleMockService{
-		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
-			return &model.Article{
-				ID:    articleID,
-				Title: "Test Article",
-			}, nil
-		},
-		generateEPUBFunc: func(_ *model.Article) ([]byte, error) {
-			return []byte("epub content"), nil
-		},
-		getUserDeviceEmailFunc: func(_ context.Context, _ string) (string, bool, error) {
-			return "", false, nil
+		sendArticleByIDFunc: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
+			return nil, apperrors.ErrInvalid
 		},
 	}
 
@@ -1132,24 +1128,12 @@ func TestHandleSendArticle_NoDeviceEmail(t *testing.T) {
 	var errResp model.ErrorResponse
 	err := json.Unmarshal(w.Body.Bytes(), &errResp)
 	require.NoError(t, err)
-	assert.Contains(t, errResp.Error, "device email not configured")
+	assert.Contains(t, errResp.Error, "invalid input")
 }
 
 func TestHandleSendArticle_SendArticleError(t *testing.T) {
 	mockSvc := &articleMockService{
-		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
-			return &model.Article{
-				ID:    articleID,
-				Title: "Test Article",
-			}, nil
-		},
-		generateEPUBFunc: func(_ *model.Article) ([]byte, error) {
-			return []byte("epub content"), nil
-		},
-		getUserDeviceEmailFunc: func(_ context.Context, _ string) (string, bool, error) {
-			return testArticleDeviceEmail, false, nil
-		},
-		sendArticleFunc: func(_ context.Context, _ string, _ []byte, _ string) (*email.SendEmailResponse, error) {
+		sendArticleByIDFunc: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
 			return nil, errors.New("send failed")
 		},
 	}

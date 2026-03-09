@@ -55,6 +55,13 @@ func (m *userprofileMockService) SendArticle(
 	return nil, errors.New("not implemented")
 }
 
+func (m *userprofileMockService) SendArticleByID(
+	_ context.Context,
+	_, _ string,
+) (*servicetypes.SendArticleResult, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (m *userprofileMockService) CreateArticle(
 	_ context.Context,
 	_, _ string,

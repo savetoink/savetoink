@@ -50,6 +50,12 @@ func (m *webhookMockService) SendArticle(
 	return nil, errors.New("not implemented")
 }
 
+func (m *webhookMockService) SendArticleByID(
+	_ context.Context, _, _ string,
+) (*servicetypes.SendArticleResult, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (m *webhookMockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
