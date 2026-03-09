@@ -16,6 +16,7 @@
 		<p>Save a new article to your reading list</p>
 	</hgroup>
 
+	<!-- svelte-ignore a11y_autofocus -->
 	<form method="POST" action="?/new">
 		<fieldset>
 			<label>
@@ -26,6 +27,7 @@
 					required
 					placeholder="https://example.com/article"
 					autocomplete="url"
+					autofocus
 				/>
 				<small>Enter the full URL of the article you want to save</small>
 			</label>
