@@ -32,9 +32,13 @@
 		n: () => goto(resolve('/new')),
 		a: () => goto(resolve('/account'))
 	};
+
+	const enabledKeys = $derived(
+		Object.keys(DETAIL_BINDINGS).filter((key) => key !== 's' || data.user?.device_email)
+	);
 </script>
 
-<KeyboardNav bindings={DETAIL_BINDINGS} callbacks={keyboardCallbacks} />
+<KeyboardNav bindings={DETAIL_BINDINGS} callbacks={keyboardCallbacks} {enabledKeys} />
 
 <article>
 	<header>

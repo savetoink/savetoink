@@ -85,6 +85,10 @@
 		a: () => goto(resolve('/account'))
 	};
 
+	const enabledKeys = $derived(
+		Object.keys(LIST_BINDINGS).filter((key) => key !== 's' || data.user?.device_email)
+	);
+
 	$effect(() => {
 		const index = selectedArticleIndex;
 		if (index !== null && articleElements[index]) {
@@ -114,7 +118,7 @@
 
 <Navigator page={data.page} hasMore={data.has_more} />
 
-<KeyboardNav bindings={LIST_BINDINGS} callbacks={keyboardCallbacks} />
+<KeyboardNav bindings={LIST_BINDINGS} callbacks={keyboardCallbacks} {enabledKeys} />
 
 <form
 	bind:this={favoriteForm}
