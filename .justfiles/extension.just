@@ -16,6 +16,8 @@ build-extension:
     bun install
     bun run build
     bun run build:firefox
+    bun run zip
+    bun run zip:firefox
 
 [working-directory('frontend/extension')]
 server-extension-firefox:
