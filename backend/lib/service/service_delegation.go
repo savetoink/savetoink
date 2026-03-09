@@ -264,31 +264,20 @@ func (s *Service) SendArticleByID(
 		return nil, err
 	}
 
-	if s.sendsRepo != nil {
-		createErr := s.sendsRepo.CreateSendRecord(
-			ctx, accountID, articleID, article.Title, deviceEmail,
-		)
-		if createErr != nil {
-			return nil, fmt.Errorf("failed to create send record: %w", createErr)
-		}
+	if createErr := s.createSendRecord(ctx, accountID, articleID, article.Title, deviceEmail); createErr != nil {
+		return nil, createErr
 	}
 
 	emailResp, err := s.SendArticle(ctx, deviceEmail, epubBytes, article.Title)
 	if err != nil {
-		if s.sendsRepo != nil {
-			updateErr := s.sendsRepo.UpdateSendRecord(ctx, accountID, articleID, "failed", "", err.Error())
-			if updateErr != nil {
-				return nil, fmt.Errorf("%w and failed to update send record: %w", err, updateErr)
-			}
+		if updateErr := s.updateSendRecordOnFailure(ctx, accountID, articleID, err); updateErr != nil {
+			return nil, fmt.Errorf("%w and failed to update send record: %w", err, updateErr)
 		}
 		return nil, err
 	}
 
-	if s.sendsRepo != nil {
-		updateErr := s.sendsRepo.UpdateSendRecord(ctx, accountID, articleID, "success", emailResp.MessageID, "")
-		if updateErr != nil {
-			return nil, fmt.Errorf("failed to update send record: %w", updateErr)
-		}
+	if updateErr := s.updateSendRecordOnSuccess(ctx, accountID, articleID, emailResp.MessageID); updateErr != nil {
+		return nil, fmt.Errorf("failed to update send record: %w", updateErr)
 	}
 
 	return &servicetypes.SendArticleResult{
@@ -296,4 +285,61 @@ func (s *Service) SendArticleByID(
 		DeviceEmail: deviceEmail,
 		EmailResp:   emailResp,
 	}, nil
+}
+
+func (s *Service) createSendRecord(
+	ctx context.Context,
+	accountID, articleID, title, deviceEmail string,
+) error {
+	if s.sendsRepo == nil {
+		return nil
+	}
+	if err := s.sendsRepo.CreateSendRecord(ctx, &model.Send{
+		Account:     accountID,
+		ArticleID:   articleID,
+		Title:       title,
+		DestEmail:   deviceEmail,
+		SenderEmail: s.cfg.SenderEmail,
+		Provider:    string(s.cfg.EmailProvider),
+	}); err != nil {
+		return fmt.Errorf("failed to create send record: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) updateSendRecordOnFailure(
+	ctx context.Context,
+	accountID, articleID string,
+	sendErr error,
+) error {
+	if s.sendsRepo == nil {
+		return nil
+	}
+	if err := s.sendsRepo.UpdateSendRecord(ctx, &model.Send{
+		Account:       accountID,
+		ArticleID:     articleID,
+		Status:        "failed",
+		ErrorResponse: sendErr.Error(),
+	}); err != nil {
+		return fmt.Errorf("failed to update send record: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) updateSendRecordOnSuccess(
+	ctx context.Context,
+	accountID, articleID, messageID string,
+) error {
+	if s.sendsRepo == nil {
+		return nil
+	}
+	if err := s.sendsRepo.UpdateSendRecord(ctx, &model.Send{
+		Account:   accountID,
+		ArticleID: articleID,
+		Status:    "success",
+		MessageID: messageID,
+	}); err != nil {
+		return fmt.Errorf("failed to update send record: %w", err)
+	}
+	return nil
 }

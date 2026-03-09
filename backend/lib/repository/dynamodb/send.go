@@ -45,20 +45,22 @@ func (d *dynamoDBSend) toDomain() *model.Send {
 }
 
 // CreateSendRecord implements SendsRepository.CreateSendRecord.
-func (d *DynamoDB) CreateSendRecord(ctx context.Context, accountID, articleID, title, destEmail string) error {
+func (d *DynamoDB) CreateSendRecord(ctx context.Context, send *model.Send) error {
 	now := time.Now().UTC()
-	send := &dynamoDBSend{
-		PK:        "USER#" + accountID,
-		SK:        "SEND#" + now.Format(time.RFC3339) + "#" + articleID,
-		Account:   accountID,
-		ArticleID: articleID,
-		SentAt:    now,
-		Title:     title,
-		DestEmail: destEmail,
-		Status:    "pending",
+	dbSend := &dynamoDBSend{
+		PK:          "USER#" + send.Account,
+		SK:          "SEND#" + now.Format(time.RFC3339) + "#" + send.ArticleID,
+		Account:     send.Account,
+		ArticleID:   send.ArticleID,
+		SentAt:      now,
+		Title:       send.Title,
+		DestEmail:   send.DestEmail,
+		SenderEmail: send.SenderEmail,
+		Provider:    send.Provider,
+		Status:      "pending",
 	}
 
-	item, err := attributevalue.MarshalMap(send)
+	item, err := attributevalue.MarshalMap(dbSend)
 	if err != nil {
 		return fmt.Errorf("failed to marshal send: %w", err)
 	}
@@ -75,29 +77,26 @@ func (d *DynamoDB) CreateSendRecord(ctx context.Context, accountID, articleID, t
 }
 
 // UpdateSendRecord implements SendsRepository.UpdateSendRecord.
-func (d *DynamoDB) UpdateSendRecord(
-	ctx context.Context,
-	accountID, articleID, status, messageID, errorResponse string,
-) error {
-	dbSends, err := d.getDynamoDBSendsByArticleID(ctx, articleID)
+func (d *DynamoDB) UpdateSendRecord(ctx context.Context, send *model.Send) error {
+	dbSends, err := d.getDynamoDBSendsByArticleID(ctx, send.ArticleID)
 	if err != nil {
 		return fmt.Errorf("failed to get send: %w", err)
 	}
 
 	if len(dbSends) == 0 {
-		return fmt.Errorf("send record not found for article %s", articleID)
+		return fmt.Errorf("send record not found for article %s", send.ArticleID)
 	}
 
-	send := dbSends[len(dbSends)-1]
-	if send.Account != accountID {
+	dbSend := dbSends[len(dbSends)-1]
+	if dbSend.Account != send.Account {
 		return errors.New("send record account mismatch")
 	}
 
-	send.Status = status
-	send.MessageID = messageID
-	send.ErrorResponse = errorResponse
+	dbSend.Status = send.Status
+	dbSend.MessageID = send.MessageID
+	dbSend.ErrorResponse = send.ErrorResponse
 
-	item, err := attributevalue.MarshalMap(send)
+	item, err := attributevalue.MarshalMap(dbSend)
 	if err != nil {
 		return fmt.Errorf("failed to marshal send: %w", err)
 	}

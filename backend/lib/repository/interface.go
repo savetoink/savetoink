@@ -35,8 +35,8 @@ type UserProfileRepository interface {
 
 // SendsRepository defines the interface for send persistence.
 type SendsRepository interface {
-	CreateSendRecord(ctx context.Context, accountID, articleID, title, destEmail string) error
-	UpdateSendRecord(ctx context.Context, accountID, articleID, status, messageID, errorResponse string) error
+	CreateSendRecord(ctx context.Context, send *model.Send) error
+	UpdateSendRecord(ctx context.Context, send *model.Send) error
 	GetSendsByArticleID(ctx context.Context, articleID string) ([]*model.Send, error)
 	GetSendsByAccountDateRange(ctx context.Context, account string, startDate, endDate time.Time) ([]*model.Send, error)
 	CountSendsByAccountDateRange(ctx context.Context, account string, startDate, endDate time.Time) (int, error)

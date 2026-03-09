@@ -107,7 +107,7 @@ export interface paths {
         put?: never;
         /**
          * Send article
-         * @description Send an article to the user's Kindle device. Requires active subscription and non-bouncing email.
+         * @description Send an article to the user's Kindle device. Creates and updates a send record with status, message ID, and provider information. Requires active subscription and non-bouncing email.
          */
         post: operations["sendArticle"];
         delete?: never;
@@ -254,6 +254,11 @@ export interface components {
              * @description URL of the article to save (http or https only, private IPs blocked)
              */
             url: string;
+            /**
+             * @description Whether to send the article to the user's Kindle device after processing is complete
+             * @default false
+             */
+            send_on_complete: boolean;
         };
         ArticleResponse: {
             /** @description Article ID */

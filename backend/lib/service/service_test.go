@@ -9,6 +9,7 @@ import (
 
 	awstypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/backend/lib/config"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
@@ -526,28 +527,20 @@ type MockSendsRepository struct {
 	sends []*model.Send
 }
 
-func (m *MockSendsRepository) CreateSendRecord(_ context.Context, accountID, articleID, title, destEmail string) error {
-	send := &model.Send{
-		Account:   accountID,
-		ArticleID: articleID,
-		Title:     title,
-		DestEmail: destEmail,
-		SentAt:    time.Now().UTC(),
-		Status:    "pending",
-	}
-	m.sends = append(m.sends, send)
+func (m *MockSendsRepository) CreateSendRecord(_ context.Context, send *model.Send) error {
+	newSend := *send
+	newSend.SentAt = time.Now().UTC()
+	newSend.Status = "pending"
+	m.sends = append(m.sends, &newSend)
 	return nil
 }
 
-func (m *MockSendsRepository) UpdateSendRecord(
-	_ context.Context,
-	accountID, articleID, status, messageID, errorResponse string,
-) error {
-	for _, send := range m.sends {
-		if send.Account == accountID && send.ArticleID == articleID {
-			send.Status = status
-			send.MessageID = messageID
-			send.ErrorResponse = errorResponse
+func (m *MockSendsRepository) UpdateSendRecord(_ context.Context, send *model.Send) error {
+	for _, s := range m.sends {
+		if s.Account == send.Account && s.ArticleID == send.ArticleID {
+			s.Status = send.Status
+			s.MessageID = send.MessageID
+			s.ErrorResponse = send.ErrorResponse
 			return nil
 		}
 	}
@@ -967,6 +960,7 @@ func TestSendArticleByID(t *testing.T) {
 				Extractor:       content.NewExtractor(),
 				Publisher:       epub.NewPublisher(),
 				SendsRepo:       mockSendsRepo,
+				Config:          &config.Config{SenderEmail: "sender@example.com", EmailProvider: consts.EmailBackendMailjet},
 			}
 
 			svc := New(deps)

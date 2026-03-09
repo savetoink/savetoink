@@ -148,11 +148,11 @@ type testSendsRepo struct {
 	countResult int
 }
 
-func (r *testSendsRepo) CreateSendRecord(_ context.Context, _, _, _, _ string) error {
+func (r *testSendsRepo) CreateSendRecord(_ context.Context, _ *model.Send) error {
 	return r.createErr
 }
 
-func (r *testSendsRepo) UpdateSendRecord(_ context.Context, _, _, _, _, _ string) error {
+func (r *testSendsRepo) UpdateSendRecord(_ context.Context, _ *model.Send) error {
 	return nil
 }
 

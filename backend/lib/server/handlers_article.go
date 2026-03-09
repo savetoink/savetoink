@@ -58,11 +58,12 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 	reqID := logging.GetRequestID(r.Context())
 
 	event := &content.ProcessArticleEvent{
-		RequestID:      reqID,
-		URL:            url,
-		ArticleID:      articleID,
-		AccountID:      accountID,
-		InheritedAttrs: convertSlogAttrsToMap(inheritedAttrs),
+		RequestID:        reqID,
+		URL:              url,
+		ArticleID:        articleID,
+		AccountID:        accountID,
+		InheritedAttrs:   convertSlogAttrsToMap(inheritedAttrs),
+		SendAfterProcess: req.SendOnComplete,
 	}
 
 	h.processor.StartProcessing(context.Background(), event)
