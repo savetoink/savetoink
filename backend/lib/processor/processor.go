@@ -12,14 +12,17 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
+	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )
 
-// ArticleServiceInterface defines the service methods needed for article processing.
-type ArticleServiceInterface interface {
+// Service defines the interface for service operations needed by the processor.
+type Service interface {
 	Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error)
 	Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error)
 	UpdateArticle(ctx context.Context, article *model.Article) error
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
+	GetUserDeviceEmail(ctx context.Context, accountID string) (email string, autoSend bool, err error)
+	SendArticleByID(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error)
 }
 
 // Processor defines the interface for starting article processing.
@@ -29,11 +32,11 @@ type Processor interface {
 
 // LocalProcessor runs article processing in a goroutine.
 type LocalProcessor struct {
-	service ArticleServiceInterface
+	service Service
 }
 
 // NewLocalProcessor creates a new LocalProcessor.
-func NewLocalProcessor(svc ArticleServiceInterface) *LocalProcessor {
+func NewLocalProcessor(svc Service) *LocalProcessor {
 	return &LocalProcessor{service: svc}
 }
 
@@ -42,10 +45,10 @@ func (p *LocalProcessor) StartProcessing(ctx context.Context, event *content.Pro
 	go ProcessArticle(ctx, p.service, event)
 }
 
-// ProcessArticle processes an article: fetches, extracts, and stores it.
+// ProcessArticle processes an article: fetches, extracts, stores, and optionally sends it.
 func ProcessArticle(
 	ctx context.Context,
-	svc ArticleServiceInterface,
+	svc Service,
 	event *content.ProcessArticleEvent,
 ) {
 	var requestError error
@@ -87,7 +90,37 @@ func ProcessArticle(
 		return
 	}
 
+	if event.SendOnComplete {
+		if sendErr := sendArticle(processCtx, svc, event.AccountID, event.ArticleID); sendErr != nil {
+			logging.AddRequestError(processCtx, sendErr)
+			logArticleResult(processCtx, event.InheritedAttrs, "failed")
+			return
+		}
+	}
+
 	logArticleResult(processCtx, event.InheritedAttrs, "success")
+}
+
+func sendArticle(ctx context.Context, svc Service, accountID, articleID string) error {
+	deviceEmail, _, err := svc.GetUserDeviceEmail(ctx, accountID)
+	if err != nil {
+		return fmt.Errorf("failed to get device email: %w", err)
+	}
+	if deviceEmail == "" {
+		return errors.New("device email not configured")
+	}
+
+	result, err := svc.SendArticleByID(ctx, accountID, articleID)
+	if err != nil {
+		return fmt.Errorf("failed to send article: %w", err)
+	}
+
+	logging.AddLogAttr(ctx, slog.String("destination_email", result.DeviceEmail))
+	if result.EmailResp != nil {
+		logging.AddLogAttr(ctx, slog.String("message_id", result.EmailResp.MessageID))
+	}
+
+	return nil
 }
 
 func logArticleResult(ctx context.Context, inheritedAttrs []map[string]any, status string) {
@@ -100,7 +133,7 @@ func logArticleResult(ctx context.Context, inheritedAttrs []map[string]any, stat
 	logging.LogArticleProcessing(ctx, "article processing completed", attrs, slog.String("status", status))
 }
 
-func markArticleError(ctx context.Context, svc ArticleServiceInterface, accountID, articleID, stage string, err error) {
+func markArticleError(ctx context.Context, svc Service, accountID, articleID, stage string, err error) {
 	logging.AddRequestError(ctx, fmt.Errorf("article %s: %s error: %w", articleID, stage, err))
 
 	article, getErr := svc.GetArticle(ctx, accountID, articleID)

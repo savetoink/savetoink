@@ -10,6 +10,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
+	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,10 +39,12 @@ func (h *testCaptureHandler) WithGroup(_ string) slog.Handler {
 }
 
 type mockArticleService struct {
-	fetchFunc      func(ctx context.Context, url string) ([]byte, content.FetcherType, error)
-	extractFunc    func(ctx context.Context, htmlBytes []byte) (*model.Article, error)
-	updateFunc     func(ctx context.Context, article *model.Article) error
-	getArticleFunc func(ctx context.Context, accountID, articleID string) (*model.Article, error)
+	fetchFunc          func(ctx context.Context, url string) ([]byte, content.FetcherType, error)
+	extractFunc        func(ctx context.Context, htmlBytes []byte) (*model.Article, error)
+	updateFunc         func(ctx context.Context, article *model.Article) error
+	getArticleFunc     func(ctx context.Context, accountID, articleID string) (*model.Article, error)
+	getUserDeviceEmail func(ctx context.Context, accountID string) (string, bool, error)
+	sendArticleByID    func(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error)
 }
 
 func (m *mockArticleService) Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error) {
@@ -77,6 +80,31 @@ func (m *mockArticleService) GetArticle(ctx context.Context, accountID, articleI
 		ID:    articleID,
 		URL:   "https://example.com/article",
 		Title: "Test Article",
+	}, nil
+}
+
+func (m *mockArticleService) GetUserDeviceEmail(
+	ctx context.Context, accountID string,
+) (email string, autoSend bool, err error) {
+	if m.getUserDeviceEmail != nil {
+		return m.getUserDeviceEmail(ctx, accountID)
+	}
+	return "test@kindle.com", true, nil
+}
+
+func (m *mockArticleService) SendArticleByID(
+	ctx context.Context,
+	accountID, articleID string,
+) (*servicetypes.SendArticleResult, error) {
+	if m.sendArticleByID != nil {
+		return m.sendArticleByID(ctx, accountID, articleID)
+	}
+	return &servicetypes.SendArticleResult{
+		Article: &model.Article{
+			ID:      articleID,
+			Account: accountID,
+		},
+		DeviceEmail: "test@kindle.com",
 	}, nil
 }
 
@@ -449,4 +477,128 @@ func TestLogArticleResult(t *testing.T) {
 	}
 
 	assert.Equal(t, "success", attrMap["status"])
+}
+
+func TestProcessArticle_SendOnComplete_Success(t *testing.T) {
+	var capturedArticle *model.Article
+	var sendCalled bool
+
+	mockSvc := &mockArticleService{
+		fetchFunc: func(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+			return []byte("<html><body>test content</body></html>"), content.FetcherTypeGo, nil
+		},
+		extractFunc: func(_ context.Context, _ []byte) (*model.Article, error) {
+			return &model.Article{
+				ID:    "article-123",
+				URL:   "https://example.com/article",
+				Title: "Test Article",
+			}, nil
+		},
+		updateFunc: func(_ context.Context, article *model.Article) error {
+			capturedArticle = article
+			return nil
+		},
+		sendArticleByID: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
+			sendCalled = true
+			return &servicetypes.SendArticleResult{
+				Article:     capturedArticle,
+				DeviceEmail: "test@kindle.com",
+			}, nil
+		},
+	}
+
+	event := &content.ProcessArticleEvent{
+		URL:            "https://example.com/article",
+		ArticleID:      "article-123",
+		AccountID:      "account-456",
+		SendOnComplete: true,
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
+	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+
+	ProcessArticle(ctx, mockSvc, event)
+
+	require.NotNil(t, capturedArticle)
+	assert.True(t, sendCalled)
+	assert.Equal(t, "article-123", capturedArticle.ID)
+}
+
+func TestProcessArticle_SendOnComplete_DeviceEmailNotSet(t *testing.T) {
+	var capturedArticle *model.Article
+
+	mockSvc := &mockArticleService{
+		fetchFunc: func(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+			return []byte("<html><body>test content</body></html>"), content.FetcherTypeGo, nil
+		},
+		extractFunc: func(_ context.Context, _ []byte) (*model.Article, error) {
+			return &model.Article{
+				ID:    "article-123",
+				URL:   "https://example.com/article",
+				Title: "Test Article",
+			}, nil
+		},
+		updateFunc: func(_ context.Context, article *model.Article) error {
+			capturedArticle = article
+			return nil
+		},
+		getUserDeviceEmail: func(_ context.Context, _ string) (string, bool, error) {
+			return "", true, nil
+		},
+	}
+
+	event := &content.ProcessArticleEvent{
+		URL:            "https://example.com/article",
+		ArticleID:      "article-123",
+		AccountID:      "account-456",
+		SendOnComplete: true,
+	}
+
+	ctx := context.Background()
+
+	ProcessArticle(ctx, mockSvc, event)
+
+	require.NotNil(t, capturedArticle)
+	assert.Equal(t, "article-123", capturedArticle.ID)
+	assert.Empty(t, capturedArticle.Error)
+}
+
+func TestProcessArticle_SendOnComplete_SendError(t *testing.T) {
+	var capturedArticle *model.Article
+
+	mockSvc := &mockArticleService{
+		fetchFunc: func(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
+			return []byte("<html><body>test content</body></html>"), content.FetcherTypeGo, nil
+		},
+		extractFunc: func(_ context.Context, _ []byte) (*model.Article, error) {
+			return &model.Article{
+				ID:    "article-123",
+				URL:   "https://example.com/article",
+				Title: "Test Article",
+			}, nil
+		},
+		updateFunc: func(_ context.Context, article *model.Article) error {
+			capturedArticle = article
+			return nil
+		},
+		sendArticleByID: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
+			return nil, errors.New("email send failed")
+		},
+	}
+
+	event := &content.ProcessArticleEvent{
+		URL:            "https://example.com/article",
+		ArticleID:      "article-123",
+		AccountID:      "account-456",
+		SendOnComplete: true,
+	}
+
+	ctx := context.Background()
+
+	ProcessArticle(ctx, mockSvc, event)
+
+	require.NotNil(t, capturedArticle)
+	assert.Equal(t, "article-123", capturedArticle.ID)
+	assert.Empty(t, capturedArticle.Error)
 }
