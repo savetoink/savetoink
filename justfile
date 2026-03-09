@@ -1,4 +1,4 @@
-set dotenv-filename := ".env"
+set dotenv-load := true
 
 project_name := 'savetoink'
 lambda_archive := 'lambda-source.zip'
