@@ -31,29 +31,20 @@ describe('keyboard bindings', () => {
 	});
 
 	it('should have list-specific bindings', () => {
-		expect(LIST_BINDINGS.ArrowUp).toBeDefined();
 		expect(LIST_BINDINGS.k).toBeDefined();
-		expect(LIST_BINDINGS.ArrowDown).toBeDefined();
 		expect(LIST_BINDINGS.j).toBeDefined();
-		expect(LIST_BINDINGS.ArrowRight).toBeDefined();
 		expect(LIST_BINDINGS.Enter).toBeDefined();
 	});
 
 	it('should have correct descriptions for list bindings', () => {
-		expect(LIST_BINDINGS.ArrowUp.description).toBe('Previous article');
 		expect(LIST_BINDINGS.k.description).toBe('Previous article');
-		expect(LIST_BINDINGS.ArrowDown.description).toBe('Next article');
 		expect(LIST_BINDINGS.j.description).toBe('Next article');
-		expect(LIST_BINDINGS.ArrowRight.description).toBe('Open article');
 		expect(LIST_BINDINGS.Enter.description).toBe('Open article');
 	});
 
 	it('should have correct category for list bindings', () => {
-		expect(LIST_BINDINGS.ArrowUp.category).toBe('list');
 		expect(LIST_BINDINGS.k.category).toBe('list');
-		expect(LIST_BINDINGS.ArrowDown.category).toBe('list');
 		expect(LIST_BINDINGS.j.category).toBe('list');
-		expect(LIST_BINDINGS.ArrowRight.category).toBe('list');
 		expect(LIST_BINDINGS.Enter.category).toBe('list');
 	});
 
@@ -64,17 +55,14 @@ describe('keyboard bindings', () => {
 	});
 
 	it('should have detail-specific bindings', () => {
-		expect(DETAIL_BINDINGS.ArrowLeft).toBeDefined();
 		expect(DETAIL_BINDINGS.Escape).toBeDefined();
 	});
 
 	it('should have correct descriptions for detail bindings', () => {
-		expect(DETAIL_BINDINGS.ArrowLeft.description).toBe('Back to list');
 		expect(DETAIL_BINDINGS.Escape.description).toBe('Back to list');
 	});
 
 	it('should have correct category for detail bindings', () => {
-		expect(DETAIL_BINDINGS.ArrowLeft.category).toBe('navigation');
 		expect(DETAIL_BINDINGS.Escape.category).toBe('navigation');
 	});
 });

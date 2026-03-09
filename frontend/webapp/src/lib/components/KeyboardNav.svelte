@@ -79,15 +79,12 @@
 <dialog class="help-modal" bind:this={dialogElement} onclose={closeHelpModal}>
 	<div class="modal-content">
 		<header>
-			<h2>Keyboard Shortcuts</h2>
-			<button class="close-btn" onclick={() => closeHelpModal()} aria-label="Close">
-				&times;
-			</button>
+			<h1 class="center">Keyboard Shortcuts</h1>
 		</header>
-		<div class="bindings-container">
+		<div class="categories">
 			{#each Object.entries(groupBindingsByCategory(bindings, allEnabledKeys)) as [category, categoryBindings] (category)}
-				<div class="category">
-					<h3>{category}</h3>
+				<div>
+					<h3 class="center"><p>{category}</p></h3>
 					<ul>
 						{#each categoryBindings as binding (binding.key)}
 							<li>
@@ -99,7 +96,7 @@
 				</div>
 			{/each}
 		</div>
-		<footer>
+		<footer class="center">
 			<button onclick={() => closeHelpModal()}>Close</button>
 			<small>Press {HELP_KEY} or Escape to close</small>
 		</footer>
@@ -107,97 +104,14 @@
 </dialog>
 
 <style>
-	.help-modal {
-		max-width: 500px;
-		width: 90vw;
-		border: none;
-		border-radius: 8px;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-		padding: 0;
-	}
-
-	.help-modal::backdrop {
-		background: rgba(0, 0, 0, 0.5);
-	}
-
-	.modal-content {
-		padding: 1.5rem;
-		background: white;
-		color: inherit;
-	}
-
-	header {
+	.categories {
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1rem;
+		flex-wrap: wrap;
+		gap: 3rem;
+		margin-top: 2rem;
 	}
-
-	header h2 {
-		margin: 0;
-		font-size: 1.5rem;
-	}
-
-	.close-btn {
-		background: none;
-		border: none;
-		font-size: 2rem;
-		line-height: 1;
-		cursor: pointer;
-		padding: 0 0.5rem;
-	}
-
-	.bindings-container {
-		max-height: 60vh;
-		overflow-y: auto;
-		margin-bottom: 1rem;
-	}
-
-	.category {
-		margin-bottom: 1rem;
-	}
-
-	.category h3 {
-		margin: 0 0 0.5rem 0;
-		font-size: 1rem;
-		text-transform: capitalize;
-		color: #666;
-	}
-
-	.category ul {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.category li {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.5rem 0;
-	}
-
-	kbd {
-		background: #f4f4f4;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		padding: 0.25rem 0.5rem;
-		font-family: monospace;
-		font-size: 0.9rem;
-		min-width: 2.5rem;
+	.center {
 		text-align: center;
-	}
-
-	footer {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 1rem;
-		border-top: 1px solid #eee;
-		padding-top: 1rem;
-	}
-
-	footer small {
-		color: #666;
+		text-transform: capitalize;
 	}
 </style>
