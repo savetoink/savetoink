@@ -7,9 +7,9 @@
 <nav>
 	<ul>
 		{#if loggedIn}
-			<NavItem link="/new" text="Add new article" />
+			<NavItem link="/new" text="Add new" />
 
-			<NavItem link="/articles" text="All" />
+			<NavItem link="/articles" text="Articles" />
 
 			<NavItem link="/articles?favorite=true" text="Favorites" />
 		{/if}
