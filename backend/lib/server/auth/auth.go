@@ -63,8 +63,12 @@ func sharedAPIKeyMiddleware(apiKeySecret string) func(http.Handler) http.Handler
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get(authHeader)
-			if authHeader == "" || !strings.HasPrefix(authHeader, authHeaderPrefix) {
-				handleAuthError(r.Context(), next, w, r, "missing or malformed auth header")
+			if authHeader == "" {
+				handleAuthError(r.Context(), next, w, r, "missing auth header")
+				return
+			}
+			if !strings.HasPrefix(authHeader, authHeaderPrefix) {
+				handleAuthError(r.Context(), next, w, r, "malformed auth header")
 				return
 			}
 			token := strings.TrimPrefix(authHeader, authHeaderPrefix)

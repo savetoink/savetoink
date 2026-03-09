@@ -512,7 +512,7 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 			authHeader:     "",
 			expectedStatus: http.StatusOK,
 			expectedAccID:  "",
-			expectedError:  "missing or malformed auth header",
+			expectedError:  "missing auth header",
 		},
 		{
 			name:           "malformed authorization header (no Bearer prefix)",
@@ -520,7 +520,7 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 			authHeader:     "test-secret-key",
 			expectedStatus: http.StatusOK,
 			expectedAccID:  "",
-			expectedError:  "missing or malformed auth header",
+			expectedError:  "malformed auth header",
 		},
 	}
 
