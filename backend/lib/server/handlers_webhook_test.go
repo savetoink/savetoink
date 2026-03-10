@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -32,11 +33,11 @@ type webhookMockService struct {
 	getAccountIDByDeviceEmailErr error
 }
 
-func (m *webhookMockService) Fetch(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
-	return nil, content.FetcherTypeGo, errors.New("not implemented")
+func (m *webhookMockService) Fetch(_ context.Context, _ *url.URL) (*content.FetchedContent, error) {
+	return nil, errors.New("not implemented")
 }
 
-func (m *webhookMockService) Extract(_ context.Context, _ []byte) (*model.Article, error) {
+func (m *webhookMockService) Extract(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -56,7 +57,7 @@ func (m *webhookMockService) SendArticleByID(
 	return nil, errors.New("not implemented")
 }
 
-func (m *webhookMockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
+func (m *webhookMockService) CreateArticle(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -190,18 +191,18 @@ func createMailjetEventJSON(events []mailjetEvent) []byte {
 }
 
 func createWebhookRequest(body []byte, secret string) *http.Request {
-	url := "/v1/webhooks/mailjet"
+	path := "/v1/webhooks/mailjet"
 	if secret != "" {
-		url = url + "?secret=" + secret
+		path = path + "?secret=" + secret
 	}
-	req := httptest.NewRequestWithContext(context.Background(), "POST", url, bytes.NewReader(body))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", path, bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	return req
 }
 
 func createTestHTTPRequestWithErrorBody() *http.Request {
-	url := "/v1/webhooks/mailjet?secret=test-webhook-secret"
-	req := httptest.NewRequestWithContext(context.Background(), "POST", url, &errorReadCloser{})
+	path := "/v1/webhooks/mailjet?secret=test-webhook-secret"
+	req := httptest.NewRequestWithContext(context.Background(), "POST", path, &errorReadCloser{})
 	req.Header.Set("Content-Type", "application/json")
 	return req
 }

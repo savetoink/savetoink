@@ -14,6 +14,7 @@ import (
 	"github.com/markusmobius/go-trafilatura"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/validation"
 	"golang.org/x/net/html"
 )
 
@@ -26,8 +27,13 @@ func NewExtractor() *Extractor {
 }
 
 // GenerateFromHTML extracts article content from HTML bytes.
-func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte) (*model.Article, error) {
+func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte, u *url.URL) (*model.Article, error) {
+	if u == nil {
+		return nil, errors.New("url is nil")
+	}
+
 	opts := trafilatura.Options{
+		OriginalURL:    u,
 		EnableFallback: true,
 		IncludeImages:  true,
 		IncludeLinks:   true,
@@ -55,18 +61,18 @@ func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte) (*mode
 // should use Fetcher.Fetch() followed by Extractor.GenerateFromHTML().
 func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.Article, error) {
 	fetcher := NewFetcher("")
-	result, err := fetcher.Fetch(ctx, urlStr)
-	if err != nil {
-		return nil, err
-	}
-
-	parsedURL, err := url.Parse(urlStr)
+	u, err := validation.ValidateURL(urlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse URL: %w", err)
 	}
 
+	result, err := fetcher.Fetch(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+
 	opts := trafilatura.Options{
-		OriginalURL:    parsedURL,
+		OriginalURL:    u,
 		EnableFallback: true,
 		Config: &trafilatura.Config{
 			MinExtractedSize: consts.MinimumExtractedSize,

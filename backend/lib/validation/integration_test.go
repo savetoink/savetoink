@@ -17,7 +17,7 @@ func TestValidationIntegration(t *testing.T) {
 		}
 
 		for _, urlStr := range badURLs {
-			err := ValidateURL(urlStr)
+			_, err := ValidateURL(urlStr)
 			if err == nil {
 				t.Errorf("Expected error for SSRF-protected URL: %s", urlStr)
 			}

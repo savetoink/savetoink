@@ -3,6 +3,7 @@ package lambda
 import (
 	"context"
 	"errors"
+	"net/url"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
@@ -18,13 +19,16 @@ type mockService struct {
 	mock.Mock
 }
 
-func (m *mockService) Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error) {
-	args := m.Called(ctx, url)
-	return args.Get(0).([]byte), args.Get(1).(content.FetcherType), args.Error(2)
+func (m *mockService) Fetch(ctx context.Context, u *url.URL) (*content.FetchedContent, error) {
+	args := m.Called(ctx, u)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*content.FetchedContent), args.Error(1)
 }
 
-func (m *mockService) Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error) {
-	args := m.Called(ctx, htmlBytes)
+func (m *mockService) Extract(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error) {
+	args := m.Called(ctx, fetched)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -151,7 +155,8 @@ func TestHandleEvent_FetchError(t *testing.T) {
 		AccountID: "account-456",
 	}
 
-	mockSvc.On("Fetch", mock.Anything, event.URL).Return([]byte{}, content.FetcherTypeGo, errors.New("fetch failed"))
+	eventURL, _ := url.Parse(event.URL)
+	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{}, errors.New("fetch failed"))
 	mockSvc.On(
 		"GetArticle", mock.Anything, event.AccountID, event.ArticleID).Return(&model.Article{ID: event.ArticleID}, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
@@ -159,7 +164,7 @@ func TestHandleEvent_FetchError(t *testing.T) {
 	err := HandleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
-	mockSvc.AssertCalled(t, "Fetch", mock.Anything, event.URL)
+	mockSvc.AssertCalled(t, "Fetch", mock.Anything, eventURL)
 	mockSvc.AssertCalled(t, "UpdateArticle", mock.Anything, mock.Anything)
 }
 
@@ -175,9 +180,15 @@ func TestHandleEvent_ExtractError(t *testing.T) {
 		AccountID: "account-456",
 	}
 
+	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
-	mockSvc.On("Fetch", mock.Anything, event.URL).Return(htmlBytes, content.FetcherTypeBrowserless, nil)
-	mockSvc.On("Extract", mock.Anything, htmlBytes).Return(nil, errors.New("extract failed"))
+	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
+		HTML: htmlBytes,
+		URL:  eventURL,
+		Type: content.FetcherTypeBrowserless,
+	}, nil)
+	mockSvc.On("Extract", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).
+		Return(nil, errors.New("extract failed"))
 	mockSvc.On(
 		"GetArticle", mock.Anything, event.AccountID, event.ArticleID).Return(&model.Article{ID: event.ArticleID}, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
@@ -185,8 +196,7 @@ func TestHandleEvent_ExtractError(t *testing.T) {
 	err := HandleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
-	mockSvc.AssertCalled(t, "Fetch", mock.Anything, event.URL)
-	mockSvc.AssertCalled(t, "Extract", mock.Anything, htmlBytes)
+	mockSvc.AssertCalled(t, "Fetch", mock.Anything, eventURL)
 }
 
 func TestHandleEvent_UpdateError(t *testing.T) {
@@ -201,10 +211,15 @@ func TestHandleEvent_UpdateError(t *testing.T) {
 		AccountID: "account-456",
 	}
 
+	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
-	mockSvc.On("Fetch", mock.Anything, event.URL).Return(htmlBytes, content.FetcherTypeBrowserless, nil)
-	mockSvc.On("Extract", mock.Anything, htmlBytes).Return(article, nil)
+	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
+		HTML: htmlBytes,
+		URL:  eventURL,
+		Type: content.FetcherTypeBrowserless,
+	}, nil)
+	mockSvc.On("Extract", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(errors.New("update failed"))
 	mockSvc.On(
 		"GetArticle", mock.Anything, event.AccountID, event.ArticleID).Return(&model.Article{ID: event.ArticleID}, nil)
@@ -212,8 +227,8 @@ func TestHandleEvent_UpdateError(t *testing.T) {
 	err := HandleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
-	mockSvc.AssertCalled(t, "Fetch", mock.Anything, event.URL)
-	mockSvc.AssertCalled(t, "Extract", mock.Anything, htmlBytes)
+	mockSvc.AssertCalled(t, "Fetch", mock.Anything, eventURL)
+	mockSvc.AssertCalled(t, "Extract", mock.Anything, mock.AnythingOfType("*content.FetchedContent"))
 	mockSvc.AssertCalled(t, "UpdateArticle", mock.Anything, mock.Anything)
 }
 
@@ -229,17 +244,22 @@ func TestHandleEvent_Success(t *testing.T) {
 		AccountID: "account-456",
 	}
 
+	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
-	mockSvc.On("Fetch", mock.Anything, event.URL).Return(htmlBytes, content.FetcherTypeBrowserless, nil)
-	mockSvc.On("Extract", mock.Anything, htmlBytes).Return(article, nil)
+	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
+		HTML: htmlBytes,
+		URL:  eventURL,
+		Type: content.FetcherTypeBrowserless,
+	}, nil)
+	mockSvc.On("Extract", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
 
 	err := HandleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
-	mockSvc.AssertCalled(t, "Fetch", mock.Anything, event.URL)
-	mockSvc.AssertCalled(t, "Extract", mock.Anything, htmlBytes)
+	mockSvc.AssertCalled(t, "Fetch", mock.Anything, eventURL)
+	mockSvc.AssertCalled(t, "Extract", mock.Anything, mock.AnythingOfType("*content.FetchedContent"))
 	mockSvc.AssertCalled(t, "UpdateArticle", mock.Anything, mock.Anything)
 }
 
@@ -256,10 +276,15 @@ func TestHandleEvent_SendOnComplete_Success(t *testing.T) {
 		SendOnComplete: true,
 	}
 
+	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
-	mockSvc.On("Fetch", mock.Anything, event.URL).Return(htmlBytes, content.FetcherTypeBrowserless, nil)
-	mockSvc.On("Extract", mock.Anything, htmlBytes).Return(article, nil)
+	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
+		HTML: htmlBytes,
+		URL:  eventURL,
+		Type: content.FetcherTypeBrowserless,
+	}, nil)
+	mockSvc.On("Extract", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
 	mockSvc.On("GetUserDeviceEmail", mock.Anything, event.AccountID).Return("device@example.com", true, nil)
 	mockSvc.On("SendArticleByID", mock.Anything, event.AccountID, event.ArticleID).Return(&servicetypes.SendArticleResult{
@@ -286,10 +311,15 @@ func TestHandleEvent_SendOnComplete_NoDeviceEmail(t *testing.T) {
 		SendOnComplete: true,
 	}
 
+	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
-	mockSvc.On("Fetch", mock.Anything, event.URL).Return(htmlBytes, content.FetcherTypeBrowserless, nil)
-	mockSvc.On("Extract", mock.Anything, htmlBytes).Return(article, nil)
+	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
+		HTML: htmlBytes,
+		URL:  eventURL,
+		Type: content.FetcherTypeBrowserless,
+	}, nil)
+	mockSvc.On("Extract", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
 	mockSvc.On("GetUserDeviceEmail", mock.Anything, event.AccountID).Return("", false, nil)
 
@@ -313,10 +343,15 @@ func TestHandleEvent_SendOnComplete_SendError(t *testing.T) {
 		SendOnComplete: true,
 	}
 
+	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
-	mockSvc.On("Fetch", mock.Anything, event.URL).Return(htmlBytes, content.FetcherTypeBrowserless, nil)
-	mockSvc.On("Extract", mock.Anything, htmlBytes).Return(article, nil)
+	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
+		HTML: htmlBytes,
+		URL:  eventURL,
+		Type: content.FetcherTypeBrowserless,
+	}, nil)
+	mockSvc.On("Extract", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
 	mockSvc.On("GetUserDeviceEmail", mock.Anything, event.AccountID).Return("device@example.com", true, nil)
 	mockSvc.On("SendArticleByID", mock.Anything, event.AccountID, event.ArticleID).Return(nil, errors.New("send failed"))
@@ -343,10 +378,15 @@ func TestHandleEvent_InheritedAttrs(t *testing.T) {
 		},
 	}
 
+	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
-	mockSvc.On("Fetch", mock.Anything, event.URL).Return(htmlBytes, content.FetcherTypeBrowserless, nil)
-	mockSvc.On("Extract", mock.Anything, htmlBytes).Return(article, nil)
+	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
+		HTML: htmlBytes,
+		URL:  eventURL,
+		Type: content.FetcherTypeBrowserless,
+	}, nil)
+	mockSvc.On("Extract", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.MatchedBy(func(_ *model.Article) bool {
 		return true
 	})).Return(nil)

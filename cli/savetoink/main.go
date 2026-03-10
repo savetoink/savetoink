@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"fmt"
+	netURL "net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,12 +74,17 @@ func processArticle(ctx context.Context, url string, svc *service.Service) (*mod
 
 	start := time.Now()
 
-	htmlBytes, _, err := svc.Fetch(ctx, url)
+	u, err := netURL.Parse(url)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid url: %w", err)
+	}
+
+	fetched, err := svc.Fetch(ctx, u)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch article: %w", err)
 	}
 
-	article, err := svc.Extract(ctx, htmlBytes)
+	article, err := svc.Extract(ctx, fetched)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to extract article: %w", err)
 	}

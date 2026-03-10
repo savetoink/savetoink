@@ -68,7 +68,7 @@ func TestValidateURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateURL(tt.url)
+			_, err := ValidateURL(tt.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -183,86 +183,6 @@ func TestValidateDeviceEmail(t *testing.T) {
 	}
 }
 
-func TestValidateURLOnlyFormat(t *testing.T) {
-	tests := []struct {
-		name    string
-		url     string
-		wantErr bool
-		errMsg  string
-	}{
-		{
-			name:    "valid HTTPS URL",
-			url:     "https://example.com/article",
-			wantErr: false,
-		},
-		{
-			name:    "valid HTTP URL",
-			url:     "http://example.com",
-			wantErr: false,
-		},
-		{
-			name:    "valid URL with port",
-			url:     "https://example.com:8080/path",
-			wantErr: false,
-		},
-		{
-			name:    "private IP is allowed",
-			url:     "http://192.168.1.1/admin",
-			wantErr: false,
-		},
-		{
-			name:    "localhost is allowed",
-			url:     "http://localhost:8080",
-			wantErr: false,
-		},
-		{
-			name:    "empty URL",
-			url:     "",
-			wantErr: true,
-			errMsg:  "cannot be empty",
-		},
-		{
-			name:    "invalid scheme",
-			url:     "ftp://example.com",
-			wantErr: true,
-			errMsg:  "must use http or https scheme",
-		},
-		{
-			name:    "missing host",
-			url:     "https://",
-			wantErr: true,
-			errMsg:  "host is required",
-		},
-		{
-			name:    "invalid URL format",
-			url:     "://example.com",
-			wantErr: true,
-			errMsg:  "failed to parse URL",
-		},
-		{
-			name:    "URL too long",
-			url:     "https://example.com/" + strings.Repeat("a", maxURLLength+100),
-			wantErr: true,
-			errMsg:  "exceeds maximum length",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateURLOnlyFormat(tt.url)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ValidateURLOnlyFormat() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.wantErr && tt.errMsg != "" && err != nil {
-				if !strings.Contains(err.Error(), tt.errMsg) {
-					t.Errorf("ValidateURLOnlyFormat() error = %v, expected to contain %v", err, tt.errMsg)
-				}
-			}
-		})
-	}
-}
-
 func TestValidateURL_AdditionalCases(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -313,7 +233,7 @@ func TestValidateURL_AdditionalCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateURL(tt.url)
+			_, err := ValidateURL(tt.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateURL() error = %v, wantErr %v", err, tt.wantErr)
 				return

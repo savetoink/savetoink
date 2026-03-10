@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"net/url"
 	"testing"
 	"time"
 
@@ -183,7 +184,7 @@ func TestCreateArticle_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	article, err := svc.CreateArticle(context.Background(), "https://example.com", "account-1")
+	article, err := svc.CreateArticle(context.Background(), &url.URL{Scheme: "https", Host: "example.com"}, "account-1")
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -209,7 +210,7 @@ func TestCreateArticle_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	_, err := svc.CreateArticle(context.Background(), "https://example.com", "account-1")
+	_, err := svc.CreateArticle(context.Background(), &url.URL{Scheme: "https", Host: "example.com"}, "account-1")
 
 	if err == nil {
 		t.Fatal("expected error, got nil")

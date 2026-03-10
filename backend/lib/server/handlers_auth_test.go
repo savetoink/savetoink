@@ -38,11 +38,11 @@ type MockService struct {
 	setUserEmailErr  error
 }
 
-func (m *MockService) Fetch(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
-	return nil, 0, errors.New("not implemented")
+func (m *MockService) Fetch(_ context.Context, _ *url.URL) (*content.FetchedContent, error) {
+	return nil, errors.New("not implemented")
 }
 
-func (m *MockService) Extract(_ context.Context, _ []byte) (*model.Article, error) {
+func (m *MockService) Extract(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -58,7 +58,7 @@ func (m *MockService) SendArticleByID(_ context.Context, _, _ string) (*servicet
 	return nil, errors.New("not implemented")
 }
 
-func (m *MockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
+func (m *MockService) CreateArticle(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
 

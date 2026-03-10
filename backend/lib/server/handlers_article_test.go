@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -133,7 +134,7 @@ func (m *mockProcessor) StartProcessing(
 type articleMockService struct {
 	createArticleFunc func(
 		ctx context.Context,
-		url, accountID string,
+		u *url.URL, accountID string,
 	) (*model.Article, error)
 	getArticleFunc func(
 		ctx context.Context,
@@ -157,6 +158,10 @@ type articleMockService struct {
 		ctx context.Context,
 		accountID, articleID string,
 	) (bool, error)
+	getUserDeviceEmailFunc func(
+		ctx context.Context,
+		accountID string,
+	) (string, bool, error)
 	generateEPUBFunc func(article *model.Article) ([]byte, error)
 	sendArticleFunc  func(
 		ctx context.Context,
@@ -166,26 +171,21 @@ type articleMockService struct {
 	) (*email.SendEmailResponse, error)
 	sendArticleByIDFunc func(
 		ctx context.Context,
-		accountID string,
-		articleID string,
+		accountID, articleID string,
 	) (*servicetypes.SendArticleResult, error)
-	getUserDeviceEmailFunc func(
-		ctx context.Context,
-		accountID string,
-	) (deviceEmail string, autoSend bool, err error)
 	dbError error
 }
 
 func (m *articleMockService) Fetch(
 	_ context.Context,
-	_ string,
-) ([]byte, content.FetcherType, error) {
-	return nil, content.FetcherTypeGo, errors.New("not implemented")
+	_ *url.URL,
+) (*content.FetchedContent, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (m *articleMockService) Extract(
 	_ context.Context,
-	_ []byte,
+	_ *content.FetchedContent,
 ) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
@@ -219,13 +219,13 @@ func (m *articleMockService) SendArticleByID(ctx context.Context, accountID, art
 	}, nil
 }
 
-func (m *articleMockService) CreateArticle(ctx context.Context, url, accountID string) (*model.Article, error) {
+func (m *articleMockService) CreateArticle(ctx context.Context, u *url.URL, accountID string) (*model.Article, error) {
 	if m.createArticleFunc != nil {
-		return m.createArticleFunc(ctx, url, accountID)
+		return m.createArticleFunc(ctx, u, accountID)
 	}
 	return &model.Article{
 		ID:    "article-123",
-		URL:   url,
+		URL:   "https://example.com/article",
 		Title: "Test Article",
 	}, nil
 }
@@ -410,10 +410,10 @@ func TestConvertSlogAttrsToMap(t *testing.T) {
 
 func TestHandleCreateArticle_Success(t *testing.T) {
 	mockSvc := &articleMockService{
-		createArticleFunc: func(_ context.Context, url, _ string) (*model.Article, error) {
+		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 			return &model.Article{
 				ID:    "article-123",
-				URL:   url,
+				URL:   "https://example.com/article",
 				Title: "Test Article",
 			}, nil
 		},
@@ -533,7 +533,7 @@ func TestHandleCreateArticle_ServiceError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockSvc := &articleMockService{
-				createArticleFunc: func(_ context.Context, _, _ string) (*model.Article, error) {
+				createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 					return nil, tt.serviceErr
 				},
 			}
@@ -558,14 +558,13 @@ func TestHandleCreateArticle_ServiceError(t *testing.T) {
 
 func TestHandleCreateArticle_DBError(t *testing.T) {
 	mockSvc := &articleMockService{
-		createArticleFunc: func(_ context.Context, url, _ string) (*model.Article, error) {
+		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 			return &model.Article{
 				ID:    "article-123",
-				URL:   url,
+				URL:   "https://example.com/article",
 				Title: "Test Article",
 			}, nil
 		},
-		dbError: errors.New("database error"),
 	}
 	mockProc := &mockProcessor{}
 

@@ -4,9 +4,11 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/validation"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,8 +54,13 @@ func TestFetchReturnsCorrectFetcherType(t *testing.T) {
 		}))
 		defer server.Close()
 
+		u, err := url.Parse(server.URL)
+		if err != nil {
+			t.Fatalf("Failed to parse server URL: %v", err)
+		}
+
 		fetcher := NewFetcher("")
-		result, err := fetcher.Fetch(ctx, server.URL)
+		result, err := fetcher.Fetch(ctx, u)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
@@ -77,8 +84,13 @@ func TestFetchReturnsCorrectFetcherType(t *testing.T) {
 		}))
 		defer browserlessServer.Close()
 
+		u, err := url.Parse(goServer.URL)
+		if err != nil {
+			t.Fatalf("Failed to parse goServer URL: %v", err)
+		}
+
 		fetcher := NewFetcher("test-key")
-		result, err := fetcher.Fetch(ctx, goServer.URL)
+		result, err := fetcher.Fetch(ctx, u)
 
 		if err == nil {
 			assert.NotNil(t, result)
@@ -99,8 +111,13 @@ func TestFetchContentTypeValidation(t *testing.T) {
 		}))
 		defer server.Close()
 
+		u, err := url.Parse(server.URL)
+		if err != nil {
+			t.Fatalf("Failed to parse server URL: %v", err)
+		}
+
 		fetcher := NewFetcher("")
-		result, err := fetcher.Fetch(ctx, server.URL)
+		result, err := fetcher.Fetch(ctx, u)
 
 		assert.Error(t, err)
 		assert.Nil(t, result)
@@ -109,9 +126,11 @@ func TestFetchContentTypeValidation(t *testing.T) {
 
 func TestFetchResult(t *testing.T) {
 	html := []byte("<html><body>Test Content</body></html>")
+	testURL, _ := url.Parse("https://example.com")
 
-	result := &FetchResult{
+	result := &FetchedContent{
 		HTML: html,
+		URL:  testURL,
 		Type: FetcherTypeGo,
 	}
 
@@ -130,8 +149,13 @@ func TestFetchWithTimeout(t *testing.T) {
 	}))
 	defer server.Close()
 
+	u, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatalf("Failed to parse server URL: %v", err)
+	}
+
 	fetcher := NewFetcher("")
-	result, err := fetcher.Fetch(ctx, server.URL)
+	result, err := fetcher.Fetch(ctx, u)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
@@ -142,17 +166,29 @@ func TestFetchInvalidURL(t *testing.T) {
 	fetcher := NewFetcher("")
 
 	tests := []struct {
-		name string
-		url  string
+		name           string
+		url            string
+		expectParseErr bool
 	}{
-		{"empty url", ""},
-		{"invalid scheme", "ftp://example.com"},
-		{"no host", "https://"},
+		{"empty url", "", true},
+		{"invalid scheme", "ftp://example.com", true},
+		{"no host", "https://", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := fetcher.Fetch(ctx, tt.url)
+			u, err := validation.ValidateURL(tt.url)
+
+			if tt.expectParseErr {
+				assert.Error(t, err)
+				assert.Nil(t, u)
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("Unexpected parse error for %s: %v", tt.url, err)
+			}
+			result, err := fetcher.Fetch(ctx, u)
 			assert.Error(t, err)
 			assert.Nil(t, result)
 		})

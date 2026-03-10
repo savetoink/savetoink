@@ -27,37 +27,53 @@ const (
 	maxEmailLength = 320
 	// hostSplitMaxParts is the maximum number of parts to split when extracting hostname from host:port.
 	hostSplitMaxParts = 2
-	// schemeHTTP is the HTTP URL scheme.
+	// schemeHTTP is HTTP URL scheme.
 	schemeHTTP = "http"
-	// schemeHTTPS is the HTTPS URL scheme.
+	// schemeHTTPS is HTTPS URL scheme.
 	schemeHTTPS = "https"
 )
 
-// ValidateURL validates URL format, scheme, host, length, and checks against private IPs.
-func ValidateURL(urlStr string) error {
-	if len(urlStr) > maxURLLength {
-		return fmt.Errorf("%w: URL exceeds maximum length of %d characters", ErrInvalidURL, maxURLLength)
+// ValidateURL parses and validates a URL string, returning a validated *url.URL.
+// This performs basic validation (scheme, host) and is used at entry points.
+func ValidateURL(rawURL string) (*url.URL, error) {
+	if len(rawURL) > maxURLLength {
+		return nil, fmt.Errorf("%w: URL exceeds maximum length of %d characters", ErrInvalidURL, maxURLLength)
 	}
 
-	if urlStr == "" {
-		return fmt.Errorf("%w: URL cannot be empty", ErrInvalidURL)
+	if rawURL == "" {
+		return nil, fmt.Errorf("%w: URL cannot be empty", ErrInvalidURL)
 	}
 
-	parsedURL, err := url.Parse(urlStr)
+	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		return fmt.Errorf("%w: failed to parse URL", ErrInvalidURL)
+		return nil, fmt.Errorf("%w: failed to parse URL", ErrInvalidURL)
 	}
 
 	if parsedURL.Scheme != schemeHTTP && parsedURL.Scheme != schemeHTTPS {
-		return fmt.Errorf("%w: must use http or https scheme", ErrInvalidURL)
+		return nil, fmt.Errorf("%w: must use http or https scheme", ErrInvalidURL)
 	}
 
 	if parsedURL.Host == "" {
-		return fmt.Errorf("%w: host is required", ErrInvalidURL)
+		return nil, fmt.Errorf("%w: host is required", ErrInvalidURL)
 	}
 
 	if isPrivateHost(parsedURL.Host) {
-		return fmt.Errorf("%w: %s", ErrPrivateIPAddress, parsedURL.Host)
+		return nil, fmt.Errorf("%w: %s", ErrPrivateIPAddress, parsedURL.Host)
+	}
+
+	return parsedURL, nil
+}
+
+// ValidateParsedURL performs business validation on an already-parsed URL.
+// This checks length and private IP addresses, and is used internally
+// after URL has been parsed by ValidateURL().
+func ValidateParsedURL(u *url.URL) error {
+	if len(u.String()) > maxURLLength {
+		return fmt.Errorf("%w: URL exceeds maximum length of %d characters", ErrInvalidURL, maxURLLength)
+	}
+
+	if isPrivateHost(u.Host) {
+		return fmt.Errorf("%w: %s", ErrPrivateIPAddress, u.Host)
 	}
 
 	return nil
@@ -127,31 +143,4 @@ func ValidateDeviceEmail(email string) error {
 		ErrInvalidEmail,
 		consts.ValidDeviceEmailDomainsJoined(),
 	)
-}
-
-// ValidateURLOnlyFormat performs basic URL format validation without private IP blocking.
-// This is used in the extractor layer where URLs have already been validated at the handler level.
-func ValidateURLOnlyFormat(urlStr string) error {
-	if len(urlStr) > maxURLLength {
-		return fmt.Errorf("%w: URL exceeds maximum length of %d characters", ErrInvalidURL, maxURLLength)
-	}
-
-	if urlStr == "" {
-		return fmt.Errorf("%w: URL cannot be empty", ErrInvalidURL)
-	}
-
-	parsedURL, err := url.Parse(urlStr)
-	if err != nil {
-		return fmt.Errorf("%w: failed to parse URL", ErrInvalidURL)
-	}
-
-	if parsedURL.Scheme != schemeHTTP && parsedURL.Scheme != schemeHTTPS {
-		return fmt.Errorf("%w: must use http or https scheme", ErrInvalidURL)
-	}
-
-	if parsedURL.Host == "" {
-		return fmt.Errorf("%w: host is required", ErrInvalidURL)
-	}
-
-	return nil
 }

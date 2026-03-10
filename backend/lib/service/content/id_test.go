@@ -1,8 +1,10 @@
 package content
 
 import (
+	"net/url"
 	"testing"
 
+	"github.com/shaftoe/savetoink/backend/lib/validation"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,34 +49,40 @@ func TestArticleIDFromURL(t *testing.T) {
 			name:        "invalid URL",
 			url:         "not-a-url",
 			wantErr:     true,
-			errContains: "must have scheme and host",
+			errContains: "must use http or https scheme",
 		},
 		{
 			name:        "URL without scheme",
 			url:         "example.com/article",
 			wantErr:     true,
-			errContains: "must have scheme and host",
+			errContains: "must use http or https scheme",
 		},
 		{
 			name:        "empty URL",
 			url:         "",
 			wantErr:     true,
-			errContains: "must have scheme and host",
+			errContains: "cannot be empty",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			id, err := ArticleIDFromURL(tt.url)
+			u, err := validation.ValidateURL(tt.url)
 
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errContains != "" {
 					assert.Contains(t, err.Error(), tt.errContains)
 				}
-				assert.Empty(t, id)
+				assert.Nil(t, u)
 				return
 			}
+
+			if err != nil {
+				t.Fatalf("Unexpected parse error for %s: %v", tt.url, err)
+			}
+
+			id, err := ArticleIDFromURL(u)
 
 			assert.NoError(t, err)
 			assert.NotEmpty(t, id)
@@ -84,9 +92,9 @@ func TestArticleIDFromURL(t *testing.T) {
 }
 
 func TestArticleIDFromURL_Deterministic(t *testing.T) {
-	url1 := "https://example.com/article/123?source=twitter"
-	url2 := "https://example.com/article/123?utm_source=newsletter#intro"
-	url3 := "https://example.com/article/123/"
+	url1, _ := url.Parse("https://example.com/article/123?source=twitter")
+	url2, _ := url.Parse("https://example.com/article/123?utm_source=newsletter#intro")
+	url3, _ := url.Parse("https://example.com/article/123/")
 
 	id1, err1 := ArticleIDFromURL(url1)
 	id2, err2 := ArticleIDFromURL(url2)
@@ -109,7 +117,11 @@ func TestArticleIDFromURL_DifferentURLs(t *testing.T) {
 	}
 
 	ids := make(map[string]bool)
-	for _, u := range urls {
+	for _, urlStr := range urls {
+		u, err := url.Parse(urlStr)
+		if err != nil {
+			t.Fatalf("Failed to parse URL %s: %v", urlStr, err)
+		}
 		id, err := ArticleIDFromURL(u)
 		assert.NoError(t, err)
 		assert.False(t, ids[id], "ID should be unique for each URL")
@@ -120,8 +132,11 @@ func TestArticleIDFromURL_DifferentURLs(t *testing.T) {
 }
 
 func TestArticleIDFromURL_HttpVsHttps(t *testing.T) {
-	idHTTP, err1 := ArticleIDFromURL("http://example.com/article")
-	idHTTPS, err2 := ArticleIDFromURL("https://example.com/article")
+	urlHTTP, _ := url.Parse("http://example.com/article")
+	urlHTTPS, _ := url.Parse("https://example.com/article")
+
+	idHTTP, err1 := ArticleIDFromURL(urlHTTP)
+	idHTTPS, err2 := ArticleIDFromURL(urlHTTPS)
 
 	assert.NoError(t, err1)
 	assert.NoError(t, err2)
@@ -195,36 +210,40 @@ func TestCleanURL(t *testing.T) {
 			inputURL:    "not-a-url",
 			expectedURL: "",
 			wantErr:     true,
-			errContains: "must have scheme and host",
+			errContains: "must use http or https scheme",
 		},
 		{
 			name:        "URL without scheme",
 			inputURL:    "example.com/article",
 			expectedURL: "",
 			wantErr:     true,
-			errContains: "must have scheme and host",
+			errContains: "must use http or https scheme",
 		},
 		{
 			name:        "empty URL",
 			inputURL:    "",
 			expectedURL: "",
 			wantErr:     true,
-			errContains: "must have scheme and host",
+			errContains: "cannot be empty",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cleanURL, err := CleanURL(tt.inputURL)
-
+			u, err := validation.ValidateURL(tt.inputURL)
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errContains != "" {
 					assert.Contains(t, err.Error(), tt.errContains)
 				}
-				assert.Empty(t, cleanURL)
+				assert.Nil(t, u)
 				return
 			}
+			if err != nil {
+				t.Fatalf("Unexpected parse error for %s: %v", tt.inputURL, err)
+			}
+
+			cleanURL := CleanURL(u)
 
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedURL, cleanURL)
@@ -256,7 +275,11 @@ func TestCleanURL_Deterministic(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		cleanURL, err := CleanURL(tt.inputURL)
+		u, err := url.Parse(tt.inputURL)
+		if err != nil {
+			t.Fatalf("Failed to parse URL %s: %v", tt.inputURL, err)
+		}
+		cleanURL := CleanURL(u)
 		assert.NoError(t, err)
 		assert.Equal(t, tt.expectedCleanURL, cleanURL)
 	}

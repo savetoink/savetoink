@@ -13,16 +13,15 @@ import (
 	"strings"
 
 	"github.com/shaftoe/savetoink/backend/lib/consts"
-	"github.com/shaftoe/savetoink/backend/lib/validation"
 )
 
 // FetcherType indicates which fetch method was used.
 type FetcherType int
 
 const (
-	// FetcherTypeGo indicates the Go HTTP client was used.
+	// FetcherTypeGo indicates that Go HTTP client was used.
 	FetcherTypeGo FetcherType = iota
-	// FetcherTypeBrowserless indicates the Browserless API was used.
+	// FetcherTypeBrowserless indicates that Browserless API was used.
 	FetcherTypeBrowserless
 )
 
@@ -37,9 +36,10 @@ func (t FetcherType) String() string {
 	}
 }
 
-// FetchResult contains the fetched HTML content and the fetcher type used.
-type FetchResult struct {
+// FetchedContent contains fetched HTML content along with its URL and fetcher type.
+type FetchedContent struct {
 	HTML []byte
+	URL  *url.URL
 	Type FetcherType
 }
 
@@ -57,19 +57,14 @@ func NewFetcher(browserlessKey string) *Fetcher {
 	}
 }
 
-// Fetch fetches HTML content from a URL and returns the bytes with fetcher type.
+// Fetch fetches HTML content from a URL and returns the bytes with the fetcher type.
 // Falls back to Browserless API if the simple HTTP fetch fails and a browserless key is configured.
-func (f *Fetcher) Fetch(ctx context.Context, urlStr string) (*FetchResult, error) {
-	if err := validateURL(urlStr); err != nil {
+func (f *Fetcher) Fetch(ctx context.Context, u *url.URL) (*FetchedContent, error) {
+	if err := validateParsedURL(u); err != nil {
 		return nil, fmt.Errorf("invalid URL: %w", err)
 	}
 
-	_, err := url.Parse(urlStr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse URL: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -78,7 +73,7 @@ func (f *Fetcher) Fetch(ctx context.Context, urlStr string) (*FetchResult, error
 	resp, err := f.client.Do(req)
 	if err != nil {
 		if f.browserlessKey != "" {
-			return f.fetchWithBrowserless(ctx, urlStr)
+			return f.fetchWithBrowserless(ctx, u)
 		}
 		return nil, fmt.Errorf("failed to fetch URL: %w", err)
 	}
@@ -86,7 +81,7 @@ func (f *Fetcher) Fetch(ctx context.Context, urlStr string) (*FetchResult, error
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
 		if f.browserlessKey != "" {
-			return f.fetchWithBrowserless(ctx, urlStr)
+			return f.fetchWithBrowserless(ctx, u)
 		}
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
@@ -95,7 +90,7 @@ func (f *Fetcher) Fetch(ctx context.Context, urlStr string) (*FetchResult, error
 	if !strings.HasPrefix(contentType, "text/html") {
 		_ = resp.Body.Close()
 		if f.browserlessKey != "" {
-			return f.fetchWithBrowserless(ctx, urlStr)
+			return f.fetchWithBrowserless(ctx, u)
 		}
 		return nil, fmt.Errorf("expected HTML content, got: %s", contentType)
 	}
@@ -104,22 +99,22 @@ func (f *Fetcher) Fetch(ctx context.Context, urlStr string) (*FetchResult, error
 	_ = resp.Body.Close()
 	if err != nil {
 		if f.browserlessKey != "" {
-			return f.fetchWithBrowserless(ctx, urlStr)
+			return f.fetchWithBrowserless(ctx, u)
 		}
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	return &FetchResult{HTML: htmlBytes, Type: FetcherTypeGo}, nil
+	return &FetchedContent{HTML: htmlBytes, URL: u, Type: FetcherTypeGo}, nil
 }
 
 // fetchWithBrowserless fetches HTML content using the Browserless content API.
-func (f *Fetcher) fetchWithBrowserless(ctx context.Context, urlStr string) (*FetchResult, error) {
+func (f *Fetcher) fetchWithBrowserless(ctx context.Context, u *url.URL) (*FetchedContent, error) {
 	browserlessURL := fmt.Sprintf("%s?token=%s", consts.BrowserlessContentURL, f.browserlessKey)
 
 	requestBody := struct {
 		URL string `json:"url"`
 	}{
-		URL: urlStr,
+		URL: u.String(),
 	}
 
 	bodyBytes, err := json.Marshal(requestBody)
@@ -153,13 +148,18 @@ func (f *Fetcher) fetchWithBrowserless(ctx context.Context, urlStr string) (*Fet
 		return nil, fmt.Errorf("browserless returned invalid content: %w", err)
 	}
 
-	return &FetchResult{HTML: htmlBytes, Type: FetcherTypeBrowserless}, nil
+	return &FetchedContent{HTML: htmlBytes, URL: u, Type: FetcherTypeBrowserless}, nil
 }
 
-func validateURL(urlStr string) error {
-	if err := validation.ValidateURLOnlyFormat(urlStr); err != nil {
-		return fmt.Errorf("invalid URL: %w", err)
+func validateParsedURL(u *url.URL) error {
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return errors.New("url must use http or https scheme")
 	}
+
+	if u.Host == "" {
+		return errors.New("url must have host")
+	}
+
 	return nil
 }
 

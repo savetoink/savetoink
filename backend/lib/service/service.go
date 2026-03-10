@@ -9,6 +9,7 @@ package service
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/lib/config"
@@ -27,11 +28,11 @@ import (
 
 // Interface defines the contract for service operations.
 type Interface interface {
-	// Fetch fetches the HTML content of a given URL and returns the fetcher type used.
-	Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error)
+	// Fetch fetches the HTML content of a given URL and returns the fetched content with metadata.
+	Fetch(ctx context.Context, u *url.URL) (*content.FetchedContent, error)
 
-	// Extract extracts article metadata and content from HTML bytes.
-	Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error)
+	// Extract extracts article metadata and content from fetched HTML.
+	Extract(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error)
 
 	// GenerateEPUB generates an EPUB document from an article.
 	GenerateEPUB(article *model.Article) ([]byte, error)
@@ -45,7 +46,7 @@ type Interface interface {
 	) (*email.SendEmailResponse, error)
 
 	// CreateArticle stores a new partial metadata article from a given URL and account ID in the database.
-	CreateArticle(ctx context.Context, rawURL, accountID string) (*model.Article, error)
+	CreateArticle(ctx context.Context, u *url.URL, accountID string) (*model.Article, error)
 
 	// UpdateArticle updates an existing article with full content and metadata.
 	UpdateArticle(ctx context.Context, article *model.Article) error

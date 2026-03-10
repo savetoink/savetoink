@@ -1,7 +1,6 @@
 package content
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -10,36 +9,24 @@ import (
 )
 
 // CleanURL cleans a URL by removing trailing slashes and fragments while preserving query parameters.
-func CleanURL(rawURL string) (string, error) {
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return "", fmt.Errorf("url must be valid: %w", err)
-	}
-
-	if parsedURL.Scheme == "" || parsedURL.Host == "" {
-		return "", errors.New("url must have scheme and host")
-	}
-
-	path := strings.TrimSuffix(parsedURL.Path, "/")
+func CleanURL(u *url.URL) string {
+	path := strings.TrimSuffix(u.Path, "/")
 	if path == "" {
 		path = "/"
 	}
 
-	cleanURL := fmt.Sprintf("%s://%s%s", parsedURL.Scheme, parsedURL.Host, path)
-	if parsedURL.RawQuery != "" {
-		cleanURL += "?" + parsedURL.RawQuery
+	cleanURL := fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, path)
+	if u.RawQuery != "" {
+		cleanURL += "?" + u.RawQuery
 	}
 
-	return cleanURL, nil
+	return cleanURL
 }
 
 // ArticleIDFromURL generates a deterministic UUID v5 for an article from its URL.
-// Uses UUID v5 with the URL namespace as defined in RFC 4122.
-func ArticleIDFromURL(rawURL string) (string, error) {
-	cleanURL, err := CleanURL(rawURL)
-	if err != nil {
-		return "", err
-	}
+// Uses UUID v5 with URL namespace as defined in RFC 4122.
+func ArticleIDFromURL(u *url.URL) (string, error) {
+	cleanURL := CleanURL(u)
 
 	id := uuid.NewSHA1(uuid.NameSpaceURL, []byte(cleanURL))
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"time"
 
 	apperrors "github.com/shaftoe/savetoink/backend/lib/apperrors"
@@ -42,13 +43,10 @@ func New(
 }
 
 // CreateArticle creates an article entry with minimal metadata.
-func (s *ArticleService) CreateArticle(ctx context.Context, rawURL, accountID string) (*model.Article, error) {
-	cleanURL, err := content.CleanURL(rawURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to clean url: %w", err)
-	}
+func (s *ArticleService) CreateArticle(ctx context.Context, u *url.URL, accountID string) (*model.Article, error) {
+	cleanURL := content.CleanURL(u)
 
-	articleID, err := content.ArticleIDFromURL(cleanURL)
+	articleID, err := content.ArticleIDFromURL(u)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate article id: %w", err)
 	}

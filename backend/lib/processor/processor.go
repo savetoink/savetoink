@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/lib/consts"
@@ -13,12 +14,13 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/validation"
 )
 
 // Service defines the interface for service operations needed by the processor.
 type Service interface {
-	Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error)
-	Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error)
+	Fetch(ctx context.Context, u *url.URL) (*content.FetchedContent, error)
+	Extract(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error)
 	UpdateArticle(ctx context.Context, article *model.Article) error
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
 	GetUserDeviceEmail(ctx context.Context, accountID string) (email string, autoSend bool, err error)
@@ -46,6 +48,8 @@ func (p *LocalProcessor) StartProcessing(ctx context.Context, event *content.Pro
 }
 
 // ProcessArticle processes an article: fetches, extracts, stores, and optionally sends it.
+//
+//nolint:funlen // function has many statements due to sequential processing steps
 func ProcessArticle(
 	ctx context.Context,
 	svc Service,
@@ -60,16 +64,23 @@ func ProcessArticle(
 	logging.AddLogAttr(processCtx, slog.String("article_id", event.ArticleID))
 	logging.AddLogAttr(processCtx, slog.Bool("send_on_complete", event.SendOnComplete))
 
-	htmlBytes, fetcherType, err := svc.Fetch(processCtx, event.URL)
+	u, err := validation.ValidateURL(event.URL)
+	if err != nil {
+		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "parse_url", err)
+		logArticleResult(processCtx, event.InheritedAttrs, "failed")
+		return
+	}
+
+	fetched, err := svc.Fetch(processCtx, u)
 	if err != nil {
 		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "fetch", err)
 		logArticleResult(processCtx, event.InheritedAttrs, "failed")
 		return
 	}
 
-	logging.AddLogAttr(processCtx, slog.String("fetcher_type", fetcherType.String()))
+	logging.AddLogAttr(processCtx, slog.String("fetcher_type", fetched.Type.String()))
 
-	extractedArticle, err := svc.Extract(processCtx, htmlBytes)
+	extractedArticle, err := svc.Extract(processCtx, fetched)
 	if err != nil {
 		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "extract", err)
 		logArticleResult(processCtx, event.InheritedAttrs, "failed")

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -30,14 +31,14 @@ type userprofileMockService struct {
 
 func (m *userprofileMockService) Fetch(
 	_ context.Context,
-	_ string,
-) ([]byte, content.FetcherType, error) {
-	return nil, content.FetcherTypeGo, errors.New("not implemented")
+	_ *url.URL,
+) (*content.FetchedContent, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (m *userprofileMockService) Extract(
 	_ context.Context,
-	_ []byte,
+	_ *content.FetchedContent,
 ) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
@@ -64,7 +65,7 @@ func (m *userprofileMockService) SendArticleByID(
 
 func (m *userprofileMockService) CreateArticle(
 	_ context.Context,
-	_, _ string,
+	_ *url.URL, _ string,
 ) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }

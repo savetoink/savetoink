@@ -29,15 +29,16 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validation.ValidateURL(req.URL); err != nil {
-		writeJSONError(w, http.StatusBadRequest, err)
+	u, err := validation.ValidateURL(req.URL)
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, fmt.Errorf("invalid URL: %w", err))
 		return
 	}
 
 	logging.AddLogAttr(r.Context(), slog.String("url", req.URL))
 	logging.AddLogAttr(r.Context(), slog.Bool("send_on_complete", req.SendOnComplete))
 
-	article, err := h.service.CreateArticle(r.Context(), req.URL, auth.GetAccountID(r.Context()))
+	article, err := h.service.CreateArticle(r.Context(), u, auth.GetAccountID(r.Context()))
 	if err != nil {
 		handleServiceError(w, r, err, "create article")
 		return

@@ -40,11 +40,11 @@ const (
 
 type mockService struct{}
 
-func (m *mockService) Fetch(_ context.Context, _ string) ([]byte, content.FetcherType, error) {
-	return nil, content.FetcherTypeGo, errors.New("not implemented in mock")
+func (m *mockService) Fetch(_ context.Context, _ *url.URL) (*content.FetchedContent, error) {
+	return nil, errors.New("not implemented in mock")
 }
 
-func (m *mockService) Extract(_ context.Context, _ []byte) (*model.Article, error) {
+func (m *mockService) Extract(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
 	return nil, errors.New("not implemented in mock")
 }
 
@@ -62,7 +62,7 @@ func (m *mockService) SendArticleByID(_ context.Context, _, _ string) (*servicet
 	return nil, errors.New("not implemented in mock")
 }
 
-func (m *mockService) CreateArticle(_ context.Context, _, _ string) (*model.Article, error) {
+func (m *mockService) CreateArticle(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 	return nil, errors.New("not implemented in mock")
 }
 

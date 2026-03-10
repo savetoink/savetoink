@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/savetoink/savetoink/graph/badge.svg?token=1UHXX9P625)](https://codecov.io/gh/savetoink/savetoink) [![Go Report Card](https://goreportcard.com/badge/github.com/shaftoe/savetoink)](https://goreportcard.com/report/github.com/shaftoe/savetoink) [![Coverage Status](https://coveralls.io/repos/github/savetoink/savetoink/badge.svg?branch=dev)](https://coveralls.io/github/savetoink/savetoink?branch=dev)
+[![codecov](https://codecov.io/gh/savetoink/savetoink/graph/badge.svg?token=1UHXX9P625)](https://codecov.io/gh/savetoink/savetoink) [![Go Report Card](https://goreportcard.com/badge/github.com/shaftoe/savetoink)](https://goreportcard.com/report/github.com/shaftoe/savetoink) [![Coverage Status](https://coveralls.io/repos/github/savetoink/savetoink/badge.svg?branch=dev)](https://coveralls.io/github/savetoink/savetoink?branch=dev) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=savetoink_savetoink&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=savetoink_savetoink)
 
 # Save To Ink
 

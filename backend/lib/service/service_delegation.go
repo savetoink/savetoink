@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	apperrors "github.com/shaftoe/savetoink/backend/lib/apperrors"
@@ -14,18 +15,18 @@ import (
 )
 
 // Fetch fetches HTML content from a URL.
-func (s *Service) Fetch(ctx context.Context, url string) ([]byte, content.FetcherType, error) {
-	result, err := s.fetcher.Fetch(ctx, url)
+func (s *Service) Fetch(ctx context.Context, u *url.URL) (*content.FetchedContent, error) {
+	result, err := s.fetcher.Fetch(ctx, u)
 	if err != nil {
-		return nil, content.FetcherTypeGo, fmt.Errorf("failed to fetch url: %w", err)
+		return nil, fmt.Errorf("failed to fetch url: %w", err)
 	}
 
-	return result.HTML, result.Type, nil
+	return result, nil
 }
 
-// Extract extracts article metadata and content from HTML bytes.
-func (s *Service) Extract(ctx context.Context, htmlBytes []byte) (*model.Article, error) {
-	article, err := s.extractor.GenerateFromHTML(ctx, htmlBytes)
+// Extract extracts article metadata and content from fetched HTML.
+func (s *Service) Extract(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error) {
+	article, err := s.extractor.GenerateFromHTML(ctx, fetched.HTML, fetched.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract: %w", err)
 	}
@@ -62,8 +63,8 @@ func (s *Service) SendArticle(
 }
 
 // CreateArticle delegates to ArticleService.
-func (s *Service) CreateArticle(ctx context.Context, rawURL, accountID string) (*model.Article, error) {
-	article, err := s.articles.CreateArticle(ctx, rawURL, accountID)
+func (s *Service) CreateArticle(ctx context.Context, u *url.URL, accountID string) (*model.Article, error) {
+	article, err := s.articles.CreateArticle(ctx, u, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create article: %w", err)
 	}
