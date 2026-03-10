@@ -24,6 +24,9 @@ func createLogRecord(r *http.Request, accountID string, requestID, version *stri
 	if forwardedFor != "" && forwardedFor != remoteAddr(r) {
 		record.AddAttrs(slog.String("forwarded_for", forwardedFor))
 	}
+	if cloudFlareRay := r.Header.Get("CF-Ray"); cloudFlareRay != "" {
+		record.AddAttrs(slog.String("cloud_flare_ray", cloudFlareRay))
+	}
 	if requestID != nil {
 		record.AddAttrs(slog.String("request_id", *requestID))
 	}

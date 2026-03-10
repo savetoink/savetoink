@@ -37,11 +37,14 @@ function createApiClient(event: RequestEvent) {
 			: clientAddress
 		: undefined;
 
+	const cloudFlareRay = event.request.headers.get('cf-ray');
+
 	return createBaseApiClient({
 		baseUrl: PUBLIC_API_URL,
 		fetch: event.fetch,
 		userAgent: event.request.headers.get('User-Agent') || undefined,
-		xForwardedFor
+		xForwardedFor,
+		cloudFlareRay
 	} as ApiClientOptions);
 }
 

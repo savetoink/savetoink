@@ -60,6 +60,7 @@ export interface ApiClientOptions {
   fetch?: typeof globalThis.fetch;
   userAgent?: string;
   xForwardedFor?: string;
+  cloudFlareRay?: string;
 }
 
 export function createApiClient({
@@ -67,6 +68,7 @@ export function createApiClient({
   fetch,
   userAgent,
   xForwardedFor,
+  cloudFlareRay,
 }: ApiClientOptions): ApiClient {
   const fetchFn = fetch || globalThis.fetch;
 
@@ -90,6 +92,10 @@ export function createApiClient({
 
     if (xForwardedFor) {
       headers["X-Forwarded-For"] = xForwardedFor;
+    }
+
+    if (cloudFlareRay) {
+      headers["CF-Ray"] = cloudFlareRay;
     }
 
     const res = await fetchFn(`${baseUrl}${path}`, {
