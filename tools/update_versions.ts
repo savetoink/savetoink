@@ -3,12 +3,14 @@ import git from "isomorphic-git";
 import * as jsonc from "jsonc-parser";
 import path from "path";
 
-type BumpType = "major" | "minor" | "patch";
+type BumpType = "major" | "minor" | "patch" | "dev";
 
 interface Version {
   major: number;
   minor: number;
   patch: number;
+  devDate?: string;
+  devCommitSha?: string;
 }
 
 interface IndentStyle {
@@ -18,33 +20,54 @@ interface IndentStyle {
 
 function showUsage(): void {
   console.error(`
-Usage: bun update_versions.ts <major|minor|patch>
+Usage: bun update_versions.ts <major|minor|patch|dev>
 
 Arguments:
   major  Increment major version, reset minor and patch to 0
   minor  Increment minor version, reset patch to 0
   patch  Increment patch version
+  dev    Add or update dev suffix with date and commit SHA (MAJOR.MINOR.PATCH-dev.MMDDHHMM.COMMITSHA)
 
 Example:
   bun update_versions.ts patch
+  bun update_versions.ts dev
   `);
 }
 
 function parseVersion(versionStr: string): Version | null {
-  const match = versionStr.trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
+  const match = versionStr.trim().match(/^(\d+)\.(\d+)\.(\d+)(?:-dev\.(\d{8})\.([a-f0-9]{7}))?$/);
   if (!match) return null;
   return {
     major: parseInt(match[1], 10),
     minor: parseInt(match[2], 10),
     patch: parseInt(match[3], 10),
+    devDate: match[4] || undefined,
+    devCommitSha: match[5] || undefined,
   };
 }
 
 function formatVersion(version: Version): string {
+  if (version.devDate && version.devCommitSha) {
+    return `${version.major}.${version.minor}.${version.patch}-dev.${version.devDate}.${version.devCommitSha}`;
+  }
   return `${version.major}.${version.minor}.${version.patch}`;
 }
 
-function bumpVersion(version: Version, bumpType: BumpType): Version {
+async function getCurrentCommitSha(repoRoot: string): Promise<string> {
+  const sha = await git.resolveRef({ fs, dir: repoRoot, ref: "HEAD" });
+  return sha.slice(0, 7);
+}
+
+function getCurrentDevDate(): string {
+  const now = new Date();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(now.getUTCDate()).padStart(2, "0");
+  const hour = String(now.getUTCHours()).padStart(2, "0");
+  const minute = String(now.getUTCMinutes()).padStart(2, "0");
+  return `${month}${day}${hour}${minute}`;
+}
+
+async function bumpVersion(version: Version, bumpType: BumpType, repoRoot: string): Promise<Version> {
   switch (bumpType) {
     case "major":
       return { major: version.major + 1, minor: 0, patch: 0 };
@@ -56,6 +79,17 @@ function bumpVersion(version: Version, bumpType: BumpType): Version {
         minor: version.minor,
         patch: version.patch + 1,
       };
+    case "dev": {
+      const commitSha = await getCurrentCommitSha(repoRoot);
+      const devDate = getCurrentDevDate();
+      return {
+        major: version.major,
+        minor: version.minor,
+        patch: version.patch,
+        devDate,
+        devCommitSha: commitSha,
+      };
+    }
     default:
       return version;
   }
@@ -172,8 +206,8 @@ async function main(): Promise<void> {
   }
 
   const bumpType = args[0] as BumpType;
-  if (bumpType !== "major" && bumpType !== "minor" && bumpType !== "patch") {
-    console.error("Error: argument must be 'major', 'minor', or 'patch'");
+  if (bumpType !== "major" && bumpType !== "minor" && bumpType !== "patch" && bumpType !== "dev") {
+    console.error("Error: argument must be 'major', 'minor', 'patch', or 'dev'");
     showUsage();
     process.exit(1);
   }
@@ -189,13 +223,14 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const newVersion = bumpVersion(version, bumpType);
+  const newVersion = await bumpVersion(version, bumpType, repoRoot);
   const oldVersionStr = formatVersion(version);
   const newVersionStr = formatVersion(newVersion);
 
-  console.log(
-    `\n📦 Updating version: ${oldVersionStr} → ${newVersionStr} (${bumpType})\n`,
-  );
+  const updateMessage = bumpType === "dev"
+    ? `\n📦 Updating version: ${oldVersionStr} → ${newVersionStr} (dev suffix)\n`
+    : `\n📦 Updating version: ${oldVersionStr} → ${newVersionStr} (${bumpType})\n`;
+  console.log(updateMessage);
 
   const files = await git.listFiles({ fs, dir: repoRoot, ref: "HEAD" });
   const packageJsonFiles = files

@@ -4,7 +4,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { getBuildConfig } from '@savetoink/shared/lib/build-config';
 
-const { version, buildDate, gitHash } = getBuildConfig();
+const { version } = getBuildConfig();
 
 export default defineConfig({
 	plugins: [
@@ -16,9 +16,7 @@ export default defineConfig({
 		sveltekit()
 	],
 	define: {
-		__APP_VERSION__: JSON.stringify(version),
-		__BUILD_DATE__: JSON.stringify(buildDate),
-		__GIT_HASH__: JSON.stringify(gitHash)
+		__APP_VERSION__: JSON.stringify(version)
 	},
 	test: {
 		expect: { requireAssertions: true },

@@ -1,6 +1,3 @@
-version:
-    @echo "$(cat VERSION)-$(date -u +%m%d%H%M)-$(git rev-parse --short HEAD)"
-
 [working-directory("tools")]
 tools-init:
     @bun install

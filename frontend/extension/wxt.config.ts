@@ -11,13 +11,11 @@ export default defineConfig({
 		permissions: ['storage', 'tabs', 'contextMenus', 'identity']
 	},
 	vite() {
-		const { version, buildDate, gitHash } = getBuildConfig();
+		const { version } = getBuildConfig();
 		return {
 			envPrefix: 'PUBLIC_',
 			define: {
-				__APP_VERSION__: JSON.stringify(version),
-				__BUILD_DATE__: JSON.stringify(buildDate),
-				__GIT_HASH__: JSON.stringify(gitHash)
+				__APP_VERSION__: JSON.stringify(version)
 			},
 			resolve: {
 				alias: {
