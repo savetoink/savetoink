@@ -48,3 +48,8 @@ jobs:
         with:
           fail_ci_if_error: true
           use_oidc: true
+
+      - name: Upload results to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          file: coverage.txt
