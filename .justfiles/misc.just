@@ -1,5 +1,5 @@
 version:
-    @echo "$(cat VERSION)-$(date -u +%m%d%H%m)-$(git rev-parse --short HEAD)"
+    @echo "$(cat VERSION)-$(date -u +%m%d%H%M)-$(git rev-parse --short HEAD)"
 
 [working-directory("tools")]
 tools-init:

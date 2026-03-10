@@ -65,6 +65,7 @@ func ProcessArticle(
 	}
 
 	logging.AddLogAttr(processCtx, slog.String("fetcher_type", fetcherType.String()))
+	logging.AddLogAttr(processCtx, slog.Bool("send_on_complete", event.SendOnComplete))
 
 	extractedArticle, err := svc.Extract(processCtx, htmlBytes)
 	if err != nil {
