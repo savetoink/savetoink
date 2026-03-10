@@ -3,7 +3,7 @@ import { exchangeCodeForToken, getProfile } from '$lib/server/apiClient';
 import { setAuthCookie, setUserCookie } from '$lib/server/cookies';
 import type { RequestHandler, RequestEvent } from './$types';
 
-export const GET: RequestHandler = async ({ fetch, url, cookies, request }) => {
+export const GET: RequestHandler = async ({ fetch, url, cookies, request, getClientAddress }) => {
 	const code = url.searchParams.get('code');
 
 	if (!code) {
@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ fetch, url, cookies, request }) => {
 	}
 
 	const response = await exchangeCodeForToken(
-		{ fetch, request } as RequestEvent,
+		{ fetch, request, getClientAddress } as RequestEvent,
 		code,
 		`${url.origin}/auth/callback`
 	);
@@ -27,7 +27,8 @@ export const GET: RequestHandler = async ({ fetch, url, cookies, request }) => {
 	const profile = await getProfile({
 		locals: { auth: response.access_token },
 		fetch,
-		request
+		request,
+		getClientAddress
 	} as RequestEvent);
 	await setUserCookie(cookies, {
 		account: profile.account,

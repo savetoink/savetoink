@@ -9,9 +9,18 @@ import {
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 import { ApiError } from '@savetoink/shared';
 
-export const load: PageServerLoad = async ({ locals, fetch, params, request }) => {
+export const load: PageServerLoad = async ({
+	locals,
+	fetch,
+	params,
+	request,
+	getClientAddress
+}) => {
 	try {
-		const article = await getArticle({ locals, fetch, request } as RequestEvent, params.id);
+		const article = await getArticle(
+			{ locals, fetch, request, getClientAddress } as RequestEvent,
+			params.id
+		);
 		return { ...article, user: locals.user };
 	} catch (err) {
 		if (err instanceof ApiError) {
@@ -23,17 +32,19 @@ export const load: PageServerLoad = async ({ locals, fetch, params, request }) =
 };
 
 export const actions = {
-	favorite: async ({ locals, fetch, params, request }) => {
+	favorite: async ({ locals, fetch, params, request, getClientAddress }) => {
 		return withActionFail(() =>
-			favoriteArticle({ locals, fetch, request } as RequestEvent, params.id)
+			favoriteArticle({ locals, fetch, request, getClientAddress } as RequestEvent, params.id)
 		);
 	},
-	send: async ({ locals, fetch, params, request }) => {
-		return withActionFail(() => sendArticle({ locals, fetch, request } as RequestEvent, params.id));
+	send: async ({ locals, fetch, params, request, getClientAddress }) => {
+		return withActionFail(() =>
+			sendArticle({ locals, fetch, request, getClientAddress } as RequestEvent, params.id)
+		);
 	},
-	delete: async ({ locals, fetch, params, request }) => {
+	delete: async ({ locals, fetch, params, request, getClientAddress }) => {
 		const result = await withActionFail(() =>
-			deleteArticle({ locals, fetch, request } as RequestEvent, params.id)
+			deleteArticle({ locals, fetch, request, getClientAddress } as RequestEvent, params.id)
 		);
 		if (result && 'status' in result) {
 			return result;

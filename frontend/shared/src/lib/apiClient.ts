@@ -59,12 +59,14 @@ export interface ApiClientOptions {
   baseUrl: string;
   fetch?: typeof globalThis.fetch;
   userAgent?: string;
+  xForwardedFor?: string;
 }
 
 export function createApiClient({
   baseUrl,
   fetch,
   userAgent,
+  xForwardedFor,
 }: ApiClientOptions): ApiClient {
   const fetchFn = fetch || globalThis.fetch;
 
@@ -84,6 +86,10 @@ export function createApiClient({
 
     if (userAgent) {
       headers["User-Agent"] = userAgent;
+    }
+
+    if (xForwardedFor) {
+      headers["X-Forwarded-For"] = xForwardedFor;
     }
 
     const res = await fetchFn(`${baseUrl}${path}`, {

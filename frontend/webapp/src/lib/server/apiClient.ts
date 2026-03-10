@@ -29,10 +29,19 @@ export async function withActionFail<T>(
 }
 
 function createApiClient(event: RequestEvent) {
+	const clientAddress = event.getClientAddress();
+	const existingXff = event.request.headers.get('x-forwarded-for');
+	const xForwardedFor = clientAddress
+		? existingXff
+			? `${existingXff}, ${clientAddress}`
+			: clientAddress
+		: undefined;
+
 	return createBaseApiClient({
 		baseUrl: PUBLIC_API_URL,
 		fetch: event.fetch,
-		userAgent: event.request.headers.get('User-Agent') || undefined
+		userAgent: event.request.headers.get('User-Agent') || undefined,
+		xForwardedFor
 	} as ApiClientOptions);
 }
 

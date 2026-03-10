@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	new: async ({ locals, request }) => {
+	new: async ({ locals, request, fetch, getClientAddress }) => {
 		const data = await request.formData();
 		const txt = data.get('url');
 		const sendToDevice = data.get('sendToDevice');
@@ -17,7 +17,11 @@ export const actions: Actions = {
 			error(400, 'URL is required');
 		}
 
-		await createArticle({ locals, request } as RequestEvent, txt, sendToDevice === 'on');
+		await createArticle(
+			{ locals, request, fetch, getClientAddress } as RequestEvent,
+			txt,
+			sendToDevice === 'on'
+		);
 
 		redirect(303, '/articles');
 	}

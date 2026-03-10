@@ -1,7 +1,7 @@
 import type { PageServerLoad, RequestEvent } from './$types';
 import { getArticles } from '$lib/server/apiClient';
 
-export const load: PageServerLoad = async ({ locals, fetch, url, request }) => {
+export const load: PageServerLoad = async ({ locals, fetch, url, request, getClientAddress }) => {
 	const pageParam = url.searchParams.get('page');
 	const pageSizeParam = url.searchParams.get('page_size');
 	const favoriteParam = url.searchParams.get('favorite');
@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ locals, fetch, url, request }) => {
 	const pageSize = pageSizeParam ? parseInt(pageSizeParam, 10) : 10;
 	const favFilter = favoriteParam === 'true';
 
-	const data = await getArticles({ locals, fetch, request } as RequestEvent, {
+	const data = await getArticles({ locals, fetch, request, getClientAddress } as RequestEvent, {
 		page,
 		page_size: pageSize,
 		favorite: favFilter

@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	save: async ({ cookies, request, fetch }) => {
+	save: async ({ cookies, request, fetch, getClientAddress }) => {
 		const data = await request.formData();
 		const token = data.get(AUTH_KEY);
 
@@ -26,7 +26,12 @@ export const actions: Actions = {
 
 		let profile: UserProfile;
 		try {
-			profile = await getProfile({ locals: { auth: token }, fetch, request } as RequestEvent);
+			profile = await getProfile({
+				locals: { auth: token },
+				fetch,
+				request,
+				getClientAddress
+			} as RequestEvent);
 		} catch (err) {
 			if (err instanceof ApiError) {
 				return fail(400, { error: 'Unauthorized: ' + err.message });
@@ -49,17 +54,22 @@ export const actions: Actions = {
 		deleteUserCookie(cookies);
 		redirect(303, '/account');
 	},
-	updateAutoSend: async ({ locals, request, fetch, cookies }) => {
+	updateAutoSend: async ({ locals, request, fetch, cookies, getClientAddress }) => {
 		const data = await request.formData();
 		const autoSend = data.get('autoSend');
 
 		await updateDevice(
-			{ locals, fetch, request } as RequestEvent,
+			{ locals, fetch, request, getClientAddress } as RequestEvent,
 			locals.user?.device_email || '',
 			autoSend === 'on'
 		);
 
-		const updatedProfile = await getProfile({ locals, fetch, request } as RequestEvent);
+		const updatedProfile = await getProfile({
+			locals,
+			fetch,
+			request,
+			getClientAddress
+		} as RequestEvent);
 		await setUserCookie(cookies, {
 			account: updatedProfile.account,
 			email: updatedProfile.email,
@@ -68,7 +78,7 @@ export const actions: Actions = {
 		});
 		return { success: true };
 	},
-	updateProfile: async ({ locals, request, fetch, cookies }) => {
+	updateProfile: async ({ locals, request, fetch, cookies, getClientAddress }) => {
 		const data = await request.formData();
 		const deviceEmail = data.get('deviceEmail');
 		const autoSend = data.get('autoSend');
@@ -86,12 +96,17 @@ export const actions: Actions = {
 		}
 
 		await updateDevice(
-			{ locals, fetch, request } as RequestEvent,
+			{ locals, fetch, request, getClientAddress } as RequestEvent,
 			deviceEmail ? deviceEmail.toString() : '',
 			autoSend === 'on'
 		);
 
-		const updatedProfile = await getProfile({ locals, fetch, request } as RequestEvent);
+		const updatedProfile = await getProfile({
+			locals,
+			fetch,
+			request,
+			getClientAddress
+		} as RequestEvent);
 		await setUserCookie(cookies, {
 			account: updatedProfile.account,
 			email: updatedProfile.email,
@@ -100,9 +115,9 @@ export const actions: Actions = {
 		});
 		redirect(303, '/account');
 	},
-	deleteDevice: async ({ locals, request, fetch, cookies }) => {
-		await deleteDevice({ locals, fetch, request } as RequestEvent);
-		const profile = await getProfile({ locals, fetch, request } as RequestEvent);
+	deleteDevice: async ({ locals, request, fetch, cookies, getClientAddress }) => {
+		await deleteDevice({ locals, fetch, request, getClientAddress } as RequestEvent);
+		const profile = await getProfile({ locals, fetch, request, getClientAddress } as RequestEvent);
 		await setUserCookie(cookies, {
 			account: profile.account,
 			email: profile.email,
