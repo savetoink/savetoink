@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	lambdacontext "github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
@@ -18,7 +19,7 @@ func HandleEvent(ctx context.Context, event *content.ProcessArticleEvent, svc pr
 
 	lc, _ := lambdacontext.FromContext(ctx)
 	lambdaRequestID := lc.AwsRequestID
-	logger := slog.Default().With(slog.String("request_id", lambdaRequestID))
+	logger := slog.Default().With(slog.String("request_id", lambdaRequestID)).With("version", *consts.Version())
 
 	if event.RequestID == "" {
 		logger.Error("invalid request: missing orig_request_id")
@@ -51,6 +52,7 @@ func HandleEvent(ctx context.Context, event *content.ProcessArticleEvent, svc pr
 	event.InheritedAttrs = append(event.InheritedAttrs,
 		map[string]any{"orig_request_id": event.RequestID},
 		map[string]any{"request_id": lambdaRequestID},
+		map[string]any{"version": *consts.Version()},
 	)
 	event.RequestID = lambdaRequestID
 
