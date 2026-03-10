@@ -1,4 +1,4 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad, RequestEvent } from './$types';
 import { getArticles } from '$lib/server/apiClient';
 
 export const load: PageServerLoad = async ({ locals, fetch, url, request }) => {
@@ -10,12 +10,11 @@ export const load: PageServerLoad = async ({ locals, fetch, url, request }) => {
 	const pageSize = pageSizeParam ? parseInt(pageSizeParam, 10) : 10;
 	const favFilter = favoriteParam === 'true';
 
-	const data = await getArticles(
-		fetch,
-		{ page, page_size: pageSize, favorite: favFilter },
-		locals.auth ?? '',
-		request
-	);
+	const data = await getArticles({ locals, fetch, request } as RequestEvent, {
+		page,
+		page_size: pageSize,
+		favorite: favFilter
+	});
 
 	return { ...data, user: locals.user };
 };

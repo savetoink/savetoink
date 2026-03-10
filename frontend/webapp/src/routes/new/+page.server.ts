@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { createArticle } from '$lib/server/apiClient';
-import type { Actions, PageServerLoad } from './$types';
+import type { Actions, PageServerLoad, RequestEvent } from './$types';
 import type { UserProfile } from '@savetoink/shared';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	new: async ({ locals, request, fetch }) => {
+	new: async ({ locals, request }) => {
 		const data = await request.formData();
 		const txt = data.get('url');
 		const sendToDevice = data.get('sendToDevice');
@@ -17,7 +17,7 @@ export const actions: Actions = {
 			error(400, 'URL is required');
 		}
 
-		await createArticle(fetch, txt, sendToDevice === 'on', locals.auth ?? '', request);
+		await createArticle({ locals, request } as RequestEvent, txt, sendToDevice === 'on');
 
 		redirect(303, '/articles');
 	}

@@ -28,7 +28,7 @@ export const handle: Handle = sequence(sentryHandle(), async ({ event, resolve }
 		} else {
 			// get profile data from API if user is authenticated but no cookie is found
 			try {
-				const profileData = await getProfile(event.fetch, event.locals.auth, event.request);
+				const profileData = await getProfile(event);
 				event.locals.user = {
 					account: profileData.account,
 					email: profileData.email,

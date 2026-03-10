@@ -9,7 +9,7 @@ import {
 import { getProfile, updateDevice, deleteDevice } from '$lib/server/apiClient';
 import { ApiError, DeviceDomains } from '@savetoink/shared';
 import type { UserProfile } from '@savetoink/shared';
-import type { Actions, PageServerLoad } from './$types';
+import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	return { user: locals.user };
@@ -26,7 +26,7 @@ export const actions: Actions = {
 
 		let profile: UserProfile;
 		try {
-			profile = await getProfile(fetch, token, request);
+			profile = await getProfile({ locals: { auth: token }, fetch, request } as RequestEvent);
 		} catch (err) {
 			if (err instanceof ApiError) {
 				return fail(400, { error: 'Unauthorized: ' + err.message });
@@ -54,14 +54,12 @@ export const actions: Actions = {
 		const autoSend = data.get('autoSend');
 
 		await updateDevice(
-			fetch,
+			{ locals, fetch, request } as RequestEvent,
 			locals.user?.device_email || '',
-			autoSend === 'on',
-			locals.auth ?? '',
-			request
+			autoSend === 'on'
 		);
 
-		const updatedProfile = await getProfile(fetch, locals.auth ?? '', request);
+		const updatedProfile = await getProfile({ locals, fetch, request } as RequestEvent);
 		await setUserCookie(cookies, {
 			account: updatedProfile.account,
 			email: updatedProfile.email,
@@ -88,14 +86,12 @@ export const actions: Actions = {
 		}
 
 		await updateDevice(
-			fetch,
+			{ locals, fetch, request } as RequestEvent,
 			deviceEmail ? deviceEmail.toString() : '',
-			autoSend === 'on',
-			locals.auth ?? '',
-			request
+			autoSend === 'on'
 		);
 
-		const updatedProfile = await getProfile(fetch, locals.auth ?? '', request);
+		const updatedProfile = await getProfile({ locals, fetch, request } as RequestEvent);
 		await setUserCookie(cookies, {
 			account: updatedProfile.account,
 			email: updatedProfile.email,
@@ -105,8 +101,8 @@ export const actions: Actions = {
 		redirect(303, '/account');
 	},
 	deleteDevice: async ({ locals, request, fetch, cookies }) => {
-		await deleteDevice(fetch, locals.auth ?? '', request);
-		const profile = await getProfile(fetch, locals.auth ?? '', request);
+		await deleteDevice({ locals, fetch, request } as RequestEvent);
+		const profile = await getProfile({ locals, fetch, request } as RequestEvent);
 		await setUserCookie(cookies, {
 			account: profile.account,
 			email: profile.email,

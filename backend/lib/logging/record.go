@@ -19,6 +19,9 @@ func createLogRecord(r *http.Request, accountID string, requestID, version *stri
 		slog.String("method", r.Method),
 		slog.String("path", r.URL.Path),
 	)
+	if forwardedFor := forwardedFor(r); forwardedFor != "" {
+		record.AddAttrs(slog.String("forwarded_for", forwardedFor))
+	}
 	if requestID != nil {
 		record.AddAttrs(slog.String("request_id", *requestID))
 	}
@@ -75,6 +78,10 @@ func remoteAddr(r *http.Request) string {
 		return r.RemoteAddr
 	}
 	return "-"
+}
+
+func forwardedFor(r *http.Request) string {
+	return r.Header.Get("X-Forwarded-For")
 }
 
 func userAgent(r *http.Request) string {
