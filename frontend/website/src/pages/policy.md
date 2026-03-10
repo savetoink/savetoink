@@ -7,9 +7,10 @@ layout: ../layouts/MarkdownLayout.astro
 # Privacy Policy
 
 **Effective date:** March 9, 2026
+
 **Last updated:** March 9, 2026
 
-SaveToInk ("we", "us", or "our") is an open-source tool that converts web articles to EPUB and delivers them to e-readers. This policy explains what data we collect, why, and how we handle it.
+Save To Ink ("we", "us", or "our") is an open-source tool that converts web articles to EPUB and delivers them to e-readers. This policy explains what data we collect, why, and how we handle it.
 
 ---
 
