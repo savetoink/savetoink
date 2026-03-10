@@ -6,7 +6,7 @@ describe('getVersion', () => {
 		const result = getVersion();
 
 		expect(result).toBeTypeOf('string');
-		expect(result).toMatch(/^\d+\.\d+\.\d+(-dev\.\d{8}\.[a-f0-9]{7})?$/);
+		expect(result).toMatch(/^\d+\.\d+\.\d+(-dev\+\d{8}\.[a-f0-9]{7})?$/);
 	});
 
 	it('should not be empty', async () => {

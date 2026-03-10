@@ -26,7 +26,7 @@ Arguments:
   major  Increment major version, reset minor and patch to 0
   minor  Increment minor version, reset patch to 0
   patch  Increment patch version
-  dev    Add or update dev suffix with date and commit SHA (MAJOR.MINOR.PATCH-dev.MMDDHHMM.COMMITSHA)
+  dev    Add or update dev suffix with date and commit SHA (MAJOR.MINOR.PATCH-dev+MMDDHHMM.COMMITSHA)
 
 Example:
   bun update_versions.ts patch
@@ -35,7 +35,7 @@ Example:
 }
 
 function parseVersion(versionStr: string): Version | null {
-  const match = versionStr.trim().match(/^(\d+)\.(\d+)\.(\d+)(?:-dev\.(\d{8})\.([a-f0-9]{7}))?$/);
+  const match = versionStr.trim().match(/^(\d+)\.(\d+)\.(\d+)(?:-dev\+(\d{8})\.([a-f0-9]{7}))?$/);
   if (!match) return null;
   return {
     major: parseInt(match[1], 10),
@@ -48,7 +48,7 @@ function parseVersion(versionStr: string): Version | null {
 
 function formatVersion(version: Version): string {
   if (version.devDate && version.devCommitSha) {
-    return `${version.major}.${version.minor}.${version.patch}-dev.${version.devDate}.${version.devCommitSha}`;
+    return `${version.major}.${version.minor}.${version.patch}-dev+${version.devDate}.${version.devCommitSha}`;
   }
   return `${version.major}.${version.minor}.${version.patch}`;
 }
