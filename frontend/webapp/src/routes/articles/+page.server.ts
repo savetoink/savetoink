@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { getArticles } from '$lib/server/apiClient';
 
-export const load: PageServerLoad = async ({ locals, fetch, url }) => {
+export const load: PageServerLoad = async ({ locals, fetch, url, request }) => {
 	const pageParam = url.searchParams.get('page');
 	const pageSizeParam = url.searchParams.get('page_size');
 	const favoriteParam = url.searchParams.get('favorite');
@@ -13,7 +13,8 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
 	const data = await getArticles(
 		fetch,
 		{ page, page_size: pageSize, favorite: favFilter },
-		locals.auth ?? ''
+		locals.auth ?? '',
+		request
 	);
 
 	return { ...data, user: locals.user };

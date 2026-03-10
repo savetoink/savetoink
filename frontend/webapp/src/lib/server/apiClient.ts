@@ -27,53 +27,105 @@ export async function withActionFail<T>(
 	}
 }
 
-// Helper to create API client with SvelteKit fetch
-function createSvelteKitClient(fetch: typeof globalThis.fetch) {
+function getUserAgent(request: Request): string | undefined {
+	return request.headers.get('User-Agent') || undefined;
+}
+
+function createSvelteKitClient(fetch: typeof globalThis.fetch, userAgent?: string) {
 	return createApiClient({
 		baseUrl: PUBLIC_API_URL,
-		fetch
+		fetch,
+		userAgent
 	} as ApiClientOptions);
 }
 
-// Specific API methods with SvelteKit error handling
-export const getProfile = (fetch: typeof globalThis.fetch, token: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).getProfile(token));
+function createApiClientWithUserAgent(fetch: typeof globalThis.fetch, request?: Request) {
+	const userAgent = request ? getUserAgent(request) : undefined;
+	return createSvelteKitClient(fetch, userAgent);
+}
 
-export const getArticles = (
+// Specific API methods with SvelteKit error handling
+export function getProfile(fetch: typeof globalThis.fetch, token: string, request?: Request) {
+	const client = createApiClientWithUserAgent(fetch, request);
+	return withSvelteKitError(() => client.getProfile(token));
+}
+
+export function getArticles(
 	fetch: typeof globalThis.fetch,
 	params: { page?: number; page_size?: number; favorite?: boolean },
-	token: string
-) => withSvelteKitError(() => createSvelteKitClient(fetch).getArticles(params, token));
+	token: string,
+	request?: Request
+) {
+	const client = createApiClientWithUserAgent(fetch, request);
+	return withSvelteKitError(() => client.getArticles(params, token));
+}
 
-export const getArticle = (fetch: typeof globalThis.fetch, id: string, token: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).getArticle(id, token));
+export function getArticle(
+	fetch: typeof globalThis.fetch,
+	id: string,
+	token: string,
+	request?: Request
+) {
+	const client = createApiClientWithUserAgent(fetch, request);
+	return withSvelteKitError(() => client.getArticle(id, token));
+}
 
-export const createArticle = (
+export function createArticle(
 	fetch: typeof globalThis.fetch,
 	url: string,
 	sendToDevice: boolean,
-	token: string
-) => withSvelteKitError(() => createSvelteKitClient(fetch).createArticle(url, sendToDevice, token));
+	token: string,
+	request?: Request
+) {
+	const client = createApiClientWithUserAgent(fetch, request);
+	return withSvelteKitError(() => client.createArticle(url, sendToDevice, token));
+}
 
-export const sendArticle = (fetch: typeof globalThis.fetch, id: string, token: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).sendArticle(id, token));
+export function sendArticle(
+	fetch: typeof globalThis.fetch,
+	id: string,
+	token: string,
+	request?: Request
+) {
+	const client = createApiClientWithUserAgent(fetch, request);
+	return withSvelteKitError(() => client.sendArticle(id, token));
+}
 
-export const favoriteArticle = (fetch: typeof globalThis.fetch, id: string, token: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).favoriteArticle(id, token));
+export function favoriteArticle(
+	fetch: typeof globalThis.fetch,
+	id: string,
+	token: string,
+	request?: Request
+) {
+	const client = createApiClientWithUserAgent(fetch, request);
+	return withSvelteKitError(() => client.favoriteArticle(id, token));
+}
 
-export const deleteArticle = (fetch: typeof globalThis.fetch, id: string, token: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).deleteArticle(id, token));
+export function deleteArticle(
+	fetch: typeof globalThis.fetch,
+	id: string,
+	token: string,
+	request?: Request
+) {
+	const client = createApiClientWithUserAgent(fetch, request);
+	return withSvelteKitError(() => client.deleteArticle(id, token));
+}
 
-export const updateDevice = (
+export function updateDevice(
 	fetch: typeof globalThis.fetch,
 	deviceEmail: string,
 	autoSend: boolean,
-	token: string
-) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).updateDevice(deviceEmail, autoSend, token));
+	token: string,
+	request?: Request
+) {
+	const client = createApiClientWithUserAgent(fetch, request);
+	return withSvelteKitError(() => client.updateDevice(deviceEmail, autoSend, token));
+}
 
-export const deleteDevice = (fetch: typeof globalThis.fetch, token: string) =>
-	withSvelteKitError(() => createSvelteKitClient(fetch).deleteDevice(token));
+export function deleteDevice(fetch: typeof globalThis.fetch, token: string, request?: Request) {
+	const client = createApiClientWithUserAgent(fetch, request);
+	return withSvelteKitError(() => client.deleteDevice(token));
+}
 
 export const exchangeCodeForToken = (
 	fetch: typeof globalThis.fetch,

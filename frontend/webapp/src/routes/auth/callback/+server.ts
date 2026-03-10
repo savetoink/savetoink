@@ -3,7 +3,7 @@ import { exchangeCodeForToken, getProfile } from '$lib/server/apiClient';
 import { setAuthCookie, setUserCookie } from '$lib/server/cookies';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ fetch, url, cookies }) => {
+export const GET: RequestHandler = async ({ fetch, url, cookies, request }) => {
 	const code = url.searchParams.get('code');
 
 	if (!code) {
@@ -20,7 +20,7 @@ export const GET: RequestHandler = async ({ fetch, url, cookies }) => {
 		maxAge: response.expires_in
 	});
 
-	const profile = await getProfile(fetch, response.access_token);
+	const profile = await getProfile(fetch, response.access_token, request);
 	await setUserCookie(cookies, {
 		account: profile.account,
 		email: profile.email,

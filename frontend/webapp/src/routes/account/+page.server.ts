@@ -26,7 +26,7 @@ export const actions: Actions = {
 
 		let profile: UserProfile;
 		try {
-			profile = await getProfile(fetch, token);
+			profile = await getProfile(fetch, token, request);
 		} catch (err) {
 			if (err instanceof ApiError) {
 				return fail(400, { error: 'Unauthorized: ' + err.message });
@@ -57,10 +57,11 @@ export const actions: Actions = {
 			fetch,
 			locals.user?.device_email || '',
 			autoSend === 'on',
-			locals.auth ?? ''
+			locals.auth ?? '',
+			request
 		);
 
-		const updatedProfile = await getProfile(fetch, locals.auth ?? '');
+		const updatedProfile = await getProfile(fetch, locals.auth ?? '', request);
 		await setUserCookie(cookies, {
 			account: updatedProfile.account,
 			email: updatedProfile.email,
@@ -90,10 +91,11 @@ export const actions: Actions = {
 			fetch,
 			deviceEmail ? deviceEmail.toString() : '',
 			autoSend === 'on',
-			locals.auth ?? ''
+			locals.auth ?? '',
+			request
 		);
 
-		const updatedProfile = await getProfile(fetch, locals.auth ?? '');
+		const updatedProfile = await getProfile(fetch, locals.auth ?? '', request);
 		await setUserCookie(cookies, {
 			account: updatedProfile.account,
 			email: updatedProfile.email,
@@ -102,9 +104,9 @@ export const actions: Actions = {
 		});
 		redirect(303, '/account');
 	},
-	deleteDevice: async ({ locals, fetch, cookies }) => {
-		await deleteDevice(fetch, locals.auth ?? '');
-		const profile = await getProfile(fetch, locals.auth ?? '');
+	deleteDevice: async ({ locals, request, fetch, cookies }) => {
+		await deleteDevice(fetch, locals.auth ?? '', request);
+		const profile = await getProfile(fetch, locals.auth ?? '', request);
 		await setUserCookie(cookies, {
 			account: profile.account,
 			email: profile.email,

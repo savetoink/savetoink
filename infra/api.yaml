@@ -326,6 +326,7 @@ Resources:
             Headers:
               - Authorization
               - User-Agent
+              - Origin
             QueryString: true
             Cookies:
               Forward: none
@@ -349,6 +350,7 @@ Resources:
               Headers:
                 - Authorization
                 - User-Agent
+                - Origin
               QueryString: true
               Cookies:
                 Forward: none

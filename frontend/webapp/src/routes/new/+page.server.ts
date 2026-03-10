@@ -17,7 +17,7 @@ export const actions: Actions = {
 			error(400, 'URL is required');
 		}
 
-		await createArticle(fetch, txt, sendToDevice === 'on', locals.auth ?? '');
+		await createArticle(fetch, txt, sendToDevice === 'on', locals.auth ?? '', request);
 
 		redirect(303, '/articles');
 	}

@@ -58,11 +58,13 @@ export interface ApiClient {
 export interface ApiClientOptions {
   baseUrl: string;
   fetch?: typeof globalThis.fetch;
+  userAgent?: string;
 }
 
 export function createApiClient({
   baseUrl,
   fetch,
+  userAgent,
 }: ApiClientOptions): ApiClient {
   const fetchFn = fetch || globalThis.fetch;
 
@@ -78,6 +80,10 @@ export function createApiClient({
 
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    if (userAgent) {
+      headers["User-Agent"] = userAgent;
     }
 
     const res = await fetchFn(`${baseUrl}${path}`, {
