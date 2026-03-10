@@ -57,6 +57,9 @@ func ProcessArticle(
 	processCtx, cancel := context.WithTimeout(processCtx, consts.ArticleProcessingTimeout)
 	defer cancel()
 
+	logging.AddLogAttr(processCtx, slog.String("article_id", event.ArticleID))
+	logging.AddLogAttr(processCtx, slog.Bool("send_on_complete", event.SendOnComplete))
+
 	htmlBytes, fetcherType, err := svc.Fetch(processCtx, event.URL)
 	if err != nil {
 		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "fetch", err)
@@ -65,7 +68,6 @@ func ProcessArticle(
 	}
 
 	logging.AddLogAttr(processCtx, slog.String("fetcher_type", fetcherType.String()))
-	logging.AddLogAttr(processCtx, slog.Bool("send_on_complete", event.SendOnComplete))
 
 	extractedArticle, err := svc.Extract(processCtx, htmlBytes)
 	if err != nil {
