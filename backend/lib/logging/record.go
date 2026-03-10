@@ -19,7 +19,9 @@ func createLogRecord(r *http.Request, accountID string, requestID, version *stri
 		slog.String("method", r.Method),
 		slog.String("path", r.URL.Path),
 	)
-	if forwardedFor := forwardedFor(r); forwardedFor != "" {
+
+	forwardedFor := forwardedFor(r)
+	if forwardedFor != "" && forwardedFor != remoteAddr(r) {
 		record.AddAttrs(slog.String("forwarded_for", forwardedFor))
 	}
 	if requestID != nil {
