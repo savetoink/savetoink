@@ -154,3 +154,18 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateUserProfile() {
 	assert.Equal(t, "updated@example.com", retrieved.Email)
 	assert.True(t, retrieved.AutoSend)
 }
+
+func (s *DynamoDBRepositoryTestSuite) TestPutUserProfileEmptyAccount() {
+	ctx := context.Background()
+	t := s.T()
+
+	profile := &model.UserProfile{
+		Email:       "test@example.com",
+		DeviceEmail: "device@example.com",
+		AutoSend:    true,
+	}
+
+	err := s.repositories.PutUserProfile(ctx, profile)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "account field is required")
+}

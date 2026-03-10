@@ -7,13 +7,12 @@ import (
 	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	lambdacontext "github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
-	"github.com/shaftoe/savetoink/backend/lib/processor"
+	lambdahandler "github.com/shaftoe/savetoink/backend/lib/processor/lambda"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 )
@@ -30,56 +29,6 @@ func main() {
 	logging.SetupLogging(cfg)
 	svc := service.NewFromConfig(cfg)
 	lambda.Start(func(ctx context.Context, event *content.ProcessArticleEvent) error {
-		if event == nil {
-			event = &content.ProcessArticleEvent{}
-		}
-		return handleRequest(ctx, event, svc)
+		return lambdahandler.HandleEvent(ctx, event, svc)
 	})
-}
-
-func handleRequest(ctx context.Context, event *content.ProcessArticleEvent, svc service.Interface) error {
-	lc, _ := lambdacontext.FromContext(ctx)
-	lambdaRequestID := lc.AwsRequestID
-	logger := slog.Default().With(slog.String("request_id", lambdaRequestID))
-
-	if event.RequestID == "" {
-		logger.Error("invalid request: missing orig_request_id")
-		return nil
-	}
-
-	logger = logger.With(slog.String("orig_request_id", event.RequestID))
-
-	if event.URL == "" {
-		logger.Error("invalid request: missing url")
-		return nil
-	}
-
-	if event.ArticleID == "" {
-		logger.Error("invalid request: missing article_id")
-		return nil
-	}
-
-	if event.AccountID == "" {
-		logger.Error("invalid request: missing account_id")
-		return nil
-	}
-
-	event.InheritedAttrs = make([]map[string]any, 0, len(event.InheritedAttrs))
-	for _, attr := range event.InheritedAttrs {
-		if _, exists := attr["request_id"]; !exists {
-			event.InheritedAttrs = append(event.InheritedAttrs, attr)
-		}
-	}
-	event.InheritedAttrs = append(event.InheritedAttrs,
-		map[string]any{"orig_request_id": event.RequestID},
-		map[string]any{"request_id": lambdaRequestID},
-	)
-	event.RequestID = lambdaRequestID
-
-	processCtx := context.WithValue(ctx, logging.RequestIDKey, event.RequestID)
-	processCtx = context.WithValue(processCtx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-
-	processor.ProcessArticle(processCtx, svc, event)
-
-	return nil
 }

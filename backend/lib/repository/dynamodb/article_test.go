@@ -287,3 +287,71 @@ func (s *DynamoDBRepositoryTestSuite) TestDeleteByAccount() {
 	require.NoError(t, err)
 	assert.Equal(t, 3, count)
 }
+
+func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountEmpty() {
+	ctx := context.Background()
+	t := s.T()
+
+	account := "test-account-empty"
+
+	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, nil)
+	require.NoError(t, err)
+	assert.Empty(t, articles)
+	assert.Equal(t, 0, total)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountOffsetOutOfBounds() {
+	ctx := context.Background()
+	t := s.T()
+
+	account := "test-account-offset"
+
+	now := time.Now()
+	publishedAt := now
+
+	article := &model.Article{
+		Account:            account,
+		ID:                 "article-offset",
+		URL:                "https://example.com/offset",
+		Title:              "Offset Article",
+		Content:            "Content",
+		CreatedAt:          now,
+		Favorite:           false,
+		Author:             "Author",
+		Excerpt:            "Excerpt",
+		ImageURL:           "https://example.com/image.jpg",
+		Language:           "en",
+		PublishedAt:        &publishedAt,
+		WordCount:          100,
+		ReadingTimeMinutes: 1,
+		SiteName:           "Example Site",
+		SourceDomain:       "example.com",
+	}
+
+	err := s.repositories.Store(ctx, article)
+	require.NoError(t, err)
+
+	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 100, 10, nil)
+	require.NoError(t, err)
+	assert.Empty(t, articles)
+	assert.Equal(t, 1, total)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestStoreArticleEmptyAccount() {
+	ctx := context.Background()
+	t := s.T()
+
+	now := time.Now()
+
+	article := &model.Article{
+		ID:        "article-empty-account",
+		URL:       "https://example.com/article",
+		Title:     "Test Article",
+		Content:   "Content",
+		CreatedAt: now,
+	}
+
+	err := s.repositories.Store(ctx, article)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "account field is required")
+}

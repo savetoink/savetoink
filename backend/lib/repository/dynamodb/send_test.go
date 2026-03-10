@@ -182,3 +182,51 @@ func (s *DynamoDBRepositoryTestSuite) TestCountSendsByAccountDateRangePartial() 
 	require.NoError(t, err)
 	assert.Equal(t, 5, count)
 }
+
+func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordNotFound() {
+	ctx := context.Background()
+	t := s.T()
+
+	updateSend := &model.Send{
+		Account:       "test-account",
+		ArticleID:     "nonexistent-article",
+		Status:        "sent",
+		MessageID:     "message-id-123",
+		ErrorResponse: "",
+	}
+
+	err := s.repositories.UpdateSendRecord(ctx, updateSend)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "send record not found")
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordAccountMismatch() {
+	ctx := context.Background()
+	t := s.T()
+
+	now := time.Now()
+
+	send := &model.Send{
+		Account:     "test-account-original",
+		ArticleID:   "article-mismatch",
+		SentAt:      now,
+		Title:       "Test Article",
+		DestEmail:   "dest@example.com",
+		SenderEmail: "sender@example.com",
+		Provider:    "mailjet",
+	}
+
+	err := s.repositories.CreateSendRecord(ctx, send)
+	require.NoError(t, err)
+
+	updateSend := &model.Send{
+		Account:   "different-account",
+		ArticleID: "article-mismatch",
+		Status:    "sent",
+		MessageID: "message-id-123",
+	}
+
+	err = s.repositories.UpdateSendRecord(ctx, updateSend)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "send record account mismatch")
+}
