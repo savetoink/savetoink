@@ -17,6 +17,7 @@ func TestMain(m *testing.M) {
 	_ = os.Unsetenv("SAVETOINK_USER_PROFILE_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_SENDS_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_APP_URL")
+	_ = os.Unsetenv("SAVETOINK_CORS_ALLOW_ORIGIN")
 	_ = os.Unsetenv("SAVETOINK_EMAIL_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_MAILJET_API_KEY")
 	_ = os.Unsetenv("SAVETOINK_MAILJET_API_SECRET")
@@ -461,6 +462,7 @@ func TestLoad_All_Env_Vars_Bound(t *testing.T) {
 		"SAVETOINK_AUTH0_CLIENT_SECRET":     "auth0-client-secret",
 		"SAVETOINK_AUTH0_DOMAIN":            "auth0-domain",
 		"SAVETOINK_AUTH_BACKEND":            "shared_api_key",
+		"SAVETOINK_CORS_ALLOW_ORIGIN":       "https://example.com",
 		"SAVETOINK_DEBUG":                   "true",
 		"SAVETOINK_EMAIL_BACKEND":           "mailjet",
 		"SAVETOINK_MAILJET_API_KEY":         "mailjet-key",
@@ -490,6 +492,7 @@ func TestLoad_All_Env_Vars_Bound(t *testing.T) {
 	assert.Equal(t, "auth0-client-secret", cfg.Auth0ClientSecret)
 	assert.Equal(t, "auth0-domain", cfg.Auth0Domain)
 	assert.Equal(t, consts.AuthBackendSharedAPIKey, cfg.AuthBackend)
+	assert.Equal(t, "https://example.com", cfg.CorsAllowOrigin)
 	assert.True(t, cfg.Debug)
 	assert.Equal(t, consts.EmailBackendMailjet, cfg.EmailProvider)
 	assert.Equal(t, "mailjet-key", cfg.MailjetAPIKey)
@@ -559,6 +562,39 @@ func TestLoad_Float_Conversion(t *testing.T) {
 			cfg, err := Load(consts.ModeServer, awsLoader)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, cfg.SentrySampleRate)
+		})
+	}
+}
+
+func TestLoad_CorsAllowOrigin(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"specific origin", "https://example.com", "https://example.com"},
+		{"localhost", "http://localhost:3000", "http://localhost:3000"},
+		{"wildcard", "*", "*"},
+		{"empty string", "", ""},
+		{"multiple origins (as-is)", "https://example.com,https://test.com", "https://example.com,https://test.com"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setupEnvVars(t, map[string]string{
+				"SAVETOINK_API_KEY":                 "test-api-key",
+				"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+				"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+				"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+				"SAVETOINK_APP_URL":                 "https://example.com",
+				"SAVETOINK_CORS_ALLOW_ORIGIN":       tt.value,
+			})
+
+			awsLoader := mockAWSLoader()
+
+			cfg, err := Load(consts.ModeServer, awsLoader)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, cfg.CorsAllowOrigin)
 		})
 	}
 }

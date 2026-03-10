@@ -50,6 +50,11 @@ Parameters:
     NoEcho: true
     Description: Secret API key for authentication
 
+  CORSAllowOrigin:
+    Type: String
+    Description: CORS allow origin for API requests
+    Default: ""
+
   SenderEmail:
     Type: String
     Description: Verified sender email address
@@ -183,6 +188,7 @@ Resources:
           SAVETOINK_AUTH0_DOMAIN: !Ref Auth0Domain
           SAVETOINK_AUTH_BACKEND: !Ref AuthBackend
           SAVETOINK_BROWSERLESS_KEY: !Ref BrowserlessKey
+          SAVETOINK_CORS_ALLOW_ORIGIN: !Ref CORSAllowOrigin
           SAVETOINK_DEBUG: !Ref Debug
           SAVETOINK_EMAIL_BACKEND: !Ref MailBackend
           SAVETOINK_LOGGING_PROVIDER: !Ref LoggingProvider

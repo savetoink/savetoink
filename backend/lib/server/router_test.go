@@ -166,7 +166,7 @@ func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
 	r.Use(auth.NewAccountIDMiddleware(cfg))
 	r.Use(requestIDMiddleware)
 	r.Use(logging.Middleware)
-	r.Use(corsMiddleware)
+	r.Use(newCorsMiddleware(cfg))
 	r.Use(jsonContentTypeMiddleware)
 
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
@@ -194,6 +194,7 @@ func setupMinimalConfig(t *testing.T) *config.Config {
 		UserProfileTable:     "test-profiles",
 		SendsTable:           "test-sends",
 		AppURL:               "https://test.com",
+		CorsAllowOrigin:      "",
 		EmailProvider:        "",
 		LoggingProvider:      consts.LoggingBackendNone,
 		SentryDSN:            "",
@@ -247,8 +248,6 @@ func TestNewRouterWithClient(t *testing.T) {
 				"Content-Type header should be set")
 			assert.NotEmpty(t, w.Header().Get("X-Request-ID"),
 				"X-Request-ID header should be set")
-			assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Origin"),
-				"CORS header should be set")
 		})
 	})
 

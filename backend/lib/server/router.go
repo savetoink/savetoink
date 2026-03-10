@@ -39,7 +39,7 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 	r.Use(auth.NewAccountIDMiddleware(cfg))
 	r.Use(requestIDMiddleware)
 	r.Use(logging.Middleware)
-	r.Use(corsMiddleware)
+	r.Use(newCorsMiddleware(cfg))
 	r.Use(jsonContentTypeMiddleware)
 
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {

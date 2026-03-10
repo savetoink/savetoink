@@ -30,6 +30,7 @@ deploy-api:
             AuthBackend="${SAVETOINK_AUTH_BACKEND}" \
             BrowserlessKey="${SAVETOINK_BROWSERLESS_KEY}" \
             CertificateArn=$(just get-cert-arn) \
+            CORSAllowOrigin="${SAVETOINK_CORS_ALLOW_ORIGIN}" \
             Debug="${SAVETOINK_DEBUG}" \
             DestEmail="$SAVETOINK_DEST_EMAIL" \
             DomainName="$SAVETOINK_DOMAIN" \

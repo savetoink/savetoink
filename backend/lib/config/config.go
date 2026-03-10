@@ -19,6 +19,7 @@ type Config struct {
 	SendsTable       string
 	AppURL           string
 	Mode             consts.RunMode
+	CorsAllowOrigin  string
 
 	// Auth
 	APIKeySecret      string
@@ -94,6 +95,7 @@ func bindEnvVars() error {
 		{"auth0-client-secret", "SAVETOINK_AUTH0_CLIENT_SECRET"},
 		{"auth0-domain", "SAVETOINK_AUTH0_DOMAIN"},
 		{"browserless-key", "SAVETOINK_BROWSERLESS_KEY"},
+		{"cors-allow-origin", "SAVETOINK_CORS_ALLOW_ORIGIN"},
 		{"debug", "SAVETOINK_DEBUG"},
 		{"email-backend", "SAVETOINK_EMAIL_BACKEND"},
 		{"logging-provider", "SAVETOINK_LOGGING_PROVIDER"},
@@ -124,6 +126,7 @@ func loadConfig(mode consts.RunMode) *Config {
 		Auth0ClientSecret:    viper.GetString("auth0-client-secret"),
 		Auth0Domain:          viper.GetString("auth0-domain"),
 		AuthBackend:          consts.AuthBackend(viper.GetString("auth-backend")),
+		CorsAllowOrigin:      viper.GetString("cors-allow-origin"),
 		Debug:                viper.GetBool("debug"),
 		EmailProvider:        consts.EmailProvider(viper.GetString("email-backend")),
 		MailjetAPIKey:        viper.GetString("api-key"),

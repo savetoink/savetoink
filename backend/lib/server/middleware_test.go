@@ -23,11 +23,11 @@ func TestCorsMiddleware(t *testing.T) {
 			nextCalled = true
 		})
 
+		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodOptions, "/test", http.NoBody)
-		req.Header.Set("origin", "https://example.com")
 		w := httptest.NewRecorder()
 
-		corsMiddleware(next).ServeHTTP(w, req)
+		newCorsMiddleware(cfg)(next).ServeHTTP(w, req)
 
 		assert.False(t, nextCalled, "next handler should not be called for OPTIONS")
 		assert.Equal(t, http.StatusNoContent, w.Code)
@@ -44,11 +44,11 @@ func TestCorsMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		})
 
+		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
-		req.Header.Set("origin", "https://example.com")
 		w := httptest.NewRecorder()
 
-		corsMiddleware(next).ServeHTTP(w, req)
+		newCorsMiddleware(cfg)(next).ServeHTTP(w, req)
 
 		assert.True(t, nextCalled, "next handler should be called for GET")
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -62,53 +62,55 @@ func TestCorsMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusCreated)
 		})
 
+		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/test", http.NoBody)
-		req.Header.Set("origin", "https://example.com")
 		w := httptest.NewRecorder()
 
-		corsMiddleware(next).ServeHTTP(w, req)
+		newCorsMiddleware(cfg)(next).ServeHTTP(w, req)
 
 		assert.True(t, nextCalled, "next handler should be called for POST")
 		assert.Equal(t, http.StatusCreated, w.Code)
 		assert.Equal(t, "https://example.com", w.Header().Get("Access-Control-Allow-Origin"))
 	})
 
-	t.Run("uses origin from request header", func(t *testing.T) {
+	t.Run("uses origin from config", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		})
 
+		cfg := &config.Config{CorsAllowOrigin: "https://myapp.com"}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
-		req.Header.Set("origin", "https://myapp.com")
 		w := httptest.NewRecorder()
 
-		corsMiddleware(next).ServeHTTP(w, req)
+		newCorsMiddleware(cfg)(next).ServeHTTP(w, req)
 
 		assert.Equal(t, "https://myapp.com", w.Header().Get("Access-Control-Allow-Origin"))
 	})
 
-	t.Run("defaults to wildcard when origin header is missing", func(t *testing.T) {
+	t.Run("no CORS headers when origin is empty", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		})
 
+		cfg := &config.Config{CorsAllowOrigin: ""}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
-		corsMiddleware(next).ServeHTTP(w, req)
+		newCorsMiddleware(cfg)(next).ServeHTTP(w, req)
 
-		assert.Equal(t, "*", w.Header().Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, "", w.Header().Get("Access-Control-Allow-Origin"))
 	})
 
-	t.Run("all CORS headers are set", func(t *testing.T) {
+	t.Run("all CORS headers are set when origin is configured", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		})
 
+		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
-		corsMiddleware(next).ServeHTTP(w, req)
+		newCorsMiddleware(cfg)(next).ServeHTTP(w, req)
 
 		assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Origin"))
 		assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Headers"))
@@ -123,10 +125,11 @@ func TestCorsMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusNoContent)
 		})
 
+		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
-		corsMiddleware(next).ServeHTTP(w, req)
+		newCorsMiddleware(cfg)(next).ServeHTTP(w, req)
 
 		assert.True(t, nextCalled, "next handler should be called for DELETE")
 		assert.Equal(t, http.StatusNoContent, w.Code)
@@ -139,10 +142,11 @@ func TestCorsMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		})
 
+		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodPut, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
-		corsMiddleware(next).ServeHTTP(w, req)
+		newCorsMiddleware(cfg)(next).ServeHTTP(w, req)
 
 		assert.True(t, nextCalled, "next handler should be called for PUT")
 		assert.Equal(t, http.StatusOK, w.Code)
