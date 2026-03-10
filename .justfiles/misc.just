@@ -39,6 +39,6 @@ install-hooks:
 
 init-frontend: init-extension
 
-set-dotenv ENV:
+dotenv ENV:
     @rm -f .env
     @ln -s .env.{{ ENV }} .env
