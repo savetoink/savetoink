@@ -52,7 +52,7 @@ func (d *DynamoDB) CreateSendRecord(ctx context.Context, send *model.Send) error
 		SK:          "SEND#" + now.Format(time.RFC3339) + "#" + send.ArticleID,
 		Account:     send.Account,
 		ArticleID:   send.ArticleID,
-		SentAt:      now,
+		SentAt:      send.SentAt.UTC(),
 		Title:       send.Title,
 		DestEmail:   send.DestEmail,
 		SenderEmail: send.SenderEmail,

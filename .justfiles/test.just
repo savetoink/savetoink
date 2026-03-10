@@ -8,10 +8,10 @@ lint-go:
 test-go: test-go-backend test-go-cli
 
 test-go-backend:
-    go test ./backend/... -short
+    go test ./backend/...
 
 test-go-cli:
-    go test ./cli/... -short
+    go test ./cli/...
 
 test-go-coverage:
     go test -coverprofile=coverage.txt ./backend/...

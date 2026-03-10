@@ -28,3 +28,9 @@ This repository contains the code for the savetoink application, composed of:
 - The OpenAPI specification is maintained in [backend/lib/server/openapi.yaml](backend/lib/server/openapi.yaml)
 - **When modifying API routes, handlers, or request/response models in `backend/lib/server/`, you MUST update the OpenAPI specification to reflect the changes**
 - The OpenAPI spec should always accurately reflect the current state of the API implementation
+
+## DynamoDB Integration Tests
+
+- The DynamoDB Local schema for integration tests is defined in [backend/lib/repository/testhelpers/setup.go](backend/lib/repository/testhelpers/setup.go)
+- **When modifying DynamoDB table schemas in [infra/api.yaml](infra/api.yaml), you MUST keep the test schema in sync with the production schema**
+- The testcontainers integration tests use a local DynamoDB instance; ensure table definitions, attribute types, key schemas, and global secondary indexes match the production CloudFormation template
