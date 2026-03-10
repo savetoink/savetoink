@@ -67,7 +67,7 @@ func finalizeLogRecord(ctx context.Context, record *slog.Record, start time.Time
 		slog.Int64("latency_ms", time.Since(start).Milliseconds()),
 	)
 
-	if err := slog.Default().Handler().Handle(ctx, *record); err != nil {
+	if err := slog.Default().Handler().Handle(ctx, *record); err != nil { //nolint:gocritic
 		slog.Error("failed to log request", "error", err)
 	}
 }
