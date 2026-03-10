@@ -7,7 +7,8 @@ const {
   title = "Save To Ink — Save articles to your e-reader",
   description = "Save any article to your Kindle or Kobo in seconds. Clean EPUB delivery for focused reading.",
 } = Astro.props;
-import Links from "../components/Links.astro";
+import SiteNav from "../components/SiteNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 import Head from "../components/Head.astro";
 ---
 
@@ -16,6 +17,19 @@ import Head from "../components/Head.astro";
   <Head title={title} description={description} />
 
   <body>
-    <slot />
+    <SiteNav />
+
+    <main class="container">
+        <slot />
+    </main>
+
+    <SiteFooter />
   </body>
 </html>
+
+<style>
+	.container :global(h1) {
+		font-size: clamp(2rem, 5vw, 2.75rem);
+		margin-top: 1.5rem;
+	}
+</style>
