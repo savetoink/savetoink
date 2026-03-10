@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
@@ -14,6 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const testEmail = "test@kindle.com"
 
 type testCaptureHandler struct {
 	record *slog.Record
@@ -85,11 +88,11 @@ func (m *mockArticleService) GetArticle(ctx context.Context, accountID, articleI
 
 func (m *mockArticleService) GetUserDeviceEmail(
 	ctx context.Context, accountID string,
-) (email string, autoSend bool, err error) {
+) (emailAddr string, autoSend bool, err error) {
 	if m.getUserDeviceEmail != nil {
 		return m.getUserDeviceEmail(ctx, accountID)
 	}
-	return "test@kindle.com", true, nil
+	return testEmail, true, nil
 }
 
 func (m *mockArticleService) SendArticleByID(
@@ -104,7 +107,7 @@ func (m *mockArticleService) SendArticleByID(
 			ID:      articleID,
 			Account: accountID,
 		},
-		DeviceEmail: "test@kindle.com",
+		DeviceEmail: testEmail,
 	}, nil
 }
 
@@ -601,4 +604,47 @@ func TestProcessArticle_SendOnComplete_SendError(t *testing.T) {
 	require.NotNil(t, capturedArticle)
 	assert.Equal(t, "article-123", capturedArticle.ID)
 	assert.Empty(t, capturedArticle.Error)
+}
+
+func TestSendArticle_GetDeviceEmailError(t *testing.T) {
+	mockSvc := &mockArticleService{
+		getUserDeviceEmail: func(_ context.Context, _ string) (string, bool, error) {
+			return "", false, errors.New("failed to get device email")
+		},
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
+	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+
+	err := sendArticle(ctx, mockSvc, "account-456", "article-123")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to get device email")
+}
+
+func TestSendArticle_EmailRespWithMessageID(t *testing.T) {
+	mockSvc := &mockArticleService{
+		getUserDeviceEmail: func(_ context.Context, _ string) (string, bool, error) {
+			return "test@kindle.com", true, nil
+		},
+		sendArticleByID: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
+			return &servicetypes.SendArticleResult{
+				Article: &model.Article{
+					ID:      "article-123",
+					Account: "account-456",
+				},
+				DeviceEmail: "test@kindle.com",
+				EmailResp:   &email.SendEmailResponse{MessageID: "msg-123"},
+			}, nil
+		},
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
+	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+
+	err := sendArticle(ctx, mockSvc, "account-456", "article-123")
+
+	require.NoError(t, err)
 }

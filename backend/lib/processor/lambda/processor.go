@@ -15,17 +15,47 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 )
 
+type lambdaInvoker interface {
+	Invoke(ctx context.Context, params *lambda.InvokeInput, optFns ...func(*lambda.Options)) (*lambda.InvokeOutput, error)
+}
+
+type awsLambdaClient struct {
+	client *lambda.Client
+}
+
+func (a *awsLambdaClient) Invoke(
+	ctx context.Context,
+	params *lambda.InvokeInput,
+	optFns ...func(*lambda.Options),
+) (*lambda.InvokeOutput, error) {
+	result, err := a.client.Invoke(ctx, params, optFns...)
+	if err != nil {
+		return nil, fmt.Errorf("lambda invoke failed: %w", err)
+	}
+	return result, nil
+}
+
 // Processor invokes a remote Lambda function for article processing.
 type Processor struct {
-	functionName string
-	lambdaClient *lambda.Client
+	functionName  string
+	lambdaInvoker lambdaInvoker
 }
 
 // NewProcessor creates a new Processor.
 func NewProcessor(functionName string, awsCfg *aws.Config) *Processor {
+	client := lambda.NewFromConfig(*awsCfg)
 	return &Processor{
-		functionName: functionName,
-		lambdaClient: lambda.NewFromConfig(*awsCfg),
+		functionName:  functionName,
+		lambdaInvoker: &awsLambdaClient{client: client},
+	}
+}
+
+// newProcessorWithInvoker creates a new Processor with a custom invoker (for testing).
+func newProcessorWithInvoker(
+	functionName string, invoker lambdaInvoker) *Processor { //nolint:unparam // Used for testing only
+	return &Processor{
+		functionName:  functionName,
+		lambdaInvoker: invoker,
 	}
 }
 
@@ -37,7 +67,7 @@ func (p *Processor) StartProcessing(ctx context.Context, event *content.ProcessA
 		return
 	}
 
-	_, err = p.lambdaClient.Invoke(ctx, &lambda.InvokeInput{
+	_, err = p.lambdaInvoker.Invoke(ctx, &lambda.InvokeInput{
 		FunctionName:   aws.String(p.functionName),
 		InvocationType: types.InvocationTypeEvent,
 		Payload:        payload,
