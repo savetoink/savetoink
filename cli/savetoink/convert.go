@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	netURL "net/url"
 	"os"
@@ -23,7 +24,7 @@ func hasScheme(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }
 
-func processArticle(ctx context.Context, input string, svc *service.Service) ([]byte, error) {
+func processArticle(ctx context.Context, input string, svc *service.Service) (io.ReadCloser, error) {
 	slog.Debug("processing article", slog.String("input", input))
 
 	start := time.Now()
@@ -57,14 +58,14 @@ func processArticle(ctx context.Context, input string, svc *service.Service) ([]
 		return nil, fmt.Errorf("failed to clean article: %w", err)
 	}
 
-	epubData, err := svc.GenerateEPUB(article)
+	epubReader, err := svc.GenerateEPUB(article)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate epub: %w", err)
 	}
 
 	slog.Debug("article processed", slog.Any("duration", time.Since(start)))
 
-	return epubData, nil
+	return epubReader, nil
 }
 
 func runConvert(_ *cobra.Command, args []string) error {
@@ -75,9 +76,15 @@ func runConvert(_ *cobra.Command, args []string) error {
 
 	svc := service.NewFromConfig(cfg)
 
-	epubData, err := processArticle(ctx, input, svc)
+	epubReader, err := processArticle(ctx, input, svc)
 	if err != nil {
 		return err
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	epubData, err := io.ReadAll(epubReader)
+	if err != nil {
+		return fmt.Errorf("failed to read epub data: %w", err)
 	}
 
 	output := "article.epub"

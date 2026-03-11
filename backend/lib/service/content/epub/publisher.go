@@ -5,7 +5,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 	"text/template"
 
@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	fileModeReadWrite = 0o644
-	emptyDiv          = "<div style=\"font-size: 0.85em; color: #666; margin-bottom: 2em; " +
+	emptyDiv = "<div style=\"font-size: 0.85em; color: #666; margin-bottom: 2em; " +
 		"padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;\">\n</div>\n"
 )
 
@@ -61,8 +60,8 @@ func buildMetadataHeader(article *model.Article) string {
 	return result
 }
 
-// GenerateEPUB creates an EPUB file from the given article and returns its bytes.
-func (p *Publisher) GenerateEPUB(article *model.Article) ([]byte, error) {
+// GenerateEPUB creates an EPUB file from the given article and returns a ReadCloser.
+func (p *Publisher) GenerateEPUB(article *model.Article) (io.ReadCloser, error) {
 	e, err := epub.NewEpub(article.Title)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create EPUB: %w", err)
@@ -94,26 +93,13 @@ func (p *Publisher) GenerateEPUB(article *model.Article) ([]byte, error) {
 
 	e.EmbedImages()
 
+	// Notice: go-epub doesn't support returning a ReadCloser directly
+	// so we use a bytes.Buffer and io.NopCloser
 	var buffer bytes.Buffer
 	_, err = e.WriteTo(&buffer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write EPUB: %w", err)
 	}
 
-	return buffer.Bytes(), nil
-}
-
-// GenerateEPUBAndWrite generates an EPUB file and writes it to the specified path.
-func (p *Publisher) GenerateEPUBAndWrite(article *model.Article, outputPath string) error {
-	data, err := p.GenerateEPUB(article)
-	if err != nil {
-		return err
-	}
-
-	// #nosec G306 - EPUB files need to be readable by user
-	if writeErr := os.WriteFile(outputPath, data, fileModeReadWrite); writeErr != nil {
-		return fmt.Errorf("failed to write EPUB file: %w", writeErr)
-	}
-
-	return nil
+	return io.NopCloser(bytes.NewReader(buffer.Bytes())), nil
 }

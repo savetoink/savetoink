@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -46,12 +47,12 @@ func (m *webhookMockService) Clean(_ context.Context, _ *html.Node, _ *url.URL) 
 	return nil, errors.New("not implemented")
 }
 
-func (m *webhookMockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
+func (m *webhookMockService) GenerateEPUB(_ *model.Article) (io.ReadCloser, error) {
 	return nil, errors.New("not implemented")
 }
 
 func (m *webhookMockService) SendArticle(
-	_ context.Context, _ string, _ []byte, _ string,
+	_ context.Context, _ string, _ io.ReadCloser, _ string,
 ) (*email.SendEmailResponse, error) {
 	return nil, errors.New("not implemented")
 }

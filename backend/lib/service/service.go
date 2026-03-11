@@ -9,6 +9,7 @@ package service
 
 import (
 	"context"
+	"io"
 	"net/url"
 	"time"
 
@@ -39,13 +40,13 @@ type Interface interface {
 	Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error)
 
 	// GenerateEPUB generates an EPUB document from an article.
-	GenerateEPUB(article *model.Article) ([]byte, error)
+	GenerateEPUB(article *model.Article) (io.ReadCloser, error)
 
 	// SendArticle sends an EPUB document as attechment to a given email address.
 	SendArticle(
 		ctx context.Context,
 		destEmail string,
-		epubBytes []byte,
+		epubData io.ReadCloser,
 		title string,
 	) (*email.SendEmailResponse, error)
 

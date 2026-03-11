@@ -2,6 +2,8 @@ package email
 
 import (
 	"context"
+	"io"
+	"strings"
 	"testing"
 )
 
@@ -46,25 +48,25 @@ func TestBuildSubject(t *testing.T) {
 func TestNewRequest(t *testing.T) {
 	tests := []struct {
 		name      string
-		epubData  []byte
+		epubData  io.ReadCloser
 		destEmail string
 		appURL    string
 	}{
 		{
 			name:      "valid request with all fields",
-			epubData:  []byte("epub content"),
+			epubData:  io.NopCloser(strings.NewReader("epub content")),
 			destEmail: "user@kindle.com",
 			appURL:    "https://saveto.ink",
 		},
 		{
 			name:      "request with empty epub data",
-			epubData:  []byte{},
+			epubData:  io.NopCloser(strings.NewReader("")),
 			destEmail: "user@free.kindle.com",
 			appURL:    "https://example.com",
 		},
 		{
 			name:      "request with large epub data",
-			epubData:  make([]byte, 1024*1024),
+			epubData:  io.NopCloser(strings.NewReader(strings.Repeat("x", 1024*1024))),
 			destEmail: "user@kindle.com",
 			appURL:    "https://saveto.ink",
 		},
@@ -76,8 +78,6 @@ func TestNewRequest(t *testing.T) {
 
 			if got.EPUBData == nil {
 				t.Errorf("NewRequest().EPUBData should not be nil")
-			} else if len(got.EPUBData) != len(tt.epubData) {
-				t.Errorf("NewRequest().EPUBData length = %d, want %d", len(got.EPUBData), len(tt.epubData))
 			}
 			if got.DestEmail != tt.destEmail {
 				t.Errorf("NewRequest().DestEmail = %v, want %v", got.DestEmail, tt.destEmail)
@@ -98,7 +98,7 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name: "valid request",
 			req: &Request{
-				EPUBData:  []byte("test epub data"),
+				EPUBData:  io.NopCloser(strings.NewReader("test epub data")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
 				Subject:   "Test Subject",
@@ -108,7 +108,7 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name: "missing device email",
 			req: &Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "",
 				Body:      "email body",
 				Subject:   "Test Subject",
@@ -128,7 +128,7 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name: "missing body",
 			req: &Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "",
 				Subject:   "Test Subject",
@@ -138,12 +138,12 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name: "empty epub data",
 			req: &Request{
-				EPUBData:  []byte{},
+				EPUBData:  io.NopCloser(strings.NewReader("")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
 				Subject:   "Test Subject",
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 

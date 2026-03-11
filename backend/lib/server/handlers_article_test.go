@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -163,11 +164,11 @@ type articleMockService struct {
 		ctx context.Context,
 		accountID string,
 	) (string, bool, error)
-	generateEPUBFunc func(article *model.Article) ([]byte, error)
+	generateEPUBFunc func(article *model.Article) (io.ReadCloser, error)
 	sendArticleFunc  func(
 		ctx context.Context,
 		destEmail string,
-		epubBytes []byte,
+		epubData io.ReadCloser,
 		title string,
 	) (*email.SendEmailResponse, error)
 	sendArticleByIDFunc func(
@@ -199,21 +200,26 @@ func (m *articleMockService) Clean(
 	return nil, errors.New("not implemented")
 }
 
-func (m *articleMockService) GenerateEPUB(article *model.Article) ([]byte, error) {
+func (m *articleMockService) GenerateEPUB(article *model.Article) (io.ReadCloser, error) {
 	if m.generateEPUBFunc != nil {
 		return m.generateEPUBFunc(article)
 	}
-	return []byte("epub content"), nil
+	return io.NopCloser(bytes.NewReader([]byte("epub content"))), nil
 }
 
-func (m *articleMockService) SendArticle(ctx context.Context, destEmail string, epubBytes []byte, title string) (*email.SendEmailResponse, error) { //nolint:lll // long function signature
+func (m *articleMockService) SendArticle(
+	ctx context.Context, destEmail string, epubData io.ReadCloser, title string) (*email.SendEmailResponse, error) {
 	if m.sendArticleFunc != nil {
-		return m.sendArticleFunc(ctx, destEmail, epubBytes, title)
+		return m.sendArticleFunc(ctx, destEmail, epubData, title)
+	}
+	if epubData != nil {
+		_ = epubData.Close()
 	}
 	return &email.SendEmailResponse{MessageID: "test-msg-id"}, nil
 }
 
-func (m *articleMockService) SendArticleByID(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error) { //nolint:lll // long function signature
+func (m *articleMockService) SendArticleByID(
+	ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error) {
 	if m.sendArticleByIDFunc != nil {
 		return m.sendArticleByIDFunc(ctx, accountID, articleID)
 	}
@@ -254,7 +260,12 @@ func (m *articleMockService) GetArticle(ctx context.Context, accountID, articleI
 	}, nil
 }
 
-func (m *articleMockService) GetArticlesMetadata(ctx context.Context, accountID string, page, pageSize int, favoriteFilter *bool) (*servicetypes.GetArticlesResult, error) { //nolint:lll // long function signature
+func (m *articleMockService) GetArticlesMetadata(
+	ctx context.Context,
+	accountID string,
+	page, pageSize int,
+	favoriteFilter *bool,
+) (*servicetypes.GetArticlesResult, error) {
 	if m.getArticlesMetadataFunc != nil {
 		return m.getArticlesMetadataFunc(ctx, accountID, page, pageSize, favoriteFilter)
 	}
@@ -267,14 +278,16 @@ func (m *articleMockService) GetArticlesMetadata(ctx context.Context, accountID 
 	}, nil
 }
 
-func (m *articleMockService) DeleteArticle(ctx context.Context, accountID, articleID string) (*servicetypes.DeleteArticleResult, error) { //nolint:lll // long function signature
+func (m *articleMockService) DeleteArticle(
+	ctx context.Context, accountID, articleID string) (*servicetypes.DeleteArticleResult, error) {
 	if m.deleteArticleFunc != nil {
 		return m.deleteArticleFunc(ctx, accountID, articleID)
 	}
 	return &servicetypes.DeleteArticleResult{Deleted: 1}, nil
 }
 
-func (m *articleMockService) DeleteAllArticles(ctx context.Context, accountID string) (*servicetypes.DeleteArticleResult, error) { //nolint:lll // long function signature
+func (m *articleMockService) DeleteAllArticles(
+	ctx context.Context, accountID string) (*servicetypes.DeleteArticleResult, error) {
 	if m.deleteAllArticlesFunc != nil {
 		return m.deleteAllArticlesFunc(ctx, accountID)
 	}
@@ -285,7 +298,8 @@ func (m *articleMockService) GetDBError() error {
 	return m.dbError
 }
 
-func (m *articleMockService) GetUserDeviceEmail(ctx context.Context, accountID string) (deviceEmail string, autoSend bool, err error) { //nolint:lll // long function signature
+func (m *articleMockService) GetUserDeviceEmail(
+	ctx context.Context, accountID string) (deviceEmail string, autoSend bool, err error) {
 	if m.getUserDeviceEmailFunc != nil {
 		return m.getUserDeviceEmailFunc(ctx, accountID)
 	}
@@ -434,7 +448,8 @@ func TestHandleCreateArticle_Success(t *testing.T) {
 
 	body := articleRequest{URL: "https://example.com/article"}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes)) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -465,7 +480,8 @@ func TestHandleCreateArticle_MissingURL(t *testing.T) {
 
 	body := articleRequest{}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes)) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -490,7 +506,8 @@ func TestHandleCreateArticle_InvalidURL(t *testing.T) {
 
 	body := articleRequest{URL: "not-a-valid-url"}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes)) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -553,7 +570,8 @@ func TestHandleCreateArticle_ServiceError(t *testing.T) {
 
 			body := articleRequest{URL: "https://example.com/article"}
 			bodyBytes, _ := json.Marshal(body)
-			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes)) //nolint:lll // long function signature
+			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(
+				"account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 
@@ -582,7 +600,8 @@ func TestHandleCreateArticle_DBError(t *testing.T) {
 
 	body := articleRequest{URL: "https://example.com/article"}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes)) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -980,13 +999,13 @@ func TestHandleSendArticle_Success(t *testing.T) {
 				Title: "Test Article",
 			}, nil
 		},
-		generateEPUBFunc: func(_ *model.Article) ([]byte, error) {
-			return []byte("epub content"), nil
+		generateEPUBFunc: func(_ *model.Article) (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader([]byte("epub content"))), nil
 		},
 		getUserDeviceEmailFunc: func(_ context.Context, _ string) (string, bool, error) {
 			return testArticleDeviceEmail, false, nil
 		},
-		sendArticleFunc: func(_ context.Context, _ string, _ []byte, _ string) (*email.SendEmailResponse, error) {
+		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
 			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
 		},
 	}
@@ -1018,13 +1037,13 @@ func TestHandleSendArticle_WithSendsCount(t *testing.T) {
 				Title: "Test Article",
 			}, nil
 		},
-		generateEPUBFunc: func(_ *model.Article) ([]byte, error) {
-			return []byte("epub content"), nil
+		generateEPUBFunc: func(_ *model.Article) (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader([]byte("epub content"))), nil
 		},
 		getUserDeviceEmailFunc: func(_ context.Context, _ string) (string, bool, error) {
 			return testArticleDeviceEmail, false, nil
 		},
-		sendArticleFunc: func(_ context.Context, _ string, _ []byte, _ string) (*email.SendEmailResponse, error) {
+		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
 			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
 		},
 	}
@@ -1168,13 +1187,13 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 				Title: "Test Article",
 			}, nil
 		},
-		generateEPUBFunc: func(_ *model.Article) ([]byte, error) {
-			return []byte("epub content"), nil
+		generateEPUBFunc: func(_ *model.Article) (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader([]byte("epub content"))), nil
 		},
 		getUserDeviceEmailFunc: func(_ context.Context, _ string) (string, bool, error) {
 			return testArticleDeviceEmail, false, nil
 		},
-		sendArticleFunc: func(_ context.Context, _ string, _ []byte, _ string) (*email.SendEmailResponse, error) {
+		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
 			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
 		},
 		dbError: errors.New("database error"),

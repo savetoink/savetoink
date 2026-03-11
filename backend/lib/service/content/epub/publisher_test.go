@@ -1,6 +1,7 @@
 package epub
 
 import (
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -23,14 +24,20 @@ func TestGenerate_Success(t *testing.T) {
 		Author:  "Test Author",
 	}
 
-	data, err := pub.GenerateEPUB(article)
+	epubReader, err := pub.GenerateEPUB(article)
 
 	if err != nil {
 		t.Fatalf("Generate() unexpected error = %v", err)
 	}
+	defer func() { _ = epubReader.Close() }()
 
-	if data == nil {
+	if epubReader == nil {
 		t.Fatal("Generate() expected data, got nil")
+	}
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
 	}
 
 	if len(data) == 0 {
@@ -53,14 +60,20 @@ func TestGenerate_WithMetadata(t *testing.T) {
 		CreatedAt:          time.Now().UTC(),
 	}
 
-	data, err := pub.GenerateEPUB(article)
+	epubReader, err := pub.GenerateEPUB(article)
 
 	if err != nil {
 		t.Fatalf("Generate() unexpected error = %v", err)
 	}
+	defer func() { _ = epubReader.Close() }()
 
-	if data == nil {
+	if epubReader == nil {
 		t.Fatal("Generate() expected data, got nil")
+	}
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
 	}
 
 	if len(data) == 0 {
@@ -75,14 +88,20 @@ func TestGenerate_EmptyTitle(t *testing.T) {
 		Content: "<p>This is test content</p>",
 	}
 
-	data, err := pub.GenerateEPUB(article)
+	epubReader, err := pub.GenerateEPUB(article)
 
 	if err != nil {
 		t.Fatalf("Generate() unexpected error = %v", err)
 	}
+	defer func() { _ = epubReader.Close() }()
 
-	if data == nil {
+	if epubReader == nil {
 		t.Fatal("Generate() expected data, got nil")
+	}
+
+	_, err = io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
 	}
 }
 
@@ -93,14 +112,20 @@ func TestGenerate_EmptyContent(t *testing.T) {
 		Content: "",
 	}
 
-	data, err := pub.GenerateEPUB(article)
+	epubReader, err := pub.GenerateEPUB(article)
 
 	if err != nil {
 		t.Fatalf("Generate() unexpected error = %v", err)
 	}
+	defer func() { _ = epubReader.Close() }()
 
-	if data == nil {
+	if epubReader == nil {
 		t.Fatal("Generate() expected data, got nil")
+	}
+
+	_, err = io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
 	}
 }
 
@@ -112,14 +137,20 @@ func TestGenerate_WithLanguage(t *testing.T) {
 		Language: "en",
 	}
 
-	data, err := pub.GenerateEPUB(article)
+	epubReader, err := pub.GenerateEPUB(article)
 
 	if err != nil {
 		t.Fatalf("Generate() unexpected error = %v", err)
 	}
+	defer func() { _ = epubReader.Close() }()
 
-	if data == nil {
+	if epubReader == nil {
 		t.Fatal("Generate() expected data, got nil")
+	}
+
+	_, err = io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
 	}
 }
 
@@ -131,14 +162,20 @@ func TestGenerate_WithExcerpt(t *testing.T) {
 		Excerpt: "This is a test excerpt",
 	}
 
-	data, err := pub.GenerateEPUB(article)
+	epubReader, err := pub.GenerateEPUB(article)
 
 	if err != nil {
 		t.Fatalf("Generate() unexpected error = %v", err)
 	}
+	defer func() { _ = epubReader.Close() }()
 
-	if data == nil {
+	if epubReader == nil {
 		t.Fatal("Generate() expected data, got nil")
+	}
+
+	_, err = io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
 	}
 }
 
@@ -150,14 +187,20 @@ func TestGenerate_WithImage(t *testing.T) {
 		ImageURL: "https://example.com/image.jpg",
 	}
 
-	data, err := pub.GenerateEPUB(article)
+	epubReader, err := pub.GenerateEPUB(article)
 
 	if err != nil {
 		t.Fatalf("Generate() unexpected error = %v", err)
 	}
+	defer func() { _ = epubReader.Close() }()
 
-	if data == nil {
+	if epubReader == nil {
 		t.Fatal("Generate() expected data, got nil")
+	}
+
+	_, err = io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
 	}
 }
 
@@ -169,14 +212,20 @@ func TestGenerate_ZeroReadingTime(t *testing.T) {
 		ReadingTimeMinutes: 0,
 	}
 
-	data, err := pub.GenerateEPUB(article)
+	epubReader, err := pub.GenerateEPUB(article)
 
 	if err != nil {
 		t.Fatalf("Generate() unexpected error = %v", err)
 	}
+	defer func() { _ = epubReader.Close() }()
 
-	if data == nil {
+	if epubReader == nil {
 		t.Fatal("Generate() expected data, got nil")
+	}
+
+	_, err = io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
 	}
 }
 
@@ -188,14 +237,20 @@ func TestGenerate_NilPublishedAt(t *testing.T) {
 		PublishedAt: nil,
 	}
 
-	data, err := pub.GenerateEPUB(article)
+	epubReader, err := pub.GenerateEPUB(article)
 
 	if err != nil {
 		t.Fatalf("Generate() unexpected error = %v", err)
 	}
+	defer func() { _ = epubReader.Close() }()
 
-	if data == nil {
+	if epubReader == nil {
 		t.Fatal("Generate() expected data, got nil")
+	}
+
+	_, err = io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
 	}
 }
 

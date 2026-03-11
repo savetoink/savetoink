@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -97,23 +98,23 @@ func (s *Service) Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model
 }
 
 // GenerateEPUB generates an EPUB from an existing article.
-func (s *Service) GenerateEPUB(article *model.Article) ([]byte, error) {
-	epubData, err := s.publisher.GenerateEPUB(article)
+func (s *Service) GenerateEPUB(article *model.Article) (io.ReadCloser, error) {
+	epubReader, err := s.publisher.GenerateEPUB(article)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate epub: %w", err)
 	}
-	return epubData, nil
+	return epubReader, nil
 }
 
 // SendArticle sends an EPUB via email.
 func (s *Service) SendArticle(
 	ctx context.Context,
 	destEmail string,
-	epubBytes []byte,
+	epubData io.ReadCloser,
 	title string,
 ) (*email.SendEmailResponse, error) {
 	req := &email.Request{
-		EPUBData:  epubBytes,
+		EPUBData:  epubData,
 		DestEmail: destEmail,
 		Body:      consts.BuildCLIEmailBody(),
 		Subject:   email.BuildSubject(title),
@@ -323,16 +324,17 @@ func (s *Service) SendArticleByID(
 		return nil, err
 	}
 
-	epubBytes, err := s.GenerateEPUB(article)
+	epubReader, err := s.GenerateEPUB(article)
 	if err != nil {
 		return nil, err
 	}
 
 	if createErr := s.createSendRecord(ctx, accountID, articleID, article.Title, deviceEmail); createErr != nil {
+		_ = epubReader.Close()
 		return nil, createErr
 	}
 
-	emailResp, err := s.SendArticle(ctx, deviceEmail, epubBytes, article.Title)
+	emailResp, err := s.SendArticle(ctx, deviceEmail, epubReader, article.Title)
 	if err != nil {
 		if updateErr := s.updateSendRecordOnFailure(ctx, accountID, articleID, err); updateErr != nil {
 			return nil, fmt.Errorf("%w and failed to update send record: %w", err, updateErr)

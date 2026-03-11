@@ -3,6 +3,7 @@ package mailjet
 import (
 	"context"
 	"encoding/base64"
+	"io"
 	"strings"
 	"testing"
 
@@ -92,7 +93,7 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name: "valid request",
 			req: &email.Request{
-				EPUBData:  []byte("test epub data"),
+				EPUBData:  io.NopCloser(strings.NewReader("test epub data")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
 				Subject:   "Test Subject",
@@ -102,7 +103,7 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name: "missing device email",
 			req: &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "",
 				Body:      "email body",
 				Subject:   "Test Subject",
@@ -122,7 +123,7 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name: "missing body",
 			req: &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "",
 				Subject:   "Test Subject",
@@ -132,12 +133,12 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name: "empty epub data",
 			req: &email.Request{
-				EPUBData:  []byte{},
+				EPUBData:  io.NopCloser(strings.NewReader("")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
 				Subject:   "Test Subject",
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 
@@ -168,7 +169,7 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "secret",
 			senderEmail: "test@example.com",
 			req: &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
 				Subject:   "Test Subject",
@@ -182,7 +183,7 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "",
 			senderEmail: "test@example.com",
 			req: &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
 				Subject:   "Test Subject",
@@ -196,7 +197,7 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "secret",
 			senderEmail: "",
 			req: &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
 				Subject:   "Test Subject",
@@ -210,7 +211,7 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "secret",
 			senderEmail: "test@example.com",
 			req: &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "",
 				Body:      "email body",
 				Subject:   "Test Subject",
@@ -238,7 +239,7 @@ func TestSendEmailValidation(t *testing.T) {
 			apiSecret:   "secret",
 			senderEmail: "test@example.com",
 			req: &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "",
 				Subject:   "Test Subject",
@@ -291,7 +292,7 @@ func TestBuildMessageInfo(t *testing.T) {
 		{
 			name: "valid request builds correct message info",
 			req: &email.Request{
-				EPUBData:  []byte("test epub data"),
+				EPUBData:  io.NopCloser(strings.NewReader("test epub data")),
 				DestEmail: "kindle@kindle.com",
 				Body:      "email body",
 				Subject:   "Test Article",
@@ -302,7 +303,7 @@ func TestBuildMessageInfo(t *testing.T) {
 		{
 			name: "request with empty subject",
 			req: &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "user@kindle.com",
 				Body:      "body",
 				Subject:   "",
@@ -315,7 +316,10 @@ func TestBuildMessageInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sender := NewSender("key", "secret", tt.senderEmail)
-			messages := sender.buildMessageInfo(tt.req)
+			messages, err := sender.buildMessageInfo(tt.req)
+			if err != nil {
+				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
+			}
 
 			if len(messages) != 1 {
 				t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
@@ -376,13 +380,16 @@ func TestBuildMessageInfo(t *testing.T) {
 func TestBuildMessageInfo_LongTitle(t *testing.T) {
 	longTitle := strings.Repeat("a", 150)
 	req := &email.Request{
-		EPUBData:  []byte("data"),
+		EPUBData:  io.NopCloser(strings.NewReader("data")),
 		DestEmail: "user@kindle.com",
 		Body:      "body",
 		Subject:   longTitle,
 	}
 	sender := NewSender("key", "secret", "test@example.com")
-	messages := sender.buildMessageInfo(req)
+	messages, err := sender.buildMessageInfo(req)
+	if err != nil {
+		t.Fatalf("buildMessageInfo() unexpected error = %v", err)
+	}
 
 	if len(messages) != 1 {
 		t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
@@ -397,13 +404,16 @@ func TestBuildMessageInfo_LongTitle(t *testing.T) {
 func TestBuildMessageInfo_UnicodeTitle(t *testing.T) {
 	title := "Test article"
 	req := &email.Request{
-		EPUBData:  []byte("data"),
+		EPUBData:  io.NopCloser(strings.NewReader("data")),
 		DestEmail: "user@kindle.com",
 		Body:      "body",
 		Subject:   title,
 	}
 	sender := NewSender("key", "secret", "test@example.com")
-	messages := sender.buildMessageInfo(req)
+	messages, err := sender.buildMessageInfo(req)
+	if err != nil {
+		t.Fatalf("buildMessageInfo() unexpected error = %v", err)
+	}
 
 	if len(messages) != 1 {
 		t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
@@ -446,13 +456,16 @@ func TestBuildMessageInfo_VaryingEPUBSizes(t *testing.T) {
 			}
 
 			req := &email.Request{
-				EPUBData:  epubData,
+				EPUBData:  io.NopCloser(strings.NewReader(string(epubData))),
 				DestEmail: "user@kindle.com",
 				Body:      "body",
 				Subject:   "Test Article",
 			}
 			sender := NewSender("key", "secret", "test@example.com")
-			messages := sender.buildMessageInfo(req)
+			messages, err := sender.buildMessageInfo(req)
+			if err != nil {
+				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
+			}
 
 			if len(messages) != 1 {
 				t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
@@ -470,9 +483,9 @@ func TestBuildMessageInfo_VaryingEPUBSizes(t *testing.T) {
 					t.Errorf("buildMessageInfo() Attachment.ContentType = %v, want %v", att.ContentType, attachmentContentType)
 				}
 
-				decoded, err := base64.StdEncoding.DecodeString(att.Base64Content)
-				if err != nil {
-					t.Fatalf("buildMessageInfo() failed to decode base64 content: %v", err)
+				decoded, decodeErr := base64.StdEncoding.DecodeString(att.Base64Content)
+				if decodeErr != nil {
+					t.Fatalf("buildMessageInfo() failed to decode base64 content: %v", decodeErr)
 				}
 				if len(decoded) != tt.epubSize {
 					t.Errorf("buildMessageInfo() decoded content size = %d, want %d", len(decoded), tt.epubSize)
@@ -484,13 +497,16 @@ func TestBuildMessageInfo_VaryingEPUBSizes(t *testing.T) {
 
 func TestBuildMessageInfo_BodyWithNewlines(t *testing.T) {
 	req := &email.Request{
-		EPUBData:  []byte("data"),
+		EPUBData:  io.NopCloser(strings.NewReader("data")),
 		DestEmail: "user@kindle.com",
 		Body:      "Line 1\nLine 2\nLine 3",
 		Subject:   "Test Article",
 	}
 	sender := NewSender("key", "secret", "test@example.com")
-	messages := sender.buildMessageInfo(req)
+	messages, err := sender.buildMessageInfo(req)
+	if err != nil {
+		t.Fatalf("buildMessageInfo() unexpected error = %v", err)
+	}
 
 	if len(messages) != 1 {
 		t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
@@ -516,13 +532,16 @@ func TestBuildMessageInfo_SenderEmailVariations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "user@kindle.com",
 				Body:      "body",
 				Subject:   "Test Article",
 			}
 			sender := NewSender("key", "secret", tt.senderEmail)
-			messages := sender.buildMessageInfo(req)
+			messages, err := sender.buildMessageInfo(req)
+			if err != nil {
+				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
+			}
 
 			if len(messages) != 1 {
 				t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
@@ -550,13 +569,16 @@ func TestBuildMessageInfo_DestEmailVariations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: tt.destEmail,
 				Body:      "body",
 				Subject:   "Test Article",
 			}
 			sender := NewSender("key", "secret", "test@example.com")
-			messages := sender.buildMessageInfo(req)
+			messages, err := sender.buildMessageInfo(req)
+			if err != nil {
+				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
+			}
 
 			if len(messages) != 1 {
 				t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
@@ -597,13 +619,16 @@ func TestBuildMessageInfo_SubjectEdgeCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "user@kindle.com",
 				Body:      "body",
 				Subject:   tt.subject,
 			}
 			sender := NewSender("key", "secret", "test@example.com")
-			messages := sender.buildMessageInfo(req)
+			messages, err := sender.buildMessageInfo(req)
+			if err != nil {
+				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
+			}
 
 			if len(messages) != 1 {
 				t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))
@@ -645,13 +670,16 @@ func TestBuildMessageInfo_BodySpecialCharacters(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := &email.Request{
-				EPUBData:  []byte("data"),
+				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "user@kindle.com",
 				Body:      tt.body,
 				Subject:   "Test",
 			}
 			sender := NewSender("key", "secret", "test@example.com")
-			messages := sender.buildMessageInfo(req)
+			messages, err := sender.buildMessageInfo(req)
+			if err != nil {
+				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
+			}
 
 			if len(messages) != 1 {
 				t.Fatalf("buildMessageInfo() returned %d messages, want 1", len(messages))

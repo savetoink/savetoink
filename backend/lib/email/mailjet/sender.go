@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 
 	mailjetLib "github.com/mailjet/mailjet-apiv3-go/v4"
 
@@ -42,7 +43,10 @@ func (s *Sender) SendEmail(ctx context.Context, req *email.Request) (*email.Send
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
-	messagesInfo := s.buildMessageInfo(req)
+	messagesInfo, err := s.buildMessageInfo(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build message info: %w", err)
+	}
 	messages := mailjetLib.MessagesV31{Info: messagesInfo}
 
 	resp, err := s.client.SendMailV31(&messages, mailjetLib.WithContext(ctx))
@@ -53,7 +57,7 @@ func (s *Sender) SendEmail(ctx context.Context, req *email.Request) (*email.Send
 	return s.parseResponse(resp)
 }
 
-func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV31 {
+func (s *Sender) buildMessageInfo(req *email.Request) ([]mailjetLib.InfoMessagesV31, error) {
 	filename := email.SanitizeFilename(req.Subject)
 	subject := req.Subject
 	if subject == "" {
@@ -61,7 +65,13 @@ func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV
 	}
 	bodyText := req.Body
 
-	base64Content := base64.StdEncoding.EncodeToString(req.EPUBData)
+	epubBytes, err := io.ReadAll(req.EPUBData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read epub data: %w", err)
+	}
+	defer func() { _ = req.EPUBData.Close() }()
+
+	base64Content := base64.StdEncoding.EncodeToString(epubBytes)
 
 	return []mailjetLib.InfoMessagesV31{
 		{
@@ -83,7 +93,7 @@ func (s *Sender) buildMessageInfo(req *email.Request) []mailjetLib.InfoMessagesV
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 const (

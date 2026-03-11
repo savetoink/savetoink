@@ -51,11 +51,16 @@ func (m *MockService) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model
 	return nil, errors.New("not implemented")
 }
 
-func (m *MockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
+func (m *MockService) GenerateEPUB(_ *model.Article) (io.ReadCloser, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (m *MockService) SendArticle(_ context.Context, _ string, _ []byte, _ string) (*email.SendEmailResponse, error) {
+func (m *MockService) SendArticle(
+	_ context.Context,
+	_ string,
+	_ io.ReadCloser,
+	_ string,
+) (*email.SendEmailResponse, error) {
 	return nil, errors.New("not implemented")
 }
 

@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +16,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
@@ -23,9 +24,10 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/server/auth"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
+	"golang.org/x/net/html"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/html"
 )
 
 const (
@@ -53,11 +55,16 @@ func (m *mockService) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model
 	return nil, errors.New("not implemented in mock")
 }
 
-func (m *mockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
-	return []byte("epub data"), nil
+func (m *mockService) GenerateEPUB(_ *model.Article) (io.ReadCloser, error) {
+	return io.NopCloser(bytes.NewReader([]byte("epub data"))), nil
 }
 
-func (m *mockService) SendArticle(_ context.Context, _ string, _ []byte, _ string) (*email.SendEmailResponse, error) {
+func (m *mockService) SendArticle(
+	_ context.Context,
+	_ string,
+	_ io.ReadCloser,
+	_ string,
+) (*email.SendEmailResponse, error) {
 	return &email.SendEmailResponse{
 		MessageID: "test-message-id",
 	}, nil
@@ -167,7 +174,6 @@ func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
 		nil,
 	)
 
-	r.Use(middleware.Recoverer)
 	r.Use(auth.NewAccountIDMiddleware(cfg))
 	r.Use(requestIDMiddleware)
 	r.Use(logging.Middleware)

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -52,14 +53,14 @@ func (m *userprofileMockService) Clean(
 	return nil, errors.New("not implemented")
 }
 
-func (m *userprofileMockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
+func (m *userprofileMockService) GenerateEPUB(_ *model.Article) (io.ReadCloser, error) {
 	return nil, errors.New("not implemented")
 }
 
 func (m *userprofileMockService) SendArticle(
 	_ context.Context,
 	_ string,
-	_ []byte,
+	_ io.ReadCloser,
 	_ string,
 ) (*email.SendEmailResponse, error) {
 	return nil, errors.New("not implemented")

@@ -4,6 +4,7 @@ package email
 import (
 	"context"
 	"errors"
+	"io"
 	"regexp"
 	"strings"
 
@@ -24,14 +25,14 @@ type Sender interface {
 
 // Request contains the data required to send an email.
 type Request struct {
-	EPUBData  []byte
+	EPUBData  io.ReadCloser
 	DestEmail string
 	Body      string
 	Subject   string
 }
 
 // NewRequest creates a new email request with the provided data.
-func NewRequest(epubData []byte, destEmail, appURL string) *Request {
+func NewRequest(epubData io.ReadCloser, destEmail, appURL string) *Request {
 	return &Request{
 		EPUBData:  epubData,
 		DestEmail: destEmail,
@@ -59,9 +60,6 @@ func ValidateRequest(_ context.Context, req *Request) error {
 	}
 	if req.EPUBData == nil {
 		return errors.New("epub data is required")
-	}
-	if len(req.EPUBData) == 0 {
-		return errors.New("epub data is empty")
 	}
 	if req.Body == "" {
 		return errors.New("email body is required")

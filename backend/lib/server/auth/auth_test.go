@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -47,11 +48,12 @@ func (m *MockService) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model
 	panic("not implemented")
 }
 
-func (m *MockService) GenerateEPUB(_ *model.Article) ([]byte, error) {
+func (m *MockService) GenerateEPUB(_ *model.Article) (io.ReadCloser, error) {
 	panic("not implemented")
 }
 
-func (m *MockService) SendArticle(_ context.Context, _ string, _ []byte, _ string) (*email.SendEmailResponse, error) {
+func (m *MockService) SendArticle(
+	_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
 	panic("not implemented")
 }
 
