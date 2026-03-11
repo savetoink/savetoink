@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/joho/godotenv"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/spf13/viper"
 )
@@ -58,6 +59,8 @@ type AWSConfigLoader func(ctx context.Context) (aws.Config, error)
 // The awsLoader parameter is used to load AWS configuration in server mode.
 // It can be nil for CLI mode or in tests where AWS config is not needed.
 func Load(mode consts.RunMode, awsLoader AWSConfigLoader) (*Config, error) {
+	_ = godotenv.Load()
+
 	viper.SetEnvPrefix("SAVETOINK")
 	viper.AutomaticEnv()
 

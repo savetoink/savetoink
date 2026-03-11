@@ -2,14 +2,13 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
+	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -24,12 +23,25 @@ var (
 
 	sendEmail bool
 	destEmail string
+
+	cfg *config.Config
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "savetoink",
 	Short: "Convert web articles to EPUB format",
 	Long:  `A CLI tool to fetch web articles and convert them to EPUB format for Kindle devices.`,
+	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
+		var err error
+
+		cfg, err = config.Load(consts.ModeCLI, nil)
+		if err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
+		}
+
+		logging.SetupLogging(cfg)
+		return nil
+	},
 }
 
 var convertCmd = &cobra.Command{
@@ -73,43 +85,4 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-}
-
-func runClean(cmd *cobra.Command, args []string) error {
-	inputURL := args[0]
-
-	u, err := url.Parse(inputURL)
-	if err != nil {
-		return fmt.Errorf("failed to parse URL: %w", err)
-	}
-
-	ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
-	defer cancel()
-
-	fetcher := content.NewFetcher("")
-	extractor := content.NewDOMExtractor()
-	cleaner := content.NewTrafilaturaCleaner()
-
-	fetched, err := fetcher.Fetch(ctx, u)
-	if err != nil {
-		return fmt.Errorf("failed to fetch URL: %w", err)
-	}
-	defer func() {
-		if closeErr := fetched.HTML.Close(); closeErr != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to close response: %v\n", closeErr)
-		}
-	}()
-
-	doc, err := extractor.Extract(ctx, fetched.HTML)
-	if err != nil {
-		return fmt.Errorf("failed to parse HTML: %w", err)
-	}
-
-	article, err := cleaner.Clean(ctx, doc, doc, u)
-	if err != nil {
-		return fmt.Errorf("failed to clean content: %w", err)
-	}
-
-	fmt.Print(article.Content)
-	return nil
 }

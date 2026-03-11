@@ -16,9 +16,8 @@ import (
 
 const (
 	fileModeReadWrite = 0o644
-	emptyDiv          = `<div style="font-size: 0.85em; color: #666; margin-bottom: 2em; ` +
-		`padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;">
-</div>`
+	emptyDiv          = "<div style=\"font-size: 0.85em; color: #666; margin-bottom: 2em; " +
+		"padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;\">\n</div>\n"
 )
 
 //go:embed metadata.tpl

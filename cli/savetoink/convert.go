@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	netURL "net/url"
 	"os"
 	"path/filepath"
@@ -32,7 +33,7 @@ func validateEmailConfig(cfg *config.Config) error {
 }
 
 func processArticle(ctx context.Context, url string, svc *service.Service) (*model.Article, []byte, error) {
-	fmt.Printf("Processing article from: %s\n", url)
+	slog.Debug("processing article", slog.String("url", url))
 
 	start := time.Now()
 
@@ -56,23 +57,18 @@ func processArticle(ctx context.Context, url string, svc *service.Service) (*mod
 		return nil, nil, fmt.Errorf("failed to clean article: %w", err)
 	}
 
-	fmt.Printf("Processed in %v\n", time.Since(start))
-
 	epubData, err := svc.GenerateEPUB(article)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate epub: %w", err)
 	}
+
+	slog.Debug("article processed", slog.Any("duration", time.Since(start)))
 
 	return article, epubData, nil
 }
 
 func runConvert(_ *cobra.Command, args []string) error {
 	url := args[0]
-
-	cfg, err := config.Load(consts.ModeCLI, nil)
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
-	}
 
 	if sendEmail {
 		if validateErr := validateEmailConfig(cfg); validateErr != nil {
@@ -95,7 +91,7 @@ func runConvert(_ *cobra.Command, args []string) error {
 		if emailErr != nil {
 			return fmt.Errorf("failed to send email: %w", emailErr)
 		}
-		fmt.Printf("\n✓ Article sent to e-reader device (email ID: %s)\n", resp.MessageID)
+		slog.Info(fmt.Sprintf("✓ Article sent to e-reader device at %s (email ID: %s)", destEmail, resp.MessageID))
 	} else {
 		if outputPath == "" {
 			outputPath = "article.epub"
@@ -104,7 +100,7 @@ func runConvert(_ *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to write EPUB: %w", writeErr)
 		}
 		absPath, _ := filepath.Abs(outputPath)
-		fmt.Printf("\n✓ EPUB saved to: %s\n", absPath)
+		slog.Info("✓ EPUB saved to " + absPath)
 	}
 
 	return nil

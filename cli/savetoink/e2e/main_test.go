@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -27,7 +28,7 @@ func TestMain(m *testing.M) {
 	binaryPath = bin
 	exitCode := m.Run()
 	if removeErr := os.Remove(binaryPath); removeErr != nil {
-		fmt.Printf("warning: failed to remove binary %s: %v\n", binaryPath, removeErr)
+		slog.Warn("failed to remove binary", slog.Any("path", binaryPath), slog.Any("error", removeErr))
 	}
 	os.Exit(exitCode)
 }

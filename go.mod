@@ -19,6 +19,7 @@ require (
 	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c
 	github.com/go-shiori/go-epub v1.2.1
 	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
 	github.com/mailjet/mailjet-apiv3-go/v4 v4.0.8
 	github.com/savetoink/go-trafilatura/v2 v2.0.1
 	github.com/spf13/cobra v1.10.2
