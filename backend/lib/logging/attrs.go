@@ -101,3 +101,15 @@ func Pagination(page, pageSize, total int, hasMore bool) []slog.Attr {
 		Bool("has_more", hasMore),
 	}
 }
+
+// ConvertSlogAttrsToMap converts a slice of slog.Attr to a slice of map[string]any.
+func ConvertSlogAttrsToMap(attrs []slog.Attr) []map[string]any {
+	if attrs == nil {
+		return nil
+	}
+	result := make([]map[string]any, len(attrs))
+	for i, attr := range attrs {
+		result[i] = map[string]any{attr.Key: attr.Value.Any()}
+	}
+	return result
+}

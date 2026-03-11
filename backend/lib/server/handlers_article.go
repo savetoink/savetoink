@@ -53,7 +53,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		URL:   article.URL,
 	})
 
-	inheritedAttrs := extractInheritedLogAttrs(r.Context())
+	inheritedAttrs := logging.ExtractInheritedLogAttrs(r.Context())
 	accountID := auth.GetAccountID(r.Context())
 	url := req.URL
 	articleID := article.ID
@@ -64,34 +64,11 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		URL:            url,
 		ArticleID:      articleID,
 		AccountID:      accountID,
-		InheritedAttrs: convertSlogAttrsToMap(inheritedAttrs),
+		InheritedAttrs: logging.ConvertSlogAttrsToMap(inheritedAttrs),
 		SendOnComplete: req.SendOnComplete,
 	}
 
 	h.processor.StartProcessing(context.Background(), event)
-}
-
-func extractInheritedLogAttrs(ctx context.Context) []slog.Attr {
-	logRecord, ok := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
-	if !ok || logRecord == nil {
-		return nil
-	}
-
-	var attrs []slog.Attr
-	excludeKeys := map[string]bool{
-		"client_ip":  true,
-		"user_agent": true,
-		"path":       true,
-		"method":     true,
-		"url":        true,
-	}
-	logRecord.Attrs(func(a slog.Attr) bool {
-		if !excludeKeys[a.Key] {
-			attrs = append(attrs, a)
-		}
-		return true
-	})
-	return attrs
 }
 
 func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {
@@ -155,17 +132,6 @@ func (h *handlers) handleGetArticle(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(article)
-}
-
-func convertSlogAttrsToMap(inheritedAttrs []slog.Attr) []map[string]any {
-	if inheritedAttrs == nil {
-		return nil
-	}
-	attrs := make([]map[string]any, len(inheritedAttrs))
-	for i, attr := range inheritedAttrs {
-		attrs[i] = map[string]any{attr.Key: attr.Value.Any()}
-	}
-	return attrs
 }
 
 func (h *handlers) handleDeleteArticle(w http.ResponseWriter, r *http.Request) {

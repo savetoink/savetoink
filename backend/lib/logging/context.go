@@ -123,3 +123,28 @@ func LogArticleProcessing(ctx context.Context, message string, inheritedAttrs []
 		slog.Error("failed to log article processing", "error", err)
 	}
 }
+
+// ExtractInheritedLogAttrs extracts attributes from the log record in the context,
+// excluding HTTP metadata keys like client_ip, user_agent, path, method, and url.
+func ExtractInheritedLogAttrs(ctx context.Context) []slog.Attr {
+	logRecord, ok := ctx.Value(LogRecordKey).(*LogRecord)
+	if !ok || logRecord == nil {
+		return nil
+	}
+
+	var attrs []slog.Attr
+	excludeKeys := map[string]bool{
+		"client_ip":  true,
+		"user_agent": true,
+		"path":       true,
+		"method":     true,
+		"url":        true,
+	}
+	logRecord.Attrs(func(a slog.Attr) bool {
+		if !excludeKeys[a.Key] {
+			attrs = append(attrs, a)
+		}
+		return true
+	})
+	return attrs
+}

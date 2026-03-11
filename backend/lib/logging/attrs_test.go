@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestString(t *testing.T) {
@@ -190,4 +191,55 @@ func TestAttrHelpers_Table(t *testing.T) {
 			assert.Equal(t, tt.want.Value.Kind(), got.Value.Kind())
 		})
 	}
+}
+
+func TestConvertSlogAttrsToMap(t *testing.T) {
+	t.Run("nil input returns nil", func(t *testing.T) {
+		result := ConvertSlogAttrsToMap(nil)
+		assert.Nil(t, result)
+	})
+
+	t.Run("empty slice returns empty slice", func(t *testing.T) {
+		result := ConvertSlogAttrsToMap([]slog.Attr{})
+		assert.NotNil(t, result)
+		assert.Equal(t, 0, len(result))
+	})
+
+	t.Run("converts slog.Attr with string value", func(t *testing.T) {
+		attrs := []slog.Attr{
+			slog.String("key1", "value1"),
+			slog.String("key2", "value2"),
+		}
+
+		result := ConvertSlogAttrsToMap(attrs)
+
+		require.NotNil(t, result)
+		assert.Equal(t, 2, len(result))
+		assert.Equal(t, "value1", result[0]["key1"])
+		assert.Equal(t, "value2", result[1]["key2"])
+	})
+
+	t.Run("converts slog.Attr with int value", func(t *testing.T) {
+		attrs := []slog.Attr{
+			slog.Int("count", 42),
+		}
+
+		result := ConvertSlogAttrsToMap(attrs)
+
+		require.NotNil(t, result)
+		assert.Equal(t, 1, len(result))
+		assert.Equal(t, int64(42), result[0]["count"])
+	})
+
+	t.Run("converts slog.Attr with bool value", func(t *testing.T) {
+		attrs := []slog.Attr{
+			slog.Bool("enabled", true),
+		}
+
+		result := ConvertSlogAttrsToMap(attrs)
+
+		require.NotNil(t, result)
+		assert.Equal(t, 1, len(result))
+		assert.Equal(t, true, result[0]["enabled"])
+	})
 }
