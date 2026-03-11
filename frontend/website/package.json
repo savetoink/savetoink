@@ -12,6 +12,7 @@
 		"icons:generate": "bun run ../../tools/generate_icons.ts ../../favicon.svg icon-targets.csv"
 	},
 	"dependencies": {
+		"@astrojs/sitemap": "^3.7.1",
 		"astro": "^4.16.19"
 	},
 	"devDependencies": {
