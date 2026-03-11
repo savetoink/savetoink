@@ -21,7 +21,6 @@ var (
 	outputPath string
 	timeout    time.Duration
 
-	sendEmail bool
 	destEmail string
 
 	cfg *config.Config
@@ -45,12 +44,21 @@ var rootCmd = &cobra.Command{
 }
 
 var convertCmd = &cobra.Command{
-	Use:   "convert [url]",
-	Short: "Convert a URL to EPUB",
-	Long: `Fetch a web article from given URL and convert it to EPUB format.
- Use --send to skip local EPUB generation and send converted EPUB to your Kindle.`,
+	Use:   "convert [url-or-file]",
+	Short: "Convert a URL or local HTML file to EPUB",
+	Long: `Fetch a web article from given URL or convert a local HTML file to EPUB format.
+The output filename is derived from the input (e.g., ./article.html → ./article.epub).`,
 	Args: cobra.ExactArgs(1),
 	RunE: runConvert,
+}
+
+var sendCmd = &cobra.Command{
+	Use:   "send [url-or-file]",
+	Short: "Convert and send EPUB to Kindle",
+	Long: `Fetch a web article from given URL or convert a local HTML file to EPUB,
+then send it to your Kindle device via email.`,
+	Args: cobra.ExactArgs(1),
+	RunE: runSend,
 }
 
 var versionCmd = &cobra.Command{
@@ -70,14 +78,16 @@ var cleanCmd = &cobra.Command{
 }
 
 func main() {
-	convertCmd.Flags().StringVarP(&outputPath, "output", "o", "article.epub", "Output file path")
+	convertCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output file path (default: derived from input)")
 	convertCmd.Flags().DurationVarP(&timeout, "timeout", "t",
 		defaultTimeoutSeconds*time.Second, "Timeout for HTTP requests")
 
-	convertCmd.Flags().BoolVar(&sendEmail, "send", false, "Send EPUB to Kindle via email instead of saving locally")
-	convertCmd.Flags().StringVar(&destEmail, "dest-email", "", "Destination Kindle email address")
+	sendCmd.Flags().StringVar(&destEmail, "dest-email", "", "Destination Kindle email address (required)")
+	sendCmd.Flags().DurationVarP(&timeout, "timeout", "t",
+		defaultTimeoutSeconds*time.Second, "Timeout for HTTP requests")
 
 	rootCmd.AddCommand(convertCmd)
+	rootCmd.AddCommand(sendCmd)
 	rootCmd.AddCommand(cleanCmd)
 	rootCmd.AddCommand(versionCmd)
 

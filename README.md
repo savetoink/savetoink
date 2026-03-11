@@ -35,7 +35,7 @@ savetoink convert https://example.com
 **Send directly to Kindle via email (requires MailJet credentials as environment variables):**
 
 ```bash
-savetoink convert https://example.com --send
+savetoink send https://example.com
 ```
 
 **Specify an output file:**
@@ -68,7 +68,7 @@ Generated in 7ms
 **Send to Kindle via email:**
 
 ```bash
-$ savetoink convert https://golang.org/doc/effective_go.html --send
+$ savetoink send https://golang.org/doc/effective_go.html
 Fetching article from: https://golang.org/doc/effective_go.html
 Extracted in 828ms
 Title: Effective Go

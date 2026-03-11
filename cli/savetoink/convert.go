@@ -10,98 +10,82 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shaftoe/savetoink/backend/lib/config"
-	"github.com/shaftoe/savetoink/backend/lib/consts"
-	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/spf13/cobra"
 )
 
-func validateEmailConfig(cfg *config.Config) error {
-	if cfg.EmailProvider != consts.EmailBackendMailjet {
-		return fmt.Errorf("missing or unsupported email provider: '%s'", cfg.EmailProvider)
-	}
-
-	var missing []string
-	cfg.ValidateEmailProviderConfigCli(&missing)
-
-	if len(missing) > 0 {
-		return fmt.Errorf("missing email provider config: %s", strings.Join(missing, ", "))
-	}
-
-	return nil
+func isWebURL(input string) bool {
+	_, err := netURL.ParseRequestURI(input)
+	return err == nil && (hasScheme(input) || strings.HasPrefix(input, "localhost"))
 }
 
-func processArticle(ctx context.Context, url string, svc *service.Service) (*model.Article, []byte, error) {
-	slog.Debug("processing article", slog.String("url", url))
+func hasScheme(s string) bool {
+	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
+}
+
+func processArticle(ctx context.Context, input string, svc *service.Service) ([]byte, error) {
+	slog.Debug("processing article", slog.String("input", input))
 
 	start := time.Now()
 
-	u, err := netURL.Parse(url)
+	var u *netURL.URL
+	var err error
+
+	if isWebURL(input) {
+		u, err = netURL.Parse(input)
+	} else {
+		absPath, absErr := filepath.Abs(input)
+		if absErr != nil {
+			return nil, fmt.Errorf("failed to get absolute path: %w", absErr)
+		}
+		u = &netURL.URL{
+			Scheme: "file",
+			Path:   absPath,
+		}
+	}
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid url: %w", err)
+		return nil, fmt.Errorf("invalid input: %w", err)
 	}
 
-	fetched, err := svc.Fetch(ctx, u)
+	doc, err := svc.ParseHTMLFromSource(ctx, u)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch article: %w", err)
-	}
-
-	doc, err := svc.ParseHTML(ctx, fetched)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse html: %w", err)
+		return nil, fmt.Errorf("failed to parse html: %w", err)
 	}
 
 	article, err := svc.Clean(ctx, doc, u)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to clean article: %w", err)
+		return nil, fmt.Errorf("failed to clean article: %w", err)
 	}
 
 	epubData, err := svc.GenerateEPUB(article)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate epub: %w", err)
+		return nil, fmt.Errorf("failed to generate epub: %w", err)
 	}
 
 	slog.Debug("article processed", slog.Any("duration", time.Since(start)))
 
-	return article, epubData, nil
+	return epubData, nil
 }
 
 func runConvert(_ *cobra.Command, args []string) error {
-	url := args[0]
-
-	if sendEmail {
-		if validateErr := validateEmailConfig(cfg); validateErr != nil {
-			return validateErr
-		}
-	}
+	input := args[0]
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	svc := service.NewFromConfig(cfg)
 
-	article, epubData, err := processArticle(ctx, url, svc)
+	epubData, err := processArticle(ctx, input, svc)
 	if err != nil {
 		return err
 	}
 
-	if sendEmail {
-		resp, emailErr := svc.SendArticle(ctx, destEmail, epubData, article.Title)
-		if emailErr != nil {
-			return fmt.Errorf("failed to send email: %w", emailErr)
-		}
-		slog.Info(fmt.Sprintf("✓ Article sent to e-reader device at %s (email ID: %s)", destEmail, resp.MessageID))
-	} else {
-		if outputPath == "" {
-			outputPath = "article.epub"
-		}
-		if writeErr := os.WriteFile(outputPath, epubData, defaultFilePerms); writeErr != nil {
-			return fmt.Errorf("failed to write EPUB: %w", writeErr)
-		}
-		absPath, _ := filepath.Abs(outputPath)
-		slog.Info("✓ EPUB saved to " + absPath)
+	output := "article.epub"
+	if writeErr := os.WriteFile(output, epubData, defaultFilePerms); writeErr != nil {
+		return fmt.Errorf("failed to write EPUB: %w", writeErr)
 	}
+	absPath, _ := filepath.Abs(output)
+	slog.Info("✓ EPUB saved to " + absPath)
 
 	return nil
 }

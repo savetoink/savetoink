@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
+	"path/filepath"
 	"time"
 
 	apperrors "github.com/shaftoe/savetoink/backend/lib/apperrors"
@@ -23,6 +25,51 @@ func (s *Service) Fetch(ctx context.Context, u *url.URL) (*content.FetchedConten
 	}
 
 	return result, nil
+}
+
+// ParseHTMLFromSource fetches or reads HTML content from a URL or local file.
+func (s *Service) ParseHTMLFromSource(ctx context.Context, u *url.URL) (*html.Node, error) {
+	var fetched *content.FetchedContent
+	var err error
+
+	if u.Scheme == "file" {
+		fetched, err = s.fetchFromFile(u)
+	} else {
+		fetched, err = s.Fetch(ctx, u)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := s.ParseHTML(ctx, fetched)
+	if err != nil {
+		return nil, err
+	}
+
+	return doc, nil
+}
+
+func (s *Service) fetchFromFile(u *url.URL) (*content.FetchedContent, error) {
+	filePath := filepath.Clean(u.Path)
+
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat file: %w", err)
+	}
+	if fileInfo.IsDir() {
+		return nil, fmt.Errorf("path is a directory: %s", filePath)
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+
+	return &content.FetchedContent{
+		HTML: file,
+		URL:  u,
+		Type: content.FetcherTypeGo,
+	}, nil
 }
 
 // ParseHTML parses HTML content from fetched content into a DOM node.
