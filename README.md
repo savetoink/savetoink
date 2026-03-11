@@ -83,6 +83,11 @@ Email sent successfully. Message ID: 1234567890, UUID: abc123-def456-ghi789
 
 ## Development
 
+### Conventions
+
+- this project follows the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) convention (or at least tries to)
+- before releasing (pushing to GitHub `master` branch), bump the version using `just bump-version`
+
 ### Prerequisites
 
 1. Install [Just command runner](https://just.systems/)
