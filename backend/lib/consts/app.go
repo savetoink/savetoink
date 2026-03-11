@@ -3,7 +3,7 @@ package consts
 
 import "time"
 
-var version = "0.25.4-dev+03111817.6ca0065"
+var version = "0.26.0"
 
 // Version returns the current version of the savetoink application.
 func Version() *string {
