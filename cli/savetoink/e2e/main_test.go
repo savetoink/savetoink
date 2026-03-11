@@ -51,7 +51,7 @@ func compileBinary() (string, error) {
 	}
 
 	//nolint:gosec // G204: This is a controlled test build with hardcoded arguments
-	cmd := exec.CommandContext(context.Background(), "go", "build", "-o", out, pkg)
+	cmd := exec.CommandContext(context.Background(), "go", "build", "-buildvcs=false", "-o", out, pkg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if runErr := cmd.Run(); runErr != nil {

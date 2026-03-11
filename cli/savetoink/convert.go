@@ -87,7 +87,15 @@ func runConvert(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to read epub data: %w", err)
 	}
 
-	output := "article.epub"
+	output := outputPath
+	if output == "" {
+		base := filepath.Base(input)
+		ext := filepath.Ext(base)
+		if ext != "" {
+			base = base[:len(base)-len(ext)]
+		}
+		output = base + ".epub"
+	}
 	if writeErr := os.WriteFile(output, epubData, defaultFilePerms); writeErr != nil {
 		return fmt.Errorf("failed to write EPUB: %w", writeErr)
 	}
