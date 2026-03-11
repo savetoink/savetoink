@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/go-shiori/dom"
-	"github.com/markusmobius/go-trafilatura"
+	"github.com/savetoink/go-trafilatura/v2"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"golang.org/x/net/html"

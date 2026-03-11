@@ -183,8 +183,6 @@ github.com/markusmobius/go-domdistiller v0.0.0-20240926050704-25b8d046ffb4 h1:+7
 github.com/markusmobius/go-domdistiller v0.0.0-20240926050704-25b8d046ffb4/go.mod h1:E7PoeC3nd4GqtxP1A64v7JDBxpAbpTSnhlq9/DHmQ28=
 github.com/markusmobius/go-htmldate v1.9.3 h1:7k5xOTFxxuYx3BR6MZasdhfNN1Fr2hHJ6EHhh3J+Ff4=
 github.com/markusmobius/go-htmldate v1.9.3/go.mod h1:UIXXDtMLJUvIRxrAg1IDGeNC3XDe3Px+qW2wPq8ilnU=
-github.com/markusmobius/go-trafilatura v1.12.3-0.20250921033241-67c3f2a1ca17 h1:SAuWqUtpvtemBFz/vWe6XCfQaHEt47zlDAYH7c64PAs=
-github.com/markusmobius/go-trafilatura v1.12.3-0.20250921033241-67c3f2a1ca17/go.mod h1:0iDxjbFWEotoYSBckDj2DIq9yHaaUg84Wk7t/NyFUto=
 github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovkB8vQcUbaXHg=
 github.com/mattn/go-colorable v0.1.14 h1:9A9LHSqF/7dyVVX6g0U9cwm9pG3kP9gSzcuIPHPsaIE=
 github.com/mattn/go-colorable v0.1.14/go.mod h1:6LmQG8QLFO4G5z1gPvYEzlUgJ2wF+stgPZH1UqBm1s8=
@@ -237,6 +235,8 @@ github.com/rs/zerolog v1.34.0/go.mod h1:bJsvje4Z08ROH4Nhs5iH600c3IkWhwp44iRc54W6
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/sagikazarmark/locafero v0.12.0 h1:/NQhBAkUb4+fH1jivKHWusDYFjMOOKU88eegjfxfHb4=
 github.com/sagikazarmark/locafero v0.12.0/go.mod h1:sZh36u/YSZ918v0Io+U9ogLYQJ9tLLBmM4eneO6WwsI=
+github.com/savetoink/go-trafilatura/v2 v2.0.1 h1:M33Q3QScY0XPvC/4kzFSir7dh9KtuCVHhOLxGKX6VWA=
+github.com/savetoink/go-trafilatura/v2 v2.0.1/go.mod h1:/8Vkqx+O2sDcS/qJp1sDscVfVqogobq0uPrFfjUpHh4=
 github.com/scylladb/termtables v0.0.0-20191203121021-c4c0b6d42ff4/go.mod h1:C1a7PQSMz9NShzorzCiG2fk9+xuCgLkPeCvMHYR2OWg=
 github.com/segmentio/asm v1.2.1 h1:DTNbBqs57ioxAD4PrArqftgypG4/qNpXoJx8TVXxPR0=
 github.com/segmentio/asm v1.2.1/go.mod h1:BqMnlJP91P8d+4ibuonYZw9mfnzI9HfxselHZr5aAcs=
