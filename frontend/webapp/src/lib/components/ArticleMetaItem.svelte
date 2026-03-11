@@ -25,7 +25,7 @@
 <li bind:this={liElement} data-selected={selected}>
 	<article>
 		<header>
-			{#if article.title}
+			{#if article}
 				<h2>
 					<a href={resolve(`/articles/${article.id}`)}
 						>{#if article.favorite}

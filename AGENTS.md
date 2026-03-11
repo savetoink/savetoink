@@ -22,6 +22,8 @@ This repository contains the code for the savetoink application, composed of:
 
 - prefer wide event logging: collect all relevant fields in a single event rather than multiple events, log once when all the processing is done
 - prefer keeping constant values in the dedicated `consts` package
+- wrap errors with `fmt.Errorf` when passing them to functions that expect an error, prefer custom error types over `errors.New` when possible
+- HTTP handlers should use, when available, utils helpers to return errors and such
 
 ## API Documentation
 
