@@ -3,6 +3,7 @@ package epub
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"os"
 	"strings"
@@ -14,24 +15,14 @@ import (
 )
 
 const (
-	// fileModeReadWrite is the file permission for EPUB files (readable by user).
 	fileModeReadWrite = 0o644
-
-	// metadataTemplate is template used to generate metadata header.
-	metadataTemplate = `<div style="font-size: 0.85em; color: #666; margin-bottom: 2em; ` +
+	emptyDiv          = `<div style="font-size: 0.85em; color: #666; margin-bottom: 2em; ` +
 		`padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;">
-` + `{{- if .Title}}<p><strong>Title: {{.Title}}</strong></p>
-` + `{{- end}}{{- if .Author}}<p><strong>Author: {{.Author}}</strong></p>
-` + `{{- end}}{{- if (sourceInfo .)}}<p><strong>Source: {{sourceInfo .}}</strong></p>
-` + `{{- end}}{{- if gt .ReadingTimeMinutes 0}}<p><strong>Reading time: ` +
-		`{{.ReadingTimeMinutes}} min</strong></p>
-` + `{{- end}}{{- if and .PublishedAt (not .PublishedAt.IsZero)}}<p><strong>Published: ` +
-		`{{.PublishedAt.Format "2006-01-02T15:04:05Z07:00"}}</strong></p>
-` + `{{- end}}{{- if not .CreatedAt.IsZero}}<p><strong>Added: ` +
-		`{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}</strong></p>
-` + `{{- end}}
 </div>`
 )
+
+//go:embed metadata.tpl
+var metadataTemplate string
 
 // Publisher handles EPUB file generation from article content.
 type Publisher struct{}
@@ -64,9 +55,6 @@ func buildMetadataHeader(article *model.Article) string {
 	}
 
 	result := buf.String()
-	emptyDiv := `<div style="font-size: 0.85em; color: #666; margin-bottom: 2em; ` +
-		`padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;">
-</div>`
 	if result == emptyDiv {
 		return ""
 	}
