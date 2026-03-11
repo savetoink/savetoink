@@ -65,8 +65,4 @@
 			text-decoration: none;
 		}
 	}
-
-	footer {
-		margin: 0;
-	}
 </style>
