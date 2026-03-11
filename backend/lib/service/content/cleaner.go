@@ -23,15 +23,12 @@ func NewTrafilaturaCleaner() *TrafilaturaCleaner {
 }
 
 // Clean extracts article content from an html.Node.
-func (c *TrafilaturaCleaner) Clean(_ context.Context, doc, node *html.Node, u *url.URL) (*model.Article, error) {
+func (c *TrafilaturaCleaner) Clean(_ context.Context, doc *html.Node, u *url.URL) (*model.Article, error) {
 	if u == nil {
 		return nil, fmt.Errorf("%w: url is nil", ErrInvalidURL)
 	}
 	if doc == nil {
 		return nil, fmt.Errorf("%w: html document is nil", ErrNilContentNode)
-	}
-	if node == nil {
-		return nil, fmt.Errorf("%w: html node is nil", ErrNilContentNode)
 	}
 
 	opts := trafilatura.Options{
@@ -45,7 +42,7 @@ func (c *TrafilaturaCleaner) Clean(_ context.Context, doc, node *html.Node, u *u
 		},
 	}
 
-	result, err := trafilatura.ExtractDocument(node, opts)
+	result, err := trafilatura.ExtractDocument(doc, opts)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrExtractionFailed, err)
 	}

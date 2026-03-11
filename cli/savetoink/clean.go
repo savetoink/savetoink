@@ -40,7 +40,7 @@ func runClean(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse HTML: %w", err)
 	}
 
-	article, err := cleaner.Clean(ctx, doc, doc, u)
+	article, err := cleaner.Clean(ctx, doc, u)
 	if err != nil {
 		return fmt.Errorf("failed to clean content: %w", err)
 	}

@@ -89,7 +89,7 @@ func (s *Service) ParseHTML(ctx context.Context, fetched *content.FetchedContent
 
 // Clean extracts article content from a DOM node.
 func (s *Service) Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error) {
-	article, err := s.cleaner.Clean(ctx, doc, doc, u)
+	article, err := s.cleaner.Clean(ctx, doc, u)
 	if err != nil {
 		return nil, fmt.Errorf("failed to clean content: %w", err)
 	}

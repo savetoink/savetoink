@@ -18,5 +18,5 @@ type Extractor interface {
 
 // Cleaner extracts article content from html.Node.
 type Cleaner interface {
-	Clean(ctx context.Context, doc, node *html.Node, u *url.URL) (*model.Article, error)
+	Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error)
 }

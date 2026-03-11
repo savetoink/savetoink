@@ -36,7 +36,7 @@ func TestTrafilaturaCleaner_Clean(t *testing.T) {
 		doc, err := dom.Parse(strings.NewReader(html))
 		require.NoError(t, err)
 
-		article, err := cleaner.Clean(context.Background(), doc, doc, testURL)
+		article, err := cleaner.Clean(context.Background(), doc, testURL)
 		require.NoError(t, err)
 		assert.NotNil(t, article)
 		assert.NotEmpty(t, article.Title)
@@ -51,15 +51,13 @@ func TestTrafilaturaCleaner_Clean(t *testing.T) {
 		doc, err := dom.Parse(strings.NewReader(simpleHTML))
 		require.NoError(t, err)
 
-		_, err = cleaner.Clean(context.Background(), doc, doc, nil)
+		_, err = cleaner.Clean(context.Background(), doc, nil)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, ErrInvalidURL)
 	})
 
 	t.Run("nil document", func(t *testing.T) {
-		doc, _ := dom.Parse(strings.NewReader(simpleHTML))
-
-		_, err := cleaner.Clean(context.Background(), nil, doc, testURL)
+		_, err := cleaner.Clean(context.Background(), nil, testURL)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, ErrNilContentNode)
 	})
