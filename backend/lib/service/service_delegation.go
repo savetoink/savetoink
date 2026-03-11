@@ -12,6 +12,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
+	"golang.org/x/net/html"
 )
 
 // Fetch fetches HTML content from a URL.
@@ -24,15 +25,27 @@ func (s *Service) Fetch(ctx context.Context, u *url.URL) (*content.FetchedConten
 	return result, nil
 }
 
-// Extract extracts article metadata and content from fetched HTML.
-func (s *Service) Extract(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error) {
+// ParseHTML parses HTML content from fetched content into a DOM node.
+func (s *Service) ParseHTML(ctx context.Context, fetched *content.FetchedContent) (*html.Node, error) {
 	defer func() {
 		_ = fetched.HTML.Close()
 	}()
-	article, err := s.extractor.GenerateFromHTML(ctx, fetched.HTML, fetched.URL)
+
+	doc, err := s.extractor.Extract(ctx, fetched.HTML)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract: %w", err)
+		return nil, fmt.Errorf("failed to parse html: %w", err)
 	}
+
+	return doc, nil
+}
+
+// Clean extracts article content from a DOM node.
+func (s *Service) Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error) {
+	article, err := s.cleaner.Clean(ctx, doc, doc, u)
+	if err != nil {
+		return nil, fmt.Errorf("failed to clean content: %w", err)
+	}
+
 	return article, nil
 }
 

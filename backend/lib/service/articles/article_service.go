@@ -14,7 +14,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/service/epub"
+	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
 	"github.com/shaftoe/savetoink/backend/lib/service/profile"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )
@@ -22,7 +22,6 @@ import (
 // ArticleService handles article CRUD operations.
 type ArticleService struct {
 	repo        repository.ArticlesRepository
-	extractor   *content.Extractor
 	publisher   *epub.Publisher
 	userProfile *profile.UserProfileService
 }
@@ -30,13 +29,11 @@ type ArticleService struct {
 // New creates a new ArticleService instance.
 func New(
 	repo repository.ArticlesRepository,
-	extractor *content.Extractor,
 	publisher *epub.Publisher,
 	userProfile *profile.UserProfileService,
 ) *ArticleService {
 	return &ArticleService{
 		repo:        repo,
-		extractor:   extractor,
 		publisher:   publisher,
 		userProfile: userProfile,
 	}

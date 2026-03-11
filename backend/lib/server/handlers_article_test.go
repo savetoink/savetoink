@@ -23,6 +23,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/html"
 )
 
 func TestExtractInheritedLogAttrs(t *testing.T) {
@@ -183,9 +184,17 @@ func (m *articleMockService) Fetch(
 	return nil, errors.New("not implemented")
 }
 
-func (m *articleMockService) Extract(
+func (m *articleMockService) ParseHTML(
 	_ context.Context,
 	_ *content.FetchedContent,
+) (*html.Node, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *articleMockService) Clean(
+	_ context.Context,
+	_ *html.Node,
+	_ *url.URL,
 ) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }

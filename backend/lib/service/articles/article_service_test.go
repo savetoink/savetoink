@@ -8,8 +8,7 @@ import (
 	awstypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/service/epub"
+	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
 )
 
 type MockRepository struct {
@@ -89,7 +88,7 @@ func TestUpdateArticle_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{},
 	}
-	svc := New(mockRepo, content.NewExtractor(), epub.NewPublisher(), nil)
+	svc := New(mockRepo, epub.NewPublisher(), nil)
 
 	ctx := context.Background()
 
@@ -137,7 +136,7 @@ func TestUpdateArticle_Success(t *testing.T) {
 }
 
 func TestUpdateArticle_NilRepo(t *testing.T) {
-	svc := New(nil, content.NewExtractor(), epub.NewPublisher(), nil)
+	svc := New(nil, epub.NewPublisher(), nil)
 
 	article := &model.Article{
 		Account: "user1",
@@ -153,7 +152,7 @@ func TestUpdateArticle_MissingFields(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{},
 	}
-	svc := New(mockRepo, content.NewExtractor(), epub.NewPublisher(), nil)
+	svc := New(mockRepo, epub.NewPublisher(), nil)
 
 	ctx := context.Background()
 

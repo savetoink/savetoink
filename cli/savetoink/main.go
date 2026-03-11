@@ -84,9 +84,14 @@ func processArticle(ctx context.Context, url string, svc *service.Service) (*mod
 		return nil, nil, fmt.Errorf("failed to fetch article: %w", err)
 	}
 
-	article, err := svc.Extract(ctx, fetched)
+	doc, err := svc.ParseHTML(ctx, fetched)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to extract article: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse html: %w", err)
+	}
+
+	article, err := svc.Clean(ctx, doc, u)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to clean article: %w", err)
 	}
 
 	fmt.Printf("Processed in %v\n", time.Since(start))

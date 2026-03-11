@@ -22,6 +22,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/html"
 )
 
 type webhookMockService struct {
@@ -37,7 +38,11 @@ func (m *webhookMockService) Fetch(_ context.Context, _ *url.URL) (*content.Fetc
 	return nil, errors.New("not implemented")
 }
 
-func (m *webhookMockService) Extract(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
+func (m *webhookMockService) ParseHTML(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *webhookMockService) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
 

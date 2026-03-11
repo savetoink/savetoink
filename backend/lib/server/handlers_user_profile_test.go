@@ -20,6 +20,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/html"
 )
 
 type userprofileMockService struct {
@@ -36,9 +37,17 @@ func (m *userprofileMockService) Fetch(
 	return nil, errors.New("not implemented")
 }
 
-func (m *userprofileMockService) Extract(
+func (m *userprofileMockService) ParseHTML(
 	_ context.Context,
 	_ *content.FetchedContent,
+) (*html.Node, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *userprofileMockService) Clean(
+	_ context.Context,
+	_ *html.Node,
+	_ *url.URL,
 ) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }

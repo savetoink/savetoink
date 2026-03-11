@@ -17,6 +17,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/html"
 )
 
 const testEmail = "test@kindle.com"
@@ -46,7 +47,8 @@ func (h *testCaptureHandler) WithGroup(_ string) slog.Handler {
 
 type mockArticleService struct {
 	fetchFunc          func(ctx context.Context, u *url.URL) (*content.FetchedContent, error)
-	extractFunc        func(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error)
+	parseHTMLFunc      func(ctx context.Context, fetched *content.FetchedContent) (*html.Node, error)
+	cleanFunc          func(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error)
 	updateFunc         func(ctx context.Context, article *model.Article) error
 	getArticleFunc     func(ctx context.Context, accountID, articleID string) (*model.Article, error)
 	getUserDeviceEmail func(ctx context.Context, accountID string) (string, bool, error)
@@ -64,13 +66,24 @@ func (m *mockArticleService) Fetch(ctx context.Context, u *url.URL) (*content.Fe
 	}, nil
 }
 
-func (m *mockArticleService) Extract(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error) {
-	if m.extractFunc != nil {
-		return m.extractFunc(ctx, fetched)
+func (m *mockArticleService) ParseHTML(ctx context.Context, fetched *content.FetchedContent) (*html.Node, error) {
+	if m.parseHTMLFunc != nil {
+		return m.parseHTMLFunc(ctx, fetched)
+	}
+	doc, err := html.Parse(strings.NewReader("<html><body>test</body></html>"))
+	if err != nil {
+		return nil, err
+	}
+	return doc, nil
+}
+
+func (m *mockArticleService) Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error) {
+	if m.cleanFunc != nil {
+		return m.cleanFunc(ctx, doc, u)
 	}
 	return &model.Article{
 		ID:    "article-123",
-		URL:   fetched.URL.String(),
+		URL:   u.String(),
 		Title: "Test Article",
 	}, nil
 }
@@ -118,6 +131,35 @@ func (m *mockArticleService) SendArticleByID(
 	}, nil
 }
 
+func newDefaultMockArticleService(capturedArticle **model.Article) *mockArticleService {
+	return &mockArticleService{
+		fetchFunc: func(_ context.Context, u *url.URL) (*content.FetchedContent, error) {
+			return &content.FetchedContent{
+				HTML: io.NopCloser(strings.NewReader("<html><body>test</body></html>")),
+				URL:  u,
+				Type: content.FetcherTypeGo,
+			}, nil
+		},
+		parseHTMLFunc: func(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+			doc, _ := html.Parse(strings.NewReader("<html><body>test</body></html>"))
+			return doc, nil
+		},
+		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
+			return &model.Article{
+				ID:    "article-123",
+				URL:   u.String(),
+				Title: "Test Article",
+			}, nil
+		},
+		updateFunc: func(_ context.Context, article *model.Article) error {
+			if capturedArticle != nil {
+				*capturedArticle = article
+			}
+			return nil
+		},
+	}
+}
+
 func TestNewLocalProcessor(t *testing.T) {
 	mockSvc := &mockArticleService{}
 	processor := NewLocalProcessor(mockSvc)
@@ -146,28 +188,7 @@ func TestLocalProcessor_StartProcessing(_ *testing.T) {
 func TestProcessArticle_Success(t *testing.T) {
 	var capturedArticle *model.Article
 
-	testURL, _ := url.Parse("https://example.com/article")
-
-	mockSvc := &mockArticleService{
-		fetchFunc: func(_ context.Context, _ *url.URL) (*content.FetchedContent, error) {
-			return &content.FetchedContent{
-				HTML: io.NopCloser(strings.NewReader("<html><body>test content</body></html>")),
-				URL:  testURL,
-				Type: content.FetcherTypeGo,
-			}, nil
-		},
-		extractFunc: func(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
-			return &model.Article{
-				ID:    "article-123",
-				URL:   "https://example.com/article",
-				Title: "Test Article",
-			}, nil
-		},
-		updateFunc: func(_ context.Context, article *model.Article) error {
-			capturedArticle = article
-			return nil
-		},
-	}
+	mockSvc := newDefaultMockArticleService(&capturedArticle)
 
 	event := &content.ProcessArticleEvent{
 		URL:       "https://example.com/article",
@@ -222,7 +243,7 @@ func TestProcessArticle_FetchError(t *testing.T) {
 	assert.True(t, articleUpdated)
 }
 
-func TestProcessArticle_ExtractError(t *testing.T) {
+func TestProcessArticle_ParseHTMLError(t *testing.T) {
 	var articleUpdated bool
 
 	mockSvc := &mockArticleService{
@@ -233,8 +254,11 @@ func TestProcessArticle_ExtractError(t *testing.T) {
 				Type: content.FetcherTypeGo,
 			}, nil
 		},
-		extractFunc: func(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
-			return nil, errors.New("extract failed")
+		parseHTMLFunc: func(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+			return nil, errors.New("parse html failed")
+		},
+		cleanFunc: func(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
+			return nil, errors.New("clean failed")
 		},
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
@@ -245,7 +269,7 @@ func TestProcessArticle_ExtractError(t *testing.T) {
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
 			articleUpdated = true
-			assert.Equal(t, "extract failed", article.Error)
+			assert.Equal(t, "parse html failed", article.Error)
 			return nil
 		},
 	}
@@ -265,7 +289,7 @@ func TestProcessArticle_ExtractError(t *testing.T) {
 	assert.True(t, articleUpdated)
 }
 
-func TestProcessArticle_NilExtractedArticle(t *testing.T) {
+func TestProcessArticle_NilCleanedArticle(t *testing.T) {
 	var articleUpdated bool
 
 	mockSvc := &mockArticleService{
@@ -276,7 +300,14 @@ func TestProcessArticle_NilExtractedArticle(t *testing.T) {
 				Type: content.FetcherTypeGo,
 			}, nil
 		},
-		extractFunc: func(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
+		parseHTMLFunc: func(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+			doc, err := html.Parse(strings.NewReader("<html><body>test</body></html>"))
+			if err != nil {
+				return nil, err
+			}
+			return doc, nil
+		},
+		cleanFunc: func(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
 			return nil, nil
 		},
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
@@ -288,7 +319,7 @@ func TestProcessArticle_NilExtractedArticle(t *testing.T) {
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
 			articleUpdated = true
-			assert.Contains(t, article.Error, "extracted article is nil")
+			assert.Contains(t, article.Error, "cleaned article is nil")
 			return nil
 		},
 	}
@@ -319,10 +350,17 @@ func TestProcessArticle_UpdateError(t *testing.T) {
 				Type: content.FetcherTypeGo,
 			}, nil
 		},
-		extractFunc: func(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
+		parseHTMLFunc: func(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+			doc, err := html.Parse(strings.NewReader("<html><body>test</body></html>"))
+			if err != nil {
+				return nil, err
+			}
+			return doc, nil
+		},
+		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
 			return &model.Article{
 				ID:    "article-123",
-				URL:   "https://example.com/article",
+				URL:   u.String(),
 				Title: "Test Article",
 			}, nil
 		},
@@ -357,25 +395,13 @@ func TestProcessArticle_UpdateError(t *testing.T) {
 func TestProcessArticle_URLMismatch(t *testing.T) {
 	var capturedArticle *model.Article
 
-	mockSvc := &mockArticleService{
-		fetchFunc: func(_ context.Context, u *url.URL) (*content.FetchedContent, error) {
-			return &content.FetchedContent{
-				HTML: io.NopCloser(strings.NewReader("<html><body>test</body></html>")),
-				URL:  u,
-				Type: content.FetcherTypeGo,
-			}, nil
-		},
-		extractFunc: func(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
-			return &model.Article{
-				ID:    "different-id",
-				URL:   "https://different.com/article",
-				Title: "Test Article",
-			}, nil
-		},
-		updateFunc: func(_ context.Context, article *model.Article) error {
-			capturedArticle = article
-			return nil
-		},
+	mockSvc := newDefaultMockArticleService(&capturedArticle)
+	mockSvc.cleanFunc = func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
+		return &model.Article{
+			ID:    "different-id",
+			URL:   u.String(),
+			Title: "Test Article",
+		}, nil
 	}
 
 	event := &content.ProcessArticleEvent{
@@ -527,10 +553,17 @@ func TestProcessArticle_SendOnComplete_Success(t *testing.T) {
 				Type: content.FetcherTypeGo,
 			}, nil
 		},
-		extractFunc: func(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
+		parseHTMLFunc: func(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+			doc, err := html.Parse(strings.NewReader("<html><body>test content</body></html>"))
+			if err != nil {
+				return nil, err
+			}
+			return doc, nil
+		},
+		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
 			return &model.Article{
 				ID:    "article-123",
-				URL:   "https://example.com/article",
+				URL:   u.String(),
 				Title: "Test Article",
 			}, nil
 		},
@@ -576,10 +609,17 @@ func TestProcessArticle_SendOnComplete_DeviceEmailNotSet(t *testing.T) {
 				Type: content.FetcherTypeGo,
 			}, nil
 		},
-		extractFunc: func(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
+		parseHTMLFunc: func(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+			doc, err := html.Parse(strings.NewReader("<html><body>test content</body></html>"))
+			if err != nil {
+				return nil, err
+			}
+			return doc, nil
+		},
+		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
 			return &model.Article{
 				ID:    "article-123",
-				URL:   "https://example.com/article",
+				URL:   u.String(),
 				Title: "Test Article",
 			}, nil
 		},
@@ -619,10 +659,17 @@ func TestProcessArticle_SendOnComplete_SendError(t *testing.T) {
 				Type: content.FetcherTypeGo,
 			}, nil
 		},
-		extractFunc: func(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
+		parseHTMLFunc: func(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+			doc, err := html.Parse(strings.NewReader("<html><body>test content</body></html>"))
+			if err != nil {
+				return nil, err
+			}
+			return doc, nil
+		},
+		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
 			return &model.Article{
 				ID:    "article-123",
-				URL:   "https://example.com/article",
+				URL:   u.String(),
 				Title: "Test Article",
 			}, nil
 		},

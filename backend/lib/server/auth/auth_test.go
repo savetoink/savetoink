@@ -18,6 +18,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
+	"golang.org/x/net/html"
 )
 
 type MockService struct {
@@ -38,7 +39,11 @@ func (m *MockService) Fetch(_ context.Context, _ *url.URL) (*content.FetchedCont
 	panic("not implemented")
 }
 
-func (m *MockService) Extract(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
+func (m *MockService) ParseHTML(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+	panic("not implemented")
+}
+
+func (m *MockService) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
 	panic("not implemented")
 }
 

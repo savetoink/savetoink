@@ -21,6 +21,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
+	"golang.org/x/net/html"
 )
 
 //nolint:gosec // test constants, not real credentials
@@ -42,7 +43,11 @@ func (m *MockService) Fetch(_ context.Context, _ *url.URL) (*content.FetchedCont
 	return nil, errors.New("not implemented")
 }
 
-func (m *MockService) Extract(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
+func (m *MockService) ParseHTML(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *MockService) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
 	return nil, errors.New("not implemented")
 }
 

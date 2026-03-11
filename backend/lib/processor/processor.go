@@ -15,12 +15,14 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/shaftoe/savetoink/backend/lib/validation"
+	"golang.org/x/net/html"
 )
 
 // Service defines the interface for service operations needed by the processor.
 type Service interface {
 	Fetch(ctx context.Context, u *url.URL) (*content.FetchedContent, error)
-	Extract(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error)
+	ParseHTML(ctx context.Context, fetched *content.FetchedContent) (*html.Node, error)
+	Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error)
 	UpdateArticle(ctx context.Context, article *model.Article) error
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
 	GetUserDeviceEmail(ctx context.Context, accountID string) (email string, autoSend bool, err error)
@@ -80,15 +82,22 @@ func ProcessArticle(
 
 	logging.AddLogAttr(processCtx, slog.String("fetcher_type", fetched.Type.String()))
 
-	extractedArticle, err := svc.Extract(processCtx, fetched)
+	doc, err := svc.ParseHTML(processCtx, fetched)
 	if err != nil {
-		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "extract", err)
+		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "parse", err)
+		logArticleResult(processCtx, event.InheritedAttrs, "failed")
+		return
+	}
+
+	extractedArticle, err := svc.Clean(processCtx, doc, u)
+	if err != nil {
+		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "clean", err)
 		logArticleResult(processCtx, event.InheritedAttrs, "failed")
 		return
 	}
 
 	if extractedArticle == nil {
-		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "extract", errors.New("extracted article is nil"))
+		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "clean", errors.New("cleaned article is nil"))
 		logArticleResult(processCtx, event.InheritedAttrs, "failed")
 		return
 	}

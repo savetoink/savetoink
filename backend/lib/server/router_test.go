@@ -25,6 +25,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/html"
 )
 
 const (
@@ -44,7 +45,11 @@ func (m *mockService) Fetch(_ context.Context, _ *url.URL) (*content.FetchedCont
 	return nil, errors.New("not implemented in mock")
 }
 
-func (m *mockService) Extract(_ context.Context, _ *content.FetchedContent) (*model.Article, error) {
+func (m *mockService) ParseHTML(_ context.Context, _ *content.FetchedContent) (*html.Node, error) {
+	return nil, errors.New("not implemented in mock")
+}
+
+func (m *mockService) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
 	return nil, errors.New("not implemented in mock")
 }
 

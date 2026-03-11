@@ -21,9 +21,10 @@ import (
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/service/articles"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/service/epub"
+	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
 	"github.com/shaftoe/savetoink/backend/lib/service/profile"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
+	"golang.org/x/net/html"
 )
 
 // Interface defines the contract for service operations.
@@ -31,8 +32,11 @@ type Interface interface {
 	// Fetch fetches the HTML content of a given URL and returns the fetched content with metadata.
 	Fetch(ctx context.Context, u *url.URL) (*content.FetchedContent, error)
 
-	// Extract extracts article metadata and content from fetched HTML.
-	Extract(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error)
+	// ParseHTML parses HTML content from fetched content into a DOM node.
+	ParseHTML(ctx context.Context, fetched *content.FetchedContent) (*html.Node, error)
+
+	// Clean extracts article content from a DOM node.
+	Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error)
 
 	// GenerateEPUB generates an EPUB document from an article.
 	GenerateEPUB(article *model.Article) ([]byte, error)
@@ -106,7 +110,8 @@ type Interface interface {
 // Dependencies holds all external dependencies required by Service.
 type Dependencies struct {
 	Fetcher         *content.Fetcher
-	Extractor       *content.Extractor
+	Extractor       content.Extractor
+	Cleaner         content.Cleaner
 	Publisher       *epub.Publisher
 	Sender          email.Sender
 	ArticlesRepo    repository.ArticlesRepository
@@ -118,7 +123,8 @@ type Dependencies struct {
 // Service orchestrator composes sub-services and implements the Interface.
 type Service struct {
 	fetcher   *content.Fetcher
-	extractor *content.Extractor
+	extractor content.Extractor
+	cleaner   content.Cleaner
 	publisher *epub.Publisher
 	articles  *articles.ArticleService
 	profile   *profile.UserProfileService
@@ -130,19 +136,18 @@ type Service struct {
 // New creates a Service instance with the provided dependencies.
 func New(deps *Dependencies) *Service {
 	fetcher := deps.Fetcher
-	extractor := deps.Extractor
 	publisher := deps.Publisher
 	userProfile := profile.New(deps.UserProfileRepo)
 	articleSvc := articles.New(
 		deps.ArticlesRepo,
-		extractor,
 		publisher,
 		userProfile,
 	)
 
 	return &Service{
 		fetcher:   fetcher,
-		extractor: extractor,
+		extractor: deps.Extractor,
+		cleaner:   deps.Cleaner,
 		publisher: publisher,
 		articles:  articleSvc,
 		profile:   userProfile,
@@ -171,7 +176,8 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 
 	return Dependencies{
 		Fetcher:         content.NewFetcher(cfg.BrowserlessKey),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          sender,
 		ArticlesRepo:    articlesRepo,

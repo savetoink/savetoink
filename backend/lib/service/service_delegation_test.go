@@ -13,7 +13,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/service/epub"
+	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
 )
 
 const testAccountID = "account-1"
@@ -176,7 +176,8 @@ func TestCreateArticle_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -202,7 +203,8 @@ func TestCreateArticle_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -226,7 +228,8 @@ func TestUpdateArticle_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -248,7 +251,8 @@ func TestUpdateArticle_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -273,7 +277,8 @@ func TestToggleFavorite_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -295,7 +300,8 @@ func TestToggleFavorite_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -317,7 +323,8 @@ func TestCountSendsByAccountDateRange_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -348,7 +355,8 @@ func TestCountSendsByAccountDateRange_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -381,7 +389,8 @@ func TestGetUserDeviceEmail_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -411,7 +420,8 @@ func TestSetUserDeviceEmail_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -433,7 +443,8 @@ func TestSetUserDeviceEmail_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -455,7 +466,8 @@ func TestSetUserDeviceEmailWithAutoSend_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -477,7 +489,8 @@ func TestSetUserDeviceEmailWithAutoSend_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -499,7 +512,8 @@ func TestDeleteUserDeviceEmail_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -521,7 +535,8 @@ func TestDeleteUserDeviceEmail_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -548,7 +563,8 @@ func TestGetUserProfile_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -574,7 +590,8 @@ func TestGetUserProfile_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -596,7 +613,8 @@ func TestSetUserEmail_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -618,7 +636,8 @@ func TestSetUserEmail_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -640,7 +659,8 @@ func TestDeleteUserProfile_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -662,7 +682,8 @@ func TestDeleteUserProfile_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -689,7 +710,8 @@ func TestHandleBounce_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -711,7 +733,8 @@ func TestHandleBounce_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -740,7 +763,8 @@ func TestIsEmailBouncing_True(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -774,7 +798,8 @@ func TestIsEmailBouncing_False(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -804,7 +829,8 @@ func TestGetAccountIDByDeviceEmail_Success(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
@@ -830,7 +856,8 @@ func TestGetAccountIDByDeviceEmail_Error(t *testing.T) {
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewExtractor(),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
 		Sender:          &emailSenderMock{},
 		ArticlesRepo:    repo,
