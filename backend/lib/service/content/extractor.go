@@ -2,10 +2,10 @@
 package content
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"strings"
 	"time"
@@ -14,7 +14,6 @@ import (
 	"github.com/markusmobius/go-trafilatura"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/validation"
 	"golang.org/x/net/html"
 )
 
@@ -26,10 +25,15 @@ func NewExtractor() *Extractor {
 	return &Extractor{}
 }
 
-// GenerateFromHTML extracts article content from HTML bytes.
-func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte, u *url.URL) (*model.Article, error) {
+// GenerateFromHTML extracts article content from HTML.
+func (e *Extractor) GenerateFromHTML(_ context.Context, htmlReader io.Reader, u *url.URL) (*model.Article, error) {
 	if u == nil {
 		return nil, errors.New("url is nil")
+	}
+
+	doc, err := dom.Parse(htmlReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse HTML content: %w", err)
 	}
 
 	opts := trafilatura.Options{
@@ -43,7 +47,7 @@ func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte, u *url
 		},
 	}
 
-	result, err := trafilatura.Extract(bytes.NewReader(htmlBytes), opts)
+	result, err := trafilatura.ExtractDocument(doc, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract article content: %w", err)
 	}
@@ -52,55 +56,18 @@ func (e *Extractor) GenerateFromHTML(_ context.Context, htmlBytes []byte, u *url
 		return nil, errors.New("no content extracted")
 	}
 
-	article := e.buildArticle(result, htmlBytes)
+	article := e.buildArticle(result, htmlReader)
 	return article, nil
 }
 
-// ExtractFromURL fetches and extracts article content from a URL.
-// This is a convenience method for testing purposes. In production, callers
-// should use Fetcher.Fetch() followed by Extractor.GenerateFromHTML().
-func (e *Extractor) ExtractFromURL(ctx context.Context, urlStr string) (*model.Article, error) {
-	fetcher := NewFetcher("")
-	u, err := validation.ValidateURL(urlStr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse URL: %w", err)
-	}
-
-	result, err := fetcher.Fetch(ctx, u)
-	if err != nil {
-		return nil, err
-	}
-
-	opts := trafilatura.Options{
-		OriginalURL:    u,
-		EnableFallback: true,
-		Config: &trafilatura.Config{
-			MinExtractedSize: consts.MinimumExtractedSize,
-			MinOutputSize:    consts.MinimumOutputSize,
-		},
-	}
-
-	trafilaturaResult, err := trafilatura.Extract(bytes.NewReader(result.HTML), opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract article content: %w", err)
-	}
-
-	if trafilaturaResult.ContentNode == nil {
-		return nil, errors.New("no content extracted")
-	}
-
-	article := e.buildArticle(trafilaturaResult, result.HTML)
-	return article, nil
-}
-
-func (e *Extractor) buildArticle(result *trafilatura.ExtractResult, htmlBytes []byte) *model.Article {
+func (e *Extractor) buildArticle(result *trafilatura.ExtractResult, htmlReader io.Reader) *model.Article {
 	contentHTML := dom.InnerHTML(result.ContentNode)
 	plainText := stripHTML(contentHTML)
 	wordCount := countWords(plainText)
 
 	title := result.Metadata.Title
 	if title == result.Metadata.Sitename {
-		if extractedTitle := extractTitleFromHTML(htmlBytes); extractedTitle != "" {
+		if extractedTitle := extractTitleFromHTML(htmlReader); extractedTitle != "" {
 			title = extractedTitle
 		}
 	}
@@ -123,8 +90,8 @@ func (e *Extractor) buildArticle(result *trafilatura.ExtractResult, htmlBytes []
 	}
 }
 
-func extractTitleFromHTML(htmlBytes []byte) string {
-	doc, err := html.Parse(strings.NewReader(string(htmlBytes)))
+func extractTitleFromHTML(htmlReader io.Reader) string {
+	doc, err := html.Parse(htmlReader)
 	if err != nil {
 		return ""
 	}

@@ -1,8 +1,10 @@
 package lambda
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
 	"net/url"
 	"testing"
 
@@ -183,7 +185,7 @@ func TestHandleEvent_ExtractError(t *testing.T) {
 	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
-		HTML: htmlBytes,
+		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
 		URL:  eventURL,
 		Type: content.FetcherTypeBrowserless,
 	}, nil)
@@ -215,7 +217,7 @@ func TestHandleEvent_UpdateError(t *testing.T) {
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
-		HTML: htmlBytes,
+		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
 		URL:  eventURL,
 		Type: content.FetcherTypeBrowserless,
 	}, nil)
@@ -248,7 +250,7 @@ func TestHandleEvent_Success(t *testing.T) {
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
-		HTML: htmlBytes,
+		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
 		URL:  eventURL,
 		Type: content.FetcherTypeBrowserless,
 	}, nil)
@@ -280,7 +282,7 @@ func TestHandleEvent_SendOnComplete_Success(t *testing.T) {
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
-		HTML: htmlBytes,
+		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
 		URL:  eventURL,
 		Type: content.FetcherTypeBrowserless,
 	}, nil)
@@ -315,7 +317,7 @@ func TestHandleEvent_SendOnComplete_NoDeviceEmail(t *testing.T) {
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
-		HTML: htmlBytes,
+		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
 		URL:  eventURL,
 		Type: content.FetcherTypeBrowserless,
 	}, nil)
@@ -347,7 +349,7 @@ func TestHandleEvent_SendOnComplete_SendError(t *testing.T) {
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
-		HTML: htmlBytes,
+		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
 		URL:  eventURL,
 		Type: content.FetcherTypeBrowserless,
 	}, nil)
@@ -382,7 +384,7 @@ func TestHandleEvent_InheritedAttrs(t *testing.T) {
 	htmlBytes := []byte("<html><body>Test</body></html>")
 	article := &model.Article{Title: "Test Article"}
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
-		HTML: htmlBytes,
+		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
 		URL:  eventURL,
 		Type: content.FetcherTypeBrowserless,
 	}, nil)

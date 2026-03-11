@@ -26,6 +26,9 @@ func (s *Service) Fetch(ctx context.Context, u *url.URL) (*content.FetchedConten
 
 // Extract extracts article metadata and content from fetched HTML.
 func (s *Service) Extract(ctx context.Context, fetched *content.FetchedContent) (*model.Article, error) {
+	defer func() {
+		_ = fetched.HTML.Close()
+	}()
 	article, err := s.extractor.GenerateFromHTML(ctx, fetched.HTML, fetched.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract: %w", err)

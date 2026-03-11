@@ -38,7 +38,7 @@ func (t FetcherType) String() string {
 
 // FetchedContent contains fetched HTML content along with its URL and fetcher type.
 type FetchedContent struct {
-	HTML []byte
+	HTML io.ReadCloser
 	URL  *url.URL
 	Type FetcherType
 }
@@ -95,16 +95,7 @@ func (f *Fetcher) Fetch(ctx context.Context, u *url.URL) (*FetchedContent, error
 		return nil, fmt.Errorf("expected HTML content, got: %s", contentType)
 	}
 
-	htmlBytes, err := io.ReadAll(resp.Body)
-	_ = resp.Body.Close()
-	if err != nil {
-		if f.browserlessKey != "" {
-			return f.fetchWithBrowserless(ctx, u)
-		}
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	return &FetchedContent{HTML: htmlBytes, URL: u, Type: FetcherTypeGo}, nil
+	return &FetchedContent{HTML: resp.Body, URL: u, Type: FetcherTypeGo}, nil
 }
 
 // fetchWithBrowserless fetches HTML content using the Browserless content API.
@@ -148,7 +139,7 @@ func (f *Fetcher) fetchWithBrowserless(ctx context.Context, u *url.URL) (*Fetche
 		return nil, fmt.Errorf("browserless returned invalid content: %w", err)
 	}
 
-	return &FetchedContent{HTML: htmlBytes, URL: u, Type: FetcherTypeBrowserless}, nil
+	return &FetchedContent{HTML: io.NopCloser(bytes.NewReader(htmlBytes)), URL: u, Type: FetcherTypeBrowserless}, nil
 }
 
 func validateParsedURL(u *url.URL) error {

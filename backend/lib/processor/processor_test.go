@@ -3,8 +3,10 @@ package processor
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -56,7 +58,7 @@ func (m *mockArticleService) Fetch(ctx context.Context, u *url.URL) (*content.Fe
 		return m.fetchFunc(ctx, u)
 	}
 	return &content.FetchedContent{
-		HTML: []byte("<html><body>test</body></html>"),
+		HTML: io.NopCloser(strings.NewReader("<html><body>test</body></html>")),
 		URL:  u,
 		Type: content.FetcherTypeGo,
 	}, nil
@@ -149,7 +151,7 @@ func TestProcessArticle_Success(t *testing.T) {
 	mockSvc := &mockArticleService{
 		fetchFunc: func(_ context.Context, _ *url.URL) (*content.FetchedContent, error) {
 			return &content.FetchedContent{
-				HTML: []byte("<html><body>test content</body></html>"),
+				HTML: io.NopCloser(strings.NewReader("<html><body>test content</body></html>")),
 				URL:  testURL,
 				Type: content.FetcherTypeGo,
 			}, nil
@@ -226,7 +228,7 @@ func TestProcessArticle_ExtractError(t *testing.T) {
 	mockSvc := &mockArticleService{
 		fetchFunc: func(_ context.Context, u *url.URL) (*content.FetchedContent, error) {
 			return &content.FetchedContent{
-				HTML: []byte("<html><body>test</body></html>"),
+				HTML: io.NopCloser(strings.NewReader("<html><body>test</body></html>")),
 				URL:  u,
 				Type: content.FetcherTypeGo,
 			}, nil
@@ -269,7 +271,7 @@ func TestProcessArticle_NilExtractedArticle(t *testing.T) {
 	mockSvc := &mockArticleService{
 		fetchFunc: func(_ context.Context, u *url.URL) (*content.FetchedContent, error) {
 			return &content.FetchedContent{
-				HTML: []byte("<html><body>test</body></html>"),
+				HTML: io.NopCloser(strings.NewReader("<html><body>test</body></html>")),
 				URL:  u,
 				Type: content.FetcherTypeGo,
 			}, nil
@@ -312,7 +314,7 @@ func TestProcessArticle_UpdateError(t *testing.T) {
 	mockSvc := &mockArticleService{
 		fetchFunc: func(_ context.Context, u *url.URL) (*content.FetchedContent, error) {
 			return &content.FetchedContent{
-				HTML: []byte("<html><body>test</body></html>"),
+				HTML: io.NopCloser(strings.NewReader("<html><body>test</body></html>")),
 				URL:  u,
 				Type: content.FetcherTypeGo,
 			}, nil
@@ -358,7 +360,7 @@ func TestProcessArticle_URLMismatch(t *testing.T) {
 	mockSvc := &mockArticleService{
 		fetchFunc: func(_ context.Context, u *url.URL) (*content.FetchedContent, error) {
 			return &content.FetchedContent{
-				HTML: []byte("<html><body>test</body></html>"),
+				HTML: io.NopCloser(strings.NewReader("<html><body>test</body></html>")),
 				URL:  u,
 				Type: content.FetcherTypeGo,
 			}, nil
@@ -401,7 +403,7 @@ func TestProcessArticle_Timeout(t *testing.T) {
 				return nil, ctx.Err()
 			case <-time.After(5 * time.Second):
 				return &content.FetchedContent{
-					HTML: []byte("<html><body>test</body></html>"),
+					HTML: io.NopCloser(strings.NewReader("<html><body>test</body></html>")),
 					URL:  u,
 					Type: content.FetcherTypeGo,
 				}, nil
@@ -520,7 +522,7 @@ func TestProcessArticle_SendOnComplete_Success(t *testing.T) {
 	mockSvc := &mockArticleService{
 		fetchFunc: func(_ context.Context, u *url.URL) (*content.FetchedContent, error) {
 			return &content.FetchedContent{
-				HTML: []byte("<html><body>test content</body></html>"),
+				HTML: io.NopCloser(strings.NewReader("<html><body>test content</body></html>")),
 				URL:  u,
 				Type: content.FetcherTypeGo,
 			}, nil
@@ -569,7 +571,7 @@ func TestProcessArticle_SendOnComplete_DeviceEmailNotSet(t *testing.T) {
 	mockSvc := &mockArticleService{
 		fetchFunc: func(_ context.Context, u *url.URL) (*content.FetchedContent, error) {
 			return &content.FetchedContent{
-				HTML: []byte("<html><body>test content</body></html>"),
+				HTML: io.NopCloser(strings.NewReader("<html><body>test content</body></html>")),
 				URL:  u,
 				Type: content.FetcherTypeGo,
 			}, nil
@@ -612,7 +614,7 @@ func TestProcessArticle_SendOnComplete_SendError(t *testing.T) {
 	mockSvc := &mockArticleService{
 		fetchFunc: func(_ context.Context, u *url.URL) (*content.FetchedContent, error) {
 			return &content.FetchedContent{
-				HTML: []byte("<html><body>test content</body></html>"),
+				HTML: io.NopCloser(strings.NewReader("<html><body>test content</body></html>")),
 				URL:  u,
 				Type: content.FetcherTypeGo,
 			}, nil
