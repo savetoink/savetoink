@@ -44,12 +44,12 @@ func runSend(_ *cobra.Command, args []string) error {
 
 	svc := service.NewFromConfig(cfg)
 
-	epubReader, err := processArticle(ctx, input, svc)
+	epubReader, title, err := processArticle(ctx, input, svc)
 	if err != nil {
 		return err
 	}
 
-	resp, emailErr := svc.SendArticle(ctx, destEmail, epubReader, "")
+	resp, emailErr := svc.SendArticle(ctx, destEmail, epubReader, *title)
 	if emailErr != nil {
 		return fmt.Errorf("failed to send email: %w", emailErr)
 	}

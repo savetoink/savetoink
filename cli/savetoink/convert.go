@@ -24,7 +24,7 @@ func hasScheme(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }
 
-func processArticle(ctx context.Context, input string, svc *service.Service) (io.ReadCloser, error) {
+func processArticle(ctx context.Context, input string, svc *service.Service) (io.ReadCloser, *string, error) {
 	slog.Debug("processing article", slog.String("input", input))
 
 	start := time.Now()
@@ -37,7 +37,7 @@ func processArticle(ctx context.Context, input string, svc *service.Service) (io
 	} else {
 		absPath, absErr := filepath.Abs(input)
 		if absErr != nil {
-			return nil, fmt.Errorf("failed to get absolute path: %w", absErr)
+			return nil, nil, fmt.Errorf("failed to get absolute path: %w", absErr)
 		}
 		u = &netURL.URL{
 			Scheme: "file",
@@ -45,27 +45,27 @@ func processArticle(ctx context.Context, input string, svc *service.Service) (io
 		}
 	}
 	if err != nil {
-		return nil, fmt.Errorf("invalid input: %w", err)
+		return nil, nil, fmt.Errorf("invalid input: %w", err)
 	}
 
 	doc, err := svc.ParseHTMLFromSource(ctx, u)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse html: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse html: %w", err)
 	}
 
 	article, err := svc.Clean(ctx, doc, u)
 	if err != nil {
-		return nil, fmt.Errorf("failed to clean article: %w", err)
+		return nil, nil, fmt.Errorf("failed to clean article: %w", err)
 	}
 
 	epubReader, err := svc.GenerateEPUB(article)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate epub: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate epub: %w", err)
 	}
 
 	slog.Debug("article processed", slog.Any("duration", time.Since(start)))
 
-	return epubReader, nil
+	return epubReader, &article.Title, nil
 }
 
 func runConvert(_ *cobra.Command, args []string) error {
@@ -76,7 +76,7 @@ func runConvert(_ *cobra.Command, args []string) error {
 
 	svc := service.NewFromConfig(cfg)
 
-	epubReader, err := processArticle(ctx, input, svc)
+	epubReader, _, err := processArticle(ctx, input, svc)
 	if err != nil {
 		return err
 	}
