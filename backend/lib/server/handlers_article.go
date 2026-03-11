@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
+	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/validation"
 )
@@ -24,26 +26,69 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.URL == "" {
-		writeJSONError(w, http.StatusBadRequest, errors.New("missing URL in request body"))
-		return
-	}
-
-	u, err := validation.ValidateURL(req.URL)
+	accountID := auth.GetAccountID(r.Context())
+	sendsCount, err := h.validateAndCheckQuota(w, r, req, accountID)
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, fmt.Errorf("invalid URL: %w", err))
 		return
 	}
 
-	logging.AddLogAttr(r.Context(), slog.String("url", req.URL))
-	logging.AddLogAttr(r.Context(), slog.Bool("send_on_complete", req.SendOnComplete))
+	u, err := h.validateURL(w, r, req)
+	if err != nil {
+		return
+	}
 
-	article, err := h.service.CreateArticle(r.Context(), u, auth.GetAccountID(r.Context()))
+	article, err := h.service.CreateArticle(r.Context(), u, accountID)
 	if err != nil {
 		handleServiceError(w, r, err, "create article")
 		return
 	}
 
+	h.writeArticleResponse(w, r, article)
+	h.startArticleProcessing(r.Context(), req.URL, article.ID, accountID, req.SendOnComplete, sendsCount)
+}
+
+func (h *handlers) validateAndCheckQuota(
+	w http.ResponseWriter,
+	r *http.Request,
+	req articleRequest,
+	accountID string,
+) (int, error) {
+	var sendsCount int
+	if req.SendOnComplete {
+		if err := checkEmailBackendEnabled(w, r, h.cfg.EmailProvider); err != nil {
+			return 0, err
+		}
+
+		sendsError, err := checkQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID)
+		if err != nil {
+			return 0, err
+		}
+		sendsCount = sendsError
+		logging.AddLogAttr(r.Context(), slog.Int("sends_count", sendsCount))
+	}
+
+	if req.URL == "" {
+		writeJSONError(w, http.StatusBadRequest, errors.New("missing URL in request body"))
+		return 0, errors.New("missing URL")
+	}
+
+	return sendsCount, nil
+}
+
+func (h *handlers) validateURL(w http.ResponseWriter, r *http.Request, req articleRequest) (*url.URL, error) {
+	u, err := validation.ValidateURL(req.URL)
+	if err != nil {
+		urlErr := fmt.Errorf("invalid URL: %w", err)
+		writeJSONError(w, http.StatusBadRequest, urlErr)
+		return nil, urlErr
+	}
+
+	logging.AddLogAttr(r.Context(), slog.String("url", req.URL))
+	logging.AddLogAttr(r.Context(), slog.Bool("send_on_complete", req.SendOnComplete))
+	return u, nil
+}
+
+func (h *handlers) writeArticleResponse(w http.ResponseWriter, r *http.Request, article *model.Article) {
 	logging.AddLogAttr(r.Context(), slog.String("article_id", article.ID))
 
 	w.WriteHeader(http.StatusCreated)
@@ -52,20 +97,24 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		Title: article.Title,
 		URL:   article.URL,
 	})
+}
 
-	inheritedAttrs := logging.ExtractInheritedLogAttrs(r.Context())
-	accountID := auth.GetAccountID(r.Context())
-	url := req.URL
-	articleID := article.ID
-	reqID := logging.GetRequestID(r.Context())
+func (h *handlers) startArticleProcessing(
+	ctx context.Context,
+	articleURL, articleID, accountID string,
+	sendOnComplete bool,
+	_ int,
+) {
+	inheritedAttrs := logging.ExtractInheritedLogAttrs(ctx)
+	reqID := logging.GetRequestID(ctx)
 
 	event := &content.ProcessArticleEvent{
 		RequestID:      reqID,
-		URL:            url,
+		URL:            articleURL,
 		ArticleID:      articleID,
 		AccountID:      accountID,
 		InheritedAttrs: logging.ConvertSlogAttrsToMap(inheritedAttrs),
-		SendOnComplete: req.SendOnComplete,
+		SendOnComplete: sendOnComplete,
 	}
 
 	h.processor.StartProcessing(context.Background(), event)
@@ -189,6 +238,15 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountID(r.Context())
 	articleID := chi.URLParam(r, "id")
 
+	if err := checkEmailBackendEnabled(w, r, h.cfg.EmailProvider); err != nil {
+		return
+	}
+
+	sendsCount, err := checkQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID)
+	if err != nil {
+		return
+	}
+
 	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
 
 	result, err := h.service.SendArticleByID(r.Context(), accountID, articleID)
@@ -205,8 +263,7 @@ func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	if auth.HasSendsCount(r.Context()) {
-		sendsCount := auth.GetSendsCount(r.Context())
+	if h.cfg.AuthBackend == consts.AuthBackendAuth0 {
 		_ = json.NewEncoder(w).Encode(sendArticleResponseWithCount{
 			Status:     "sent",
 			SendsCount: sendsCount + 1,

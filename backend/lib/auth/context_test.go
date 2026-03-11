@@ -41,31 +41,3 @@ func TestGetAuthError(t *testing.T) {
 		assert.NoError(t, result)
 	})
 }
-
-func TestGetSendsCount(t *testing.T) {
-	t.Run("returns count when set", func(t *testing.T) {
-		ctx := context.WithValue(context.Background(), SendsCountKey, 5)
-		result := GetSendsCount(ctx)
-		assert.Equal(t, 5, result)
-	})
-
-	t.Run("returns 0 when not set", func(t *testing.T) {
-		ctx := context.Background()
-		result := GetSendsCount(ctx)
-		assert.Equal(t, 0, result)
-	})
-}
-
-func TestHasSendsCount(t *testing.T) {
-	t.Run("returns true when set", func(t *testing.T) {
-		ctx := context.WithValue(context.Background(), SendsCountKey, 5)
-		result := HasSendsCount(ctx)
-		assert.True(t, result)
-	})
-
-	t.Run("returns false when not set", func(t *testing.T) {
-		ctx := context.Background()
-		result := HasSendsCount(ctx)
-		assert.False(t, result)
-	})
-}

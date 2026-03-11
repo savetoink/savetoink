@@ -60,7 +60,7 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 	return r
 }
 
-func setupRoutes(r *chi.Mux, handlers *handlers, cfg *config.Config, srv service.Interface) {
+func setupRoutes(r *chi.Mux, handlers *handlers, cfg *config.Config, _ service.Interface) {
 	r.Route("/v1", func(r chi.Router) {
 		r.Get("/health", handlers.handleHealth)
 
@@ -72,11 +72,7 @@ func setupRoutes(r *chi.Mux, handlers *handlers, cfg *config.Config, srv service
 			r.Get("/{id}", handlers.handleGetArticle)
 			r.Delete("/{id}", handlers.handleDeleteArticle)
 			r.Put("/{id}/favorite", handlers.handleToggleFavorite)
-			r.With(
-				auth.NewEmailBackendEnabledMiddleware(cfg),
-				auth.NewActiveSubscriptionMiddleware(cfg, srv),
-				auth.NewBouncingEmailMiddleware(srv),
-			).Post("/{id}/send", handlers.handleSendArticle)
+			r.Post("/{id}/send", handlers.handleSendArticle)
 		})
 
 		r.Route("/user", func(r chi.Router) {

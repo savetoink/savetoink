@@ -1,14 +1,18 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	apperrors "github.com/shaftoe/savetoink/backend/lib/apperrors"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/service"
 )
 
 // writeJSONError writes an error response with the given status code and error message.
@@ -44,7 +48,123 @@ func decodeAndValidateRequest(w http.ResponseWriter, r *http.Request, req any) e
 }
 
 // handleServiceError logs error and writes appropriate response.
-func handleServiceError(w http.ResponseWriter, r *http.Request, err error, context string) {
-	logging.AddRequestError(r.Context(), fmt.Errorf("%s: %w", context, err))
+func handleServiceError(w http.ResponseWriter, r *http.Request, err error, contextStr string) {
+	logging.AddRequestError(r.Context(), fmt.Errorf("%s: %w", contextStr, err))
 	writeJSONError(w, statusCodeForError(err), err)
+}
+
+// checkEmailBackendEnabled checks if email backend is configured.
+func checkEmailBackendEnabled(w http.ResponseWriter, r *http.Request, emailProvider consts.EmailProvider) error {
+	if emailProvider == "" || emailProvider != consts.EmailBackendMailjet {
+		backendErr := fmt.Errorf("email backend not configured: %w", apperrors.ErrInvalid)
+		handleServiceError(w, r, backendErr, "check email backend")
+		return backendErr
+	}
+	return nil
+}
+
+// checkQuotaAndDeviceEmail checks if user has exceeded quota and if device email is bouncing.
+func checkQuotaAndDeviceEmail(
+	ctx context.Context,
+	w http.ResponseWriter,
+	r *http.Request,
+	svc service.Interface,
+	authBackend consts.AuthBackend,
+	accountID string,
+) (int, error) {
+	sendsCount, err := checkQuota(ctx, w, r, svc, authBackend, accountID)
+	if err != nil {
+		return sendsCount, err
+	}
+
+	if emailErr := checkDeviceEmail(ctx, w, r, svc, accountID); emailErr != nil {
+		return sendsCount, emailErr
+	}
+
+	return sendsCount, nil
+}
+
+func checkQuota(
+	ctx context.Context,
+	w http.ResponseWriter,
+	r *http.Request,
+	svc service.Interface,
+	authBackend consts.AuthBackend,
+	accountID string,
+) (int, error) {
+	if authBackend != consts.AuthBackendAuth0 {
+		return 0, nil
+	}
+
+	startDate := time.Now().AddDate(0, 0, -consts.FreeTierSendPeriodDays)
+
+	count, err := svc.CountSendsByAccountDateRange(ctx, accountID, startDate, time.Now())
+	if err != nil {
+		countErr := fmt.Errorf("failed to check subscription limit: %w", err)
+		handleServiceError(w, r, countErr, "check quota")
+		return 0, countErr
+	}
+
+	if count >= consts.MaxFreeTierSendsPerPeriod {
+		quotaErr := fmt.Errorf("free tier limit exceeded: %w", apperrors.ErrInvalid)
+		handleServiceError(w, r, quotaErr, "check quota")
+		return count, quotaErr
+	}
+
+	return count, nil
+}
+
+func checkDeviceEmail(
+	ctx context.Context,
+	w http.ResponseWriter,
+	r *http.Request,
+	svc service.Interface,
+	accountID string,
+) error {
+	destEmail, _, err := svc.GetUserDeviceEmail(ctx, accountID)
+	if err != nil {
+		emailErr := fmt.Errorf("failed to get user device email: %w", err)
+		handleServiceError(w, r, emailErr, "get device email")
+		return emailErr
+	}
+
+	if destEmail == "" {
+		return nil
+	}
+
+	isBouncing, err := svc.IsEmailBouncing(ctx, accountID, destEmail)
+	if err != nil {
+		bounceErr := fmt.Errorf("failed to check if email is bouncing: %w", err)
+		handleServiceError(w, r, bounceErr, "check bouncing email")
+		return bounceErr
+	}
+
+	if isBouncing {
+		return handleBouncingEmail(ctx, w, r, svc, accountID, destEmail)
+	}
+
+	return nil
+}
+
+func handleBouncingEmail(
+	ctx context.Context,
+	w http.ResponseWriter,
+	r *http.Request,
+	svc service.Interface,
+	accountID string,
+	destEmail string,
+) error {
+	bounceMsg := fmt.Sprintf("device email %s is blocked due to previous bounce", destEmail)
+
+	profile, profileErr := svc.GetUserProfile(ctx, accountID)
+	if profileErr == nil && profile != nil && profile.BouncedEmails != nil {
+		bounceInfo, exists := profile.BouncedEmails[destEmail]
+		if exists && bounceInfo.Error != "" {
+			bounceMsg = fmt.Sprintf("%s: %s", bounceMsg, bounceInfo.Error)
+		}
+	}
+
+	bounceErr := fmt.Errorf("%s: %w", bounceMsg, apperrors.ErrInvalid)
+	handleServiceError(w, r, bounceErr, "check bouncing email")
+	return bounceErr
 }
