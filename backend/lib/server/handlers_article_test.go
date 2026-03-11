@@ -613,7 +613,13 @@ func TestHandleCreateArticle_DBError(t *testing.T) {
 
 func TestHandleGetArticles_Success(t *testing.T) {
 	mockSvc := &articleMockService{
-		getArticlesMetadataFunc: func(_ context.Context, _ string, page, pageSize int, _ *bool) (*servicetypes.GetArticlesResult, error) { //nolint:lll // long function signature
+		getArticlesMetadataFunc: func(
+			_ context.Context,
+			_ string,
+			page,
+			pageSize int,
+			_ *bool,
+		) (*servicetypes.GetArticlesResult, error) {
 			return &servicetypes.GetArticlesResult{
 				Articles: []*model.Article{
 					{ID: "article-1", Title: "Article 1", URL: "https://example.com/1"},
@@ -630,7 +636,10 @@ func TestHandleGetArticles_Success(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "GET", "/v1/articles?page=1&page_size=10", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"GET",
+		"/v1/articles?page=1&page_size=10",
+		nil)
 	w := httptest.NewRecorder()
 
 	h.handleGetArticles(w, req)
@@ -649,7 +658,12 @@ func TestHandleGetArticles_Success(t *testing.T) {
 
 func TestHandleGetArticles_WithFavoriteFilter(t *testing.T) {
 	mockSvc := &articleMockService{
-		getArticlesMetadataFunc: func(_ context.Context, _ string, _, _ int, favoriteFilter *bool) (*servicetypes.GetArticlesResult, error) { //nolint:lll // long function signature
+		getArticlesMetadataFunc: func(
+			_ context.Context,
+			_ string,
+			_, _ int,
+			favoriteFilter *bool,
+		) (*servicetypes.GetArticlesResult, error) {
 			assert.NotNil(t, favoriteFilter)
 			assert.True(t, *favoriteFilter)
 			return &servicetypes.GetArticlesResult{
@@ -665,7 +679,10 @@ func TestHandleGetArticles_WithFavoriteFilter(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "GET", "/v1/articles?favorite=true", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"GET",
+		"/v1/articles?favorite=true",
+		nil)
 	w := httptest.NewRecorder()
 
 	h.handleGetArticles(w, req)
@@ -675,7 +692,13 @@ func TestHandleGetArticles_WithFavoriteFilter(t *testing.T) {
 
 func TestHandleGetArticles_InvalidPage(t *testing.T) {
 	mockSvc := &articleMockService{
-		getArticlesMetadataFunc: func(_ context.Context, _ string, page, _ int, _ *bool) (*servicetypes.GetArticlesResult, error) { //nolint:lll // long function signature
+		getArticlesMetadataFunc: func(
+			_ context.Context,
+			_ string,
+			page,
+			_ int,
+			_ *bool,
+		) (*servicetypes.GetArticlesResult, error) {
 			assert.Equal(t, 1, page)
 			return &servicetypes.GetArticlesResult{
 				Articles: []*model.Article{},
@@ -690,7 +713,10 @@ func TestHandleGetArticles_InvalidPage(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "GET", "/v1/articles?page=invalid", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"GET",
+		"/v1/articles?page=invalid",
+		nil)
 	w := httptest.NewRecorder()
 
 	h.handleGetArticles(w, req)
@@ -700,7 +726,13 @@ func TestHandleGetArticles_InvalidPage(t *testing.T) {
 
 func TestHandleGetArticles_PageSizeCapped(t *testing.T) {
 	mockSvc := &articleMockService{
-		getArticlesMetadataFunc: func(_ context.Context, _ string, _, pageSize int, _ *bool) (*servicetypes.GetArticlesResult, error) { //nolint:lll // long function signature
+		getArticlesMetadataFunc: func(
+			_ context.Context,
+			_ string,
+			_,
+			pageSize int,
+			_ *bool,
+		) (*servicetypes.GetArticlesResult, error) {
 			assert.Equal(t, 20, pageSize)
 			return &servicetypes.GetArticlesResult{
 				Articles: []*model.Article{},
@@ -715,7 +747,10 @@ func TestHandleGetArticles_PageSizeCapped(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "GET", "/v1/articles?page_size=200", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"GET",
+		"/v1/articles?page_size=200",
+		nil)
 	w := httptest.NewRecorder()
 
 	h.handleGetArticles(w, req)
@@ -744,7 +779,12 @@ func TestHandleGetArticles_ServiceError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockSvc := &articleMockService{
-				getArticlesMetadataFunc: func(_ context.Context, _ string, _, _ int, _ *bool) (*servicetypes.GetArticlesResult, error) { //nolint:lll // long function signature
+				getArticlesMetadataFunc: func(
+					_ context.Context,
+					_ string,
+					_, _ int,
+					_ *bool,
+				) (*servicetypes.GetArticlesResult, error) {
 					return nil, tt.serviceErr
 				},
 			}
@@ -776,7 +816,10 @@ func TestHandleGetArticle_Success(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "GET", "/v1/articles/article-123", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"GET",
+		"/v1/articles/article-123",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -803,7 +846,10 @@ func TestHandleGetArticle_NotFound(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "GET", "/v1/articles/article-123", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"GET",
+		"/v1/articles/article-123",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -824,7 +870,10 @@ func TestHandleDeleteArticle_Success(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "DELETE", "/v1/articles/article-123", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"DELETE",
+		"/v1/articles/article-123",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -869,7 +918,10 @@ func TestHandleDeleteArticle_ServiceError(t *testing.T) {
 			cfg := &config.Config{}
 			h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "DELETE", "/v1/articles/article-123", nil) //nolint:lll // long function signature
+			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+				"DELETE",
+				"/v1/articles/article-123",
+				nil)
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("id", "article-123")
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -933,7 +985,10 @@ func TestHandleToggleFavorite_Success(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "PUT", "/v1/articles/article-123/favorite", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"PUT",
+		"/v1/articles/article-123/favorite",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -978,7 +1033,10 @@ func TestHandleToggleFavorite_ServiceError(t *testing.T) {
 			cfg := &config.Config{}
 			h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "PUT", "/v1/articles/article-123/favorite", nil) //nolint:lll // long function signature
+			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+				"PUT",
+				"/v1/articles/article-123/favorite",
+				nil)
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("id", "article-123")
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -1013,7 +1071,10 @@ func TestHandleSendArticle_Success(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles/article-123/send", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"POST",
+		"/v1/articles/article-123/send",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -1079,7 +1140,10 @@ func TestHandleSendArticle_ArticleNotFound(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles/article-123/send", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"POST",
+		"/v1/articles/article-123/send",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -1100,7 +1164,10 @@ func TestHandleSendArticle_GenerateEPUBError(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles/article-123/send", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"POST",
+		"/v1/articles/article-123/send",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -1121,7 +1188,10 @@ func TestHandleSendArticle_GetDeviceEmailError(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles/article-123/send", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"POST",
+		"/v1/articles/article-123/send",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -1142,7 +1212,10 @@ func TestHandleSendArticle_NoDeviceEmail(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles/article-123/send", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"POST",
+		"/v1/articles/article-123/send",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -1168,7 +1241,10 @@ func TestHandleSendArticle_SendArticleError(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles/article-123/send", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"POST",
+		"/v1/articles/article-123/send",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
@@ -1202,7 +1278,10 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"), "POST", "/v1/articles/article-123/send", nil) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount("account-123"),
+		"POST",
+		"/v1/articles/article-123/send",
+		nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "article-123")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))

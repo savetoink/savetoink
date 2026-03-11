@@ -139,7 +139,12 @@ func (m *userprofileMockService) GetUserDeviceEmail(
 	return testArticleDeviceEmail, false, nil
 }
 
-func (m *userprofileMockService) SetUserDeviceEmailWithAutoSend(ctx context.Context, accountID, deviceEmail string, autoSend bool) error { //nolint:lll // long function signature
+func (m *userprofileMockService) SetUserDeviceEmailWithAutoSend(
+	ctx context.Context,
+	accountID,
+	deviceEmail string,
+	autoSend bool,
+) error {
 	if m.setUserDeviceEmailFunc != nil {
 		return m.setUserDeviceEmailFunc(ctx, accountID, deviceEmail, autoSend)
 	}
@@ -377,7 +382,10 @@ func TestHandleSetDevice_InvalidJSON(t *testing.T) {
 	cfg := &config.Config{}
 	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "PUT", "/v1/devices", bytes.NewReader([]byte("invalid json"))) //nolint:lll // long function signature
+	req := httptest.NewRequestWithContext(newUserprofileTestContext(),
+		"PUT",
+		"/v1/devices",
+		bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 

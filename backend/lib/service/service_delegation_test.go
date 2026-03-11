@@ -7,7 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awstypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/shaftoe/savetoink/backend/lib/config"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	svcemail "github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/repository"
@@ -881,3 +884,116 @@ func (m *emailSenderMock) SendEmail(_ context.Context, _ *svcemail.Request) (*sv
 var _ repository.ArticlesRepository = (*testArticlesRepo)(nil)
 var _ repository.UserProfileRepository = (*testUserProfileRepo)(nil)
 var _ repository.SendsRepository = (*testSendsRepo)(nil)
+
+func TestNewDependenciesFromConfig_WithMailjetAndAWS(t *testing.T) {
+	cfg := &config.Config{
+		EmailProvider:    consts.EmailBackendMailjet,
+		MailjetAPIKey:    "test-api-key",
+		MailjetAPISecret: "test-secret",
+		SenderEmail:      "sender@example.com",
+		AWSConfig:        &aws.Config{},
+		ArticlesTable:    "articles-table",
+		UserProfileTable: "profiles-table",
+		SendsTable:       "sends-table",
+		BrowserlessKey:   "browserless-key",
+	}
+
+	deps := NewDependenciesFromConfig(cfg)
+
+	if deps.Fetcher == nil {
+		t.Error("expected Fetcher to be not nil")
+	}
+	if deps.Extractor == nil {
+		t.Error("expected Extractor to be not nil")
+	}
+	if deps.Cleaner == nil {
+		t.Error("expected Cleaner to be not nil")
+	}
+	if deps.Publisher == nil {
+		t.Error("expected Publisher to be not nil")
+	}
+	if deps.Sender == nil {
+		t.Error("expected Sender to be not nil")
+	}
+	if deps.ArticlesRepo == nil {
+		t.Error("expected ArticlesRepo to be not nil")
+	}
+	if deps.UserProfileRepo == nil {
+		t.Error("expected UserProfileRepo to be not nil")
+	}
+	if deps.SendsRepo == nil {
+		t.Error("expected SendsRepo to be not nil")
+	}
+}
+
+func TestNewDependenciesFromConfig_NoMailjetNoAWS(t *testing.T) {
+	cfg := &config.Config{
+		EmailProvider:  "unknown",
+		BrowserlessKey: "browserless-key",
+	}
+
+	deps := NewDependenciesFromConfig(cfg)
+
+	if deps.Fetcher == nil {
+		t.Error("expected Fetcher to be not nil")
+	}
+	if deps.Sender != nil {
+		t.Error("expected Sender to be nil")
+	}
+	if deps.ArticlesRepo != nil {
+		t.Error("expected ArticlesRepo to be nil")
+	}
+	if deps.UserProfileRepo != nil {
+		t.Error("expected UserProfileRepo to be nil")
+	}
+	if deps.SendsRepo != nil {
+		t.Error("expected SendsRepo to be nil")
+	}
+}
+
+func TestNewFromConfig(t *testing.T) {
+	cfg := &config.Config{
+		EmailProvider:    consts.EmailBackendMailjet,
+		MailjetAPIKey:    "test-api-key",
+		MailjetAPISecret: "test-secret",
+		SenderEmail:      "sender@example.com",
+		AWSConfig:        &aws.Config{},
+		ArticlesTable:    "articles-table",
+		UserProfileTable: "profiles-table",
+		SendsTable:       "sends-table",
+		BrowserlessKey:   "browserless-key",
+	}
+
+	svc := NewFromConfig(cfg)
+
+	if svc == nil {
+		t.Fatal("expected service to be not nil")
+	}
+	if svc.fetcher == nil {
+		t.Error("expected fetcher to be not nil")
+	}
+	if svc.extractor == nil {
+		t.Error("expected extractor to be not nil")
+	}
+	if svc.cleaner == nil {
+		t.Error("expected cleaner to be not nil")
+	}
+	if svc.publisher == nil {
+		t.Error("expected publisher to be not nil")
+	}
+	if svc.articles == nil {
+		t.Error("expected articles to be not nil")
+	}
+	if svc.profile == nil {
+		t.Error("expected profile to be not nil")
+	}
+	if svc.sender == nil {
+		t.Error("expected sender to be not nil")
+	}
+	if svc.sendsRepo == nil {
+		t.Error("expected sendsRepo to be not nil")
+	}
+	if svc.cfg != cfg {
+		t.Error("expected cfg to be set")
+	}
+}
