@@ -156,7 +156,7 @@ func TestCorsMiddleware(t *testing.T) {
 func TestRequestIDMiddleware(t *testing.T) {
 	t.Run("uses lambda context AWS request ID as highest priority", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Context().Value(logging.RequestIDKey)
+			requestID := logging.GetRequestID(r.Context())
 			assert.Equal(t, "lambda-request-123", requestID)
 			w.WriteHeader(http.StatusOK)
 		})
@@ -179,7 +179,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 	t.Run("uses X-Request-ID header when no lambda context", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Context().Value(logging.RequestIDKey)
+			requestID := logging.GetRequestID(r.Context())
 			assert.Equal(t, "header-request-id", requestID)
 			w.WriteHeader(http.StatusOK)
 		})
@@ -195,7 +195,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 	t.Run("uses x-amzn-request-id header as fallback", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Context().Value(logging.RequestIDKey)
+			requestID := logging.GetRequestID(r.Context())
 			assert.NotNil(t, requestID)
 			w.WriteHeader(http.StatusOK)
 		})
@@ -211,7 +211,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 	t.Run("generates request ID when no sources available", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Context().Value(logging.RequestIDKey)
+			requestID := logging.GetRequestID(r.Context())
 			assert.NotNil(t, requestID)
 			assert.NotEmpty(t, requestID)
 			w.WriteHeader(http.StatusOK)
@@ -243,7 +243,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 	t.Run("adds request ID to request context", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Context().Value(logging.RequestIDKey)
+			requestID := logging.GetRequestID(r.Context())
 			assert.NotNil(t, requestID, "request ID should be in context")
 			assert.Equal(t, "test-id", requestID, "request ID should match header value")
 			w.WriteHeader(http.StatusOK)
@@ -258,7 +258,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 	t.Run("lambda context takes precedence over x-amzn-request-id", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Context().Value(logging.RequestIDKey)
+			requestID := logging.GetRequestID(r.Context())
 			assert.Equal(t, "lambda-id", requestID)
 			w.WriteHeader(http.StatusOK)
 		})
@@ -280,7 +280,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 	t.Run("X-Request-ID takes precedence over x-amzn-request-id", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Context().Value(logging.RequestIDKey)
+			requestID := logging.GetRequestID(r.Context())
 			assert.Equal(t, "custom-id", requestID)
 			w.WriteHeader(http.StatusOK)
 		})
@@ -297,7 +297,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 	t.Run("handles lambda context with empty AwsRequestID", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Context().Value(logging.RequestIDKey)
+			requestID := logging.GetRequestID(r.Context())
 			assert.NotNil(t, requestID)
 			w.WriteHeader(http.StatusOK)
 		})
@@ -319,7 +319,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 	t.Run("handles empty X-Request-ID header", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Context().Value(logging.RequestIDKey)
+			requestID := logging.GetRequestID(r.Context())
 			assert.NotNil(t, requestID)
 			w.WriteHeader(http.StatusOK)
 		})
@@ -465,7 +465,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
 		logRecord := &logging.LogRecord{Record: &record}
-		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+		ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
 		nextCalled := false
 		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -498,7 +498,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
 		logRecord := &logging.LogRecord{Record: &record}
-		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+		ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
 		nextCalled := false
 		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -570,7 +570,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 			t.Run(method, func(t *testing.T) {
 				record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
 				logRecord := &logging.LogRecord{Record: &record}
-				ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+				ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
 				next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.WriteHeader(http.StatusOK)
@@ -623,7 +623,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
 		logRecord := &logging.LogRecord{Record: &record}
-		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+		ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
 		logging.AddString(ctx, "existing_key", "existing_value")
 
@@ -680,7 +680,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 				record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
 				logRecord := &logging.LogRecord{Record: &record}
-				ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+				ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
 				next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.WriteHeader(http.StatusOK)
@@ -710,7 +710,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
 		logRecord := &logging.LogRecord{Record: &record}
-		ctx := context.WithValue(context.Background(), logging.LogRecordKey, logRecord)
+		ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
 		customHeaderValue := "custom-request-value"
 		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

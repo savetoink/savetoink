@@ -190,7 +190,7 @@ func TestFinalizeLogRecord_WithRequestError(t *testing.T) {
 	start := time.Now()
 
 	testErr := errors.New("request failed")
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &testErr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &testErr)
 
 	finalizeLogRecord(ctx, &record, start, http.StatusOK)
 
@@ -215,7 +215,7 @@ func TestFinalizeLogRecord_WithJoinedErrors(t *testing.T) {
 	err1 := errors.New("error one")
 	err2 := errors.New("error two")
 	joinedErr := errors.Join(err1, err2)
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &joinedErr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &joinedErr)
 
 	finalizeLogRecord(ctx, &record, start, http.StatusOK)
 
@@ -359,16 +359,16 @@ func TestMiddleware_WithContextValues(t *testing.T) {
 
 	assert.NotNil(t, capturedContext)
 
-	logRecord := capturedContext.Value(LogRecordKey)
+	logRecord := capturedContext.Value(logRecordKey)
 	assert.NotNil(t, logRecord)
 
-	requestError := capturedContext.Value(RequestErrorKey)
+	requestError := capturedContext.Value(requestErrorKey)
 	assert.NotNil(t, requestError)
 }
 
 func TestGetRequestIDFromContext_Present(t *testing.T) {
 	requestID := testRequestID
-	ctx := context.WithValue(context.Background(), RequestIDKey, requestID)
+	ctx := context.WithValue(context.Background(), requestIDKey, requestID)
 
 	result := getRequestIDFromContext(ctx)
 
@@ -385,7 +385,7 @@ func TestGetRequestIDFromContext_Missing(t *testing.T) {
 }
 
 func TestGetRequestIDFromContext_WrongType(t *testing.T) {
-	ctx := context.WithValue(context.Background(), RequestIDKey, 12345)
+	ctx := context.WithValue(context.Background(), requestIDKey, 12345)
 
 	result := getRequestIDFromContext(ctx)
 
@@ -394,7 +394,7 @@ func TestGetRequestIDFromContext_WrongType(t *testing.T) {
 
 func TestMiddleware_WithRequestID(t *testing.T) {
 	requestID := "test-request-id"
-	ctx := context.WithValue(context.Background(), RequestIDKey, requestID)
+	ctx := context.WithValue(context.Background(), requestIDKey, requestID)
 	req := httptest.NewRequestWithContext(ctx, "GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 

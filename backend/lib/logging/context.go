@@ -13,12 +13,12 @@ import (
 type contextKey string
 
 const (
-	// LogRecordKey is the context key for the log record.
-	LogRecordKey contextKey = "log_record"
-	// RequestErrorKey is the context key for request errors.
-	RequestErrorKey contextKey = "request_error"
-	// RequestIDKey is the context key for request IDs.
-	RequestIDKey contextKey = "request_id"
+	// logRecordKey is the context key for the log record.
+	logRecordKey contextKey = "log_record"
+	// requestErrorKey is the context key for request errors.
+	requestErrorKey contextKey = "request_error"
+	// requestIDKey is the context key for request IDs.
+	requestIDKey contextKey = "request_id"
 )
 
 // LogRecord wraps a slog.Record for use in request context.
@@ -27,7 +27,7 @@ type LogRecord struct {
 }
 
 func getLogRecord(ctx context.Context) *LogRecord {
-	if record, ok := ctx.Value(LogRecordKey).(*LogRecord); ok {
+	if record, ok := ctx.Value(logRecordKey).(*LogRecord); ok {
 		return record
 	}
 	return nil
@@ -35,7 +35,7 @@ func getLogRecord(ctx context.Context) *LogRecord {
 
 // GetRequestError retrieves any request error from context.
 func GetRequestError(ctx context.Context) error {
-	if errPtr, ok := ctx.Value(RequestErrorKey).(*error); ok && errPtr != nil {
+	if errPtr, ok := ctx.Value(requestErrorKey).(*error); ok && errPtr != nil {
 		return *errPtr
 	}
 	return nil
@@ -77,7 +77,7 @@ func AddRequestError(ctx context.Context, err error) {
 	if err == nil {
 		return
 	}
-	if errPtr, ok := ctx.Value(RequestErrorKey).(*error); ok && errPtr != nil {
+	if errPtr, ok := ctx.Value(requestErrorKey).(*error); ok && errPtr != nil {
 		if *errPtr != nil {
 			*errPtr = errors.Join(*errPtr, err)
 		} else {
@@ -88,10 +88,16 @@ func AddRequestError(ctx context.Context, err error) {
 
 // GetRequestID retrieves the request ID from context.
 func GetRequestID(ctx context.Context) string {
-	if id, ok := ctx.Value(RequestIDKey).(string); ok {
+	if id, ok := ctx.Value(requestIDKey).(string); ok {
 		return id
 	}
 	return ""
+}
+
+// GetLogRecord retrieves the log record from context.
+// This is useful for testing and internal package use.
+func GetLogRecord(ctx context.Context) *LogRecord {
+	return getLogRecord(ctx)
 }
 
 // LogArticleProcessing logs article processing events.
@@ -130,7 +136,7 @@ func LogArticleProcessing(ctx context.Context, message string, inheritedAttrs []
 // ExtractInheritedLogAttrs extracts attributes from the log record in the context,
 // excluding HTTP metadata keys like client_ip, user_agent, path, method, and url.
 func ExtractInheritedLogAttrs(ctx context.Context) []slog.Attr {
-	logRecord, ok := ctx.Value(LogRecordKey).(*LogRecord)
+	logRecord, ok := ctx.Value(logRecordKey).(*LogRecord)
 	if !ok || logRecord == nil {
 		return nil
 	}
@@ -150,4 +156,26 @@ func ExtractInheritedLogAttrs(ctx context.Context) []slog.Attr {
 		return true
 	})
 	return attrs
+}
+
+// WithLogRecord creates a context with a log record for structured logging.
+func WithLogRecord(ctx context.Context) context.Context {
+	return context.WithValue(ctx, logRecordKey, &LogRecord{Record: &slog.Record{}})
+}
+
+// WithLogRecordValue creates a context with the provided log record.
+// This is useful for testing.
+func WithLogRecordValue(ctx context.Context, record *LogRecord) context.Context {
+	return context.WithValue(ctx, logRecordKey, record)
+}
+
+// WithRequestError creates a context with a request error accumulator.
+func WithRequestError(ctx context.Context) context.Context {
+	var err error
+	return context.WithValue(ctx, requestErrorKey, &err)
+}
+
+// WithRequestID creates a context with a request ID.
+func WithRequestID(ctx context.Context, requestID string) context.Context {
+	return context.WithValue(ctx, requestIDKey, requestID)
 }

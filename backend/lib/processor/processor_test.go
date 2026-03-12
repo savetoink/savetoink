@@ -243,8 +243,8 @@ func TestProcessArticle_FetchError(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	ProcessArticle(ctx, mockSvc, event)
 
@@ -289,8 +289,8 @@ func TestProcessArticle_ParseHTMLError(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	ProcessArticle(ctx, mockSvc, event)
 
@@ -339,8 +339,8 @@ func TestProcessArticle_NilCleanedArticle(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	ProcessArticle(ctx, mockSvc, event)
 
@@ -392,8 +392,8 @@ func TestProcessArticle_UpdateError(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	ProcessArticle(ctx, mockSvc, event)
 
@@ -419,8 +419,8 @@ func TestProcessArticle_URLMismatch(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	ProcessArticle(ctx, mockSvc, event)
 
@@ -452,8 +452,8 @@ func TestProcessArticle_Timeout(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	startTime := time.Now()
 	ProcessArticle(ctx, mockSvc, event)
@@ -480,8 +480,8 @@ func TestMarkArticleError_Success(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	testErr := errors.New("test error")
 	markArticleError(ctx, mockSvc, "account-456", "article-123", "extract", testErr)
@@ -501,8 +501,8 @@ func TestMarkArticleError_GetArticleError(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	testErr := errors.New("test error")
 	markArticleError(ctx, mockSvc, "account-456", "article-123", "extract", testErr)
@@ -528,8 +528,8 @@ func TestLogArticleResult(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	logArticleResult(ctx, inheritedAttrs)
 
@@ -593,8 +593,8 @@ func TestProcessArticle_SendOnComplete_Success(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	ProcessArticle(ctx, mockSvc, event)
 
@@ -716,8 +716,8 @@ func TestSendArticle_GetDeviceEmailError(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	err := sendArticle(ctx, mockSvc, article)
 
@@ -742,8 +742,8 @@ func TestSendArticle_EmailRespWithMessageID(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
+	ctx = logging.WithLogRecord(ctx)
+	ctx = logging.WithRequestError(ctx)
 
 	err := sendArticle(ctx, mockSvc, article)
 

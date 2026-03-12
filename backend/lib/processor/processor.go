@@ -116,9 +116,8 @@ func setupProcessingContext(
 	ctx context.Context,
 	_ *content.ProcessArticleEvent,
 ) (context.Context, context.CancelFunc) {
-	var requestError error
-	processCtx := context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	processCtx = context.WithValue(processCtx, logging.RequestErrorKey, &requestError)
+	processCtx := logging.WithLogRecord(ctx)
+	processCtx = logging.WithRequestError(processCtx)
 	processCtx, cancel := context.WithTimeout(processCtx, consts.ArticleProcessingTimeout)
 	return processCtx, cancel
 }

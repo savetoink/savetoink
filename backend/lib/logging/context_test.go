@@ -20,14 +20,14 @@ func TestGetRequestError_NoError(t *testing.T) {
 
 func TestGetRequestError_WithNilError(t *testing.T) {
 	var nilErr error
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &nilErr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &nilErr)
 	err := GetRequestError(ctx)
 	assert.Nil(t, err)
 }
 
 func TestGetRequestError_WithError(t *testing.T) {
 	testErr := errors.New("test error")
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &testErr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &testErr)
 	err := GetRequestError(ctx)
 	assert.Equal(t, testErr, err)
 }
@@ -36,7 +36,7 @@ func TestGetRequestError_JoinedErrors(t *testing.T) {
 	err1 := errors.New("error 1")
 	err2 := errors.New("error 2")
 	joinedErr := errors.Join(err1, err2)
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &joinedErr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &joinedErr)
 	err := GetRequestError(ctx)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "error 1")
@@ -55,7 +55,7 @@ func TestAddLogAttr_NoRecord(t *testing.T) {
 func TestAddLogAttr_WithRecord(t *testing.T) {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "message", 0)
 	logRecord := &LogRecord{&record}
-	ctx := context.WithValue(context.Background(), LogRecordKey, logRecord)
+	ctx := context.WithValue(context.Background(), logRecordKey, logRecord)
 
 	AddLogAttr(ctx, String("key1", "value1"))
 
@@ -73,7 +73,7 @@ func TestAddLogAttr_WithRecord(t *testing.T) {
 func TestAddLogAttr_MultipleAttrs(t *testing.T) {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "message", 0)
 	logRecord := &LogRecord{&record}
-	ctx := context.WithValue(context.Background(), LogRecordKey, logRecord)
+	ctx := context.WithValue(context.Background(), logRecordKey, logRecord)
 
 	AddLogAttr(ctx, String("key1", "value1"))
 	AddLogAttr(ctx, Int("key2", 42))
@@ -94,7 +94,7 @@ func TestAddLogAttr_MultipleAttrs(t *testing.T) {
 func TestAddString(t *testing.T) {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "message", 0)
 	logRecord := &LogRecord{&record}
-	ctx := context.WithValue(context.Background(), LogRecordKey, logRecord)
+	ctx := context.WithValue(context.Background(), logRecordKey, logRecord)
 
 	AddString(ctx, "test_key", "test_value")
 
@@ -112,7 +112,7 @@ func TestAddString(t *testing.T) {
 func TestAddInt(t *testing.T) {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "message", 0)
 	logRecord := &LogRecord{&record}
-	ctx := context.WithValue(context.Background(), LogRecordKey, logRecord)
+	ctx := context.WithValue(context.Background(), logRecordKey, logRecord)
 
 	AddInt(ctx, "count", 100)
 
@@ -130,7 +130,7 @@ func TestAddInt(t *testing.T) {
 func TestAddBool(t *testing.T) {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "message", 0)
 	logRecord := &LogRecord{&record}
-	ctx := context.WithValue(context.Background(), LogRecordKey, logRecord)
+	ctx := context.WithValue(context.Background(), logRecordKey, logRecord)
 
 	AddBool(ctx, "success", true)
 
@@ -149,7 +149,7 @@ func TestAddTime(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "message", 0)
 	logRecord := &LogRecord{&record}
-	ctx := context.WithValue(context.Background(), LogRecordKey, logRecord)
+	ctx := context.WithValue(context.Background(), logRecordKey, logRecord)
 
 	AddTime(ctx, "timestamp", now)
 
@@ -166,7 +166,7 @@ func TestAddTime(t *testing.T) {
 
 func TestAddRequestError_NilError(t *testing.T) {
 	var nilErr *error
-	ctx := context.WithValue(context.Background(), RequestErrorKey, nilErr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, nilErr)
 
 	assert.NotPanics(t, func() {
 		AddRequestError(ctx, nil)
@@ -187,7 +187,7 @@ func TestAddRequestError_NoContextKey(t *testing.T) {
 
 func TestAddRequestError_FirstError(t *testing.T) {
 	var errPtr error
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &errPtr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &errPtr)
 
 	testErr1 := errors.New("first error")
 	AddRequestError(ctx, testErr1)
@@ -198,7 +198,7 @@ func TestAddRequestError_FirstError(t *testing.T) {
 
 func TestAddRequestError_MultipleErrors(t *testing.T) {
 	var errPtr error
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &errPtr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &errPtr)
 
 	err1 := errors.New("error 1")
 	err2 := errors.New("error 2")
@@ -219,7 +219,7 @@ func TestAddRequestError_MultipleErrors(t *testing.T) {
 func TestAddRequestError_AfterExistingJoinedError(t *testing.T) {
 	initialErr := errors.Join(errors.New("initial"), errors.New("error"))
 	errPtr := initialErr
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &errPtr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &errPtr)
 
 	newErr := errors.New("new error")
 	AddRequestError(ctx, newErr)
@@ -231,9 +231,11 @@ func TestAddRequestError_AfterExistingJoinedError(t *testing.T) {
 }
 
 func TestContextKeys(t *testing.T) {
-	assert.Equal(t, contextKey("log_record"), LogRecordKey)
-	assert.Equal(t, contextKey("request_error"), RequestErrorKey)
-	assert.Equal(t, contextKey("request_id"), RequestIDKey)
+	// These keys are now private and only accessible within the logging package
+	// This test verifies the internal key values are correct
+	assert.Equal(t, contextKey("log_record"), logRecordKey)
+	assert.Equal(t, contextKey("request_error"), requestErrorKey)
+	assert.Equal(t, contextKey("request_id"), requestIDKey)
 }
 
 func TestLogRecord(t *testing.T) {
@@ -252,7 +254,7 @@ func TestLogRecord(t *testing.T) {
 func TestAddLogAttr_Integration(t *testing.T) {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "message", 0)
 	logRecord := &LogRecord{&record}
-	ctx := context.WithValue(context.Background(), LogRecordKey, logRecord)
+	ctx := context.WithValue(context.Background(), logRecordKey, logRecord)
 
 	AddString(ctx, "user_id", "user-123")
 	AddInt(ctx, "items_count", 42)
@@ -280,7 +282,7 @@ func TestAddLogAttr_Integration(t *testing.T) {
 
 func TestGetRequestID_Present(t *testing.T) {
 	requestID := "req-12345"
-	ctx := context.WithValue(context.Background(), RequestIDKey, requestID)
+	ctx := context.WithValue(context.Background(), requestIDKey, requestID)
 
 	result := GetRequestID(ctx)
 
@@ -296,7 +298,7 @@ func TestGetRequestID_Missing(t *testing.T) {
 }
 
 func TestGetRequestID_WrongType(t *testing.T) {
-	ctx := context.WithValue(context.Background(), RequestIDKey, 12345)
+	ctx := context.WithValue(context.Background(), requestIDKey, 12345)
 
 	result := GetRequestID(ctx)
 
@@ -357,7 +359,7 @@ func TestExtractInheritedLogAttrs(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			ctx = context.WithValue(ctx, LogRecordKey, &LogRecord{Record: &record})
+			ctx = context.WithValue(ctx, logRecordKey, &LogRecord{Record: &record})
 
 			attrs := ExtractInheritedLogAttrs(ctx)
 
@@ -385,7 +387,7 @@ func TestExtractInheritedLogAttrs_NoLogRecord(t *testing.T) {
 
 func TestExtractInheritedLogAttrs_NilLogRecord(t *testing.T) {
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, LogRecordKey, (*LogRecord)(nil))
+	ctx = context.WithValue(ctx, logRecordKey, (*LogRecord)(nil))
 
 	attrs := ExtractInheritedLogAttrs(ctx)
 
@@ -460,7 +462,7 @@ func TestLogArticleProcessing_SingleError(t *testing.T) {
 	defer slog.SetDefault(defaultLogger)
 
 	testErr := errors.New("fetch failed")
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &testErr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &testErr)
 
 	inheritedAttrs := []slog.Attr{
 		slog.String("request_id", "req-123"),
@@ -500,7 +502,7 @@ func TestLogArticleProcessing_JoinedErrors(t *testing.T) {
 	err1 := errors.New("error 1")
 	err2 := errors.New("error 2")
 	joinedErr := errors.Join(err1, err2)
-	ctx := context.WithValue(context.Background(), RequestErrorKey, &joinedErr)
+	ctx := context.WithValue(context.Background(), requestErrorKey, &joinedErr)
 
 	inheritedAttrs := []slog.Attr{
 		slog.String("request_id", "req-123"),
@@ -569,7 +571,7 @@ func TestLogArticleProcessing_WithLogRecordAttrs(t *testing.T) {
 	defer slog.SetDefault(defaultLogger)
 
 	logRecord := slog.NewRecord(time.Now(), slog.LevelInfo, "message", 0)
-	ctx := context.WithValue(context.Background(), LogRecordKey, &LogRecord{&logRecord})
+	ctx := context.WithValue(context.Background(), logRecordKey, &LogRecord{&logRecord})
 
 	AddString(ctx, "fetcher_type", "browserless")
 	AddInt(ctx, "response_time_ms", 250)

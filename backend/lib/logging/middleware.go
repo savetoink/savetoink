@@ -25,27 +25,39 @@ func (r *responseStatusRecorder) WriteHeader(code int) {
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
-			start        = time.Now()
-			accountID    = auth.GetAccountIDFromCtx(r.Context())
-			requestID    = getRequestIDFromContext(r.Context())
-			version      = consts.Version()
-			requestError error
+			start     = time.Now()
+			accountID = auth.GetAccountIDFromCtx(r.Context())
+			requestID = getRequestIDFromContext(r.Context())
+			version   = consts.Version()
 		)
 
 		record := createLogRecord(r, accountID, requestID, version)
 
-		ctx := context.WithValue(r.Context(), LogRecordKey, &LogRecord{Record: &record})
-		ctx = context.WithValue(ctx, RequestErrorKey, &requestError)
+		ctx := WithLogRecord(r.Context())
+		// Initialize the log record with the created record
+		var logRecord *LogRecord
+		if lr := getLogRecord(ctx); lr != nil {
+			*lr.Record = record
+			logRecord = lr
+		}
+		ctx = WithRequestError(ctx)
 
 		recorder := &responseStatusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(recorder, r.WithContext(ctx))
 
-		finalizeLogRecord(ctx, &record, start, recorder.status)
+		// Use the log record from the context (which has been modified by handlers)
+		// instead of the local copy
+		if logRecord != nil {
+			finalizeLogRecord(ctx, logRecord.Record, start, recorder.status)
+		} else {
+			// Fallback to local record if context record is missing (shouldn't happen)
+			finalizeLogRecord(ctx, &record, start, recorder.status)
+		}
 	})
 }
 
 func getRequestIDFromContext(ctx context.Context) *string {
-	requestID, ok := ctx.Value(RequestIDKey).(string)
+	requestID, ok := ctx.Value(requestIDKey).(string)
 	if !ok {
 		return nil
 	}

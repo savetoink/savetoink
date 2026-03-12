@@ -96,5 +96,10 @@ func setupRoutes(r *chi.Mux, h *handlers.Handlers, cfg *config.Config, _ service
 		if cfg.EmailProvider == consts.EmailBackendMailjet {
 			r.Post("/webhooks/mailjet", h.HandleMailjetWebhook)
 		}
+
+		r.Route("/sends", func(r chi.Router) {
+			r.Use(auth.EnsureAutheticatedMiddleware)
+			r.Get("/", h.HandleGetSends)
+		})
 	})
 }

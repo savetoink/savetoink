@@ -17,6 +17,8 @@ import (
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const testAccountID = "account-1"
@@ -996,4 +998,66 @@ func TestNewFromConfig(t *testing.T) {
 	if svc.cfg != cfg {
 		t.Error("expected cfg to be set")
 	}
+}
+
+func TestCreateSendRecordSetsTimestamp(t *testing.T) {
+	ctx := context.Background()
+	beforeCreate := time.Now()
+
+	mockRepo := &testSendsRepoTracking{}
+
+	cfg := &config.Config{
+		SenderEmail:   "test@example.com",
+		EmailProvider: consts.EmailBackendMailjet,
+	}
+	svc := New(&Dependencies{
+		Fetcher:         &content.Fetcher{},
+		Extractor:       &content.DOMExtractor{},
+		Cleaner:         &content.TrafilaturaCleaner{},
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    &testArticlesRepo{},
+		UserProfileRepo: &testUserProfileRepo{},
+		SendsRepo:       mockRepo,
+		Config:          cfg,
+	})
+
+	err := svc.createSendRecord(ctx, "account-123", "article-456", "Test Article", "device@test.com")
+	require.NoError(t, err)
+	require.Len(t, mockRepo.createdSends, 1, "should have created one send record")
+
+	created := mockRepo.createdSends[0]
+	assert.Equal(t, "account-123", created.Account)
+	assert.Equal(t, "article-456", created.ArticleID)
+	assert.Equal(t, "Test Article", created.Title)
+	assert.Equal(t, "device@test.com", created.DestEmail)
+	assert.Equal(t, "test@example.com", created.SenderEmail)
+	assert.Equal(t, "mailjet", created.Provider)
+
+	assert.True(t, created.SentAt.After(beforeCreate), "SentAt should be set to current time")
+}
+
+type testSendsRepoTracking struct {
+	createdSends []*model.Send
+}
+
+func (r *testSendsRepoTracking) CreateSendRecord(_ context.Context, send *model.Send) error {
+	r.createdSends = append(r.createdSends, send)
+	return nil
+}
+
+func (r *testSendsRepoTracking) UpdateSendRecord(_ context.Context, _ *model.Send) error {
+	return nil
+}
+
+func (r *testSendsRepoTracking) GetSendsByArticleID(_ context.Context, _ string) ([]*model.Send, error) {
+	return nil, nil
+}
+
+func (r *testSendsRepoTracking) GetSendsByAccountDateRange(_ context.Context, _ string, _, _ time.Time) ([]*model.Send, error) {
+	return nil, nil
+}
+
+func (r *testSendsRepoTracking) CountSendsByAccountDateRange(_ context.Context, _ string, _, _ time.Time) (int, error) {
+	return 0, nil
 }

@@ -2,6 +2,8 @@
 package types
 
 import (
+	"time"
+
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -90,4 +92,18 @@ type UserProfileResponse struct {
 	Email       string `json:"email"`
 	DeviceEmail string `json:"device_email"`
 	AutoSend    bool   `json:"auto_send"`
+}
+
+// SendsResponse represents a sends quota status response.
+type SendsResponse struct {
+	TotalSends        int       `json:"total_sends"`
+	CurrentSends      int       `json:"current_sends"`
+	MaxSendsPerPeriod int       `json:"max_sends_per_period"`
+	PeriodDays        int       `json:"period_days"`
+	RemainingSends    int       `json:"remaining_sends"`
+	PeriodResetDate   time.Time `json:"period_reset_date"`
+}
+
+type SendsResponseNoLimits struct {
+	TotalSends int `json:"total_sends"`
 }

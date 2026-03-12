@@ -163,10 +163,8 @@ func newWebhookTestContext() context.Context {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "test", 0)
 	logRecord := &logging.LogRecord{Record: &record}
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, logRecord)
-
-	var err error
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, &err)
+	ctx = logging.WithLogRecordValue(ctx, logRecord)
+	ctx = logging.WithRequestError(ctx)
 
 	return ctx
 }
@@ -466,7 +464,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
 			if a.Key == logKeyBouncedEmail && a.Value.String() == "test@example.com" {
@@ -492,7 +490,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
 			if a.Key == logKeyAccountID && a.Value.String() == "account-123" {
@@ -518,7 +516,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
 			if a.Key == logKeyAccountID {
@@ -542,7 +540,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
 			if a.Key == logKeyBounceError && a.Value.String() == "bounce error message" {
@@ -566,7 +564,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
 			if a.Key == logKeyBounceError && a.Value.String() == mailjetEventBounce {
@@ -590,7 +588,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
 			if a.Key == logKeyHardBounce && a.Value.Bool() {
@@ -614,7 +612,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
 			if a.Key == logKeyHardBounce {
@@ -639,7 +637,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		expectedTime := time.Unix(timestamp, 0).UTC()
 		logRecord.Attrs(func(a slog.Attr) bool {
@@ -665,7 +663,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
 			if a.Key == logKeyBounceTimestamp {
@@ -693,7 +691,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		_ = h.processBounceEvents(req, events)
 
-		logRecord := ctx.Value(logging.LogRecordKey).(*logging.LogRecord)
+		logRecord := logging.GetLogRecord(ctx)
 		var processedCount, failedCount int
 		logRecord.Attrs(func(a slog.Attr) bool {
 			if a.Key == logKeyProcessedCount {

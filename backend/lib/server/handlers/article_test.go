@@ -282,10 +282,8 @@ func newArticleTestContext() context.Context {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "test", 0)
 	logRecord := &logging.LogRecord{Record: &record}
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, logging.LogRecordKey, logRecord)
-
-	var err error
-	ctx = context.WithValue(ctx, logging.RequestErrorKey, &err)
+	ctx = logging.WithLogRecordValue(ctx, logRecord)
+	ctx = logging.WithRequestError(ctx)
 
 	return ctx
 }

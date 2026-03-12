@@ -111,6 +111,7 @@ func (s *Service) createSendRecord(
 	if err := s.sendsRepo.CreateSendRecord(ctx, &model.Send{
 		Account:     accountID,
 		ArticleID:   articleID,
+		SentAt:      time.Now().UTC(),
 		Title:       title,
 		DestEmail:   deviceEmail,
 		SenderEmail: s.cfg.SenderEmail,

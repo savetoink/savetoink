@@ -2,7 +2,6 @@
 package server
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -53,7 +52,7 @@ func requestIDMiddleware(next http.Handler) http.Handler {
 			requestID = generateRequestID()
 		}
 
-		ctx := context.WithValue(r.Context(), logging.RequestIDKey, requestID)
+		ctx := logging.WithRequestID(r.Context(), requestID)
 		w.Header().Set("X-Request-ID", requestID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

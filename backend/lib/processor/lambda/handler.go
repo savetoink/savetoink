@@ -59,8 +59,8 @@ func HandleEvent(ctx context.Context, event *content.ProcessArticleEvent, svc pr
 	)
 	event.RequestID = lambdaRequestID
 
-	processCtx := context.WithValue(ctx, logging.RequestIDKey, event.RequestID)
-	processCtx = context.WithValue(processCtx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
+	processCtx := logging.WithRequestID(ctx, event.RequestID)
+	processCtx = logging.WithLogRecord(processCtx)
 
 	processor.ProcessArticle(processCtx, svc, event)
 
