@@ -21,21 +21,21 @@ import (
 
 // ArticleService handles article CRUD operations.
 type ArticleService struct {
-	repo        repository.ArticlesRepository
-	publisher   *epub.Publisher
-	userProfile *profile.UserProfileService
+	articlesRepo repository.ArticlesRepository
+	publisher    *epub.Publisher
+	userProfile  *profile.UserProfileService
 }
 
 // New creates a new ArticleService instance.
 func New(
-	repo repository.ArticlesRepository,
+	articles repository.ArticlesRepository,
 	publisher *epub.Publisher,
 	userProfile *profile.UserProfileService,
 ) *ArticleService {
 	return &ArticleService{
-		repo:        repo,
-		publisher:   publisher,
-		userProfile: userProfile,
+		articlesRepo: articles,
+		publisher:    publisher,
+		userProfile:  userProfile,
 	}
 }
 
@@ -55,10 +55,8 @@ func (s *ArticleService) CreateArticle(ctx context.Context, u *url.URL, accountI
 		CreatedAt: time.Now().UTC(),
 	}
 
-	if s.repo != nil {
-		if storeErr := s.repo.Store(ctx, article); storeErr != nil {
-			return nil, fmt.Errorf("failed to store article: %w", storeErr)
-		}
+	if storeErr := s.articlesRepo.Store(ctx, article); storeErr != nil {
+		return nil, fmt.Errorf("failed to store article: %w", storeErr)
 	}
 
 	return article, nil
@@ -70,11 +68,7 @@ func (s *ArticleService) UpdateArticle(ctx context.Context, article *model.Artic
 		return errors.New("account and ID required for update")
 	}
 
-	if s.repo == nil {
-		return nil
-	}
-
-	if err := s.repo.Store(ctx, article); err != nil {
+	if err := s.articlesRepo.Store(ctx, article); err != nil {
 		return fmt.Errorf("failed to update article: %w", err)
 	}
 
@@ -87,11 +81,7 @@ func (s *ArticleService) GetArticle(ctx context.Context, accountID, articleID st
 		return nil, fmt.Errorf("%w: %s", apperrors.ErrInvalid, consts.ErrInvalidArticleID)
 	}
 
-	if s.repo == nil {
-		return nil, errors.New("repository not configured")
-	}
-
-	article, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
+	article, err := s.articlesRepo.GetByAccountAndID(ctx, accountID, articleID)
 	if err != nil {
 		if errors.Is(err, repoimpl.ErrNotFound) {
 			return nil, apperrors.ErrNotFound
@@ -109,17 +99,7 @@ func (s *ArticleService) GetArticlesMetadata(
 	page, pageSize int,
 	favoriteFilter *bool,
 ) (*servicetypes.GetArticlesResult, error) {
-	if s.repo == nil {
-		return &servicetypes.GetArticlesResult{
-			Articles: []*model.Article{},
-			Page:     page,
-			PageSize: pageSize,
-			Total:    0,
-			HasMore:  false,
-		}, nil
-	}
-
-	articles, lastEvaluatedKey, total, err := s.repo.GetMetadataByAccount(ctx, accountID, page, pageSize, favoriteFilter)
+	articles, lastEvaluatedKey, total, err := s.articlesRepo.GetMetadataByAccount(ctx, accountID, page, pageSize, favoriteFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get articles: %w", err)
 	}
@@ -146,11 +126,7 @@ func (s *ArticleService) DeleteArticle(
 		return nil, fmt.Errorf("%w: %s", apperrors.ErrInvalid, consts.ErrInvalidArticleID)
 	}
 
-	if s.repo == nil {
-		return &servicetypes.DeleteArticleResult{Deleted: 0}, nil
-	}
-
-	_, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
+	_, err := s.articlesRepo.GetByAccountAndID(ctx, accountID, articleID)
 	if err != nil {
 		if errors.Is(err, repoimpl.ErrNotFound) {
 			return &servicetypes.DeleteArticleResult{Deleted: 0}, nil
@@ -158,7 +134,7 @@ func (s *ArticleService) DeleteArticle(
 		return nil, fmt.Errorf("failed to get article: %w", err)
 	}
 
-	err = s.repo.DeleteByAccountAndID(ctx, accountID, articleID)
+	err = s.articlesRepo.DeleteByAccountAndID(ctx, accountID, articleID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete article: %w", err)
 	}
@@ -171,11 +147,7 @@ func (s *ArticleService) DeleteAllArticles(
 	ctx context.Context,
 	accountID string,
 ) (*servicetypes.DeleteArticleResult, error) {
-	if s.repo == nil {
-		return &servicetypes.DeleteArticleResult{Deleted: 0}, nil
-	}
-
-	deleted, err := s.repo.DeleteByAccount(ctx, accountID)
+	deleted, err := s.articlesRepo.DeleteByAccount(ctx, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete all articles: %w", err)
 	}
@@ -185,11 +157,7 @@ func (s *ArticleService) DeleteAllArticles(
 
 // ToggleFavorite toggles the favorite status of an article.
 func (s *ArticleService) ToggleFavorite(ctx context.Context, accountID, articleID string) (bool, error) {
-	if s.repo == nil {
-		return false, errors.New("repository not configured")
-	}
-
-	article, err := s.repo.GetByAccountAndID(ctx, accountID, articleID)
+	article, err := s.articlesRepo.GetByAccountAndID(ctx, accountID, articleID)
 	if err != nil {
 		if errors.Is(err, repoimpl.ErrNotFound) {
 			return false, apperrors.ErrNotFound
@@ -199,7 +167,7 @@ func (s *ArticleService) ToggleFavorite(ctx context.Context, accountID, articleI
 
 	newFavoriteStatus := !article.Favorite
 
-	err = s.repo.UpdateFavorite(ctx, accountID, articleID, newFavoriteStatus)
+	err = s.articlesRepo.UpdateFavorite(ctx, accountID, articleID, newFavoriteStatus)
 	if err != nil {
 		return false, fmt.Errorf("failed to update favorite: %w", err)
 	}

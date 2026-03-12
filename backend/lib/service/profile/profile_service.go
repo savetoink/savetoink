@@ -3,7 +3,6 @@ package profile
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -32,10 +31,6 @@ func (s *UserProfileService) GetUserDeviceEmailAndAutoSend(
 	ctx context.Context,
 	accountID string,
 ) (deviceEmail string, autoSend bool, err error) {
-	if s.repo == nil {
-		return "", false, errors.New("user profile repository not configured")
-	}
-
 	profile, err := s.repo.GetUserProfile(ctx, accountID)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get user profile: %w", err)
@@ -50,10 +45,6 @@ func (s *UserProfileService) GetUserDeviceEmailAndAutoSend(
 
 // SetUserDeviceEmail sets the user's device email address.
 func (s *UserProfileService) SetUserDeviceEmail(ctx context.Context, accountID, deviceEmail string) error {
-	if s.repo == nil {
-		return errors.New("user profile repository not configured")
-	}
-
 	profile, getErr := s.repo.GetUserProfile(ctx, accountID)
 	if getErr != nil {
 		return fmt.Errorf("failed to get user profile: %w", getErr)
@@ -82,10 +73,6 @@ func (s *UserProfileService) SetUserDeviceEmailWithAutoSend(
 ) error {
 	if err := s.validateDeviceEmail(deviceEmail); err != nil {
 		return fmt.Errorf("%w: %s", apperrors.ErrInvalid, err.Error())
-	}
-
-	if s.repo == nil {
-		return errors.New("user profile repository not configured")
 	}
 
 	profile, getErr := s.repo.GetUserProfile(ctx, accountID)
@@ -120,10 +107,6 @@ func (s *UserProfileService) SetUserDeviceEmailWithAutoSend(
 
 // DeleteUserDeviceEmail removes the user's device email.
 func (s *UserProfileService) DeleteUserDeviceEmail(ctx context.Context, accountID string) error {
-	if s.repo == nil {
-		return errors.New("user profile repository not configured")
-	}
-
 	oldDeviceEmail, _, _ := s.GetUserDeviceEmailAndAutoSend(ctx, accountID)
 
 	if err := s.repo.DeleteUserDeviceEmail(ctx, accountID); err != nil {
@@ -138,10 +121,6 @@ func (s *UserProfileService) DeleteUserDeviceEmail(ctx context.Context, accountI
 
 // GetUserProfile retrieves the user's profile.
 func (s *UserProfileService) GetUserProfile(ctx context.Context, accountID string) (*model.UserProfile, error) {
-	if s.repo == nil {
-		return nil, errors.New("user profile repository not configured")
-	}
-
 	profile, err := s.repo.GetUserProfile(ctx, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user profile: %w", err)
@@ -154,10 +133,6 @@ func (s *UserProfileService) GetUserProfile(ctx context.Context, accountID strin
 func (s *UserProfileService) SetUserEmail(ctx context.Context, accountID, userEmail string) error {
 	if err := validation.ValidateEmail(userEmail); err != nil {
 		return fmt.Errorf("%w: %s", apperrors.ErrInvalid, err.Error())
-	}
-
-	if s.repo == nil {
-		return errors.New("user profile repository not configured")
 	}
 
 	profile, getErr := s.repo.GetUserProfile(ctx, accountID)
@@ -182,10 +157,6 @@ func (s *UserProfileService) SetUserEmail(ctx context.Context, accountID, userEm
 
 // DeleteUserProfile removes the user's profile.
 func (s *UserProfileService) DeleteUserProfile(ctx context.Context, accountID string) error {
-	if s.repo == nil {
-		return errors.New("user profile repository not configured")
-	}
-
 	if err := s.repo.DeleteUserProfile(ctx, accountID); err != nil {
 		return fmt.Errorf("failed to delete user profile: %w", err)
 	}
@@ -246,10 +217,6 @@ func (s *UserProfileService) HandleBounce(ctx context.Context, deviceEmail, erro
 
 // IsEmailBouncing checks if a device email is marked as bouncing.
 func (s *UserProfileService) IsEmailBouncing(ctx context.Context, accountID, deviceEmail string) (bool, error) {
-	if s.repo == nil {
-		return false, errors.New("user profile repository not configured")
-	}
-
 	profile, err := s.repo.GetUserProfile(ctx, accountID)
 	if err != nil {
 		return false, fmt.Errorf("failed to get user profile: %w", err)

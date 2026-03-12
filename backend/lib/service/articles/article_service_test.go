@@ -9,6 +9,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
+	"github.com/stretchr/testify/assert"
 )
 
 type MockRepository struct {
@@ -143,9 +144,9 @@ func TestUpdateArticle_NilRepo(t *testing.T) {
 		ID:      "test-id",
 	}
 
-	if err := svc.UpdateArticle(context.Background(), article); err != nil {
-		t.Fatalf("unexpected error with nil repo: %v", err)
-	}
+	assert.Panics(t, func() {
+		svc.UpdateArticle(context.Background(), article)
+	}, "expected panic with nil repo")
 }
 
 func TestUpdateArticle_MissingFields(t *testing.T) {
