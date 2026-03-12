@@ -22,6 +22,10 @@
 	let sendForm: HTMLFormElement;
 	let deleteForm: HTMLFormElement;
 
+	let favoriteSubmitting = $state(false);
+	let sendSubmitting = $state(false);
+	let deleteSubmitting = $state(false);
+
 	const keyboardCallbacks = {
 		f: () => toggleFavoriteAction(favoriteForm),
 		d: () => deleteArticleAction(deleteForm),
@@ -36,6 +40,42 @@
 	const enabledKeys = $derived(
 		Object.keys(DETAIL_BINDINGS).filter((key) => key !== 's' || data.user?.device_email)
 	);
+
+	async function handleFavoriteEnhance() {
+		favoriteSubmitting = true;
+		return async ({
+			update
+		}: {
+			update: (options?: { reset?: boolean; invalidateAll?: boolean }) => Promise<void>;
+		}) => {
+			await update();
+			favoriteSubmitting = false;
+		};
+	}
+
+	async function handleSendEnhance() {
+		sendSubmitting = true;
+		return async ({
+			update
+		}: {
+			update: (options?: { reset?: boolean; invalidateAll?: boolean }) => Promise<void>;
+		}) => {
+			await update();
+			sendSubmitting = false;
+		};
+	}
+
+	async function handleDeleteEnhance() {
+		deleteSubmitting = true;
+		return async ({
+			update
+		}: {
+			update: (options?: { reset?: boolean; invalidateAll?: boolean }) => Promise<void>;
+		}) => {
+			await update();
+			deleteSubmitting = false;
+		};
+	}
 </script>
 
 <KeyboardNav bindings={DETAIL_BINDINGS} callbacks={keyboardCallbacks} {enabledKeys} />
@@ -65,7 +105,13 @@
 		</h1>
 
 		<ArticleMetaAccordion article={data} />
-		<ArticleControls article={data} user={data.user} />
+		<ArticleControls
+			article={data}
+			user={data.user}
+			{favoriteSubmitting}
+			{sendSubmitting}
+			{deleteSubmitting}
+		/>
 	</header>
 	<section>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -77,10 +123,20 @@
 	bind:this={favoriteForm}
 	method="POST"
 	action="/articles/{data.id}?/favorite"
-	use:enhance
+	use:enhance={handleFavoriteEnhance}
 ></form>
-<form bind:this={sendForm} method="POST" action="/articles/{data.id}?/send" use:enhance></form>
-<form bind:this={deleteForm} method="POST" action="/articles/{data.id}?/delete" use:enhance></form>
+<form
+	bind:this={sendForm}
+	method="POST"
+	action="/articles/{data.id}?/send"
+	use:enhance={handleSendEnhance}
+></form>
+<form
+	bind:this={deleteForm}
+	method="POST"
+	action="/articles/{data.id}?/delete"
+	use:enhance={handleDeleteEnhance}
+></form>
 
 <style>
 	img {
