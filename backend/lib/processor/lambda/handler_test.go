@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/html"
@@ -65,13 +65,25 @@ func (m *mockService) GetUserDeviceEmailAndAutoSend( //nolint:gocritic
 	return args.String(0), args.Bool(1), args.Error(2)
 }
 
-func (m *mockService) SendArticleByID(ctx context.Context, accountID, articleID string) (
-	*servicetypes.SendArticleResult, error) {
-	args := m.Called(ctx, accountID, articleID)
+func (m *mockService) SendArticle(
+	ctx context.Context,
+	destEmail string,
+	epubData io.ReadCloser,
+	title string,
+) (*email.SendEmailResponse, error) {
+	args := m.Called(ctx, destEmail, epubData, title)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*servicetypes.SendArticleResult), args.Error(1)
+	return args.Get(0).(*email.SendEmailResponse), args.Error(1)
+}
+
+func (m *mockService) GenerateEPUB(article *model.Article) (io.ReadCloser, error) {
+	args := m.Called(article)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
 
 func TestHandleEvent_NilEvent(t *testing.T) {
@@ -308,16 +320,21 @@ func TestHandleEvent_SendOnComplete_Success(t *testing.T) {
 	mockSvc.On("ParseHTML", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(doc, nil)
 	mockSvc.On("Clean", mock.Anything, mock.AnythingOfType("*html.Node"), mock.Anything).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
-	mockSvc.On("GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID).Return("device@example.com", true, nil)
-	mockSvc.On("SendArticleByID", mock.Anything, event.AccountID, event.ArticleID).Return(&servicetypes.SendArticleResult{
-		DeviceEmail: "device@example.com",
-	}, nil)
+	mockSvc.On("GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID).Return(
+		"device@example.com", true, nil)
+	mockSvc.On("GenerateEPUB", mock.AnythingOfType("*model.Article")).Return(
+		io.NopCloser(bytes.NewReader(htmlBytes)), nil)
+	mockSvc.On("SendArticle", mock.Anything, "device@example.com",
+		mock.Anything, "Test Article").Return(
+		&email.SendEmailResponse{MessageID: "msg-123"}, nil)
 
 	err := HandleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID)
-	mockSvc.AssertCalled(t, "SendArticleByID", mock.Anything, event.AccountID, event.ArticleID)
+	mockSvc.AssertCalled(t, "GenerateEPUB", mock.AnythingOfType("*model.Article"))
+	mockSvc.AssertCalled(t, "SendArticle", mock.Anything, "device@example.com",
+		mock.Anything, "Test Article")
 }
 
 func TestHandleEvent_SendOnComplete_NoDeviceEmail(t *testing.T) {
@@ -351,7 +368,7 @@ func TestHandleEvent_SendOnComplete_NoDeviceEmail(t *testing.T) {
 
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID)
-	mockSvc.AssertNotCalled(t, "SendArticleByID")
+	mockSvc.AssertNotCalled(t, "SendArticle")
 }
 
 func TestHandleEvent_SendOnComplete_SendError(t *testing.T) {
@@ -379,13 +396,20 @@ func TestHandleEvent_SendOnComplete_SendError(t *testing.T) {
 	mockSvc.On("ParseHTML", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(doc, nil)
 	mockSvc.On("Clean", mock.Anything, mock.AnythingOfType("*html.Node"), mock.Anything).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
-	mockSvc.On("GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID).Return("device@example.com", true, nil)
-	mockSvc.On("SendArticleByID", mock.Anything, event.AccountID, event.ArticleID).Return(nil, errors.New("send failed"))
+	mockSvc.On("GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID).Return(
+		"device@example.com", true, nil)
+	mockSvc.On("GenerateEPUB", mock.AnythingOfType("*model.Article")).Return(
+		io.NopCloser(bytes.NewReader(htmlBytes)), nil)
+	mockSvc.On("SendArticle", mock.Anything, "device@example.com",
+		mock.Anything, "Test Article").Return(nil,
+		errors.New("send failed"))
 
 	err := HandleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
-	mockSvc.AssertCalled(t, "SendArticleByID", mock.Anything, event.AccountID, event.ArticleID)
+	mockSvc.AssertCalled(t, "GenerateEPUB", mock.AnythingOfType("*model.Article"))
+	mockSvc.AssertCalled(t, "SendArticle", mock.Anything, "device@example.com",
+		mock.Anything, "Test Article")
 }
 
 func TestHandleEvent_InheritedAttrs(t *testing.T) {

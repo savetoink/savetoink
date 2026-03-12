@@ -5,15 +5,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/url"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/shaftoe/savetoink/backend/lib/validation"
 	"golang.org/x/net/html"
 )
@@ -25,8 +26,14 @@ type Service interface {
 	Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error)
 	UpdateArticle(ctx context.Context, article *model.Article) error
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
+	GenerateEPUB(article *model.Article) (io.ReadCloser, error)
 	GetUserDeviceEmailAndAutoSend(ctx context.Context, accountID string) (email string, autoSend bool, err error)
-	SendArticleByID(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error)
+	SendArticle(
+		ctx context.Context,
+		destEmail string,
+		epubData io.ReadCloser,
+		title string,
+	) (*email.SendEmailResponse, error)
 }
 
 // Processor defines the interface for starting article processing.
@@ -50,71 +57,52 @@ func (p *LocalProcessor) StartProcessing(ctx context.Context, event *content.Pro
 }
 
 // ProcessArticle processes an article: fetches, extracts, stores, and optionally sends it.
-//
-//nolint:funlen // function has many statements due to sequential processing steps
 func ProcessArticle(
 	ctx context.Context,
 	svc Service,
 	event *content.ProcessArticleEvent,
 ) {
-	var requestError error
-	processCtx := context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
-	processCtx = context.WithValue(processCtx, logging.RequestErrorKey, &requestError)
-	processCtx, cancel := context.WithTimeout(processCtx, consts.ArticleProcessingTimeout)
+	processCtx, cancel := setupProcessingContext(ctx, event)
 	defer cancel()
 
-	logging.AddLogAttr(processCtx, slog.String("article_id", event.ArticleID))
-	logging.AddLogAttr(processCtx, slog.Bool("send_on_complete", event.SendOnComplete))
-
-	u, err := validation.ValidateURL(event.URL)
-	if err != nil {
-		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "parse_url", err)
-		logArticleResult(processCtx, event.InheritedAttrs, "failed")
+	u, validateErr := validateArticleURL(event.URL)
+	if validateErr != nil {
+		handleProcessingError(processCtx, svc, event, "parse_url", validateErr)
 		return
 	}
 
-	fetched, err := svc.Fetch(processCtx, u)
-	if err != nil {
-		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "fetch", err)
-		logArticleResult(processCtx, event.InheritedAttrs, "failed")
+	fetched, fetchErr := fetchArticleContent(processCtx, u, svc)
+	if fetchErr != nil {
+		handleProcessingError(processCtx, svc, event, "fetch", fetchErr)
 		return
 	}
 
-	logging.AddLogAttr(processCtx, slog.String("fetcher_type", fetched.Type.String()))
-
-	doc, err := svc.ParseHTML(processCtx, fetched)
-	if err != nil {
-		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "parse", err)
-		logArticleResult(processCtx, event.InheritedAttrs, "failed")
+	doc, parseErr := svc.ParseHTML(processCtx, fetched)
+	if parseErr != nil {
+		handleProcessingError(processCtx, svc, event, "parse", parseErr)
 		return
 	}
 
-	extractedArticle, err := svc.Clean(processCtx, doc, u)
-	if err != nil {
-		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "clean", err)
-		logArticleResult(processCtx, event.InheritedAttrs, "failed")
+	article, cleanErr := cleanArticle(processCtx, doc, u, svc)
+	if cleanErr != nil {
+		handleProcessingError(processCtx, svc, event, "clean", cleanErr)
 		return
 	}
 
-	if extractedArticle == nil {
-		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "clean", errors.New("cleaned article is nil"))
-		logArticleResult(processCtx, event.InheritedAttrs, "failed")
+	if article == nil {
+		handleProcessingError(processCtx, svc, event, "clean", errors.New("cleaned article is nil"))
 		return
 	}
 
-	extractedArticle.Account = event.AccountID
-	extractedArticle.ID = event.ArticleID
-	extractedArticle.CreatedAt = time.Now().UTC()
-	extractedArticle.URL = event.URL
-
-	if updateErr := svc.UpdateArticle(processCtx, extractedArticle); updateErr != nil {
-		markArticleError(processCtx, svc, event.AccountID, event.ArticleID, "update", updateErr)
-		logArticleResult(processCtx, event.InheritedAttrs, "failed")
+	updatedArticle, storeErr := prepareAndStoreArticle(processCtx, article, event, svc)
+	if storeErr != nil {
+		handleProcessingError(processCtx, svc, event, "update", storeErr)
 		return
 	}
 
 	if event.SendOnComplete {
-		if sendErr := sendArticle(processCtx, svc, event.AccountID, event.ArticleID); sendErr != nil {
+		sendErr := sendArticle(processCtx, svc, updatedArticle)
+		if sendErr != nil {
 			logging.AddRequestError(processCtx, sendErr)
 			logArticleResult(processCtx, event.InheritedAttrs, "failed")
 			return
@@ -124,8 +112,83 @@ func ProcessArticle(
 	logArticleResult(processCtx, event.InheritedAttrs, "success")
 }
 
-func sendArticle(ctx context.Context, svc Service, accountID, articleID string) error {
-	deviceEmail, _, err := svc.GetUserDeviceEmailAndAutoSend(ctx, accountID)
+func setupProcessingContext(
+	ctx context.Context,
+	event *content.ProcessArticleEvent,
+) (context.Context, context.CancelFunc) {
+	var requestError error
+	processCtx := context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
+	processCtx = context.WithValue(processCtx, logging.RequestErrorKey, &requestError)
+	processCtx, cancel := context.WithTimeout(processCtx, consts.ArticleProcessingTimeout)
+	logging.AddLogAttr(processCtx, slog.String("article_id", event.ArticleID))
+	logging.AddLogAttr(processCtx, slog.Bool("send_on_complete", event.SendOnComplete))
+	return processCtx, cancel
+}
+
+func validateArticleURL(urlStr string) (*url.URL, error) {
+	u, err := validation.ValidateURL(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate URL: %w", err)
+	}
+	return u, nil
+}
+
+func fetchArticleContent(
+	ctx context.Context,
+	u *url.URL,
+	svc Service,
+) (*content.FetchedContent, error) {
+	fetched, err := svc.Fetch(ctx, u)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch content: %w", err)
+	}
+	logging.AddLogAttr(ctx, slog.String("fetcher_type", fetched.Type.String()))
+	return fetched, nil
+}
+
+func cleanArticle(
+	ctx context.Context,
+	doc *html.Node,
+	u *url.URL,
+	svc Service,
+) (*model.Article, error) {
+	article, err := svc.Clean(ctx, doc, u)
+	if err != nil {
+		return nil, fmt.Errorf("failed to clean article: %w", err)
+	}
+	return article, nil
+}
+
+func prepareAndStoreArticle(
+	ctx context.Context,
+	article *model.Article,
+	event *content.ProcessArticleEvent,
+	svc Service,
+) (*model.Article, error) {
+	article.Account = event.AccountID
+	article.ID = event.ArticleID
+	article.CreatedAt = time.Now().UTC()
+	article.URL = event.URL
+
+	if err := svc.UpdateArticle(ctx, article); err != nil {
+		return nil, fmt.Errorf("failed to update article: %w", err)
+	}
+	return article, nil
+}
+
+func handleProcessingError(
+	ctx context.Context,
+	svc Service,
+	event *content.ProcessArticleEvent,
+	stage string,
+	err error,
+) {
+	markArticleError(ctx, svc, event.AccountID, event.ArticleID, stage, err)
+	logArticleResult(ctx, event.InheritedAttrs, "failed")
+}
+
+func sendArticle(ctx context.Context, svc Service, article *model.Article) error {
+	deviceEmail, _, err := svc.GetUserDeviceEmailAndAutoSend(ctx, article.Account)
 	if err != nil {
 		return fmt.Errorf("failed to get device email: %w", err)
 	}
@@ -133,14 +196,24 @@ func sendArticle(ctx context.Context, svc Service, accountID, articleID string) 
 		return errors.New("device email not configured")
 	}
 
-	result, err := svc.SendArticleByID(ctx, accountID, articleID)
+	epub, err := svc.GenerateEPUB(article)
+	if err != nil {
+		return fmt.Errorf("failed to generate epub: %w", err)
+	}
+	defer func() {
+		if closeErr := epub.Close(); closeErr != nil {
+			logging.AddRequestError(ctx, fmt.Errorf("failed to close epub: %w", closeErr))
+		}
+	}()
+
+	result, err := svc.SendArticle(ctx, deviceEmail, epub, article.Title)
 	if err != nil {
 		return fmt.Errorf("failed to send article: %w", err)
 	}
 
-	logging.AddLogAttr(ctx, slog.String("destination_email", result.DeviceEmail))
-	if result.EmailResp != nil {
-		logging.AddLogAttr(ctx, slog.String("message_id", result.EmailResp.MessageID))
+	logging.AddLogAttr(ctx, slog.String("destination_email", deviceEmail))
+	if result.MessageID != "" {
+		logging.AddLogAttr(ctx, slog.String("message_id", result.MessageID))
 	}
 
 	return nil

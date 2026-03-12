@@ -14,7 +14,6 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"
@@ -52,7 +51,13 @@ type mockArticleService struct {
 	updateFunc         func(ctx context.Context, article *model.Article) error
 	getArticleFunc     func(ctx context.Context, accountID, articleID string) (*model.Article, error)
 	getUserDeviceEmail func(ctx context.Context, accountID string) (string, bool, error)
-	sendArticleByID    func(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error)
+	sendArticleFunc    func(
+		ctx context.Context,
+		destEmail string,
+		epubData io.ReadCloser,
+		title string,
+	) (*email.SendEmailResponse, error)
+	generateEPUBFunc func(article *model.Article) (io.ReadCloser, error)
 }
 
 func (m *mockArticleService) Fetch(ctx context.Context, u *url.URL) (*content.FetchedContent, error) {
@@ -115,20 +120,23 @@ func (m *mockArticleService) GetUserDeviceEmailAndAutoSend(
 	return testEmail, true, nil
 }
 
-func (m *mockArticleService) SendArticleByID(
+func (m *mockArticleService) SendArticle(
 	ctx context.Context,
-	accountID, articleID string,
-) (*servicetypes.SendArticleResult, error) {
-	if m.sendArticleByID != nil {
-		return m.sendArticleByID(ctx, accountID, articleID)
+	destEmail string,
+	epubData io.ReadCloser,
+	title string,
+) (*email.SendEmailResponse, error) {
+	if m.sendArticleFunc != nil {
+		return m.sendArticleFunc(ctx, destEmail, epubData, title)
 	}
-	return &servicetypes.SendArticleResult{
-		Article: &model.Article{
-			ID:      articleID,
-			Account: accountID,
-		},
-		DeviceEmail: testEmail,
-	}, nil
+	return &email.SendEmailResponse{MessageID: "msg-123"}, nil
+}
+
+func (m *mockArticleService) GenerateEPUB(article *model.Article) (io.ReadCloser, error) {
+	if m.generateEPUBFunc != nil {
+		return m.generateEPUBFunc(article)
+	}
+	return io.NopCloser(strings.NewReader("epub content")), nil
 }
 
 func newDefaultMockArticleService(capturedArticle **model.Article) *mockArticleService {
@@ -223,7 +231,7 @@ func TestProcessArticle_FetchError(t *testing.T) {
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
 			articleUpdated = true
-			assert.Equal(t, "fetch failed", article.Error)
+			assert.Contains(t, article.Error, "fetch failed")
 			return nil
 		},
 	}
@@ -571,12 +579,9 @@ func TestProcessArticle_SendOnComplete_Success(t *testing.T) {
 			capturedArticle = article
 			return nil
 		},
-		sendArticleByID: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
+		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
 			sendCalled = true
-			return &servicetypes.SendArticleResult{
-				Article:     capturedArticle,
-				DeviceEmail: "test@kindle.com",
-			}, nil
+			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
 		},
 	}
 
@@ -677,7 +682,7 @@ func TestProcessArticle_SendOnComplete_SendError(t *testing.T) {
 			capturedArticle = article
 			return nil
 		},
-		sendArticleByID: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
+		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
 			return nil, errors.New("email send failed")
 		},
 	}
@@ -705,11 +710,16 @@ func TestSendArticle_GetDeviceEmailError(t *testing.T) {
 		},
 	}
 
+	article := &model.Article{
+		ID:      "article-123",
+		Account: "account-456",
+	}
+
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
 	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
 
-	err := sendArticle(ctx, mockSvc, "account-456", "article-123")
+	err := sendArticle(ctx, mockSvc, article)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get device email")
@@ -720,23 +730,22 @@ func TestSendArticle_EmailRespWithMessageID(t *testing.T) {
 		getUserDeviceEmail: func(_ context.Context, _ string) (string, bool, error) {
 			return "test@kindle.com", true, nil
 		},
-		sendArticleByID: func(_ context.Context, _, _ string) (*servicetypes.SendArticleResult, error) {
-			return &servicetypes.SendArticleResult{
-				Article: &model.Article{
-					ID:      "article-123",
-					Account: "account-456",
-				},
-				DeviceEmail: "test@kindle.com",
-				EmailResp:   &email.SendEmailResponse{MessageID: "msg-123"},
-			}, nil
+		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
+			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
 		},
+	}
+
+	article := &model.Article{
+		ID:      "article-123",
+		Account: "account-456",
+		Title:   "Test Article",
 	}
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
 	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
 
-	err := sendArticle(ctx, mockSvc, "account-456", "article-123")
+	err := sendArticle(ctx, mockSvc, article)
 
 	require.NoError(t, err)
 }

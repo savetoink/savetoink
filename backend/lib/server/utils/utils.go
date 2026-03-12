@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -104,6 +105,8 @@ func checkQuota(
 		HandleServiceError(w, r, countErr, "check quota")
 		return 0, countErr
 	}
+
+	logging.AddLogAttr(r.Context(), slog.Int("sends_count", count))
 
 	if count >= consts.MaxFreeTierSendsPerPeriod {
 		quotaErr := fmt.Errorf("free tier limit exceeded: %w", apperrors.ErrInvalid)
