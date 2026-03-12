@@ -44,6 +44,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/robots.txt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Robots.txt
+         * @description Get the robots.txt file for search engine crawling
+         */
+        get: operations["robotsTxt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/articles": {
         parameters: {
             query?: never;
@@ -59,7 +79,7 @@ export interface paths {
         put?: never;
         /**
          * Create article
-         * @description Save a new article from a URL
+         * @description Save a new article from a URL. If send_on_complete is true, checks quota and device email status before creating.
          */
         post: operations["createArticle"];
         /**
@@ -127,7 +147,7 @@ export interface paths {
         put?: never;
         /**
          * Send article
-         * @description Send an article to the user's Kindle device. Creates and updates a send record with status, message ID, and provider information. Requires active subscription and non-bouncing email.
+         * @description Send an article to the user's e-reader device. Creates and updates a send record with status, message ID, and provider information. Requires active subscription, configured email backend, and non-bouncing email.
          */
         post: operations["sendArticle"];
         delete?: never;
@@ -166,13 +186,13 @@ export interface paths {
         get?: never;
         /**
          * Set device
-         * @description Set or update the user's Kindle device email and auto-send preferences
+         * @description Set or update the user's e-reader device email and auto-send preferences
          */
         put: operations["setDevice"];
         post?: never;
         /**
          * Delete device
-         * @description Remove the user's Kindle device email
+         * @description Remove the user's e-reader device email
          */
         delete: operations["deleteDevice"];
         options?: never;
@@ -275,7 +295,7 @@ export interface components {
              */
             url: string;
             /**
-             * @description Whether to send the article to the user's Kindle device after processing is complete
+             * @description Whether to send the article to the user's device after processing is complete
              * @default false
              */
             send_on_complete: boolean;
@@ -323,7 +343,7 @@ export interface components {
             account: string;
             /** @description User email address */
             email: string;
-            /** @description Kindle device email */
+            /** @description User e-reader device email */
             device_email: string;
             /** @description Whether to auto-send articles */
             auto_send: boolean;
@@ -340,14 +360,14 @@ export interface components {
         DeviceRequest: {
             /**
              * Format: email
-             * @description Kindle device email address (must end with @kindle.com or @free.kindle.com)
+             * @description e-reader device email address
              */
             device_email: string;
             /** @description Whether to auto-send articles to device */
             auto_send: boolean;
         };
         DeviceResponse: {
-            /** @description Kindle device email address */
+            /** @description e-reader device email address */
             device_email: string;
             /** @description Whether to auto-send articles */
             auto_send: boolean;
@@ -437,6 +457,26 @@ export interface operations {
             };
         };
     };
+    robotsTxt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Robots.txt content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
     listArticles: {
         parameters: {
             query?: {
@@ -513,7 +553,7 @@ export interface operations {
                     "application/json": components["schemas"]["ArticleResponse"];
                 };
             };
-            /** @description Bad request */
+            /** @description Bad request (invalid URL, email backend not configured, or device email is bouncing) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -524,6 +564,24 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict (device email is bouncing) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests (free tier quota exceeded) */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -733,6 +791,15 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Bad request (email backend not configured or device email is bouncing) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description Unauthorized */
             401: {
                 headers: {
@@ -744,6 +811,24 @@ export interface operations {
             };
             /** @description Article not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict (device email is bouncing) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests (free tier quota exceeded) */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -977,6 +1062,10 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /**
+                         * @description Webhook processing status
+                         * @example ok
+                         */
                         status?: string;
                     };
                 };
