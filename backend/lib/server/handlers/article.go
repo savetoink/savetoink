@@ -78,7 +78,6 @@ func (h *Handlers) validateAndCheckQuota(
 			return 0, fmt.Errorf("quota and device email check failed: %w", err)
 		}
 		sendsCount = sendsError
-		logging.AddLogAttr(r.Context(), slog.Int("sends_count", sendsCount))
 	}
 
 	if req.URL == "" {
