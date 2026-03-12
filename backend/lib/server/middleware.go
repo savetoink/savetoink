@@ -70,7 +70,7 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 }
 
 // processorInfoMiddleware adds a "processed_by" log attribute to the request context
-// indicating whether the request was processed by a lambda function.
+// indicating the lambda function that processes the article creation.
 func processorInfoMiddleware(cfg *config.Config) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

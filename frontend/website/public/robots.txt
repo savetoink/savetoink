@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.saveto.ink/sitemap.xml
+Sitemap: https://www.saveto.ink/sitemap-index.xml
