@@ -27,9 +27,12 @@ update-versions version_type:
     @bun i
     @bun update_versions.ts {{ version_type }}
 
+# Bump semver in VERSION and package.json files, create bump commit
+# Tag the commit with the new version if version_type is not "dev"
 bump-version version_type:
     @just update-versions {{ version_type }}
     @git commit -m "chore: bump versions to $(cat VERSION)" .
+    @git tag "v$(cat VERSION)"
 
 install-hooks:
     @lefthook install
