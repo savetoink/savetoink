@@ -291,7 +291,7 @@ func newArticleTestContext() context.Context {
 
 func newArticleTestContextWithAccount() context.Context {
 	ctx := newArticleTestContext()
-	return context.WithValue(ctx, auth.AccountIDKey, "account-123")
+	return auth.AddAccountIDToCtx(ctx, "account-123")
 }
 
 func TestHandleCreateArticle_Success(t *testing.T) {

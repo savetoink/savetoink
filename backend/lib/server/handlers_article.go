@@ -26,7 +26,7 @@ func (h *handlers) handleCreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 	sendsCount, err := h.validateAndCheckQuota(w, r, req, accountID)
 	if err != nil {
 		return
@@ -142,7 +142,7 @@ func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {
 		favoriteFilter = &fav
 	}
 
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 
 	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, favoriteFilter)
 	if err != nil {
@@ -165,7 +165,7 @@ func (h *handlers) handleGetArticles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) handleGetArticle(w http.ResponseWriter, r *http.Request) {
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 	articleID := chi.URLParam(r, "id")
 
 	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
@@ -184,7 +184,7 @@ func (h *handlers) handleGetArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) handleDeleteArticle(w http.ResponseWriter, r *http.Request) {
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 	articleID := chi.URLParam(r, "id")
 
 	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
@@ -202,7 +202,7 @@ func (h *handlers) handleDeleteArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) handleDeleteAllArticles(w http.ResponseWriter, r *http.Request) {
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 
 	result, err := h.service.DeleteAllArticles(r.Context(), accountID)
 	if err != nil {
@@ -217,7 +217,7 @@ func (h *handlers) handleDeleteAllArticles(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *handlers) handleToggleFavorite(w http.ResponseWriter, r *http.Request) {
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 	articleID := chi.URLParam(r, "id")
 
 	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
@@ -235,7 +235,7 @@ func (h *handlers) handleToggleFavorite(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) handleSendArticle(w http.ResponseWriter, r *http.Request) {
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 	articleID := chi.URLParam(r, "id")
 
 	if err := checkEmailBackendEnabled(w, r, h.cfg.EmailProvider); err != nil {

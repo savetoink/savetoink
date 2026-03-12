@@ -40,7 +40,7 @@ func createLogRecord(r *http.Request, accountID string, requestID, version *stri
 }
 
 func finalizeLogRecord(ctx context.Context, record *slog.Record, start time.Time, statusCode int) {
-	authResult := auth.GetAuthError(ctx)
+	authResult := auth.GetAuthErrorFromCtx(ctx)
 	if authResult != nil {
 		record.AddAttrs(slog.String("auth_result", authResult.Error()))
 	}

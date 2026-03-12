@@ -26,7 +26,7 @@ func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
 			start        = time.Now()
-			accountID    = auth.GetAccountID(r.Context())
+			accountID    = auth.GetAccountIDFromCtx(r.Context())
 			requestID    = getRequestIDFromContext(r.Context())
 			version      = consts.Version()
 			requestError error

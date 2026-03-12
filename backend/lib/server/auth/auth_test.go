@@ -158,7 +158,7 @@ func TestGetAccountID(t *testing.T) {
 	}{
 		{
 			name:     "account ID in context",
-			setupCtx: func() context.Context { return addAccountIDToContext(context.Background(), "test-account") },
+			setupCtx: func() context.Context { return auth.AddAccountIDToCtx(context.Background(), "test-account") },
 			expected: "test-account",
 		},
 		{
@@ -166,17 +166,12 @@ func TestGetAccountID(t *testing.T) {
 			setupCtx: context.Background,
 			expected: "",
 		},
-		{
-			name:     "wrong type in context",
-			setupCtx: func() context.Context { return context.WithValue(context.Background(), auth.AccountIDKey, 123) },
-			expected: "",
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := tt.setupCtx()
-			result := auth.GetAccountID(ctx)
+			result := auth.GetAccountIDFromCtx(ctx)
 			if result != tt.expected {
 				t.Errorf("expected %q, got %q", tt.expected, result)
 			}
@@ -247,7 +242,7 @@ func TestAuth0Middleware(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 		}
 
-		err := auth.GetAuthError(capturedContext)
+		err := auth.GetAuthErrorFromCtx(capturedContext)
 		if err == nil {
 			t.Error("expected auth error in context")
 		}
@@ -278,7 +273,7 @@ func TestAuth0Middleware(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 		}
 
-		err := auth.GetAuthError(capturedContext)
+		err := auth.GetAuthErrorFromCtx(capturedContext)
 		if err == nil {
 			t.Error("expected auth error for invalid signature")
 		}
@@ -317,7 +312,7 @@ func TestHandleAuthError(t *testing.T) {
 				t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 			}
 
-			err := auth.GetAuthError(capturedContext)
+			err := auth.GetAuthErrorFromCtx(capturedContext)
 			if err == nil && tt.errorMsg != "" {
 				t.Error("expected auth error in context")
 			}
@@ -336,7 +331,7 @@ func TestEnsureAuthenticatedMiddleware_WithAuthError(t *testing.T) {
 		{
 			name: "auth error in context",
 			setupCtx: func() context.Context {
-				return context.WithValue(context.Background(), auth.AuthErrorKey, "authentication failed")
+				return auth.AddAuthErrorToCtx(context.Background(), "authentication failed")
 			},
 		},
 	}
@@ -376,7 +371,7 @@ func TestEnsureAuthenticatedMiddleware_WithAccountID(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	ctx := addAccountIDToContext(context.Background(), "test-account")
+	ctx := auth.AddAccountIDToCtx(context.Background(), "test-account")
 	req := httptest.NewRequestWithContext(ctx, "GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 

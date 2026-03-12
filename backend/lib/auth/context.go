@@ -9,23 +9,31 @@ import (
 type contextKey string
 
 const (
-	// AccountIDKey is the context key for account ID.
-	AccountIDKey contextKey = "account_id"
-	// AuthErrorKey is the context key for authentication error.
-	AuthErrorKey contextKey = "auth_error"
+	accountIDKey contextKey = "account_id"
+	authErrorKey contextKey = "auth_error"
 )
 
-// GetAccountID retrieves authenticated account ID from context.
-func GetAccountID(ctx context.Context) string {
-	accountID, _ := ctx.Value(AccountIDKey).(string)
+// GetAccountIDFromCtx retrieves authenticated account ID from context.
+func GetAccountIDFromCtx(ctx context.Context) string {
+	accountID, _ := ctx.Value(accountIDKey).(string)
 	return accountID
 }
 
-// GetAuthError retrieves authentication error from context, if any.
-func GetAuthError(ctx context.Context) error {
-	authError, found := ctx.Value(AuthErrorKey).(string)
+// GetAuthErrorFromCtx retrieves authentication error from context, if any.
+func GetAuthErrorFromCtx(ctx context.Context) error {
+	authError, found := ctx.Value(authErrorKey).(string)
 	if found {
 		return errors.New(authError)
 	}
 	return nil
+}
+
+// AddAccountIDToCtx adds an account ID to the context.
+func AddAccountIDToCtx(ctx context.Context, accountID string) context.Context {
+	return context.WithValue(ctx, accountIDKey, accountID)
+}
+
+// AddAuthErrorToCtx adds an authentication error to the context.
+func AddAuthErrorToCtx(ctx context.Context, msg string) context.Context {
+	return context.WithValue(ctx, authErrorKey, msg)
 }

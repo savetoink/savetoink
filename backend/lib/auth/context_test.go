@@ -9,35 +9,29 @@ import (
 
 func TestGetAccountID(t *testing.T) {
 	t.Run("returns account ID when set", func(t *testing.T) {
-		ctx := context.WithValue(context.Background(), AccountIDKey, "test-account-123")
-		result := GetAccountID(ctx)
+		ctx := AddAccountIDToCtx(context.Background(), "test-account-123")
+		result := GetAccountIDFromCtx(ctx)
 		assert.Equal(t, "test-account-123", result)
 	})
 
 	t.Run("returns empty string when not set", func(t *testing.T) {
 		ctx := context.Background()
-		result := GetAccountID(ctx)
-		assert.Equal(t, "", result)
-	})
-
-	t.Run("returns empty string when wrong type", func(t *testing.T) {
-		ctx := context.WithValue(context.Background(), AccountIDKey, 123)
-		result := GetAccountID(ctx)
+		result := GetAccountIDFromCtx(ctx)
 		assert.Equal(t, "", result)
 	})
 }
 
 func TestGetAuthError(t *testing.T) {
 	t.Run("returns error when set", func(t *testing.T) {
-		ctx := context.WithValue(context.Background(), AuthErrorKey, "authentication failed")
-		result := GetAuthError(ctx)
+		ctx := context.WithValue(context.Background(), authErrorKey, "authentication failed")
+		result := GetAuthErrorFromCtx(ctx)
 		assert.Error(t, result)
 		assert.Contains(t, result.Error(), "authentication failed")
 	})
 
 	t.Run("returns nil when not set", func(t *testing.T) {
 		ctx := context.Background()
-		result := GetAuthError(ctx)
+		result := GetAuthErrorFromCtx(ctx)
 		assert.NoError(t, result)
 	})
 }

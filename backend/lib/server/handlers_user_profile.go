@@ -15,7 +15,7 @@ type userProfileResponse struct {
 }
 
 func (h *handlers) handleGetUserProfile(w http.ResponseWriter, r *http.Request) {
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 
 	deviceEmail, autoSend, err := h.service.GetUserDeviceEmail(r.Context(), accountID)
 	if err != nil {
@@ -44,7 +44,7 @@ func (h *handlers) handleGetUserProfile(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *handlers) handleSetDevice(w http.ResponseWriter, r *http.Request) {
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 
 	var req deviceRequest
 	if err := decodeAndValidateRequest(w, r, &req); err != nil {
@@ -61,7 +61,7 @@ func (h *handlers) handleSetDevice(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) handleDeleteDevice(w http.ResponseWriter, r *http.Request) {
-	accountID := auth.GetAccountID(r.Context())
+	accountID := auth.GetAccountIDFromCtx(r.Context())
 
 	err := h.service.DeleteUserDeviceEmail(r.Context(), accountID)
 	if err != nil {

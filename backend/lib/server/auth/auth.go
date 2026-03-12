@@ -42,13 +42,13 @@ func NewAccountIDMiddleware(cfg *config.Config) func(http.Handler) http.Handler 
 // proceeding to the next handler.
 func EnsureAutheticatedMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := auth.GetAuthError(r.Context()); err != nil {
+		if err := auth.GetAuthErrorFromCtx(r.Context()); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 			return
 		}
 
-		accountID := auth.GetAccountID(r.Context())
+		accountID := auth.GetAccountIDFromCtx(r.Context())
 		if accountID == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "unauthorized"})
@@ -76,7 +76,7 @@ func sharedAPIKeyMiddleware(apiKeySecret string) func(http.Handler) http.Handler
 				handleAuthError(r.Context(), next, w, r, "invalid API key")
 				return
 			}
-			ctx := addAccountIDToContext(r.Context(), adminAccountID)
+			ctx := auth.AddAccountIDToCtx(r.Context(), adminAccountID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -127,17 +127,13 @@ func auth0Middleware(domain, audience string) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := addAccountIDToContext(r.Context(), validatedClaims.RegisteredClaims.Subject)
+			ctx := auth.AddAccountIDToCtx(r.Context(), validatedClaims.RegisteredClaims.Subject)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func addAccountIDToContext(ctx context.Context, accountID string) context.Context {
-	return context.WithValue(ctx, auth.AccountIDKey, accountID)
-}
-
 func handleAuthError(ctx context.Context, next http.Handler, w http.ResponseWriter, r *http.Request, msg string) {
-	ctx = context.WithValue(ctx, auth.AuthErrorKey, msg)
+	ctx = auth.AddAuthErrorToCtx(ctx, msg)
 	next.ServeHTTP(w, r.WithContext(ctx))
 }

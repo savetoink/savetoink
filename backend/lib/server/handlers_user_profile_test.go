@@ -201,7 +201,7 @@ func (m *userprofileMockService) GetAccountIDByDeviceEmail(_ context.Context, _ 
 
 func newUserprofileTestContext() context.Context {
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.AccountIDKey, "account-123")
+	ctx = auth.AddAccountIDToCtx(ctx, "account-123")
 	return ctx
 }
 
