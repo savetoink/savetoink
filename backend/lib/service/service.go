@@ -42,13 +42,9 @@ type Interface interface {
 	// GenerateEPUB generates an EPUB document from an article.
 	GenerateEPUB(article *model.Article) (io.ReadCloser, error)
 
-	// SendArticle sends an EPUB document as attechment to a given email address.
-	SendArticle(
-		ctx context.Context,
-		destEmail string,
-		epubData io.ReadCloser,
-		title string,
-	) (*email.SendEmailResponse, error)
+	///////////
+	// Articles
+	///////////
 
 	// CreateArticle stores a new partial metadata article from a given URL and account ID in the database.
 	CreateArticle(ctx context.Context, u *url.URL, accountID string) (*model.Article, error)
@@ -70,14 +66,24 @@ type Interface interface {
 	// DeleteAllArticles deletes all existing articles by account ID from the database.
 	DeleteAllArticles(ctx context.Context, accountID string) (*servicetypes.DeleteArticleResult, error)
 
-	// GetUserDeviceEmailAndAutoSend retrieves the device email and auto-send preference for a given account.
-	GetUserDeviceEmailAndAutoSend(ctx context.Context, accountID string) (string, bool, error)
+	// ToggleFavorite toggles the favorite status of an article.
+	ToggleFavorite(ctx context.Context, accountID string, articleID string) (bool, error)
 
-	// SetUserDeviceEmailWithAutoSend sets the device email and auto-send preference for a given account.
-	SetUserDeviceEmailWithAutoSend(ctx context.Context, accountID, deviceEmail string, autoSend bool) error
+	// SendArticle sends an EPUB document as attachment to a given email address.
+	SendArticle(
+		ctx context.Context,
+		destEmail string,
+		epubData io.ReadCloser,
+		title string,
+	) (*email.SendEmailResponse, error)
 
-	// DeleteUserDeviceEmail deletes the device email for a given account.
-	DeleteUserDeviceEmail(ctx context.Context, accountID string) error
+	// SendArticleByID retrieves an article by account ID and article ID,
+	// generates an EPUB, and sends it to the user's device email.
+	SendArticleByID(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error)
+
+	///////////////
+	// User profile
+	///////////////
 
 	// GetUserProfile retrieves the user profile for a given account.
 	GetUserProfile(ctx context.Context, accountID string) (*model.UserProfile, error)
@@ -88,11 +94,18 @@ type Interface interface {
 	// DeleteUserProfile deletes the user profile for a given account.
 	DeleteUserProfile(ctx context.Context, accountID string) error
 
-	// ToggleFavorite toggles the favorite status of an article.
-	ToggleFavorite(ctx context.Context, accountID string, articleID string) (bool, error)
+	// GetUserDeviceEmailAndAutoSend retrieves the device email and auto-send preference for a given account.
+	GetUserDeviceEmailAndAutoSend(ctx context.Context, accountID string) (string, bool, error)
 
-	// CountSendsByAccountDateRange counts the number of sends for a given account within a date range.
-	CountSendsByAccountDateRange(ctx context.Context, accountID string, startDate, endDate time.Time) (int, error)
+	// SetUserDeviceEmailWithAutoSend sets the device email and auto-send preference for a given account.
+	SetUserDeviceEmailWithAutoSend(ctx context.Context, accountID, deviceEmail string, autoSend bool) error
+
+	// DeleteUserDeviceEmail deletes the device email for a given account.
+	DeleteUserDeviceEmail(ctx context.Context, accountID string) error
+
+	//////////
+	// Mailing
+	//////////
 
 	// HandleBounce handles a bounce notification for a given device email.
 	HandleBounce(ctx context.Context, deviceEmail, errorMessage string) error
@@ -103,9 +116,12 @@ type Interface interface {
 	// GetAccountIDByDeviceEmail retrieves the account ID associated with a device email.
 	GetAccountIDByDeviceEmail(ctx context.Context, deviceEmail string) (string, error)
 
-	// SendArticleByID retrieves an article by account ID and article ID,
-	// generates an EPUB, and sends it to the user's device email.
-	SendArticleByID(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error)
+	////////
+	// Sends
+	////////
+
+	// CountSendsByAccountDateRange counts the number of sends for a given account within a date range.
+	CountSendsByAccountDateRange(ctx context.Context, accountID string, startDate, endDate time.Time) (int, error)
 }
 
 // Dependencies holds all external dependencies required by Service.
