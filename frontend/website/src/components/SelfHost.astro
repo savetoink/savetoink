@@ -35,21 +35,21 @@
           <div class="sh-step-num">1</div>
           <div>
             <h4>Prerequisites</h4>
-            <p>AWS CLI configured, <code>just</code> installed, Auth0 app created, Mailjet account for email delivery. That's the full list.</p>
+            <p>AWS CLI configured, <a href="https://just.systems/man/en/">Just</a> command runner, <a href="https://mailjet.com/">Mailjet</a> account for email delivery (optional). That's it.</p>
           </div>
         </div>
         <div class="sh-step">
           <div class="sh-step-num">2</div>
           <div>
             <h4>Configure <code>.env</code></h4>
-            <p>Set your domain, Auth0 credentials, Mailjet API keys, and Kindle send-to email. CloudFormation handles the rest.</p>
+            <p>Set your domain, Auth0 credentials, Mailjet API keys, and e-reader device send-to email. CloudFormation handles the rest.</p>
           </div>
         </div>
         <div class="sh-step">
           <div class="sh-step-num">3</div>
           <div>
             <h4><code>just deploy</code></h4>
-            <p>Builds both Go Lambdas for Linux, uploads zips to S3, deploys the CloudFormation stack, provisions CloudFront. Add a DNS CNAME and you're done.</p>
+            <p>Builds both Go Lambdas for Linux, uploads zips to S3, deploys the CloudFormation stack, provisions CloudFront. Add a DNS CNAME to your domain and you're done.</p>
           </div>
         </div>
         <div class="sh-infra-tags">
