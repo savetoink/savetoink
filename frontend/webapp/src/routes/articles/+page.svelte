@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import ArticleMetaItem from '$lib/components/ArticleMetaItem.svelte';
-	import Navigator from '$lib/components/Navigator.svelte';
+	import Paginator from '$lib/components/Paginator.svelte';
 	import KeyboardNav from '$lib/components/KeyboardNav.svelte';
 	import {
 		LIST_BINDINGS,
@@ -115,7 +115,7 @@
 	</ul>
 {/if}
 
-<Navigator page={data.page} hasMore={data.has_more} />
+<Paginator page={data.page} hasMore={data.has_more} />
 
 <KeyboardNav bindings={LIST_BINDINGS} callbacks={keyboardCallbacks} {enabledKeys} />
 
