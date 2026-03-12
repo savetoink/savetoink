@@ -104,24 +104,22 @@ func ProcessArticle(
 		sendErr := sendArticle(processCtx, svc, updatedArticle)
 		if sendErr != nil {
 			logging.AddRequestError(processCtx, sendErr)
-			logArticleResult(processCtx, event.InheritedAttrs, "failed")
+			logArticleResult(processCtx, event.InheritedAttrs)
 			return
 		}
 	}
 
-	logArticleResult(processCtx, event.InheritedAttrs, "success")
+	logArticleResult(processCtx, event.InheritedAttrs)
 }
 
 func setupProcessingContext(
 	ctx context.Context,
-	event *content.ProcessArticleEvent,
+	_ *content.ProcessArticleEvent,
 ) (context.Context, context.CancelFunc) {
 	var requestError error
 	processCtx := context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
 	processCtx = context.WithValue(processCtx, logging.RequestErrorKey, &requestError)
 	processCtx, cancel := context.WithTimeout(processCtx, consts.ArticleProcessingTimeout)
-	logging.AddLogAttr(processCtx, slog.String("article_id", event.ArticleID))
-	logging.AddLogAttr(processCtx, slog.Bool("send_on_complete", event.SendOnComplete))
 	return processCtx, cancel
 }
 
@@ -184,7 +182,7 @@ func handleProcessingError(
 	err error,
 ) {
 	markArticleError(ctx, svc, event.AccountID, event.ArticleID, stage, err)
-	logArticleResult(ctx, event.InheritedAttrs, "failed")
+	logArticleResult(ctx, event.InheritedAttrs)
 }
 
 func sendArticle(ctx context.Context, svc Service, article *model.Article) error {
@@ -219,14 +217,14 @@ func sendArticle(ctx context.Context, svc Service, article *model.Article) error
 	return nil
 }
 
-func logArticleResult(ctx context.Context, inheritedAttrs []map[string]any, status string) {
+func logArticleResult(ctx context.Context, inheritedAttrs []map[string]any) {
 	attrs := make([]slog.Attr, len(inheritedAttrs))
 	for i, attrMap := range inheritedAttrs {
 		for k, v := range attrMap {
 			attrs[i] = slog.Any(k, v)
 		}
 	}
-	logging.LogArticleProcessing(ctx, "article processing completed", attrs, slog.String("status", status))
+	logging.LogArticleProcessing(ctx, "article processing completed", attrs)
 }
 
 func markArticleError(ctx context.Context, svc Service, accountID, articleID, stage string, err error) {

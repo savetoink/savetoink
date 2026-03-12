@@ -531,7 +531,7 @@ func TestLogArticleResult(t *testing.T) {
 	ctx = context.WithValue(ctx, logging.LogRecordKey, &logging.LogRecord{Record: &slog.Record{}})
 	ctx = context.WithValue(ctx, logging.RequestErrorKey, new(error))
 
-	logArticleResult(ctx, inheritedAttrs, "success")
+	logArticleResult(ctx, inheritedAttrs)
 
 	assert.Equal(t, "article processing completed", capturedRecord.Message)
 
@@ -541,12 +541,12 @@ func TestLogArticleResult(t *testing.T) {
 		return true
 	})
 
-	attrMap := make(map[string]string)
+	attrMap := make(map[string]any)
 	for _, attr := range attrs {
-		attrMap[attr.Key] = attr.Value.String()
+		attrMap[attr.Key] = attr.Value.Any()
 	}
 
-	assert.Equal(t, "success", attrMap["status"])
+	assert.Equal(t, int64(200), attrMap["status"])
 }
 
 func TestProcessArticle_SendOnComplete_Success(t *testing.T) {

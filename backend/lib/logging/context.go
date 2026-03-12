@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 )
 
@@ -94,12 +95,11 @@ func GetRequestID(ctx context.Context) string {
 }
 
 // LogArticleProcessing logs article processing events.
-func LogArticleProcessing(ctx context.Context, message string, inheritedAttrs []slog.Attr, extraAttr slog.Attr) {
+func LogArticleProcessing(ctx context.Context, message string, inheritedAttrs []slog.Attr) {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, message, 0)
 	for _, attr := range inheritedAttrs {
 		record.AddAttrs(attr)
 	}
-	record.AddAttrs(extraAttr)
 
 	if logRecord := getLogRecord(ctx); logRecord != nil {
 		logRecord.Attrs(func(attr slog.Attr) bool {
@@ -109,6 +109,7 @@ func LogArticleProcessing(ctx context.Context, message string, inheritedAttrs []
 	}
 
 	if requestError := GetRequestError(ctx); requestError != nil {
+		record.AddAttrs(slog.Int("status", http.StatusInternalServerError))
 		if joinedErr, ok := requestError.(interface{ Unwrap() []error }); ok {
 			for i, err := range joinedErr.Unwrap() {
 				record.AddAttrs(slog.String(fmt.Sprintf("error_%d", i), err.Error()))
@@ -117,6 +118,8 @@ func LogArticleProcessing(ctx context.Context, message string, inheritedAttrs []
 			record.AddAttrs(slog.String("error", requestError.Error()))
 		}
 		record.Level = slog.LevelError
+	} else {
+		record.AddAttrs(slog.Int("status", http.StatusOK))
 	}
 
 	if err := slog.Default().Handler().Handle(ctx, record); err != nil {

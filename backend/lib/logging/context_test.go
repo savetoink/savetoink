@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net/http"
 	"testing"
 	"time"
 
@@ -423,11 +424,10 @@ func TestLogArticleProcessing_Success(t *testing.T) {
 		slog.String("request_id", "req-123"),
 		slog.String("account_id", "acc-456"),
 	}
-	extraAttr := slog.String("status", "success")
 
 	ctx := context.Background()
 
-	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs, extraAttr)
+	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -441,14 +441,14 @@ func TestLogArticleProcessing_Success(t *testing.T) {
 		return true
 	})
 
-	attrMap := make(map[string]string)
+	attrMap := make(map[string]any)
 	for _, attr := range attrs {
-		attrMap[attr.Key] = attr.Value.String()
+		attrMap[attr.Key] = attr.Value.Any()
 	}
 
 	assert.Equal(t, "req-123", attrMap["request_id"])
 	assert.Equal(t, "acc-456", attrMap["account_id"])
-	assert.Equal(t, "success", attrMap["status"])
+	assert.Equal(t, int64(http.StatusOK), attrMap["status"])
 	assert.NotContains(t, attrMap, "error")
 }
 
@@ -465,9 +465,8 @@ func TestLogArticleProcessing_SingleError(t *testing.T) {
 	inheritedAttrs := []slog.Attr{
 		slog.String("request_id", "req-123"),
 	}
-	extraAttr := slog.String("status", "failed")
 
-	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs, extraAttr)
+	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -481,13 +480,13 @@ func TestLogArticleProcessing_SingleError(t *testing.T) {
 		return true
 	})
 
-	attrMap := make(map[string]string)
+	attrMap := make(map[string]any)
 	for _, attr := range attrs {
-		attrMap[attr.Key] = attr.Value.String()
+		attrMap[attr.Key] = attr.Value.Any()
 	}
 
 	assert.Equal(t, "req-123", attrMap["request_id"])
-	assert.Equal(t, "failed", attrMap["status"])
+	assert.Equal(t, int64(http.StatusInternalServerError), attrMap["status"])
 	assert.Equal(t, "fetch failed", attrMap["error"])
 }
 
@@ -506,9 +505,8 @@ func TestLogArticleProcessing_JoinedErrors(t *testing.T) {
 	inheritedAttrs := []slog.Attr{
 		slog.String("request_id", "req-123"),
 	}
-	extraAttr := slog.String("status", "failed")
 
-	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs, extraAttr)
+	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -522,13 +520,13 @@ func TestLogArticleProcessing_JoinedErrors(t *testing.T) {
 		return true
 	})
 
-	attrMap := make(map[string]string)
+	attrMap := make(map[string]any)
 	for _, attr := range attrs {
-		attrMap[attr.Key] = attr.Value.String()
+		attrMap[attr.Key] = attr.Value.Any()
 	}
 
 	assert.Equal(t, "req-123", attrMap["request_id"])
-	assert.Equal(t, "failed", attrMap["status"])
+	assert.Equal(t, int64(http.StatusInternalServerError), attrMap["status"])
 	assert.Equal(t, "error 1", attrMap["error_0"])
 	assert.Equal(t, "error 2", attrMap["error_1"])
 }
@@ -541,9 +539,8 @@ func TestLogArticleProcessing_NoInheritedAttrs(t *testing.T) {
 	defer slog.SetDefault(defaultLogger)
 
 	ctx := context.Background()
-	extraAttr := slog.String("status", "success")
 
-	LogArticleProcessing(ctx, "article processing completed", nil, extraAttr)
+	LogArticleProcessing(ctx, "article processing completed", nil)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -556,12 +553,12 @@ func TestLogArticleProcessing_NoInheritedAttrs(t *testing.T) {
 		return true
 	})
 
-	attrMap := make(map[string]string)
+	attrMap := make(map[string]any)
 	for _, attr := range attrs {
-		attrMap[attr.Key] = attr.Value.String()
+		attrMap[attr.Key] = attr.Value.Any()
 	}
 
-	assert.Equal(t, "success", attrMap["status"])
+	assert.Equal(t, int64(http.StatusOK), attrMap["status"])
 }
 
 func TestLogArticleProcessing_WithLogRecordAttrs(t *testing.T) {
@@ -580,9 +577,8 @@ func TestLogArticleProcessing_WithLogRecordAttrs(t *testing.T) {
 	inheritedAttrs := []slog.Attr{
 		slog.String("request_id", "req-123"),
 	}
-	extraAttr := slog.String("status", "success")
 
-	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs, extraAttr)
+	LogArticleProcessing(ctx, "article processing completed", inheritedAttrs)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -596,13 +592,13 @@ func TestLogArticleProcessing_WithLogRecordAttrs(t *testing.T) {
 		return true
 	})
 
-	attrMap := make(map[string]string)
+	attrMap := make(map[string]any)
 	for _, attr := range attrs {
-		attrMap[attr.Key] = attr.Value.String()
+		attrMap[attr.Key] = attr.Value.Any()
 	}
 
 	assert.Equal(t, "req-123", attrMap["request_id"])
-	assert.Equal(t, "success", attrMap["status"])
+	assert.Equal(t, int64(http.StatusOK), attrMap["status"])
 	assert.Equal(t, "browserless", attrMap["fetcher_type"])
-	assert.Equal(t, "250", attrMap["response_time_ms"])
+	assert.Equal(t, int64(250), attrMap["response_time_ms"])
 }
