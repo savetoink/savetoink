@@ -263,9 +263,9 @@ func TestCheckQuotaAndDeviceEmail(t *testing.T) {
 		count, err := CheckQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
 
 		assert.NotNil(t, err)
-		assert.Equal(t, "free tier limit exceeded: invalid input", err.Error())
+		assert.Equal(t, "free tier limit exceeded: quota exceeded", err.Error())
 		assert.Equal(t, consts.MaxFreeTierSendsPerPeriod, count)
-		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, http.StatusTooManyRequests, w.Code)
 	})
 
 	t.Run("Auth0 with count over limit", func(t *testing.T) {
@@ -282,9 +282,9 @@ func TestCheckQuotaAndDeviceEmail(t *testing.T) {
 		count, err := CheckQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
 
 		assert.NotNil(t, err)
-		assert.Equal(t, "free tier limit exceeded: invalid input", err.Error())
+		assert.Equal(t, "free tier limit exceeded: quota exceeded", err.Error())
 		assert.Equal(t, consts.MaxFreeTierSendsPerPeriod+1, count)
-		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, http.StatusTooManyRequests, w.Code)
 	})
 
 	t.Run("Auth0 with service error counting sends", func(t *testing.T) {

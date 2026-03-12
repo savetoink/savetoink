@@ -16,6 +16,9 @@ var (
 
 	// ErrConflict indicates a state conflict (e.g., duplicate creation).
 	ErrConflict = errors.New("conflict")
+
+	// ErrQuotaExceeded indicates a quota limit has been exceeded.
+	ErrQuotaExceeded = errors.New("quota exceeded")
 )
 
 // IsNotFound checks if error is ErrNotFound.
@@ -36,4 +39,9 @@ func IsUnauthorized(err error) bool {
 // IsConflict checks if error is ErrConflict.
 func IsConflict(err error) bool {
 	return errors.Is(err, ErrConflict)
+}
+
+// IsQuotaExceeded checks if error is ErrQuotaExceeded.
+func IsQuotaExceeded(err error) bool {
+	return errors.Is(err, ErrQuotaExceeded)
 }

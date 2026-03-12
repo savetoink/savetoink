@@ -33,6 +33,8 @@ func statusCodeForError(err error) int {
 		return http.StatusUnauthorized
 	case errors.Is(err, apperrors.ErrConflict):
 		return http.StatusConflict
+	case errors.Is(err, apperrors.ErrQuotaExceeded):
+		return http.StatusTooManyRequests
 	default:
 		return http.StatusInternalServerError
 	}
@@ -109,7 +111,7 @@ func checkQuota(
 	logging.AddLogAttr(r.Context(), slog.Int("sends_count", count))
 
 	if count >= consts.MaxFreeTierSendsPerPeriod {
-		quotaErr := fmt.Errorf("free tier limit exceeded: %w", apperrors.ErrInvalid)
+		quotaErr := fmt.Errorf("free tier limit exceeded: %w", apperrors.ErrQuotaExceeded)
 		HandleServiceError(w, r, quotaErr, "check quota")
 		return count, quotaErr
 	}

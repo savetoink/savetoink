@@ -18,6 +18,7 @@ func TestError_Constants(t *testing.T) {
 		{"ErrInvalid", ErrInvalid, "invalid input"},
 		{"ErrUnauthorized", ErrUnauthorized, "unauthorized"},
 		{"ErrConflict", ErrConflict, "conflict"},
+		{"ErrQuotaExceeded", ErrQuotaExceeded, "quota exceeded"},
 	}
 
 	for _, tt := range tests {
@@ -192,70 +193,128 @@ func TestIsConflict(t *testing.T) {
 	}
 }
 
-func TestIsFunctions_Table(t *testing.T) {
+func TestIsQuotaExceeded(t *testing.T) {
 	tests := []struct {
-		name           string
-		err            error
-		expectNotFound bool
-		expectInvalid  bool
-		expectUnauth   bool
-		expectConflict bool
+		name     string
+		err      error
+		expected bool
 	}{
 		{
-			name:           "ErrNotFound",
-			err:            ErrNotFound,
-			expectNotFound: true,
-			expectInvalid:  false,
-			expectUnauth:   false,
-			expectConflict: false,
+			name:     "direct ErrQuotaExceeded",
+			err:      ErrQuotaExceeded,
+			expected: true,
 		},
 		{
-			name:           "ErrInvalid",
-			err:            ErrInvalid,
-			expectNotFound: false,
-			expectInvalid:  true,
-			expectUnauth:   false,
-			expectConflict: false,
+			name:     "wrapped ErrQuotaExceeded",
+			err:      fmt.Errorf("context: %w", ErrQuotaExceeded),
+			expected: true,
 		},
 		{
-			name:           "ErrUnauthorized",
-			err:            ErrUnauthorized,
-			expectNotFound: false,
-			expectInvalid:  false,
-			expectUnauth:   true,
-			expectConflict: false,
+			name:     "different error",
+			err:      ErrInvalid,
+			expected: false,
 		},
 		{
-			name:           "ErrConflict",
-			err:            ErrConflict,
-			expectNotFound: false,
-			expectInvalid:  false,
-			expectUnauth:   false,
-			expectConflict: true,
+			name:     "nil error",
+			err:      nil,
+			expected: false,
 		},
 		{
-			name:           "nil error",
-			err:            nil,
-			expectNotFound: false,
-			expectInvalid:  false,
-			expectUnauth:   false,
-			expectConflict: false,
+			name:     "custom error",
+			err:      errors.New("some other error"),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsQuotaExceeded(tt.err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestIsFunctions_Table(t *testing.T) {
+	tests := []struct {
+		name              string
+		err               error
+		expectNotFound    bool
+		expectInvalid     bool
+		expectUnauth      bool
+		expectConflict    bool
+		expectQuotaExceed bool
+	}{
+		{
+			name:              "ErrNotFound",
+			err:               ErrNotFound,
+			expectNotFound:    true,
+			expectInvalid:     false,
+			expectUnauth:      false,
+			expectConflict:    false,
+			expectQuotaExceed: false,
 		},
 		{
-			name:           "custom error",
-			err:            errors.New("custom error"),
-			expectNotFound: false,
-			expectInvalid:  false,
-			expectUnauth:   false,
-			expectConflict: false,
+			name:              "ErrInvalid",
+			err:               ErrInvalid,
+			expectNotFound:    false,
+			expectInvalid:     true,
+			expectUnauth:      false,
+			expectConflict:    false,
+			expectQuotaExceed: false,
 		},
 		{
-			name:           "wrapped ErrNotFound",
-			err:            fmt.Errorf("wrapped: %w", ErrNotFound),
-			expectNotFound: true,
-			expectInvalid:  false,
-			expectUnauth:   false,
-			expectConflict: false,
+			name:              "ErrUnauthorized",
+			err:               ErrUnauthorized,
+			expectNotFound:    false,
+			expectInvalid:     false,
+			expectUnauth:      true,
+			expectConflict:    false,
+			expectQuotaExceed: false,
+		},
+		{
+			name:              "ErrConflict",
+			err:               ErrConflict,
+			expectNotFound:    false,
+			expectInvalid:     false,
+			expectUnauth:      false,
+			expectConflict:    true,
+			expectQuotaExceed: false,
+		},
+		{
+			name:              "ErrQuotaExceeded",
+			err:               ErrQuotaExceeded,
+			expectNotFound:    false,
+			expectInvalid:     false,
+			expectUnauth:      false,
+			expectConflict:    false,
+			expectQuotaExceed: true,
+		},
+		{
+			name:              "nil error",
+			err:               nil,
+			expectNotFound:    false,
+			expectInvalid:     false,
+			expectUnauth:      false,
+			expectConflict:    false,
+			expectQuotaExceed: false,
+		},
+		{
+			name:              "custom error",
+			err:               errors.New("custom error"),
+			expectNotFound:    false,
+			expectInvalid:     false,
+			expectUnauth:      false,
+			expectConflict:    false,
+			expectQuotaExceed: false,
+		},
+		{
+			name:              "wrapped ErrNotFound",
+			err:               fmt.Errorf("wrapped: %w", ErrNotFound),
+			expectNotFound:    true,
+			expectInvalid:     false,
+			expectUnauth:      false,
+			expectConflict:    false,
+			expectQuotaExceed: false,
 		},
 	}
 
@@ -265,6 +324,7 @@ func TestIsFunctions_Table(t *testing.T) {
 			assert.Equal(t, tt.expectInvalid, IsInvalid(tt.err))
 			assert.Equal(t, tt.expectUnauth, IsUnauthorized(tt.err))
 			assert.Equal(t, tt.expectConflict, IsConflict(tt.err))
+			assert.Equal(t, tt.expectQuotaExceed, IsQuotaExceeded(tt.err))
 		})
 	}
 }
