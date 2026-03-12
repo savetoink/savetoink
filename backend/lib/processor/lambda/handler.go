@@ -53,6 +53,7 @@ func HandleEvent(ctx context.Context, event *content.ProcessArticleEvent, svc pr
 		map[string]any{"orig_request_id": event.RequestID},
 		map[string]any{"request_id": lambdaRequestID},
 		map[string]any{"version": *consts.Version()},
+		map[string]any{"article_id": event.ArticleID},
 	)
 	event.RequestID = lambdaRequestID
 

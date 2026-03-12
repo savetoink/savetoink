@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	apperrors "github.com/shaftoe/savetoink/backend/lib/apperrors"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
@@ -172,4 +173,18 @@ func handleBouncingEmail(
 	bounceErr := fmt.Errorf("%s: %w", bounceMsg, apperrors.ErrInvalid)
 	HandleServiceError(w, r, bounceErr, "check bouncing email")
 	return bounceErr
+}
+
+// GetArticleID returns the article ID from the request URL parameter.
+// If found, it takes care of adding the article ID to the context log attributes.
+func GetArticleID(r *http.Request) string {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		return ""
+	}
+
+	logging.AddLogAttr(r.Context(), slog.String("article_id", id))
+
+	return id
 }

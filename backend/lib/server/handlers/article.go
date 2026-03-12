@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
@@ -19,7 +18,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
 	"github.com/shaftoe/savetoink/backend/lib/server/types"
-	serverutils "github.com/shaftoe/savetoink/backend/lib/server/utils"
+	"github.com/shaftoe/savetoink/backend/lib/server/utils"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/validation"
@@ -36,7 +35,7 @@ type Handlers struct {
 // HandleCreateArticle handles the article creation endpoint.
 func (h *Handlers) HandleCreateArticle(w http.ResponseWriter, r *http.Request) {
 	var req types.ArticleRequest
-	if err := serverutils.DecodeAndValidateRequest(w, r, &req); err != nil {
+	if err := utils.DecodeAndValidateRequest(w, r, &req); err != nil {
 		return
 	}
 
@@ -53,11 +52,11 @@ func (h *Handlers) HandleCreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	article, err := h.service.CreateArticle(r.Context(), u, accountID)
 	if err != nil {
-		serverutils.HandleServiceError(w, r, err, "create article")
+		utils.HandleServiceError(w, r, err, "create article")
 		return
 	}
 
-	h.writeArticleResponse(w, r, article)
+	h.writeArticleResponse(w, article)
 	h.startArticleProcessing(r.Context(), req.URL, article.ID, accountID, req.SendOnComplete, sendsCount)
 }
 
@@ -69,11 +68,11 @@ func (h *Handlers) validateAndCheckQuota(
 ) (int, error) {
 	var sendsCount int
 	if req.SendOnComplete {
-		if err := serverutils.CheckEmailBackendEnabled(w, r, h.cfg.EmailProvider); err != nil {
+		if err := utils.CheckEmailBackendEnabled(w, r, h.cfg.EmailProvider); err != nil {
 			return 0, fmt.Errorf("email backend check failed: %w", err)
 		}
 
-		sendsError, err := serverutils.CheckQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID)
+		sendsError, err := utils.CheckQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID)
 		if err != nil {
 			return 0, fmt.Errorf("quota and device email check failed: %w", err)
 		}
@@ -81,7 +80,7 @@ func (h *Handlers) validateAndCheckQuota(
 	}
 
 	if req.URL == "" {
-		serverutils.WriteJSONError(w, http.StatusBadRequest, errors.New("missing URL in request body"))
+		utils.WriteJSONError(w, http.StatusBadRequest, errors.New("missing URL in request body"))
 		return 0, errors.New("missing URL")
 	}
 
@@ -92,7 +91,7 @@ func (h *Handlers) validateURL(w http.ResponseWriter, r *http.Request, req types
 	u, err := validation.ValidateURL(req.URL)
 	if err != nil {
 		urlErr := fmt.Errorf("invalid URL: %w", err)
-		serverutils.WriteJSONError(w, http.StatusBadRequest, urlErr)
+		utils.WriteJSONError(w, http.StatusBadRequest, urlErr)
 		return nil, urlErr
 	}
 
@@ -101,9 +100,7 @@ func (h *Handlers) validateURL(w http.ResponseWriter, r *http.Request, req types
 	return u, nil
 }
 
-func (h *Handlers) writeArticleResponse(w http.ResponseWriter, r *http.Request, article *model.Article) {
-	logging.AddLogAttr(r.Context(), slog.String("article_id", article.ID))
-
+func (h *Handlers) writeArticleResponse(w http.ResponseWriter, article *model.Article) {
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(types.ArticleResponse{
 		ID:    article.ID,
@@ -160,7 +157,7 @@ func (h *Handlers) HandleGetArticles(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, favoriteFilter)
 	if err != nil {
-		serverutils.HandleServiceError(w, r, err, "get articles metadata")
+		utils.HandleServiceError(w, r, err, "get articles metadata")
 		return
 	}
 
@@ -181,14 +178,12 @@ func (h *Handlers) HandleGetArticles(w http.ResponseWriter, r *http.Request) {
 // HandleGetArticle handles the get single article endpoint.
 func (h *Handlers) HandleGetArticle(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountIDFromCtx(r.Context())
-	articleID := chi.URLParam(r, "id")
-
-	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
+	articleID := utils.GetArticleID(r)
 
 	article, err := h.service.GetArticle(r.Context(), accountID, articleID)
 	if err != nil {
 		logging.AddRequestError(r.Context(), fmt.Errorf("db error: %w", err))
-		serverutils.WriteJSONError(w, http.StatusNotFound, err)
+		utils.WriteJSONError(w, http.StatusNotFound, err)
 		return
 	}
 
@@ -201,13 +196,11 @@ func (h *Handlers) HandleGetArticle(w http.ResponseWriter, r *http.Request) {
 // HandleDeleteArticle handles the delete article endpoint.
 func (h *Handlers) HandleDeleteArticle(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountIDFromCtx(r.Context())
-	articleID := chi.URLParam(r, "id")
-
-	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
+	articleID := utils.GetArticleID(r)
 
 	result, err := h.service.DeleteArticle(r.Context(), accountID, articleID)
 	if err != nil {
-		serverutils.HandleServiceError(w, r, err, "delete article")
+		utils.HandleServiceError(w, r, err, "delete article")
 		return
 	}
 
@@ -223,7 +216,7 @@ func (h *Handlers) HandleDeleteAllArticles(w http.ResponseWriter, r *http.Reques
 
 	result, err := h.service.DeleteAllArticles(r.Context(), accountID)
 	if err != nil {
-		serverutils.HandleServiceError(w, r, err, "delete all articles")
+		utils.HandleServiceError(w, r, err, "delete all articles")
 		return
 	}
 
@@ -236,13 +229,11 @@ func (h *Handlers) HandleDeleteAllArticles(w http.ResponseWriter, r *http.Reques
 // HandleToggleFavorite handles the toggle favorite endpoint.
 func (h *Handlers) HandleToggleFavorite(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountIDFromCtx(r.Context())
-	articleID := chi.URLParam(r, "id")
-
-	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
+	articleID := utils.GetArticleID(r)
 
 	newStatus, err := h.service.ToggleFavorite(r.Context(), accountID, articleID)
 	if err != nil {
-		serverutils.HandleServiceError(w, r, err, "toggle favorite")
+		utils.HandleServiceError(w, r, err, "toggle favorite")
 		return
 	}
 
@@ -255,22 +246,20 @@ func (h *Handlers) HandleToggleFavorite(w http.ResponseWriter, r *http.Request) 
 // HandleSendArticle handles the send article endpoint.
 func (h *Handlers) HandleSendArticle(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountIDFromCtx(r.Context())
-	articleID := chi.URLParam(r, "id")
+	articleID := utils.GetArticleID(r)
 
-	if err := serverutils.CheckEmailBackendEnabled(w, r, h.cfg.EmailProvider); err != nil {
+	if err := utils.CheckEmailBackendEnabled(w, r, h.cfg.EmailProvider); err != nil {
 		return
 	}
 
-	sendsCount, err := serverutils.CheckQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID)
+	sendsCount, err := utils.CheckQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID)
 	if err != nil {
 		return
 	}
-
-	logging.AddLogAttr(r.Context(), slog.String("article_id", articleID))
 
 	result, err := h.service.SendArticleByID(r.Context(), accountID, articleID)
 	if err != nil {
-		serverutils.HandleServiceError(w, r, err, "send article")
+		utils.HandleServiceError(w, r, err, "send article")
 		return
 	}
 
