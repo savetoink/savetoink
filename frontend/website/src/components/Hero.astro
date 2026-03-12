@@ -3,93 +3,210 @@
 
 <section class="hero">
   <div class="container">
-      <h1>Send any article<br /><em>straight to your<br />e-reader</em></h1>
 
-    <p class="hero-sub">
-      Save to Ink converts any URL into a clean EPUB and delivers it to your
-      Kindle, Kobo, or any other e-reader — in one click.
+    <p class="hero-badge">
+      <span class="badge-dot"></span>
+      Self-hostable · Open source · ELv2
     </p>
 
+    <h1>Your articles.<br /><em>Your hosting.</em><br />Your e-reader.</h1>
+
+    <p class="hero-sub">
+      Save to Ink converts any URL into a clean EPUB and sends it straight to your e-reader device.
+      Host it yourself, use the CLI, or use the free cloud service — your call.
+    </p>
+
+    <div class="hero-cli">
+      <div class="cli-bar">
+        <span class="cli-dot red"></span>
+        <span class="cli-dot yellow"></span>
+        <span class="cli-dot green"></span>
+        <span class="cli-label">terminal</span>
+      </div>
+      <div class="cli-body">
+        <div class="cli-line">
+          <span class="cli-prompt">$</span>
+          <span class="cli-cmd">go install github.com/shaftoe/savetoink/cli/savetoink@latest</span>
+        </div>
+        <div class="cli-line">
+          <span class="cli-prompt">$</span>
+          <span class="cli-cmd">savetoink send https://example.com/long-read --dest-email mydevice@kindle.com</span>
+        </div>
+        <div class="cli-line cli-output">
+          <span class="cli-check">✓</span>Fetched
+          <span class="cli-check">✓</span>Cleaned
+          <span class="cli-check">✓</span>EPUB ready
+          <span class="cli-check">✓</span>Sent to Kindle
+        </div>
+      </div>
+    </div>
+
     <div class="hero-actions">
-      <a href="https://app.saveto.ink/" class="btn-primary">
-        Start for free
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 8h10M9 4l4 4-4 4"/>
-        </svg>
-      </a>
-      <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener" class="btn-secondary">
+      <a href="https://github.com/Save to Ink/Save to Ink" target="_blank" rel="noopener" class="btn-primary">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
         </svg>
         View on GitHub
       </a>
+      <a href="https://app.saveto.ink/" class="btn-secondary">
+        Or try the hosted version →
+      </a>
     </div>
+
+    <p class="hero-footnote">
+      Omnivore shut down. Pocket was acquired... Own your stack.
+    </p>
+
   </div>
 </section>
 
 <style>
-	.hero {
-		padding: 6rem 0 5rem;
-		text-align: center;
-	}
+  .hero {
+    padding: 5.5rem 0 4.5rem;
+    text-align: center;
+  }
 
-	.hero-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.8rem;
-		font-weight: 500;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--accent);
-		background: color-mix(in srgb, var(--accent) 10%, transparent);
-		border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-		border-radius: 100px;
-		padding: 0.3rem 0.85rem;
-		margin-bottom: 1.5rem;
-	}
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 0.3rem 0.9rem;
+    margin-bottom: 2rem;
+  }
 
-	.hero h1 {
-		font-family: var(--font-display);
-		font-size: clamp(2.4rem, 6vw, 4rem);
-		font-weight: 400;
-		line-height: 1.12;
-		letter-spacing: -0.02em;
-		color: var(--ink);
-		margin-bottom: 1.25rem;
-		max-width: 18ch;
-		margin-left: auto;
-		margin-right: auto;
-	}
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+  }
 
-	.hero h1 em {
-		font-style: italic;
-		color: var(--accent);
-	}
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 7vw, 4.5rem);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 1.25rem;
+  }
 
-	.hero-sub {
-		font-size: 1.15rem;
-		color: var(--muted);
-		max-width: 46ch;
-		margin: 0 auto 2.5rem;
-		line-height: 1.6;
-	}
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
 
-	.hero-actions {
-		display: flex;
-		gap: 0.75rem;
-		justify-content: center;
-		flex-wrap: wrap;
-	}
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 52ch;
+    margin: 0 auto 2.5rem;
+    line-height: 1.65;
+  }
 
-	@media (max-width: 640px) {
-		.hero {
-			padding: 4rem 0 3.5rem;
-		}
+  .hero-cli {
+    max-width: 42rem;
+    margin: 0 auto 2.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    text-align: left;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
 
-		.hero-actions {
-			flex-direction: column;
-			align-items: stretch;
-		}
-	}
+  .cli-bar {
+    background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+    border-bottom: 1px solid var(--border);
+    padding: 0.55rem 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .cli-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .cli-dot.red    { background: #ff5f57; }
+  .cli-dot.yellow { background: #febc2e; }
+  .cli-dot.green  { background: #28c840; }
+
+  .cli-label {
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    font-family: var(--font-mono);
+  }
+
+  .cli-body {
+    background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+    padding: 1.1rem 1.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.9;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .cli-line {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .cli-prompt {
+    color: var(--accent);
+    font-weight: 700;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .cli-cmd {
+    color: var(--ink);
+    word-break: break-all;
+  }
+
+  .cli-output {
+    color: var(--muted);
+    padding-left: 1.25rem;
+    font-size: 0.82rem;
+  }
+
+  .cli-check {
+    color: #22c55e;
+    font-weight: 700;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-footnote {
+    font-size: 0.8rem;
+    color: var(--muted);
+    opacity: 0.7;
+    margin: 0;
+    font-style: italic;
+  }
+
+  @media (max-width: 640px) {
+    .hero { padding: 3.5rem 0 3rem; }
+    .hero-actions { flex-direction: column; align-items: stretch; }
+    .cli-body { font-size: 0.78rem; }
+  }
 </style>

@@ -4,11 +4,12 @@
 <nav class="site-nav">
   <div class="nav-inner">
     <a href="/" class="nav-logo">
-        Save to Ink
+      Save to Ink
     </a>
 
     <div class="nav-links">
-      <a href="/#pricing">Pricing</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#pricing">Cloud</a>
       <a href="/policy">Privacy</a>
       <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener" class="btn-gh">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -16,84 +17,75 @@
         </svg>
         GitHub
       </a>
-      <a href="https://app.saveto.ink/" class="btn-primary" style="padding: 0.35rem 0.9rem; font-size: 0.85rem;">
-        Get started
-      </a>
     </div>
   </div>
 </nav>
 
 <style>
-	nav.site-nav {
-		position: sticky;
-		top: 0;
-		z-index: 100;
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
-		background: color-mix(in srgb, var(--paper) 85%, transparent);
-		border-bottom: 1px solid var(--border);
-		padding: 0;
-	}
+  nav.site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--paper) 85%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
 
-	nav.site-nav .nav-inner {
-		max-width: 72rem;
-		margin: 0 auto;
-		padding: 0.9rem 1.5rem;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-	}
+  nav.site-nav .nav-inner {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
 
-	.nav-logo {
-		display: flex;
-		align-items: center;
-		gap: 0.55rem;
-		font-family: var(--font-display);
-		font-size: 1.2rem;
-		color: var(--ink);
-		text-decoration: none;
-		letter-spacing: -0.01em;
-	}
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    color: var(--ink);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
 
-	.nav-logo svg {
-		flex-shrink: 0;
-	}
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
 
-	.nav-links {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
+  .nav-links a {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.4rem;
+    transition: color 0.15s, background 0.15s;
+  }
 
-	.nav-links a {
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--muted);
-		text-decoration: none;
-		padding: 0.35rem 0.65rem;
-		border-radius: 0.4rem;
-		transition:
-			color 0.15s,
-			background 0.15s;
-	}
+  .nav-links a:hover {
+    color: var(--ink);
+    background: var(--border);
+  }
 
-	.nav-links a:hover {
-		color: var(--ink);
-		background: var(--border);
-	}
+  .nav-links .btn-gh {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--ink) !important;
+    border: 1px solid var(--border);
+    background: transparent;
+    padding: 0.35rem 0.8rem !important;
+    margin-left: 0.25rem;
+  }
 
-	.nav-links .btn-gh {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		color: var(--ink) !important;
-		border: 1px solid var(--border);
-		background: transparent;
-		padding: 0.35rem 0.8rem !important;
-	}
-
-	.nav-links .btn-gh:hover {
-		background: var(--border) !important;
-	}
+  .nav-links .btn-gh:hover {
+    background: var(--border) !important;
+  }
 </style>

@@ -4,68 +4,272 @@
 <section class="section">
   <div class="container">
     <p class="section-label">How it works</p>
-    <h2 class="section-heading">Three steps, then just read</h2>
+    <h2 class="section-heading">Four ways in.<br />One output format.</h2>
     <p class="section-sub">
-      No clutter, no apps to open. Save an article and pick it up on
-      your e-reader in seconds.
+      CLI, REST API, browser extension, or web app — pick whatever fits your workflow.
+      All produce the same clean EPUB, delivered to your device.
     </p>
 
-    <div class="steps-row">
-      <div class="step-card">
-        <p class="step-num">Step 01</p>
-        <h3>Paste a URL</h3>
-        <p>Use the web app or the browser extension to submit any article, essay, or long-form page.</p>
+    <div class="ways-grid">
+      <div class="way-card way-cli">
+        <div class="way-header">
+          <div class="way-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="2 4 6 8 2 12"/><line x1="8" y1="12" x2="14" y2="12"/>
+            </svg>
+          </div>
+          <h3>CLI</h3>
+        </div>
+        <p>Install with <code>go install</code>, pipe URLs, script it, cron it. Works without an account.</p>
+        <div class="way-code">
+          <span class="cli-p">$</span> savetoink send https://…
+        </div>
       </div>
-      <div class="step-card">
-        <p class="step-num">Step 02</p>
-        <h3>We clean it up</h3>
-        <p>Save to Ink strips ads, nav, and noise. What's left is the actual content, formatted as a proper EPUB.</p>
+
+      <div class="way-card">
+        <div class="way-header">
+          <div class="way-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 5h12M2 8h8M2 11h5"/>
+              <path d="M11 9l3 3-3 3"/>
+            </svg>
+          </div>
+          <h3>REST API</h3>
+        </div>
+        <p>OpenAPI v3 spec. <code>POST /articles</code> to save, <code>POST /articles/:id/sends</code> to deliver. Integrate with anything.</p>
+        <div class="way-tag">OpenAPI v3</div>
       </div>
-      <div class="step-card">
-        <p class="step-num">Step 03</p>
-        <h3>Delivered to your device</h3>
-        <p>The EPUB lands in your Kindle or Kobo library automatically — ready to read, offline, on your own terms.</p>
+
+      <div class="way-card">
+        <div class="way-header">
+          <div class="way-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="1" y="3" width="14" height="10" rx="2"/><circle cx="8" cy="8" r="2"/>
+            </svg>
+          </div>
+          <h3>Browser extension</h3>
+        </div>
+        <p>One click from Chrome or Firefox. Works with the hosted version or points to your own instance.</p>
+        <div class="way-tag">Chrome · Firefox</div>
+      </div>
+
+      <div class="way-card">
+        <div class="way-header">
+          <div class="way-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="2" width="12" height="12" rx="2"/>
+              <path d="M5 6h6M5 9h4"/>
+            </svg>
+          </div>
+          <h3>Web app</h3>
+        </div>
+        <p>Paste a URL, browse your library, re-send or download EPUBs. Self-host it or use ours.</p>
+        <div class="way-tag">app.saveto.ink</div>
+      </div>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <p class="ps-label">Fetch</p>
+        <p class="ps-desc">Browserless fallback for JS-heavy pages</p>
+      </div>
+      <p class="ps-arrow">→</p>
+      <div class="pipeline-step">
+        <p class="ps-label">Distill</p>
+        <p class="ps-desc">go-trafilatura strips everything but content</p>
+      </div>
+      <p class="ps-arrow">→</p>
+      <div class="pipeline-step">
+        <p class="ps-label">Publish</p>
+        <p class="ps-desc">go-epub builds a proper EPUB with metadata</p>
+      </div>
+      <p class="ps-arrow">→</p>
+      <div class="pipeline-step">
+        <p class="ps-label">Send</p>
+        <p class="ps-desc">Email-to-Kindle · Kobo sideload</p>
       </div>
     </div>
   </div>
 </section>
 
 <style>
-	.steps-row {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-		gap: 1.5rem;
-		margin-top: 2rem;
-	}
+  .ways-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+  }
 
-	.step-card {
-		background: color-mix(in srgb, var(--ink) 4%, var(--paper));
-		border: 1px solid var(--border);
-		border-radius: var(--card-radius);
-		padding: 1.5rem;
-		text-align: left;
-	}
+  .way-card {
+    background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
 
-	.step-num {
-		font-size: 0.75rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--accent);
-		margin-bottom: 0.5rem;
-	}
+  .way-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
 
-	.step-card h3 {
-		font-size: 1.05rem;
-		font-weight: 600;
-		margin: 0 0 0.4rem;
-		color: var(--ink);
-	}
+  .way-cli {
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    background: color-mix(in srgb, var(--accent) 4%, var(--paper));
+  }
 
-	.step-card p {
-		font-size: 0.9rem;
-		color: var(--muted);
-		margin: 0;
-		line-height: 1.55;
-	}
+  .way-header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.65rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .way-icon {
+    width: 2rem;
+    height: 2rem;
+    min-width: 2rem;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius: 0.45rem;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+  }
+
+  .way-card h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .way-card > p {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0 0 0.85rem;
+    line-height: 1.55;
+  }
+
+  .way-card code {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+    border: 1px solid var(--border);
+    border-radius: 0.2rem;
+    padding: 0.05rem 0.3rem;
+  }
+
+  .way-code {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+    border: 1px solid var(--border);
+    border-radius: 0.4rem;
+    padding: 0.45rem 0.7rem;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.5rem;
+  }
+
+  .cli-p {
+    color: var(--accent);
+    font-weight: 700;
+    user-select: none;
+  }
+
+  .way-tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 0.2rem 0.6rem;
+  }
+
+  /* Pipeline */
+  .pipeline {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 3rem;
+    padding: 1.25rem 1.5rem;
+    background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
+
+  .pipeline-step {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center;
+    gap: 0.2rem;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .ps-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .ps-desc {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .ps-arrow {
+    color: var(--muted);
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin: 0;
+    line-height: 1;
+    /* nudge up to align with the label row */
+    margin-bottom: 1.1rem;
+  }
+
+  @media (max-width: 900px) {
+    .ways-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .ways-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .pipeline {
+      flex-direction: column !important;
+      align-items: flex-start;
+    }
+    .ps-arrow {
+      transform: rotate(90deg);
+      align-self: center;
+      margin-bottom: 0;
+    }
+    .pipeline-step {
+      align-items: flex-start !important;
+      text-align: left;
+      width: 100%;
+    }
+  }
 </style>

@@ -1,0 +1,200 @@
+---
+---
+
+<section class="section" id="self-host">
+  <div class="container">
+    <p class="section-label">Self-hosting</p>
+    <h2 class="section-heading">Runs fully serverless on AWS.<br />One command to deploy.</h2>
+    <p class="section-sub">
+      Two Go Lambdas, DynamoDB, SQS, CloudFront. No servers to maintain, no containers to babysit.
+      Clone the repo, fill in <code>.env</code>, run <code>just deploy</code>.
+    </p>
+
+    <div class="selfhost-grid">
+      <div class="sh-panel">
+        <p class="sh-panel-label">deploy</p>
+        <div class="sh-code">
+          <div class="code-line"><span class="cm"># one-time setup</span></div>
+          <div class="code-line"><span class="cli-prompt">$</span> <span class="cmd">cp .env.example .env <span class="cm">&amp;&amp; vim .env</span></span></div>
+          <div class="code-line">&nbsp;</div>
+          <div class="code-line"><span class="cm"># deploy everything to AWS</span></div>
+          <div class="code-line"><span class="cli-prompt">$</span> <span class="cmd">just deploy</span></div>
+          <div class="code-line">&nbsp;</div>
+          <div class="code-line"><span class="out">  ✓ S3 bucket</span></div>
+          <div class="code-line"><span class="out">  ✓ ACM certificate</span></div>
+          <div class="code-line"><span class="out">  ✓ Lambda (api + processor)</span></div>
+          <div class="code-line"><span class="out">  ✓ DynamoDB + SQS</span></div>
+          <div class="code-line"><span class="out">  ✓ CloudFront distribution</span></div>
+          <div class="code-line">&nbsp;</div>
+          <div class="code-line"><span class="cm"># add DNS CNAME and you're live</span></div>
+        </div>
+      </div>
+
+      <div class="sh-steps">
+        <div class="sh-step">
+          <div class="sh-step-num">1</div>
+          <div>
+            <h4>Prerequisites</h4>
+            <p>AWS CLI configured, <code>just</code> installed, Auth0 app created, Mailjet account for email delivery. That's the full list.</p>
+          </div>
+        </div>
+        <div class="sh-step">
+          <div class="sh-step-num">2</div>
+          <div>
+            <h4>Configure <code>.env</code></h4>
+            <p>Set your domain, Auth0 credentials, Mailjet API keys, and Kindle send-to email. CloudFormation handles the rest.</p>
+          </div>
+        </div>
+        <div class="sh-step">
+          <div class="sh-step-num">3</div>
+          <div>
+            <h4><code>just deploy</code></h4>
+            <p>Builds both Go Lambdas for Linux, uploads zips to S3, deploys the CloudFormation stack, provisions CloudFront. Add a DNS CNAME and you're done.</p>
+          </div>
+        </div>
+        <div class="sh-infra-tags">
+          <span class="infra-tag">Lambda</span>
+          <span class="infra-tag">DynamoDB</span>
+          <span class="infra-tag">SQS</span>
+          <span class="infra-tag">CloudFront</span>
+          <span class="infra-tag">ACM</span>
+          <span class="infra-tag">Auth0</span>
+          <span class="infra-tag">Mailjet</span>
+        </div>
+        <a href="https://github.com/savetoink/savetoink#self-hosting" class="btn-secondary sh-docs-link" target="_blank" rel="noopener">
+          Read the self-hosting docs →
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .selfhost-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2.5rem;
+    align-items: start;
+  }
+
+  .sh-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+  }
+
+  .sh-panel-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+    border-bottom: 1px solid var(--border);
+    padding: 0.55rem 1rem;
+    margin: 0;
+  }
+
+  .sh-code {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    padding: 1rem 1.1rem;
+    background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+    color: var(--ink);
+  }
+
+  .code-line {
+    display: block;
+  }
+
+  .cli-prompt {
+    color: var(--accent);
+    font-weight: 700;
+    user-select: none;
+    margin-right: 0.5rem;
+  }
+
+  .cmd  { color: var(--ink); }
+  .cm   { color: var(--muted); font-style: italic; }
+  .out  { color: #22c55e; padding-left: 0.25rem; }
+
+  /* Steps */
+  .sh-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .sh-step {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .sh-step-num {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-top: 0.1rem;
+  }
+
+  .sh-step h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 0.25rem;
+  }
+
+  .sh-step p {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  .sh-step code, p code {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    padding: 0.05rem 0.35rem;
+  }
+
+  .sh-infra-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .infra-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 0.2rem 0.6rem;
+  }
+
+  .sh-docs-link {
+    align-self: flex-start;
+  }
+
+  @media (max-width: 768px) {
+    .selfhost-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
