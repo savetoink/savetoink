@@ -50,10 +50,12 @@ func HandleEvent(ctx context.Context, event *content.ProcessArticleEvent, svc pr
 		}
 	}
 	event.InheritedAttrs = append(event.InheritedAttrs,
+		map[string]any{"account_id": event.AccountID},
+		map[string]any{"article_id": event.ArticleID},
 		map[string]any{"orig_request_id": event.RequestID},
 		map[string]any{"request_id": lambdaRequestID},
+		map[string]any{"url": event.URL},
 		map[string]any{"version": *consts.Version()},
-		map[string]any{"article_id": event.ArticleID},
 	)
 	event.RequestID = lambdaRequestID
 
