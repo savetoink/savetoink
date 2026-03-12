@@ -52,6 +52,9 @@
 				>{#if data.favorite}
 					<span>⭐️&nbsp;</span>
 				{/if}
+				{#if data.author}
+					{data.author} -
+				{/if}
 				{title}</a
 			>
 			{#if data.imageUrl}
