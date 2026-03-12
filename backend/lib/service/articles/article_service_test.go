@@ -145,7 +145,7 @@ func TestUpdateArticle_NilRepo(t *testing.T) {
 	}
 
 	assert.Panics(t, func() {
-		svc.UpdateArticle(context.Background(), article)
+		_ = svc.UpdateArticle(context.Background(), article)
 	}, "expected panic with nil repo")
 }
 

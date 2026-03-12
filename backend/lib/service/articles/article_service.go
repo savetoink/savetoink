@@ -99,7 +99,8 @@ func (s *ArticleService) GetArticlesMetadata(
 	page, pageSize int,
 	favoriteFilter *bool,
 ) (*servicetypes.GetArticlesResult, error) {
-	articles, lastEvaluatedKey, total, err := s.articlesRepo.GetMetadataByAccount(ctx, accountID, page, pageSize, favoriteFilter)
+	articles, lastEvaluatedKey, total, err := s.articlesRepo.GetMetadataByAccount(
+		ctx, accountID, page, pageSize, favoriteFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get articles: %w", err)
 	}
