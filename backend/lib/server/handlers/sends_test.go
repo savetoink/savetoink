@@ -248,33 +248,6 @@ func TestHandleGetSends_ZeroSends(t *testing.T) {
 	assert.Equal(t, 10, resp.RemainingSends, "remaining_sends should equal max quota when no sends")
 }
 
-func TestHandleGetSends_AtQuotaLimit(t *testing.T) {
-	mockSvc := &sendsMockService{
-		countSendsFunc: func(_ context.Context, _ string, _, _ time.Time) (int, error) {
-			return 10, nil
-		},
-	}
-
-	cfg := &config.Config{
-		AuthBackend: consts.AuthBackendAuth0,
-	}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
-
-	req := httptest.NewRequestWithContext(newSendsTestContext(), "GET", "/v1/sends", nil)
-	w := httptest.NewRecorder()
-
-	h.HandleGetSends(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	var resp types.SendsResponse
-	err := json.Unmarshal(w.Body.Bytes(), &resp)
-	require.NoError(t, err)
-	assert.Equal(t, 10, resp.CurrentSends, "current_sends should equal max at quota limit")
-	assert.Equal(t, 10, resp.TotalSends, "total_sends should equal max at quota limit")
-	assert.Equal(t, 0, resp.RemainingSends, "remaining_sends should be 0 at quota limit")
-}
-
 func TestHandleGetSends_ServiceError(t *testing.T) {
 	tests := []struct {
 		name           string

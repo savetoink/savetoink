@@ -104,6 +104,7 @@ type SendsResponse struct {
 	PeriodResetDate   time.Time `json:"period_reset_date"`
 }
 
+// SendsResponseNoLimits represents a sends response for shared API key users (no quota limits).
 type SendsResponseNoLimits struct {
 	TotalSends int `json:"total_sends"`
 }
