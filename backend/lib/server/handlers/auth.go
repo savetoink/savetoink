@@ -1,5 +1,5 @@
-// Package server provides HTTP handlers and middleware for the savetoink application.
-package server
+// Package handlers provides HTTP handlers for the savetoink application.
+package handlers
 
 import (
 	"bytes"
@@ -15,25 +15,31 @@ import (
 	"strings"
 
 	"github.com/shaftoe/savetoink/backend/lib/logging"
+	"github.com/shaftoe/savetoink/backend/lib/server/types"
+	"github.com/shaftoe/savetoink/backend/lib/server/utils"
 )
 
 const (
 	jwtPartsCount = 3
+
+	// OauthTokenPath is the OAuth token endpoint path.
+	OauthTokenPath = "/oauth/token" //nolint:gosec // this is an API endpoint path, not a credential
 )
 
-func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Request) {
-	var req authTokenExchangeRequest
-	if decodeErr := decodeAndValidateRequest(w, r, &req); decodeErr != nil {
+// HandleAuthTokenExchange handles the OAuth token exchange endpoint.
+func (h *Handlers) HandleAuthTokenExchange(w http.ResponseWriter, r *http.Request) {
+	var req types.AuthTokenExchangeRequest
+	if decodeErr := utils.DecodeAndValidateRequest(w, r, &req); decodeErr != nil {
 		return
 	}
 
 	if req.Code == "" {
-		writeJSONError(w, http.StatusBadRequest, errors.New("missing code in request body"))
+		utils.WriteJSONError(w, http.StatusBadRequest, errors.New("missing code in request body"))
 		return
 	}
 
 	if req.RedirectURI == "" {
-		writeJSONError(w, http.StatusBadRequest, errors.New("missing redirect_uri in request body"))
+		utils.WriteJSONError(w, http.StatusBadRequest, errors.New("missing redirect_uri in request body"))
 		return
 	}
 
@@ -48,7 +54,8 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	resp, body, execErr := h.executeTokenExchange(tokenReq)
 	if execErr != nil {
 		logging.AddRequestError(r.Context(), execErr)
-		writeJSONError(w, http.StatusInternalServerError, fmt.Errorf("failed to exchange token with Auth0: %w", execErr))
+		utils.WriteJSONError(w, http.StatusInternalServerError,
+			fmt.Errorf("failed to exchange token with Auth0: %w", execErr))
 		return
 	}
 
@@ -57,10 +64,11 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	var tokenResp authTokenExchangeResponse
+	var tokenResp types.AuthTokenExchangeResponse
 	if unmarshalErr := json.Unmarshal(body, &tokenResp); unmarshalErr != nil {
 		logging.AddRequestError(r.Context(), unmarshalErr)
-		writeJSONError(w, http.StatusInternalServerError, fmt.Errorf("failed to decode token response: %w", unmarshalErr))
+		utils.WriteJSONError(w, http.StatusInternalServerError,
+			fmt.Errorf("failed to decode token response: %w", unmarshalErr))
 		return
 	}
 
@@ -83,7 +91,7 @@ func (h *handlers) handleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	_ = json.NewEncoder(w).Encode(tokenResp) //nolint:gosec // returning OAuth access token, not a secret
 }
 
-func (h *handlers) buildTokenRequest(req authTokenExchangeRequest) *http.Request {
+func (h *Handlers) buildTokenRequest(req types.AuthTokenExchangeRequest) *http.Request {
 	auth0TokenURL := "https://" + h.cfg.Auth0Domain + "/oauth/token"
 	tokenReq := url.Values{}
 	tokenReq.Set("grant_type", req.GrantType)
@@ -102,7 +110,7 @@ func (h *handlers) buildTokenRequest(req authTokenExchangeRequest) *http.Request
 	return httpReq
 }
 
-func (h *handlers) executeTokenExchange(httpReq *http.Request) (*http.Response, []byte, error) {
+func (h *Handlers) executeTokenExchange(httpReq *http.Request) (*http.Response, []byte, error) {
 	resp, err := h.client.Do(httpReq) //nolint:gosec // HTTP request to Auth0 is from config, not user input
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to execute token exchange: %w", err)
@@ -118,7 +126,7 @@ func (h *handlers) executeTokenExchange(httpReq *http.Request) (*http.Response, 
 	return resp, body, nil
 }
 
-func (h *handlers) handleAuth0Error(ctx context.Context, w http.ResponseWriter, body []byte) {
+func (h *Handlers) handleAuth0Error(ctx context.Context, w http.ResponseWriter, body []byte) {
 	var errResp struct {
 		Error            string `json:"error"`
 		ErrorDescription string `json:"error_description"`
@@ -127,9 +135,9 @@ func (h *handlers) handleAuth0Error(ctx context.Context, w http.ResponseWriter, 
 	logging.AddLogAttr(ctx, slog.String("auth0_error", errResp.Error))
 
 	if errResp.ErrorDescription != "" {
-		writeJSONError(w, http.StatusUnauthorized, errors.New(errResp.ErrorDescription))
+		utils.WriteJSONError(w, http.StatusUnauthorized, errors.New(errResp.ErrorDescription))
 	} else {
-		writeJSONError(w, http.StatusUnauthorized, fmt.Errorf("token exchange failed: %s", errResp.Error))
+		utils.WriteJSONError(w, http.StatusUnauthorized, fmt.Errorf("token exchange failed: %s", errResp.Error))
 	}
 }
 
@@ -159,7 +167,7 @@ func extractEmailFromIDToken(idToken string) (string, error) {
 	return claims.Email, nil
 }
 
-func (h *handlers) storeUserEmail(ctx context.Context, email, accessToken string) error {
+func (h *Handlers) storeUserEmail(ctx context.Context, email, accessToken string) error {
 	if h.service == nil {
 		return errors.New("service not configured")
 	}

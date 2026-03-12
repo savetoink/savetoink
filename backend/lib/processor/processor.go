@@ -25,7 +25,7 @@ type Service interface {
 	Clean(ctx context.Context, doc *html.Node, u *url.URL) (*model.Article, error)
 	UpdateArticle(ctx context.Context, article *model.Article) error
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
-	GetUserDeviceEmail(ctx context.Context, accountID string) (email string, autoSend bool, err error)
+	GetUserDeviceEmailAndAutoSend(ctx context.Context, accountID string) (email string, autoSend bool, err error)
 	SendArticleByID(ctx context.Context, accountID, articleID string) (*servicetypes.SendArticleResult, error)
 }
 
@@ -125,7 +125,7 @@ func ProcessArticle(
 }
 
 func sendArticle(ctx context.Context, svc Service, accountID, articleID string) error {
-	deviceEmail, _, err := svc.GetUserDeviceEmail(ctx, accountID)
+	deviceEmail, _, err := svc.GetUserDeviceEmailAndAutoSend(ctx, accountID)
 	if err != nil {
 		return fmt.Errorf("failed to get device email: %w", err)
 	}

@@ -1,3 +1,4 @@
+// Package server provides HTTP routing and middleware for the savetoink application.
 package server
 
 import (

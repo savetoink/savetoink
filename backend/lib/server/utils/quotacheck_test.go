@@ -1,4 +1,5 @@
-package server
+// Package utils provides utility functions for HTTP handlers.
+package utils
 
 import (
 	"context"
@@ -18,6 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/html"
 )
+
+const testDeviceEmail = "test@kindle.com"
 
 type quotaCheckMockService struct {
 	countSendsFunc      func(ctx context.Context, accountID string, startDate, endDate time.Time) (int, error)
@@ -97,7 +100,7 @@ func (m *quotaCheckMockService) GetDBError() error {
 	panic("not implemented")
 }
 
-func (m *quotaCheckMockService) GetUserDeviceEmail(
+func (m *quotaCheckMockService) GetUserDeviceEmailAndAutoSend(
 	ctx context.Context,
 	accountID string,
 ) (emailAddr string, ok bool, err error) {
@@ -195,7 +198,7 @@ func TestCheckEmailBackendEnabled(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 
-			err := checkEmailBackendEnabled(w, r, tt.emailProvider)
+			err := CheckEmailBackendEnabled(w, r, tt.emailProvider)
 
 			if tt.expectedError != "" {
 				assert.NotNil(t, err)
@@ -215,7 +218,7 @@ func TestCheckQuotaAndDeviceEmail(t *testing.T) {
 		r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		ctx := context.Background()
 
-		count, err := checkQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendSharedAPIKey, "test-account")
+		count, err := CheckQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendSharedAPIKey, "test-account")
 
 		assert.Nil(t, err)
 		assert.Equal(t, 0, count)
@@ -239,7 +242,7 @@ func TestCheckQuotaAndDeviceEmail(t *testing.T) {
 		r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		ctx := context.Background()
 
-		count, err := checkQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
+		count, err := CheckQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
 
 		assert.Nil(t, err)
 		assert.Equal(t, 5, count)
@@ -257,7 +260,7 @@ func TestCheckQuotaAndDeviceEmail(t *testing.T) {
 		r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		ctx := context.Background()
 
-		count, err := checkQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
+		count, err := CheckQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
 
 		assert.NotNil(t, err)
 		assert.Equal(t, "free tier limit exceeded: invalid input", err.Error())
@@ -276,7 +279,7 @@ func TestCheckQuotaAndDeviceEmail(t *testing.T) {
 		r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		ctx := context.Background()
 
-		count, err := checkQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
+		count, err := CheckQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
 
 		assert.NotNil(t, err)
 		assert.Equal(t, "free tier limit exceeded: invalid input", err.Error())
@@ -295,7 +298,7 @@ func TestCheckQuotaAndDeviceEmail(t *testing.T) {
 		r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		ctx := context.Background()
 
-		count, err := checkQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
+		count, err := CheckQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
 
 		assert.NotNil(t, err)
 		assert.Contains(t, err.Error(), "failed to check subscription limit")
@@ -327,7 +330,7 @@ func TestCheckQuotaAndDeviceEmail(t *testing.T) {
 		r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		ctx := context.Background()
 
-		count, err := checkQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
+		count, err := CheckQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
 
 		assert.NotNil(t, err)
 		assert.Equal(
@@ -359,7 +362,7 @@ func TestCheckQuotaAndDeviceEmail(t *testing.T) {
 		r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		ctx := context.Background()
 
-		count, err := checkQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
+		count, err := CheckQuotaAndDeviceEmail(ctx, w, r, mockSvc, consts.AuthBackendAuth0, "test-account")
 
 		assert.NotNil(t, err)
 		assert.Equal(t, "device email "+testDeviceEmail+" is blocked due to previous bounce: invalid input", err.Error())

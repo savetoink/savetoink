@@ -59,7 +59,7 @@ func (m *mockService) GetArticle(ctx context.Context, accountID, articleID strin
 	return args.Get(0).(*model.Article), args.Error(1)
 }
 
-func (m *mockService) GetUserDeviceEmail( //nolint:gocritic
+func (m *mockService) GetUserDeviceEmailAndAutoSend( //nolint:gocritic
 	ctx context.Context, accountID string) (string, bool, error) {
 	args := m.Called(ctx, accountID)
 	return args.String(0), args.Bool(1), args.Error(2)
@@ -308,7 +308,7 @@ func TestHandleEvent_SendOnComplete_Success(t *testing.T) {
 	mockSvc.On("ParseHTML", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(doc, nil)
 	mockSvc.On("Clean", mock.Anything, mock.AnythingOfType("*html.Node"), mock.Anything).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
-	mockSvc.On("GetUserDeviceEmail", mock.Anything, event.AccountID).Return("device@example.com", true, nil)
+	mockSvc.On("GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID).Return("device@example.com", true, nil)
 	mockSvc.On("SendArticleByID", mock.Anything, event.AccountID, event.ArticleID).Return(&servicetypes.SendArticleResult{
 		DeviceEmail: "device@example.com",
 	}, nil)
@@ -316,7 +316,7 @@ func TestHandleEvent_SendOnComplete_Success(t *testing.T) {
 	err := HandleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
-	mockSvc.AssertCalled(t, "GetUserDeviceEmail", mock.Anything, event.AccountID)
+	mockSvc.AssertCalled(t, "GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID)
 	mockSvc.AssertCalled(t, "SendArticleByID", mock.Anything, event.AccountID, event.ArticleID)
 }
 
@@ -345,12 +345,12 @@ func TestHandleEvent_SendOnComplete_NoDeviceEmail(t *testing.T) {
 	mockSvc.On("ParseHTML", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(doc, nil)
 	mockSvc.On("Clean", mock.Anything, mock.AnythingOfType("*html.Node"), mock.Anything).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
-	mockSvc.On("GetUserDeviceEmail", mock.Anything, event.AccountID).Return("", false, nil)
+	mockSvc.On("GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID).Return("", false, nil)
 
 	err := HandleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
-	mockSvc.AssertCalled(t, "GetUserDeviceEmail", mock.Anything, event.AccountID)
+	mockSvc.AssertCalled(t, "GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID)
 	mockSvc.AssertNotCalled(t, "SendArticleByID")
 }
 
@@ -379,7 +379,7 @@ func TestHandleEvent_SendOnComplete_SendError(t *testing.T) {
 	mockSvc.On("ParseHTML", mock.Anything, mock.AnythingOfType("*content.FetchedContent")).Return(doc, nil)
 	mockSvc.On("Clean", mock.Anything, mock.AnythingOfType("*html.Node"), mock.Anything).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
-	mockSvc.On("GetUserDeviceEmail", mock.Anything, event.AccountID).Return("device@example.com", true, nil)
+	mockSvc.On("GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID).Return("device@example.com", true, nil)
 	mockSvc.On("SendArticleByID", mock.Anything, event.AccountID, event.ArticleID).Return(nil, errors.New("send failed"))
 
 	err := HandleEvent(ctx, event, mockSvc)

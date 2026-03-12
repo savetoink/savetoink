@@ -401,7 +401,7 @@ func TestGetUserDeviceEmail_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	email, autoSend, err := svc.GetUserDeviceEmail(context.Background(), "account-1")
+	email, autoSend, err := svc.GetUserDeviceEmailAndAutoSend(context.Background(), "account-1")
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

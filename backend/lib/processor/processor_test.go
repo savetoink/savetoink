@@ -106,7 +106,7 @@ func (m *mockArticleService) GetArticle(ctx context.Context, accountID, articleI
 	}, nil
 }
 
-func (m *mockArticleService) GetUserDeviceEmail(
+func (m *mockArticleService) GetUserDeviceEmailAndAutoSend(
 	ctx context.Context, accountID string,
 ) (emailAddr string, autoSend bool, err error) {
 	if m.getUserDeviceEmail != nil {

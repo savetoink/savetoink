@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"bytes"
@@ -21,6 +21,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
@@ -215,7 +216,7 @@ func (m *articleMockService) GetDBError() error {
 	return m.dbError
 }
 
-func (m *articleMockService) GetUserDeviceEmail(
+func (m *articleMockService) GetUserDeviceEmailAndAutoSend(
 	ctx context.Context, accountID string) (deviceEmail string, autoSend bool, err error) {
 	if m.getUserDeviceEmailFunc != nil {
 		return m.getUserDeviceEmailFunc(ctx, accountID)
@@ -307,20 +308,20 @@ func TestHandleCreateArticle_Success(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
 
-	body := articleRequest{URL: "https://example.com/article"}
+	body := types.ArticleRequest{URL: "https://example.com/article"}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	h.handleCreateArticle(w, req)
+	h.HandleCreateArticle(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var resp articleResponse
+	var resp types.ArticleResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "article-123", resp.ID)
@@ -339,16 +340,16 @@ func TestHandleCreateArticle_MissingURL(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
 
-	body := articleRequest{}
+	body := types.ArticleRequest{}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	h.handleCreateArticle(w, req)
+	h.HandleCreateArticle(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -365,16 +366,16 @@ func TestHandleCreateArticle_InvalidURL(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
 
-	body := articleRequest{URL: "not-a-valid-url"}
+	body := types.ArticleRequest{URL: "not-a-valid-url"}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	h.handleCreateArticle(w, req)
+	h.HandleCreateArticle(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -429,16 +430,16 @@ func TestHandleCreateArticle_ServiceError(t *testing.T) {
 			mockProc := &mockProcessor{}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := newHandlers(cfg, mockSvc, http.DefaultClient, mockProc)
+			h := New(cfg, mockSvc, http.DefaultClient, mockProc)
 
-			body := articleRequest{URL: "https://example.com/article"}
+			body := types.ArticleRequest{URL: "https://example.com/article"}
 			bodyBytes, _ := json.Marshal(body)
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"POST", "/v1/articles", bytes.NewReader(bodyBytes))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 
-			h.handleCreateArticle(w, req)
+			h.HandleCreateArticle(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			assert.False(t, mockProc.startProcessingCalled)
@@ -459,16 +460,16 @@ func TestHandleCreateArticle_DBError(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
 
-	body := articleRequest{URL: "https://example.com/article"}
+	body := types.ArticleRequest{URL: "https://example.com/article"}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	h.handleCreateArticle(w, req)
+	h.HandleCreateArticle(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	assert.True(t, mockProc.startProcessingCalled)
@@ -497,7 +498,7 @@ func TestHandleGetArticles_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -505,11 +506,11 @@ func TestHandleGetArticles_Success(t *testing.T) {
 		nil)
 	w := httptest.NewRecorder()
 
-	h.handleGetArticles(w, req)
+	h.HandleGetArticles(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp listArticlesResponse
+	var resp types.ListArticlesResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(resp.Articles))
@@ -540,7 +541,7 @@ func TestHandleGetArticles_WithFavoriteFilter(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -548,7 +549,7 @@ func TestHandleGetArticles_WithFavoriteFilter(t *testing.T) {
 		nil)
 	w := httptest.NewRecorder()
 
-	h.handleGetArticles(w, req)
+	h.HandleGetArticles(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
@@ -574,7 +575,7 @@ func TestHandleGetArticles_InvalidPage(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -582,7 +583,7 @@ func TestHandleGetArticles_InvalidPage(t *testing.T) {
 		nil)
 	w := httptest.NewRecorder()
 
-	h.handleGetArticles(w, req)
+	h.HandleGetArticles(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
@@ -608,7 +609,7 @@ func TestHandleGetArticles_PageSizeCapped(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -616,7 +617,7 @@ func TestHandleGetArticles_PageSizeCapped(t *testing.T) {
 		nil)
 	w := httptest.NewRecorder()
 
-	h.handleGetArticles(w, req)
+	h.HandleGetArticles(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
@@ -653,12 +654,12 @@ func TestHandleGetArticles_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(), "GET", "/v1/articles", nil)
 			w := httptest.NewRecorder()
 
-			h.handleGetArticles(w, req)
+			h.HandleGetArticles(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
@@ -677,7 +678,7 @@ func TestHandleGetArticle_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -688,7 +689,7 @@ func TestHandleGetArticle_Success(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleGetArticle(w, req)
+	h.HandleGetArticle(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -707,7 +708,7 @@ func TestHandleGetArticle_NotFound(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -718,7 +719,7 @@ func TestHandleGetArticle_NotFound(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleGetArticle(w, req)
+	h.HandleGetArticle(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
@@ -731,7 +732,7 @@ func TestHandleDeleteArticle_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"DELETE",
@@ -742,11 +743,11 @@ func TestHandleDeleteArticle_Success(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleDeleteArticle(w, req)
+	h.HandleDeleteArticle(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp deleteArticleResponse
+	var resp types.DeleteArticleResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, 1, resp.Deleted)
@@ -779,7 +780,7 @@ func TestHandleDeleteArticle_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"DELETE",
@@ -790,7 +791,7 @@ func TestHandleDeleteArticle_ServiceError(t *testing.T) {
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 			w := httptest.NewRecorder()
 
-			h.handleDeleteArticle(w, req)
+			h.HandleDeleteArticle(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
@@ -805,16 +806,16 @@ func TestHandleDeleteAllArticles_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(), "DELETE", "/v1/articles", nil)
 	w := httptest.NewRecorder()
 
-	h.handleDeleteAllArticles(w, req)
+	h.HandleDeleteAllArticles(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp deleteArticleResponse
+	var resp types.DeleteArticleResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, 5, resp.Deleted)
@@ -828,12 +829,12 @@ func TestHandleDeleteAllArticles_ServiceError(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(), "DELETE", "/v1/articles", nil)
 	w := httptest.NewRecorder()
 
-	h.handleDeleteAllArticles(w, req)
+	h.HandleDeleteAllArticles(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
@@ -846,7 +847,7 @@ func TestHandleToggleFavorite_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"PUT",
@@ -857,11 +858,11 @@ func TestHandleToggleFavorite_Success(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleToggleFavorite(w, req)
+	h.HandleToggleFavorite(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp favoriteResponse
+	var resp types.FavoriteResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.True(t, resp.Favorite)
@@ -894,7 +895,7 @@ func TestHandleToggleFavorite_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"PUT",
@@ -905,7 +906,7 @@ func TestHandleToggleFavorite_ServiceError(t *testing.T) {
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 			w := httptest.NewRecorder()
 
-			h.handleToggleFavorite(w, req)
+			h.HandleToggleFavorite(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
@@ -932,7 +933,7 @@ func TestHandleSendArticle_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -943,11 +944,11 @@ func TestHandleSendArticle_Success(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleSendArticle(w, req)
+	h.HandleSendArticle(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp sendArticleResponse
+	var resp types.SendArticleResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "sent", resp.Status)
@@ -979,7 +980,7 @@ func TestHandleSendArticle_WithSendsCount(t *testing.T) {
 		AuthBackend:   consts.AuthBackendAuth0,
 		EmailProvider: consts.EmailBackendMailjet,
 	}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	ctx := newArticleTestContextWithAccount()
 	req := httptest.NewRequestWithContext(ctx, "POST", "/v1/articles/article-123/send", nil)
@@ -988,11 +989,11 @@ func TestHandleSendArticle_WithSendsCount(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleSendArticle(w, req)
+	h.HandleSendArticle(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp sendArticleResponseWithCount
+	var resp types.SendArticleResponseWithCount
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "sent", resp.Status)
@@ -1012,16 +1013,16 @@ func TestHandleCreateArticle_SendOnCompleteWithoutEmailBackend(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: ""}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
 
-	body := articleRequest{URL: "https://example.com/article", SendOnComplete: true}
+	body := types.ArticleRequest{URL: "https://example.com/article", SendOnComplete: true}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	h.handleCreateArticle(w, req)
+	h.HandleCreateArticle(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -1041,7 +1042,7 @@ func TestHandleSendArticle_ArticleNotFound(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1052,7 +1053,7 @@ func TestHandleSendArticle_ArticleNotFound(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleSendArticle(w, req)
+	h.HandleSendArticle(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
@@ -1065,7 +1066,7 @@ func TestHandleSendArticle_GenerateEPUBError(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1076,7 +1077,7 @@ func TestHandleSendArticle_GenerateEPUBError(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleSendArticle(w, req)
+	h.HandleSendArticle(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
@@ -1089,7 +1090,7 @@ func TestHandleSendArticle_GetDeviceEmailError(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1100,7 +1101,7 @@ func TestHandleSendArticle_GetDeviceEmailError(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleSendArticle(w, req)
+	h.HandleSendArticle(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
@@ -1113,7 +1114,7 @@ func TestHandleSendArticle_NoDeviceEmail(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1124,7 +1125,7 @@ func TestHandleSendArticle_NoDeviceEmail(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleSendArticle(w, req)
+	h.HandleSendArticle(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -1142,7 +1143,7 @@ func TestHandleSendArticle_SendArticleError(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1153,7 +1154,7 @@ func TestHandleSendArticle_SendArticleError(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleSendArticle(w, req)
+	h.HandleSendArticle(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
@@ -1179,7 +1180,7 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1190,7 +1191,7 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
-	h.handleSendArticle(w, req)
+	h.HandleSendArticle(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }

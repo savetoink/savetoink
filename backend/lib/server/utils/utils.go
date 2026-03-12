@@ -1,4 +1,4 @@
-package server
+package utils
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
 
-// writeJSONError writes an error response with the given status code and error message.
-func writeJSONError(w http.ResponseWriter, status int, err error) {
+// WriteJSONError writes an error response with given status code and error message.
+func WriteJSONError(w http.ResponseWriter, status int, err error) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: err.Error()})
 }
@@ -37,34 +37,34 @@ func statusCodeForError(err error) int {
 	}
 }
 
-// decodeAndValidateRequest decodes JSON from request body and handles errors.
-func decodeAndValidateRequest(w http.ResponseWriter, r *http.Request, req any) error {
+// DecodeAndValidateRequest decodes JSON from request body and handles errors.
+func DecodeAndValidateRequest(w http.ResponseWriter, r *http.Request, req any) error {
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		decodeErr := fmt.Errorf("failed to decode request body: %w", err)
-		writeJSONError(w, http.StatusBadRequest, decodeErr)
+		WriteJSONError(w, http.StatusBadRequest, decodeErr)
 		return decodeErr
 	}
 	return nil
 }
 
-// handleServiceError logs error and writes appropriate response.
-func handleServiceError(w http.ResponseWriter, r *http.Request, err error, contextStr string) {
+// HandleServiceError logs error and writes appropriate response.
+func HandleServiceError(w http.ResponseWriter, r *http.Request, err error, contextStr string) {
 	logging.AddRequestError(r.Context(), fmt.Errorf("%s: %w", contextStr, err))
-	writeJSONError(w, statusCodeForError(err), err)
+	WriteJSONError(w, statusCodeForError(err), err)
 }
 
-// checkEmailBackendEnabled checks if email backend is configured.
-func checkEmailBackendEnabled(w http.ResponseWriter, r *http.Request, emailProvider consts.EmailProvider) error {
+// CheckEmailBackendEnabled checks if email backend is configured.
+func CheckEmailBackendEnabled(w http.ResponseWriter, r *http.Request, emailProvider consts.EmailProvider) error {
 	if emailProvider == "" || emailProvider != consts.EmailBackendMailjet {
 		backendErr := fmt.Errorf("email backend not configured: %w", apperrors.ErrInvalid)
-		handleServiceError(w, r, backendErr, "check email backend")
+		HandleServiceError(w, r, backendErr, "check email backend")
 		return backendErr
 	}
 	return nil
 }
 
-// checkQuotaAndDeviceEmail checks if user has exceeded quota and if device email is bouncing.
-func checkQuotaAndDeviceEmail(
+// CheckQuotaAndDeviceEmail checks if user has exceeded quota and if device email is bouncing.
+func CheckQuotaAndDeviceEmail(
 	ctx context.Context,
 	w http.ResponseWriter,
 	r *http.Request,
@@ -101,13 +101,13 @@ func checkQuota(
 	count, err := svc.CountSendsByAccountDateRange(ctx, accountID, startDate, time.Now())
 	if err != nil {
 		countErr := fmt.Errorf("failed to check subscription limit: %w", err)
-		handleServiceError(w, r, countErr, "check quota")
+		HandleServiceError(w, r, countErr, "check quota")
 		return 0, countErr
 	}
 
 	if count >= consts.MaxFreeTierSendsPerPeriod {
 		quotaErr := fmt.Errorf("free tier limit exceeded: %w", apperrors.ErrInvalid)
-		handleServiceError(w, r, quotaErr, "check quota")
+		HandleServiceError(w, r, quotaErr, "check quota")
 		return count, quotaErr
 	}
 
@@ -121,10 +121,10 @@ func checkDeviceEmail(
 	svc service.Interface,
 	accountID string,
 ) error {
-	destEmail, _, err := svc.GetUserDeviceEmail(ctx, accountID)
+	destEmail, _, err := svc.GetUserDeviceEmailAndAutoSend(ctx, accountID)
 	if err != nil {
 		emailErr := fmt.Errorf("failed to get user device email: %w", err)
-		handleServiceError(w, r, emailErr, "get device email")
+		HandleServiceError(w, r, emailErr, "get device email")
 		return emailErr
 	}
 
@@ -135,7 +135,7 @@ func checkDeviceEmail(
 	isBouncing, err := svc.IsEmailBouncing(ctx, accountID, destEmail)
 	if err != nil {
 		bounceErr := fmt.Errorf("failed to check if email is bouncing: %w", err)
-		handleServiceError(w, r, bounceErr, "check bouncing email")
+		HandleServiceError(w, r, bounceErr, "check bouncing email")
 		return bounceErr
 	}
 
@@ -165,6 +165,6 @@ func handleBouncingEmail(
 	}
 
 	bounceErr := fmt.Errorf("%s: %w", bounceMsg, apperrors.ErrInvalid)
-	handleServiceError(w, r, bounceErr, "check bouncing email")
+	HandleServiceError(w, r, bounceErr, "check bouncing email")
 	return bounceErr
 }

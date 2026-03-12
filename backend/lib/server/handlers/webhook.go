@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"crypto/subtle"
@@ -35,7 +35,8 @@ type mailjetWebhookResponse struct {
 	Status string `json:"status"`
 }
 
-func (h *handlers) handleMailjetWebhook(w http.ResponseWriter, r *http.Request) {
+// HandleMailjetWebhook handles the Mailjet webhook endpoint.
+func (h *Handlers) HandleMailjetWebhook(w http.ResponseWriter, r *http.Request) {
 	// https://dev.mailjet.com/email/guides/webhooks/#best-practices
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(mailjetWebhookResponse{
@@ -68,7 +69,7 @@ func (h *handlers) handleMailjetWebhook(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (h *handlers) verifyMailjetSecret(r *http.Request) error {
+func (h *Handlers) verifyMailjetSecret(r *http.Request) error {
 	if h.cfg.MailjetWebhookSecret == "" {
 		return errors.New("mailjet webhook secret not configured")
 	}
@@ -81,7 +82,7 @@ func (h *handlers) verifyMailjetSecret(r *http.Request) error {
 	return nil
 }
 
-func (h *handlers) processBounceEvents(r *http.Request, events []mailjetEvent) error {
+func (h *Handlers) processBounceEvents(r *http.Request, events []mailjetEvent) error {
 	var processedCount int
 	var failedCount int
 	var err error
@@ -136,7 +137,7 @@ func (h *handlers) processBounceEvents(r *http.Request, events []mailjetEvent) e
 	return err
 }
 
-func (h *handlers) extractErrorMessage(event *mailjetEvent) string {
+func (h *Handlers) extractErrorMessage(event *mailjetEvent) string {
 	errorMessage := event.Error
 	if errorMessage == "" {
 		errorMessage = event.Comment

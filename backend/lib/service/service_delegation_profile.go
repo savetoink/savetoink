@@ -7,12 +7,12 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
-// GetUserDeviceEmail delegates to UserProfileService.
-func (s *Service) GetUserDeviceEmail(
+// GetUserDeviceEmailAndAutoSend delegates to UserProfileService.
+func (s *Service) GetUserDeviceEmailAndAutoSend(
 	ctx context.Context,
 	accountID string,
 ) (deviceEmail string, autoSend bool, err error) {
-	deviceEmail, autoSend, err = s.profile.GetUserDeviceEmail(ctx, accountID)
+	deviceEmail, autoSend, err = s.profile.GetUserDeviceEmailAndAutoSend(ctx, accountID)
 	return
 }
 

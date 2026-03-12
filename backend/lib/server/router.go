@@ -11,6 +11,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/server/auth"
+	"github.com/shaftoe/savetoink/backend/lib/server/handlers"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
 
@@ -28,7 +29,7 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 	srv := service.NewFromConfig(cfg)
 	proc := newProcessor(cfg, srv)
 
-	handlers := newHandlers(
+	h := handlers.New(
 		cfg,
 		srv,
 		client,
@@ -52,48 +53,48 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "method_not_allowed"})
 	})
 
-	r.Get("/robots.txt", robotsTXTHandler)
-	r.Get("/v1/openapi.yaml", openAPIHandler)
+	r.Get("/robots.txt", handlers.RobotsTXTHandler)
+	r.Get("/v1/openapi.yaml", handlers.OpenAPIHandler)
 
-	setupRoutes(r, handlers, cfg, srv)
+	setupRoutes(r, h, cfg, srv)
 
 	return r
 }
 
-func setupRoutes(r *chi.Mux, handlers *handlers, cfg *config.Config, _ service.Interface) {
+func setupRoutes(r *chi.Mux, h *handlers.Handlers, cfg *config.Config, _ service.Interface) {
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/health", handlers.handleHealth)
+		r.Get("/health", h.HandleHealth)
 
 		r.Route("/articles", func(r chi.Router) {
 			r.Use(auth.EnsureAutheticatedMiddleware)
-			r.With(processorInfoMiddleware(cfg)).Post("/", handlers.handleCreateArticle)
-			r.Get("/", handlers.handleGetArticles)
-			r.Delete("/", handlers.handleDeleteAllArticles)
-			r.Get("/{id}", handlers.handleGetArticle)
-			r.Delete("/{id}", handlers.handleDeleteArticle)
-			r.Put("/{id}/favorite", handlers.handleToggleFavorite)
-			r.Post("/{id}/send", handlers.handleSendArticle)
+			r.With(processorInfoMiddleware(cfg)).Post("/", h.HandleCreateArticle)
+			r.Get("/", h.HandleGetArticles)
+			r.Delete("/", h.HandleDeleteAllArticles)
+			r.Get("/{id}", h.HandleGetArticle)
+			r.Delete("/{id}", h.HandleDeleteArticle)
+			r.Put("/{id}/favorite", h.HandleToggleFavorite)
+			r.Post("/{id}/send", h.HandleSendArticle)
 		})
 
 		r.Route("/user", func(r chi.Router) {
 			r.Use(auth.EnsureAutheticatedMiddleware)
 			r.Route("/profile", func(r chi.Router) {
-				r.Get("/", handlers.handleGetUserProfile)
+				r.Get("/", h.HandleGetUserProfile)
 			})
 		})
 
 		r.Route("/devices", func(r chi.Router) {
 			r.Use(auth.EnsureAutheticatedMiddleware)
-			r.Put("/", handlers.handleSetDevice)
-			r.Delete("/", handlers.handleDeleteDevice)
+			r.Put("/", h.HandleSetDevice)
+			r.Delete("/", h.HandleDeleteDevice)
 		})
 
 		if cfg.AuthBackend == consts.AuthBackendAuth0 {
-			r.Post("/auth/token", handlers.handleAuthTokenExchange)
+			r.Post("/auth/token", h.HandleAuthTokenExchange)
 		}
 
 		if cfg.EmailProvider == consts.EmailBackendMailjet {
-			r.Post("/webhooks/mailjet", handlers.handleMailjetWebhook)
+			r.Post("/webhooks/mailjet", h.HandleMailjetWebhook)
 		}
 	})
 }

@@ -22,6 +22,8 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/server/auth"
+	"github.com/shaftoe/savetoink/backend/lib/server/handlers"
+	"github.com/shaftoe/savetoink/backend/lib/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"golang.org/x/net/html"
@@ -117,7 +119,9 @@ func (m *mockService) GetDBError() error {
 	return nil
 }
 
-func (m *mockService) GetUserDeviceEmail(_ context.Context, _ string) (deviceEmail string, autoSend bool, err error) {
+func (m *mockService) GetUserDeviceEmailAndAutoSend(
+	_ context.Context, _ string,
+) (deviceEmail string, autoSend bool, err error) {
 	return "", false, nil
 }
 
@@ -167,7 +171,7 @@ func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
 	r := chi.NewRouter()
 	svc := &mockService{}
 
-	handlers := newHandlers(
+	h := handlers.New(
 		cfg,
 		svc,
 		client,
@@ -190,7 +194,7 @@ func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
 		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "method_not_allowed"})
 	})
 
-	setupRoutes(r, handlers, cfg, svc)
+	setupRoutes(r, h, cfg, svc)
 
 	return r
 }
@@ -324,7 +328,7 @@ func TestSetupRoutes_BaseRoutes(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var resp healthResponse
+		var resp types.HealthResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
 		require.NoError(t, err)
 		assert.Equal(t, "ok", resp.Status)
@@ -807,7 +811,7 @@ func TestIntegration_HealthEndpointAccessible(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp healthResponse
+	var resp types.HealthResponse
 	err := json.NewDecoder(w.Body).Decode(&resp)
 	require.NoError(t, err)
 	assert.Equal(t, "ok", resp.Status)
@@ -862,4 +866,98 @@ func TestIntegration_AuthenticatedRouteRequiresAuth(t *testing.T) {
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
+}
+
+func TestNewRouter_AuthTokenRoute(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("Expected POST request, got %s", r.Method)
+		}
+		if r.URL.Path != handlers.OauthTokenPath {
+			t.Errorf("Expected path /oauth/token, got %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
+			AccessToken: "test-access-token",
+			TokenType:   "Bearer",
+			ExpiresIn:   3600,
+		})
+	}))
+	defer server.Close()
+
+	parsedURL, _ := url.Parse(server.URL)
+	client := server.Client()
+	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	cfg := &config.Config{
+		APIKeySecret:      "test-key",
+		AuthBackend:       consts.AuthBackendAuth0,
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0ClientID:     "test-client-id",
+		Auth0ClientSecret: "test-client-secret",
+		Auth0Audience:     "test-audience",
+	}
+	r := newRouterWithClient(cfg, client)
+
+	body := types.AuthTokenExchangeRequest{
+		Code:        "test-code",
+		RedirectURI: "http://localhost/callback",
+	}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+}
+
+func TestAuthTokenRoute_Registered(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
+			AccessToken: "test-access-token",
+			TokenType:   "Bearer",
+			ExpiresIn:   3600,
+		})
+	}))
+	defer server.Close()
+
+	parsedURL, _ := url.Parse(server.URL)
+	client := server.Client()
+	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	cfg := &config.Config{
+		APIKeySecret:      "test-key",
+		AuthBackend:       consts.AuthBackendAuth0,
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0ClientID:     "test-client-id",
+		Auth0ClientSecret: "test-client-secret",
+		Auth0Audience:     "test-audience",
+	}
+	r := newRouterWithClient(cfg, client)
+
+	body := types.AuthTokenExchangeRequest{
+		Code:        "test-code",
+		RedirectURI: "http://localhost/callback",
+	}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code == http.StatusNotFound {
+		t.Errorf("route should be registered when AuthBackend is Auth0, got status %d", w.Code)
+	}
 }

@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"bytes"
@@ -17,6 +17,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 	"github.com/stretchr/testify/assert"
@@ -128,7 +129,7 @@ func (m *userprofileMockService) GetDBError() error {
 }
 
 //nolint:gocritic // mock function with named returns is OK
-func (m *userprofileMockService) GetUserDeviceEmail(
+func (m *userprofileMockService) GetUserDeviceEmailAndAutoSend(
 	ctx context.Context,
 	accountID string,
 ) (string, bool, error) {
@@ -218,16 +219,16 @@ func TestHandleGetUserProfile_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", "/v1/user/profile", nil)
 	w := httptest.NewRecorder()
 
-	h.handleGetUserProfile(w, req)
+	h.HandleGetUserProfile(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp userProfileResponse
+	var resp types.UserProfileResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "account-123", resp.Account)
@@ -247,16 +248,16 @@ func TestHandleGetUserProfile_NilProfile(t *testing.T) {
 	}
 
 	cfg := &config.Config{}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", "/v1/user/profile", nil)
 	w := httptest.NewRecorder()
 
-	h.handleGetUserProfile(w, req)
+	h.HandleGetUserProfile(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp userProfileResponse
+	var resp types.UserProfileResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "account-123", resp.Account)
@@ -292,12 +293,12 @@ func TestHandleGetUserProfile_GetUserDeviceEmailError(t *testing.T) {
 			}
 
 			cfg := &config.Config{}
-			h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", "/v1/user/profile", nil)
 			w := httptest.NewRecorder()
 
-			h.handleGetUserProfile(w, req)
+			h.HandleGetUserProfile(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
@@ -334,12 +335,12 @@ func TestHandleGetUserProfile_GetUserProfileError(t *testing.T) {
 			}
 
 			cfg := &config.Config{}
-			h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", "/v1/user/profile", nil)
 			w := httptest.NewRecorder()
 
-			h.handleGetUserProfile(w, req)
+			h.HandleGetUserProfile(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
@@ -354,9 +355,9 @@ func TestHandleSetDevice_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
-	body := deviceRequest{
+	body := types.DeviceRequest{
 		DeviceEmail: testArticleDeviceEmail,
 		AutoSend:    true,
 	}
@@ -365,11 +366,11 @@ func TestHandleSetDevice_Success(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	h.handleSetDevice(w, req)
+	h.HandleSetDevice(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp deviceResponse
+	var resp types.DeviceResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, testArticleDeviceEmail, resp.DeviceEmail)
@@ -380,7 +381,7 @@ func TestHandleSetDevice_InvalidJSON(t *testing.T) {
 	mockSvc := &userprofileMockService{}
 
 	cfg := &config.Config{}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newUserprofileTestContext(),
 		"PUT",
@@ -389,7 +390,7 @@ func TestHandleSetDevice_InvalidJSON(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	h.handleSetDevice(w, req)
+	h.HandleSetDevice(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
@@ -421,9 +422,9 @@ func TestHandleSetDevice_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{}
-			h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
-			body := deviceRequest{
+			body := types.DeviceRequest{
 				DeviceEmail: testArticleDeviceEmail,
 				AutoSend:    true,
 			}
@@ -432,7 +433,7 @@ func TestHandleSetDevice_ServiceError(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 
-			h.handleSetDevice(w, req)
+			h.HandleSetDevice(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
@@ -447,16 +448,16 @@ func TestHandleDeleteDevice_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{}
-	h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "DELETE", "/v1/devices", nil)
 	w := httptest.NewRecorder()
 
-	h.handleDeleteDevice(w, req)
+	h.HandleDeleteDevice(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp deviceResponse
+	var resp types.DeviceResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "", resp.DeviceEmail)
@@ -490,12 +491,12 @@ func TestHandleDeleteDevice_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{}
-			h := newHandlers(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
 			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "DELETE", "/v1/devices", nil)
 			w := httptest.NewRecorder()
 
-			h.handleDeleteDevice(w, req)
+			h.HandleDeleteDevice(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})

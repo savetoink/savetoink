@@ -91,7 +91,9 @@ func (m *MockService) GetDBError() error {
 	panic("not implemented")
 }
 
-func (m *MockService) GetUserDeviceEmail(_ context.Context, _ string) (deviceEmail string, autoSend bool, err error) {
+func (m *MockService) GetUserDeviceEmailAndAutoSend(
+	_ context.Context, _ string,
+) (deviceEmail string, autoSend bool, err error) {
 	if m.emailErr != nil {
 		return "", false, m.emailErr
 	}

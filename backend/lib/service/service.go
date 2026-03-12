@@ -56,7 +56,7 @@ type Interface interface {
 	// UpdateArticle updates an existing article with full content and metadata.
 	UpdateArticle(ctx context.Context, article *model.Article) error
 
-	// GetArticle retrieves an article by account ID and article ID from the database.
+	// GetArticle retrieves an existing article by account ID and article ID from the database.
 	GetArticle(ctx context.Context, accountID, articleID string) (*model.Article, error)
 
 	// GetArticlesMetadata retrieves all articles metadata by account ID and pagination parameters.
@@ -64,14 +64,14 @@ type Interface interface {
 		ctx context.Context, accountID string, page, pageSize int, favoriteFilter *bool,
 	) (*servicetypes.GetArticlesResult, error)
 
-	// DeleteArticle deletes an article by account ID and article ID from the database.
+	// DeleteArticle deletes an existing article by account ID and article ID from the database.
 	DeleteArticle(ctx context.Context, accountID, articleID string) (*servicetypes.DeleteArticleResult, error)
 
-	// DeleteAllArticles deletes all articles by account ID from the database.
+	// DeleteAllArticles deletes all existing articles by account ID from the database.
 	DeleteAllArticles(ctx context.Context, accountID string) (*servicetypes.DeleteArticleResult, error)
 
-	// GetUserDeviceEmail retrieves the device email and auto-send preference for a given account.
-	GetUserDeviceEmail(ctx context.Context, accountID string) (string, bool, error)
+	// GetUserDeviceEmailAndAutoSend retrieves the device email and auto-send preference for a given account.
+	GetUserDeviceEmailAndAutoSend(ctx context.Context, accountID string) (string, bool, error)
 
 	// SetUserDeviceEmailWithAutoSend sets the device email and auto-send preference for a given account.
 	SetUserDeviceEmailWithAutoSend(ctx context.Context, accountID, deviceEmail string, autoSend bool) error

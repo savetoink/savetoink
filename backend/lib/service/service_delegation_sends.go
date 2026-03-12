@@ -41,7 +41,7 @@ func (s *Service) SendArticleByID(
 	accountID,
 	articleID string,
 ) (*servicetypes.SendArticleResult, error) {
-	deviceEmail, _, err := s.GetUserDeviceEmail(ctx, accountID)
+	deviceEmail, _, err := s.GetUserDeviceEmailAndAutoSend(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}

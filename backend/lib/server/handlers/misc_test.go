@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"context"
@@ -13,7 +13,7 @@ func TestRobotsTXTHandler(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/robots.txt", http.NoBody)
 	w := httptest.NewRecorder()
 
-	robotsTXTHandler(w, req)
+	RobotsTXTHandler(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "text/plain", w.Header().Get("Content-Type"))
@@ -28,7 +28,7 @@ func TestOpenAPIHandler(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/v1/openapi.yaml", http.NoBody)
 	w := httptest.NewRecorder()
 
-	openAPIHandler(w, req)
+	OpenAPIHandler(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "text/yaml", w.Header().Get("Content-Type"))

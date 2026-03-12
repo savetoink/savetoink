@@ -27,8 +27,8 @@ func New(repo repository.UserProfileRepository) *UserProfileService {
 	}
 }
 
-// GetUserDeviceEmail retrieves the user's device email and auto-send preference.
-func (s *UserProfileService) GetUserDeviceEmail(
+// GetUserDeviceEmailAndAutoSend retrieves the user's device email and auto-send preference.
+func (s *UserProfileService) GetUserDeviceEmailAndAutoSend(
 	ctx context.Context,
 	accountID string,
 ) (deviceEmail string, autoSend bool, err error) {
@@ -124,7 +124,7 @@ func (s *UserProfileService) DeleteUserDeviceEmail(ctx context.Context, accountI
 		return errors.New("user profile repository not configured")
 	}
 
-	oldDeviceEmail, _, _ := s.GetUserDeviceEmail(ctx, accountID)
+	oldDeviceEmail, _, _ := s.GetUserDeviceEmailAndAutoSend(ctx, accountID)
 
 	if err := s.repo.DeleteUserDeviceEmail(ctx, accountID); err != nil {
 		return fmt.Errorf("failed to delete user device email: %w", err)
