@@ -37,3 +37,6 @@ jobs:
 
       - name: Build and push API Docker image
         run: just build-http-docker push-http-docker
+
+      - name: Build and push Webapp Docker image
+        run: just build-webapp-docker push-webapp-docker

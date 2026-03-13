@@ -22,3 +22,10 @@ push-cli-docker:
 push-http-docker:
     docker tag ghcr.io/savetoink/savetoink-http:$(cat VERSION) ghcr.io/savetoink/savetoink-http:latest
     docker push ghcr.io/savetoink/savetoink-http:latest
+
+build-webapp-docker:
+    docker build . --build-arg PUBLIC_AUTH_BACKEND --build-arg PUBLIC_API_URL --build-arg PUBLIC_APP_URL --build-arg PUBLIC_IS_DEV_WORKER --build-arg PUBLIC_AUTH0_CLIENT_ID --build-arg PUBLIC_AUTH0_DOMAIN --build-arg PUBLIC_AUTH0_AUDIENCE --build-arg COOKIE_SECRET --build-arg PUBLIC_SENTRY_DSN --build-arg PUBLIC_SENTRY_ENVIRONMENT -f infra/Dockerfile.webapp -t ghcr.io/savetoink/savetoink-webapp:$(cat VERSION)
+
+push-webapp-docker:
+    docker tag ghcr.io/savetoink/savetoink-webapp:$(cat VERSION) ghcr.io/savetoink/savetoink-webapp:latest
+    docker push ghcr.io/savetoink/savetoink-webapp:latest

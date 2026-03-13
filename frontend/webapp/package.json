@@ -47,6 +47,7 @@
 	"dependencies": {
 		"@savetoink/shared": "*",
 		"@sentry/sveltekit": "^10.42.0",
-		"date-fns": "^4.1.0"
+		"date-fns": "^4.1.0",
+		"svelte-adapter-bun": "^1.0.1"
 	}
 }
