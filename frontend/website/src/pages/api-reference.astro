@@ -1,0 +1,22 @@
+---
+import { ScalarComponent } from '@scalar/astro'
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SaveToInk API Reference</title>
+  </head>
+  <body>
+    <ScalarComponent
+      configuration={{
+        url: '/openapi.yaml',
+        pageTitle: 'Save To Ink API Reference',
+        theme: 'default',
+        baseServerURL: import.meta.env.PUBLIC_API_URL,
+        darkMode: true,
+      }}
+    />
+  </body>
+</html>

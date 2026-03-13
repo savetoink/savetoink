@@ -1,4 +1,5 @@
 ---
+const appUrl = new URL(import.meta.env.PUBLIC_APP_URL).hostname;
 ---
 
 <section class="section">
@@ -67,7 +68,7 @@
           <h3>Web app</h3>
         </div>
         <p>Paste a URL, browse your library, re-send or download EPUBs. Self-host it or use ours.</p>
-        <div class="way-tag">app.saveto.ink</div>
+        <div class="way-tag">{appUrl}</div>
       </div>
     </div>
 

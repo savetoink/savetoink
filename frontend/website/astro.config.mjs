@@ -1,11 +1,20 @@
+import { copyFileSync, mkdirSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
-
-// NOTICE: seems that >3.6.0 is buggy and won't build
-// see https://github.com/savetoink/savetoink/issues/79
 import sitemap from '@astrojs/sitemap';
+
+const syncOpenApiSpec = {
+	name: 'sync-openapi-spec',
+	hooks: {
+		'astro:config:setup': ({ logger }) => {
+			mkdirSync('public', { recursive: true });
+			copyFileSync('../../backend/lib/server/handlers/openapi.yaml', 'public/openapi.yaml');
+			logger.info('OpenAPI spec synced to public/');
+		}
+	}
+};
 
 export default defineConfig({
 	site: 'https://www.saveto.ink',
 	output: 'static',
-	integrations: [sitemap()]
+	integrations: [syncOpenApiSpec, sitemap()]
 });
