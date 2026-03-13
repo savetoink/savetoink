@@ -9,3 +9,5 @@ pre-push:
   jobs:
     - name: Run all tests and linters
       run: just check
+      only:
+        - ref: master
