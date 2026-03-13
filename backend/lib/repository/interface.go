@@ -5,7 +5,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -18,7 +17,7 @@ type ArticlesRepository interface {
 		account string,
 		page, pageSize int,
 		favoriteFilter *bool,
-	) ([]*model.Article, map[string]types.AttributeValue, int, error)
+	) ([]*model.Article, any, int, error)
 	DeleteByAccountAndID(ctx context.Context, account, id string) error
 	DeleteByAccount(ctx context.Context, account string) (int, error)
 	UpdateFavorite(ctx context.Context, account, id string, favorite bool) error

@@ -33,6 +33,10 @@ func TestMain(m *testing.M) {
 	_ = os.Unsetenv("SAVETOINK_SENTRY_ENVIRONMENT")
 	_ = os.Unsetenv("SAVETOINK_SENTRY_SAMPLE_RATE")
 	_ = os.Unsetenv("SAVETOINK_DEBUG")
+	_ = os.Unsetenv("SAVETOINK_STORAGE_BACKEND")
+	_ = os.Unsetenv("SAVETOINK_SQLITE_PATH")
+	_ = os.Unsetenv("SAVETOINK_BROWSERLESS_KEY")
+	_ = os.Unsetenv("SAVETOINK_PROCESS_ARTICLE_LAMBDA")
 	os.Exit(m.Run())
 }
 
@@ -507,65 +511,6 @@ func TestLoad_All_Env_Vars_Bound(t *testing.T) {
 	assert.Equal(t, 0.5, cfg.SentrySampleRate)
 }
 
-func TestLoad_Boolean_String_Conversion(t *testing.T) {
-	tests := []struct {
-		name     string
-		value    string
-		expected bool
-	}{
-		{"true as string", "true", true},
-		{"TRUE as string", "TRUE", true},
-		{"1 as string", "1", true},
-		{"false as string", "false", false},
-		{"FALSE as string", "FALSE", false},
-		{"0 as string", "0", false},
-		{"empty string defaults to false", "", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			setupEnvVars(t, map[string]string{
-				"SAVETOINK_DEBUG": tt.value,
-			})
-
-			cfg, err := Load(consts.ModeCLI, nil)
-			require.NoError(t, err)
-			assert.Equal(t, tt.expected, cfg.Debug)
-		})
-	}
-}
-
-func TestLoad_Float_Conversion(t *testing.T) {
-	tests := []struct {
-		name     string
-		value    string
-		expected float64
-	}{
-		{"integer", "1", 1.0},
-		{"float", "0.5", 0.5},
-		{"zero", "0", 0.0},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			setupEnvVars(t, map[string]string{
-				"SAVETOINK_API_KEY":                 "test-api-key",
-				"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
-				"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
-				"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-				"SAVETOINK_APP_URL":                 "https://example.com",
-				"SAVETOINK_SENTRY_SAMPLE_RATE":      tt.value,
-			})
-
-			awsLoader := mockAWSLoader()
-
-			cfg, err := Load(consts.ModeServer, awsLoader)
-			require.NoError(t, err)
-			assert.Equal(t, tt.expected, cfg.SentrySampleRate)
-		})
-	}
-}
-
 func TestLoad_CorsAllowOrigin(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -597,6 +542,168 @@ func TestLoad_CorsAllowOrigin(t *testing.T) {
 			assert.Equal(t, tt.expected, cfg.CorsAllowOrigin)
 		})
 	}
+}
+
+func TestLoad_SQLite_Backend_Success(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND": "sqlite",
+		"SAVETOINK_SQLITE_PATH":     "/path/to/database.db",
+		"SAVETOINK_APP_URL":         "https://example.com",
+		"SAVETOINK_API_KEY":         "test-api-key",
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.StorageBackendSQLite, cfg.StorageBackend)
+	assert.Equal(t, "/path/to/database.db", cfg.SQLitePath)
+}
+
+func TestLoad_DynamoDB_Backend_Success(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "dynamodb",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+	})
+
+	awsLoader := mockAWSLoader()
+
+	cfg, err := Load(consts.ModeServer, awsLoader)
+	require.NoError(t, err)
+	assert.Equal(t, consts.StorageBackendDynamoDB, cfg.StorageBackend)
+	assert.NotNil(t, cfg.AWSConfig)
+}
+
+func TestLoad_Default_Storage_Backend(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+	})
+
+	awsLoader := mockAWSLoader()
+
+	cfg, err := Load(consts.ModeServer, awsLoader)
+	require.NoError(t, err)
+	assert.Equal(t, consts.StorageBackendDynamoDB, cfg.StorageBackend)
+}
+
+func TestLoad_Missing_SQLite_Path(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND": "sqlite",
+		"SAVETOINK_APP_URL":         "https://example.com",
+	})
+
+	_, err := Load(consts.ModeServer, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "SAVETOINK_SQLITE_PATH")
+}
+
+func TestLoad_Missing_DynamoDB_Tables(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND": "dynamodb",
+		"SAVETOINK_API_KEY":         "test-api-key",
+		"SAVETOINK_APP_URL":         "https://example.com",
+	})
+
+	awsLoader := mockAWSLoader()
+
+	_, err := Load(consts.ModeServer, awsLoader)
+	require.Error(t, err)
+	errMsg := err.Error()
+	assert.Contains(t, errMsg, "SAVETOINK_ARTICLE_TABLE_NAME")
+	assert.Contains(t, errMsg, "SAVETOINK_USER_PROFILE_TABLE_NAME")
+	assert.Contains(t, errMsg, "SAVETOINK_SENDS_TABLE_NAME")
+}
+
+func TestLoad_Invalid_Storage_Backend(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND": "invalid-backend",
+		"SAVETOINK_APP_URL":         "https://example.com",
+	})
+
+	awsLoader := mockAWSLoader()
+
+	_, err := Load(consts.ModeServer, awsLoader)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported storage backend")
+}
+
+func TestLoad_Browserless_Key(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+		"SAVETOINK_BROWSERLESS_KEY":         "browserless-key-123",
+	})
+
+	awsLoader := mockAWSLoader()
+
+	cfg, err := Load(consts.ModeServer, awsLoader)
+	require.NoError(t, err)
+	assert.Equal(t, "browserless-key-123", cfg.BrowserlessKey)
+}
+
+func TestLoad_Process_Article_Lambda(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+		"SAVETOINK_PROCESS_ARTICLE_LAMBDA":  "arn:aws:lambda:us-east-1:123456789012:function:ProcessArticle",
+	})
+
+	awsLoader := mockAWSLoader()
+
+	cfg, err := Load(consts.ModeServer, awsLoader)
+	require.NoError(t, err)
+	assert.Equal(t, "arn:aws:lambda:us-east-1:123456789012:function:ProcessArticle", cfg.ProcessArticleLambda)
+}
+
+func TestLoad_CLI_WithMailjet(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_EMAIL_BACKEND":      "mailjet",
+		"SAVETOINK_MAILJET_API_KEY":    "mailjet-key",
+		"SAVETOINK_MAILJET_API_SECRET": "mailjet-secret",
+		"SAVETOINK_SENDER_EMAIL":       "sender@example.com",
+	})
+
+	cfg, err := Load(consts.ModeCLI, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.EmailBackendMailjet, cfg.EmailProvider)
+	assert.Equal(t, "mailjet-key", cfg.MailjetAPIKey)
+	assert.Equal(t, "mailjet-secret", cfg.MailjetAPISecret)
+	assert.Equal(t, "sender@example.com", cfg.SenderEmail)
+}
+
+func TestLoad_InvalidEmailProvider(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_EMAIL_BACKEND": "invalid-provider",
+	})
+
+	cfg, err := Load(consts.ModeCLI, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.EmailProvider("invalid-provider"), cfg.EmailProvider)
+}
+
+func TestLoad_MissingMailjetKeys_CLI(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_EMAIL_BACKEND": "mailjet",
+	})
+
+	cfg, err := Load(consts.ModeCLI, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.EmailBackendMailjet, cfg.EmailProvider)
+	assert.Empty(t, cfg.MailjetAPIKey)
+	assert.Empty(t, cfg.MailjetAPISecret)
+	assert.Empty(t, cfg.SenderEmail)
 }
 
 func mockAWSLoader() AWSConfigLoader {

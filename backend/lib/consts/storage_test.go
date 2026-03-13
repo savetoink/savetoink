@@ -50,3 +50,39 @@ func TestDynamoDB_GSI_NamingPattern(t *testing.T) {
 		})
 	}
 }
+
+func TestStorageBackend_Constants(t *testing.T) {
+	tests := []struct {
+		name     string
+		constant StorageBackend
+		value    string
+	}{
+		{"DynamoDB", StorageBackendDynamoDB, "dynamodb"},
+		{"SQLite", StorageBackendSQLite, "sqlite"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.NotEmpty(t, tt.constant, "Storage backend constant should not be empty")
+			assert.Equal(t, tt.value, string(tt.constant), "Storage backend constant should have expected value")
+		})
+	}
+}
+
+func TestStorageBackend_String_Conversion(t *testing.T) {
+	tests := []struct {
+		name string
+		env  string
+		want StorageBackend
+	}{
+		{"dynamodb", "dynamodb", StorageBackendDynamoDB},
+		{"sqlite", "sqlite", StorageBackendSQLite},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := StorageBackend(tt.env)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

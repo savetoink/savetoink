@@ -88,7 +88,7 @@ func (d *DynamoDB) GetMetadataByAccount(
 	account string,
 	page, pageSize int,
 	favoriteFilter *bool,
-) (articles []*model.Article, lastEvaluatedKey map[string]types.AttributeValue, total int, err error) {
+) (articles []*model.Article, lastEvaluatedKey any, total int, err error) {
 	if page < consts.MinPage || pageSize < consts.MinPageSize || pageSize > consts.MaxPageSize {
 		pageSize = consts.DefaultPageSize
 	}

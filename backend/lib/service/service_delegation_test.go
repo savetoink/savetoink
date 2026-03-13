@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	awstypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	svcemail "github.com/shaftoe/savetoink/backend/lib/email"
@@ -57,7 +56,7 @@ func (r *testArticlesRepo) GetMetadataByAccount(
 	account string,
 	_, _ int,
 	favoriteFilter *bool,
-) (articles []*model.Article, lastKey map[string]awstypes.AttributeValue, total int, err error) {
+) (articles []*model.Article, lastKey any, total int, err error) {
 	if r.metadataErr != nil {
 		return nil, nil, 0, r.metadataErr
 	}
@@ -950,6 +949,44 @@ func TestNewDependenciesFromConfig_NoMailjetNoAWS(t *testing.T) {
 	}
 	if deps.SendsRepo != nil {
 		t.Error("expected SendsRepo to be nil")
+	}
+}
+
+func TestNewDependenciesFromConfig_WithSQLite(t *testing.T) {
+	cfg := &config.Config{
+		StorageBackend: consts.StorageBackendSQLite,
+		SQLitePath:     "/tmp/test.db",
+		BrowserlessKey: "browserless-key",
+	}
+
+	deps := NewDependenciesFromConfig(cfg)
+
+	if deps.Fetcher == nil {
+		t.Error("expected Fetcher to be not nil")
+	}
+	if deps.Extractor == nil {
+		t.Error("expected Extractor to be not nil")
+	}
+	if deps.Cleaner == nil {
+		t.Error("expected Cleaner to be not nil")
+	}
+	if deps.Publisher == nil {
+		t.Error("expected Publisher to be not nil")
+	}
+	if deps.Sender != nil {
+		t.Error("expected Sender to be nil (no email provider set)")
+	}
+	if deps.ArticlesRepo == nil {
+		t.Error("expected ArticlesRepo to be not nil")
+	}
+	if deps.UserProfileRepo == nil {
+		t.Error("expected UserProfileRepo to be not nil")
+	}
+	if deps.SendsRepo == nil {
+		t.Error("expected SendsRepo to be not nil")
+	}
+	if deps.Config == nil {
+		t.Error("expected Config to be not nil")
 	}
 }
 

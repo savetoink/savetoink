@@ -9,6 +9,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/url"
 	"time"
@@ -20,6 +21,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
+	repoimplsqlite "github.com/shaftoe/savetoink/backend/lib/repository/sqlite"
 	"github.com/shaftoe/savetoink/backend/lib/service/articles"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
@@ -184,11 +186,25 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 	var articlesRepo repository.ArticlesRepository
 	var userProfileRepo repository.UserProfileRepository
 	var sendsRepo repository.SendsRepository
-	if cfg.AWSConfig != nil {
-		dynamoDB := repoimpl.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable, cfg.SendsTable)
-		articlesRepo = dynamoDB
-		userProfileRepo = dynamoDB
-		sendsRepo = dynamoDB
+
+	switch cfg.StorageBackend {
+	case consts.StorageBackendDynamoDB, "":
+		if cfg.AWSConfig != nil {
+			dynamoDB := repoimpl.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable, cfg.SendsTable)
+			articlesRepo = dynamoDB
+			userProfileRepo = dynamoDB
+			sendsRepo = dynamoDB
+		}
+	case consts.StorageBackendSQLite:
+		ctx, cancel := context.WithTimeout(context.Background(), consts.SqliteInitTimeout)
+		defer cancel()
+		sqlite, err := repoimplsqlite.NewSQLite(ctx, cfg.SQLitePath)
+		if err != nil {
+			panic(fmt.Sprintf("failed to create SQLite repository: %v", err))
+		}
+		articlesRepo = sqlite
+		userProfileRepo = sqlite
+		sendsRepo = sqlite
 	}
 
 	return Dependencies{

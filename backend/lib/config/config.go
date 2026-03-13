@@ -22,6 +22,10 @@ type Config struct {
 	Mode             consts.RunMode
 	CorsAllowOrigin  string
 
+	// Storage
+	StorageBackend consts.StorageBackend
+	SQLitePath     string
+
 	// Auth
 	APIKeySecret      string
 	AWSConfig         *aws.Config
@@ -108,6 +112,8 @@ func bindEnvVars() error {
 		{"sentry-dsn", "SAVETOINK_SENTRY_DSN"},
 		{"sentry-environment", "SAVETOINK_SENTRY_ENVIRONMENT"},
 		{"sentry-sample-rate", "SAVETOINK_SENTRY_SAMPLE_RATE"},
+		{"storage-backend", "SAVETOINK_STORAGE_BACKEND"},
+		{"sqlite-path", "SAVETOINK_SQLITE_PATH"},
 		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
 	}
 
@@ -135,7 +141,6 @@ func loadConfig(mode consts.RunMode) *Config {
 		MailjetAPIKey:        viper.GetString("api-key"),
 		MailjetAPISecret:     viper.GetString("api-secret"),
 		MailjetWebhookSecret: viper.GetString("api-webhook-secret"),
-		Mode:                 mode,
 		SenderEmail:          viper.GetString("sender-email"),
 		SendsTable:           viper.GetString("sends-table"),
 		UserProfileTable:     viper.GetString("user-profile-table"),
@@ -145,6 +150,9 @@ func loadConfig(mode consts.RunMode) *Config {
 		SentrySampleRate:     viper.GetFloat64("sentry-sample-rate"),
 		BrowserlessKey:       viper.GetString("browserless-key"),
 		ProcessArticleLambda: viper.GetString("process-article-lambda"),
+		StorageBackend:       consts.StorageBackend(viper.GetString("storage-backend")),
+		SQLitePath:           viper.GetString("sqlite-path"),
+		Mode:                 mode,
 	}
 
 	return cfg
@@ -171,9 +179,43 @@ func (c *Config) validateServerConfig(missing *[]string, awsLoader AWSConfigLoad
 		return err
 	}
 
-	c.validateEmailProviderConfig(missing)
-	c.validateLoggingProviderConfig(missing)
+	if err := c.validateEmailProviderConfig(missing); err != nil {
+		return err
+	}
 
+	if err := c.validateLoggingProviderConfig(missing); err != nil {
+		return err
+	}
+
+	if err := c.validateAppURL(missing); err != nil {
+		return err
+	}
+
+	return c.validateStorageBackendConfig(missing, awsLoader)
+}
+
+func (c *Config) validateStorageBackendConfig(missing *[]string, awsLoader AWSConfigLoader) error {
+	if c.StorageBackend == "" {
+		c.StorageBackend = consts.StorageBackendDynamoDB
+	}
+
+	switch c.StorageBackend {
+	case consts.StorageBackendDynamoDB:
+		if err := c.validateDynamoDBConfig(missing, awsLoader); err != nil {
+			return err
+		}
+	case consts.StorageBackendSQLite:
+		if err := c.validateSQLiteConfig(missing); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupported storage backend: %s", c.StorageBackend)
+	}
+
+	return nil
+}
+
+func (c *Config) validateDynamoDBConfig(missing *[]string, awsLoader AWSConfigLoader) error {
 	if c.ArticlesTable == "" {
 		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
 	}
@@ -183,20 +225,25 @@ func (c *Config) validateServerConfig(missing *[]string, awsLoader AWSConfigLoad
 	if c.SendsTable == "" {
 		*missing = append(*missing, "SAVETOINK_SENDS_TABLE_NAME")
 	}
-	if c.AppURL == "" {
-		*missing = append(*missing, "SAVETOINK_APP_URL")
-	}
+	return c.validateAWSLoaderConfig(awsLoader)
+}
 
+func (c *Config) validateAWSLoaderConfig(awsLoader AWSConfigLoader) error {
 	if awsLoader == nil {
 		return errors.New("AWS config loader is required in server mode")
 	}
-
 	cfg, err := awsLoader(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
 	}
 	c.AWSConfig = &cfg
+	return nil
+}
 
+func (c *Config) validateSQLiteConfig(missing *[]string) error {
+	if c.SQLitePath == "" {
+		*missing = append(*missing, "SAVETOINK_SQLITE_PATH")
+	}
 	return nil
 }
 
@@ -225,16 +272,39 @@ func (c *Config) validateAuthBackendConfig(missing *[]string) error {
 	return nil
 }
 
-func (c *Config) validateEmailProviderConfig(missing *[]string) {
+func (c *Config) validateEmailProviderConfig(missing *[]string) error {
 	c.ValidateEmailProviderConfigCli(missing)
 	if c.EmailProvider == consts.EmailBackendMailjet {
 		if c.MailjetWebhookSecret == "" {
 			*missing = append(*missing, "SAVETOINK_MAILJET_WEBHOOK_SECRET")
 		}
 	}
+	return nil
 }
 
-// ValidateEmailProviderConfigCli validates the email provider config for the CLI.
+func (c *Config) validateLoggingProviderConfig(missing *[]string) error {
+	if c.LoggingProvider == consts.LoggingBackendSentry {
+		if c.SentryDSN == "" {
+			*missing = append(*missing, "SAVETOINK_SENTRY_DSN")
+		}
+		if c.SentryEnvironment == "" {
+			*missing = append(*missing, "SAVETOINK_SENTRY_ENVIRONMENT")
+		}
+		if c.SentrySampleRate == 0 {
+			*missing = append(*missing, "SAVETOINK_SENTRY_SAMPLE_RATE")
+		}
+	}
+	return nil
+}
+
+func (c *Config) validateAppURL(missing *[]string) error {
+	if c.AppURL == "" {
+		*missing = append(*missing, "SAVETOINK_APP_URL")
+	}
+	return nil
+}
+
+// ValidateEmailProviderConfigCli validates of email provider config for CLI.
 func (c *Config) ValidateEmailProviderConfigCli(missing *[]string) {
 	if c.EmailProvider == consts.EmailBackendMailjet {
 		if c.MailjetAPIKey == "" {
@@ -245,20 +315,6 @@ func (c *Config) ValidateEmailProviderConfigCli(missing *[]string) {
 		}
 		if c.SenderEmail == "" {
 			*missing = append(*missing, "SAVETOINK_SENDER_EMAIL")
-		}
-	}
-}
-
-func (c *Config) validateLoggingProviderConfig(missing *[]string) {
-	if c.LoggingProvider == consts.LoggingBackendSentry {
-		if c.SentryDSN == "" {
-			*missing = append(*missing, "SAVETOINK_SENTRY_DSN")
-		}
-		if c.SentryEnvironment == "" {
-			*missing = append(*missing, "SAVETOINK_SENTRY_ENVIRONMENT")
-		}
-		if c.SentrySampleRate == 0 {
-			*missing = append(*missing, "SAVETOINK_SENTRY_SAMPLE_RATE")
 		}
 	}
 }

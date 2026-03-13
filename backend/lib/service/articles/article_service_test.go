@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	awstypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
@@ -41,7 +40,7 @@ func (m *MockRepository) GetMetadataByAccount(
 	account string,
 	_page, _pageSize int, //nolint:revive // unused parameters required by interface
 	favoriteFilter *bool,
-) (result []*model.Article, lastEvaluatedKey map[string]awstypes.AttributeValue, total int, err error) {
+) (result []*model.Article, lastEvaluatedKey any, total int, err error) {
 	for _, article := range m.articles {
 		if article.Account == account {
 			if favoriteFilter != nil && article.Favorite != *favoriteFilter {
