@@ -22,8 +22,8 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Set up Just
-        uses: extractions/setup-just@v3
+      - name: Grab VERSION
+        run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
@@ -32,8 +32,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push CLI Docker image
-        run: just build-cli-docker push-cli-docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
-      - name: Build and push API Docker image
-        run: just build-http-docker push-http-docker
+      - name: Build and push CLI
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: infra/Dockerfile.cli
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/savetoink/savetoink-cli:latest,ghcr.io/savetoink/savetoink-cli:${{ env.VERSION }}
+
+      - name: Build and push API
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: infra/Dockerfile.http
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/savetoink/savetoink-api:latest,ghcr.io/savetoink/savetoink-api:${{ env.VERSION }}
