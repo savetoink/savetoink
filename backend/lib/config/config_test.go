@@ -65,6 +65,7 @@ func TestLoad_CLI_Mode_With_Debug(t *testing.T) {
 
 func TestLoad_Server_Mode_Success(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "dynamodb",
 		"SAVETOINK_API_KEY":                 "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
@@ -93,6 +94,7 @@ func TestLoad_Server_Mode_Success(t *testing.T) {
 
 func TestLoad_Default_Auth_Backend(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "dynamodb",
 		"SAVETOINK_API_KEY":                 "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
@@ -114,6 +116,7 @@ func TestLoad_Auth0_Backend_Success(t *testing.T) {
 		"SAVETOINK_AUTH0_AUDIENCE":          "auth0-audience",
 		"SAVETOINK_AUTH0_CLIENT_ID":         "auth0-client-id",
 		"SAVETOINK_AUTH0_CLIENT_SECRET":     "auth0-client-secret",
+		"SAVETOINK_STORAGE_BACKEND":         "dynamodb",
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
@@ -133,8 +136,10 @@ func TestLoad_Auth0_Backend_Success(t *testing.T) {
 
 func TestLoad_Invalid_Auth_Backend(t *testing.T) {
 	setupEnvVars(t, map[string]string{
-		"SAVETOINK_AUTH_BACKEND":       "invalid-backend",
-		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
+		"SAVETOINK_AUTH_BACKEND":    "invalid-backend",
+		"SAVETOINK_STORAGE_BACKEND": "sqlite",
+		"SAVETOINK_SQLITE_PATH":     "/path/to/database.db",
+		"SAVETOINK_APP_URL":         "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -156,7 +161,9 @@ func TestLoad_Missing_Required_Server_Env(t *testing.T) {
 
 func TestLoad_Missing_API_Key_For_Shared_API_Key(t *testing.T) {
 	setupEnvVars(t, map[string]string{
-		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
+		"SAVETOINK_STORAGE_BACKEND": "sqlite",
+		"SAVETOINK_SQLITE_PATH":     "/path/to/database.db",
+		"SAVETOINK_APP_URL":         "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -168,8 +175,10 @@ func TestLoad_Missing_API_Key_For_Shared_API_Key(t *testing.T) {
 
 func TestLoad_Missing_Multiple_Auth0_Env(t *testing.T) {
 	setupEnvVars(t, map[string]string{
-		"SAVETOINK_AUTH_BACKEND":       "auth0",
-		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
+		"SAVETOINK_AUTH_BACKEND":    "auth0",
+		"SAVETOINK_STORAGE_BACKEND": "sqlite",
+		"SAVETOINK_SQLITE_PATH":     "/path/to/database.db",
+		"SAVETOINK_APP_URL":         "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -185,7 +194,11 @@ func TestLoad_Missing_Multiple_Auth0_Env(t *testing.T) {
 
 func TestLoad_Missing_ArticlesTable(t *testing.T) {
 	setupEnvVars(t, map[string]string{
-		"SAVETOINK_API_KEY": "test-api-key",
+		"SAVETOINK_STORAGE_BACKEND":         "dynamodb",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -197,8 +210,11 @@ func TestLoad_Missing_ArticlesTable(t *testing.T) {
 
 func TestLoad_Missing_UserProfileTable(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "dynamodb",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
+		"SAVETOINK_APP_URL":            "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -210,9 +226,11 @@ func TestLoad_Missing_UserProfileTable(t *testing.T) {
 
 func TestLoad_Missing_SendsTable(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "dynamodb",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
+		"SAVETOINK_APP_URL":            "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -224,6 +242,8 @@ func TestLoad_Missing_SendsTable(t *testing.T) {
 
 func TestLoad_Missing_AppURL(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
+		"SAVETOINK_SQLITE_PATH":        "/path/to/database.db",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
@@ -239,6 +259,8 @@ func TestLoad_Missing_AppURL(t *testing.T) {
 
 func TestLoad_Missing_Mailjet_API_Key(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
+		"SAVETOINK_SQLITE_PATH":        "/path/to/database.db",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
@@ -256,6 +278,8 @@ func TestLoad_Missing_Mailjet_API_Key(t *testing.T) {
 
 func TestLoad_Missing_Mailjet_API_Secret(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
+		"SAVETOINK_SQLITE_PATH":        "/path/to/database.db",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
@@ -274,6 +298,8 @@ func TestLoad_Missing_Mailjet_API_Secret(t *testing.T) {
 
 func TestLoad_Missing_Mailjet_Webhook_Secret(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
+		"SAVETOINK_SQLITE_PATH":        "/path/to/database.db",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
@@ -293,6 +319,8 @@ func TestLoad_Missing_Mailjet_Webhook_Secret(t *testing.T) {
 
 func TestLoad_Missing_Sender_Email(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":     "sqlite",
+		"SAVETOINK_SQLITE_PATH":         "/path/to/database.db",
 		"SAVETOINK_API_KEY":             "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME":  "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE":  "profiles-table",
@@ -313,6 +341,8 @@ func TestLoad_Missing_Sender_Email(t *testing.T) {
 
 func TestLoad_Sentry_Provider_Success(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
 		"SAVETOINK_API_KEY":                 "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
@@ -336,6 +366,8 @@ func TestLoad_Sentry_Provider_Success(t *testing.T) {
 
 func TestLoad_Missing_Sentry_DSN(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
+		"SAVETOINK_SQLITE_PATH":        "/path/to/database.db",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
@@ -355,6 +387,8 @@ func TestLoad_Missing_Sentry_DSN(t *testing.T) {
 
 func TestLoad_Missing_Sentry_Environment(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
+		"SAVETOINK_SQLITE_PATH":        "/path/to/database.db",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
@@ -374,6 +408,8 @@ func TestLoad_Missing_Sentry_Environment(t *testing.T) {
 
 func TestLoad_Missing_Sentry_Sample_Rate(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
+		"SAVETOINK_SQLITE_PATH":        "/path/to/database.db",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
@@ -393,6 +429,8 @@ func TestLoad_Missing_Sentry_Sample_Rate(t *testing.T) {
 
 func TestLoad_Non_Sentry_Logging_Does_Not_Validate_Sentry(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
 		"SAVETOINK_API_KEY":                 "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
@@ -412,7 +450,8 @@ func TestLoad_Non_Sentry_Logging_Does_Not_Validate_Sentry(t *testing.T) {
 
 func TestLoad_Multiple_Validation_Errors(t *testing.T) {
 	setupEnvVars(t, map[string]string{
-		"SAVETOINK_AUTH_BACKEND": "auth0",
+		"SAVETOINK_AUTH_BACKEND":    "auth0",
+		"SAVETOINK_STORAGE_BACKEND": "dynamodb",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -432,8 +471,12 @@ func TestLoad_Multiple_Validation_Errors(t *testing.T) {
 
 func TestLoad_Server_Mode_Without_AWS_Loader(t *testing.T) {
 	setupEnvVars(t, map[string]string{
-		"SAVETOINK_API_KEY":            "test-api-key",
-		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
+		"SAVETOINK_STORAGE_BACKEND":         "dynamodb",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	_, err := Load(consts.ModeServer, nil)
@@ -443,8 +486,12 @@ func TestLoad_Server_Mode_Without_AWS_Loader(t *testing.T) {
 
 func TestLoad_Server_Mode_AWS_Loader_Error(t *testing.T) {
 	setupEnvVars(t, map[string]string{
-		"SAVETOINK_API_KEY":            "test-api-key",
-		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
+		"SAVETOINK_STORAGE_BACKEND":         "dynamodb",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	awsLoader := func(_ context.Context) (aws.Config, error) {
@@ -479,6 +526,7 @@ func TestLoad_All_Env_Vars_Bound(t *testing.T) {
 		"SAVETOINK_SENTRY_DSN":              "sentry-dsn",
 		"SAVETOINK_SENTRY_ENVIRONMENT":      "production",
 		"SAVETOINK_SENTRY_SAMPLE_RATE":      "0.5",
+		"SAVETOINK_STORAGE_BACKEND":         "dynamodb",
 	}
 
 	setupEnvVars(t, envVars)
@@ -527,6 +575,8 @@ func TestLoad_CorsAllowOrigin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setupEnvVars(t, map[string]string{
+				"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+				"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
 				"SAVETOINK_API_KEY":                 "test-api-key",
 				"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 				"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
@@ -578,29 +628,27 @@ func TestLoad_DynamoDB_Backend_Success(t *testing.T) {
 
 func TestLoad_Default_Storage_Backend(t *testing.T) {
 	setupEnvVars(t, map[string]string{
-		"SAVETOINK_API_KEY":                 "test-api-key",
-		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
-		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
-		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
+		"SAVETOINK_API_KEY":     "test-api-key",
+		"SAVETOINK_SQLITE_PATH": "/path/to/database.db",
+		"SAVETOINK_APP_URL":     "https://example.com",
 	})
 
-	awsLoader := mockAWSLoader()
-
-	cfg, err := Load(consts.ModeServer, awsLoader)
+	cfg, err := Load(consts.ModeServer, nil)
 	require.NoError(t, err)
-	assert.Equal(t, consts.StorageBackendDynamoDB, cfg.StorageBackend)
+	assert.Equal(t, consts.StorageBackendSQLite, cfg.StorageBackend)
 }
 
-func TestLoad_Missing_SQLite_Path(t *testing.T) {
+func TestLoad_SQLite_Path_Default(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_STORAGE_BACKEND": "sqlite",
 		"SAVETOINK_APP_URL":         "https://example.com",
+		"SAVETOINK_API_KEY":         "test-api-key",
 	})
 
-	_, err := Load(consts.ModeServer, nil)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "SAVETOINK_SQLITE_PATH")
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.StorageBackendSQLite, cfg.StorageBackend)
+	assert.Equal(t, consts.SQLitePathDefault, cfg.SQLitePath)
 }
 
 func TestLoad_Missing_DynamoDB_Tables(t *testing.T) {
@@ -635,6 +683,8 @@ func TestLoad_Invalid_Storage_Backend(t *testing.T) {
 
 func TestLoad_Browserless_Key(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
 		"SAVETOINK_API_KEY":                 "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
@@ -652,6 +702,8 @@ func TestLoad_Browserless_Key(t *testing.T) {
 
 func TestLoad_Process_Article_Lambda(t *testing.T) {
 	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
 		"SAVETOINK_API_KEY":                 "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",

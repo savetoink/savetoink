@@ -31,4 +31,7 @@ const (
 
 	// SqliteInitTimeout is the timeout for initializing the SQLite database.
 	SqliteInitTimeout = time.Second
+
+	// SQLitePathDefault is the default path to the SQLite database file.
+	SQLitePathDefault = "savetoink.db"
 )

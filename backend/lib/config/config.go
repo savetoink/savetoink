@@ -196,7 +196,7 @@ func (c *Config) validateServerConfig(missing *[]string, awsLoader AWSConfigLoad
 
 func (c *Config) validateStorageBackendConfig(missing *[]string, awsLoader AWSConfigLoader) error {
 	if c.StorageBackend == "" {
-		c.StorageBackend = consts.StorageBackendDynamoDB
+		c.StorageBackend = consts.StorageBackendSQLite
 	}
 
 	switch c.StorageBackend {
@@ -205,6 +205,9 @@ func (c *Config) validateStorageBackendConfig(missing *[]string, awsLoader AWSCo
 			return err
 		}
 	case consts.StorageBackendSQLite:
+		if c.SQLitePath == "" {
+			c.SQLitePath = consts.SQLitePathDefault
+		}
 		if err := c.validateSQLiteConfig(missing); err != nil {
 			return err
 		}
