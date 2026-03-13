@@ -154,7 +154,6 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess # FIXME: use proper policy
       Policies:
         - PolicyName: !Sub "${ProjectName}-lambda-invoke-processor"
           PolicyDocument:
@@ -164,6 +163,59 @@ Resources:
                 Action:
                   - lambda:InvokeFunction
                 Resource: !Sub "arn:aws:lambda:*:*:function:${ProjectName}-processor"
+        - PolicyName: !Sub "${ProjectName}-dynamodb-access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt ArticleTable.Arn
+                  - !Sub "${ArticleTable.Arn}/index/*"
+                  - !GetAtt ArticleTagsTable.Arn
+                  - !Sub "${ArticleTagsTable.Arn}/index/*"
+                  - !GetAtt SendsTable.Arn
+                  - !Sub "${SendsTable.Arn}/index/*"
+                  - !GetAtt UserProfileTable.Arn
+                  - !Sub "${UserProfileTable.Arn}/index/*"
+
+  ProcessorLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-processor-lambda-exec"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-processor-dynamodb-access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt ArticleTable.Arn
+                  - !Sub "${ArticleTable.Arn}/index/*"
+                  - !GetAtt UserProfileTable.Arn
+                  - !Sub "${UserProfileTable.Arn}/index/*"
 
   #############################
   # Lambda function for the API
@@ -250,23 +302,17 @@ Resources:
       Description: !Sub "${ProjectName} Processor - Async article processing service"
       Runtime: provided.al2023
       Handler: bootstrap
-      Role: !GetAtt LambdaExecutionRole.Arn
+      Role: !GetAtt ProcessorLambdaExecutionRole.Arn
       Code:
         S3Bucket: !Ref SourceBucketName
         S3Key: !Ref ProcessorSourceBucketKey
       Timeout: 30
       MemorySize: 1024
       Environment:
-        Variables: # TODO: update config validator to support subset of vars in processor
+        Variables:
           SAVETOINK_API_KEY: !Ref APIKeySecret
           SAVETOINK_APP_URL: !Ref AppURL
           SAVETOINK_ARTICLE_TABLE_NAME: !Ref ArticleTable
-          SAVETOINK_ARTICLE_TAGS_TABLE_NAME: !Ref ArticleTagsTable
-          SAVETOINK_AUTH0_AUDIENCE: !Ref Auth0Audience
-          SAVETOINK_AUTH0_CLIENT_ID: !Ref Auth0ClientId
-          SAVETOINK_AUTH0_CLIENT_SECRET: !Ref Auth0ClientSecret
-          SAVETOINK_AUTH0_DOMAIN: !Ref Auth0Domain
-          SAVETOINK_AUTH_BACKEND: !Ref AuthBackend
           SAVETOINK_BROWSERLESS_KEY: !Ref BrowserlessKey
           SAVETOINK_DEBUG: !Ref Debug
           SAVETOINK_EMAIL_BACKEND: !Ref MailBackend
@@ -490,28 +536,6 @@ Resources:
           Projection:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
-
-  DynamoDBTableAccessPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub "${ProjectName}-dynamodb-access"
-      Roles:
-        - !Ref LambdaExecutionRole
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Action:
-              - dynamodb:DeleteItem
-              - dynamodb:GetItem
-              - dynamodb:PutItem
-              - dynamodb:Query
-              - dynamodb:UpdateItem
-            Resource:
-              - !GetAtt ArticleTable.Arn
-              - !GetAtt ArticleTagsTable.Arn
-              - !GetAtt SendsTable.Arn
-              - !GetAtt UserProfileTable.Arn
 
   #############################
   # GitHub OIDC Provider
