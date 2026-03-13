@@ -10,6 +10,8 @@ on:
 
 permissions:
   id-token: write
+  packages: write
+  contents: read
 
 jobs:
   docker:
@@ -23,12 +25,15 @@ jobs:
       - name: Set up Just
         uses: extractions/setup-just@v3
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and push CLI Docker image
         run: just build-cli-docker push-cli-docker
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push API Docker image
         run: just build-http-docker push-http-docker
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

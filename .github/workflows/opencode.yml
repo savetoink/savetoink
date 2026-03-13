@@ -1,4 +1,4 @@
-name: opencode
+name: Opencode
 
 on:
   issue_comment:
@@ -30,6 +30,7 @@ jobs:
         uses: anomalyco/opencode/github@latest
         env:
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: zai-coding-plan/glm-4.7
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_github_token: true
