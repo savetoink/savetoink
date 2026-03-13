@@ -370,3 +370,72 @@ func (s *DynamoDBRepositoryTestSuite) TestCountSendsByAccountDateRangeRespectsTi
 	require.NoError(t, err)
 	assert.Equal(t, 6, count, "should count sends from 0, 1, 2, 3, 4, and 5 days ago")
 }
+
+func (s *DynamoDBRepositoryTestSuite) TestGetSendsByAccountDateRangeEmptyResult() {
+	ctx := context.Background()
+	t := s.T()
+
+	now := time.Now()
+	account := "test-account-empty-range"
+
+	startDate := now.Add(-10 * 24 * time.Hour)
+	endDate := now.Add(-5 * 24 * time.Hour)
+
+	sends, err := s.repositories.GetSendsByAccountDateRange(ctx, account, startDate, endDate)
+	require.NoError(t, err)
+	assert.Empty(t, sends)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestCountSendsByAccountDateRangeEmptyResult() {
+	ctx := context.Background()
+	t := s.T()
+
+	now := time.Now()
+	account := "test-account-empty-count"
+
+	startDate := now.Add(-10 * 24 * time.Hour)
+	endDate := now.Add(-5 * 24 * time.Hour)
+
+	count, err := s.repositories.CountSendsByAccountDateRange(ctx, account, startDate, endDate)
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordWithErrorResponse() {
+	ctx := context.Background()
+	t := s.T()
+
+	now := time.Now()
+
+	send := &model.Send{
+		Account:     "test-account-error",
+		ArticleID:   "article-error",
+		SentAt:      now,
+		Title:       "Test Article Error",
+		DestEmail:   "dest@example.com",
+		SenderEmail: "sender@example.com",
+		Provider:    "mailjet",
+	}
+
+	err := s.repositories.CreateSendRecord(ctx, send)
+	require.NoError(t, err)
+
+	updateSend := &model.Send{
+		Account:       "test-account-error",
+		ArticleID:     "article-error",
+		Status:        "failed",
+		MessageID:     "",
+		ErrorResponse: "SMTP error: 550 5.7.1",
+	}
+
+	err = s.repositories.UpdateSendRecord(ctx, updateSend)
+	require.NoError(t, err)
+
+	sends, err := s.repositories.GetSendsByArticleID(ctx, send.ArticleID)
+	require.NoError(t, err)
+	require.Len(t, sends, 1)
+
+	retrieved := sends[0]
+	assert.Equal(t, "failed", retrieved.Status)
+	assert.Equal(t, "SMTP error: 550 5.7.1", retrieved.ErrorResponse)
+}
