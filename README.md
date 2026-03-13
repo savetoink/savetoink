@@ -1,8 +1,8 @@
-[![codecov](https://codecov.io/gh/savetoink/savetoink/graph/badge.svg?token=1UHXX9P625)](https://codecov.io/gh/savetoink/savetoink) [![Go Report Card](https://goreportcard.com/badge/github.com/shaftoe/savetoink)](https://goreportcard.com/report/github.com/shaftoe/savetoink) [![Coverage Status](https://coveralls.io/repos/github/savetoink/savetoink/badge.svg?branch=dev)](https://coveralls.io/github/savetoink/savetoink?branch=dev) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=savetoink_savetoink&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=savetoink_savetoink)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shaftoe/savetoink)](https://goreportcard.com/report/github.com/shaftoe/savetoink) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=savetoink_savetoink&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=savetoink_savetoink) [![codecov](https://codecov.io/gh/savetoink/savetoink/graph/badge.svg?token=1UHXX9P625)](https://codecov.io/gh/savetoink/savetoink) [![Coverage Status](https://coveralls.io/repos/github/savetoink/savetoink/badge.svg)](https://coveralls.io/github/savetoink/savetoink)
 
 # Save To Ink
 
-Self-hosted read-later service with native Kindle delivery. Save articles in the cloud, send to your e-reader, keep them forever. Open-source alternative to Pocket + Send-to-Kindle.
+Self-hosted read-later service with native e-readers delivery. Save articles in the cloud, send to your e-reader, keep them forever. Open-source alternative to Pocket + Send-to-Kindle.
 
 **DISCLAIMER**: This project is under development (alpha)and not affiliated with Amazon or Kindle. Use at your own risk.
 
@@ -13,6 +13,7 @@ Self-hosted read-later service with native Kindle delivery. Save articles in the
 - Convert content to EPUB format with [go-epub](https://github.com/go-shiori/go-epub) for e-reader devices
 - Optionally send to reader devices like Kindle, Kobo, etc. via email backend (only [MailJet](https://www.mailjet.com/) supported at the moment)
 - Browser extension to easy save/send pages
+- REST APIs for programmatic access
 
 ## CLI Tool
 
@@ -26,16 +27,16 @@ go install github.com/shaftoe/savetoink/cli/savetoink@latest
 
 ### Usage
 
+**Send directly to Kindle via email (requires MailJet credentials as environment variables):**
+
+```bash
+savetoink send https://example.com --dest-email my-kindle@kindle.com
+```
+
 **Convert a URL to EPUB (save locally):**
 
 ```bash
 savetoink convert https://example.com
-```
-
-**Send directly to Kindle via email (requires MailJet credentials as environment variables):**
-
-```bash
-savetoink send https://example.com
 ```
 
 **Specify an output file:**
@@ -44,41 +45,20 @@ savetoink send https://example.com
 savetoink convert https://example.com -o my-book.epub
 ```
 
-**Set a custom timeout:**
-
-```bash
-savetoink convert https://example.com -t 1m
-```
-
 ### Examples
 
 **Save to local file:**
 
 ```bash
 $ savetoink convert https://golang.org/doc/effective_go.html -o effective_go.epub
-Fetching article from: https://golang.org/doc/effective_go.html
-Extracted in 828ms
-Title: Effective Go
-Generating EPUB: effective_go.epub
-Generated in 7ms
-
-✓ EPUB saved to: /Users/alex/git/savetoink/effective_go.epub
+✓ EPUB saved to: effective_go.epub
 ```
 
 **Send to Kindle via email:**
 
 ```bash
-$ savetoink send https://golang.org/doc/effective_go.html
-Fetching article from: https://golang.org/doc/effective_go.html
-Extracted in 828ms
-Title: Effective Go
-Generating EPUB for email...
-Generated in 7ms
-Sending to Kindle: sender@example.com -> your-kindle@kindle.com
-Sent in 245ms
-Email sent successfully. Message ID: 1234567890, UUID: abc123-def456-ghi789
-
-✓ Article sent to Kindle
+$ savetoink send https://golang.org/doc/effective_go.html --dest-email my-kindle@kindle.com
+✓ Article sent to e-reader device at my-kindle@kindle.com (email ID: fbbaf039-887a-4c86-9a8a-759562592599)"
 ```
 
 ## Development
