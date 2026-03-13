@@ -1,0 +1,11 @@
+{
+  "name": "Save To Ink",
+  "short_name": "SaveToInk",
+  "share_target": {
+    "action": "/new",
+    "method": "POST",
+    "params": {
+      "url": "url"
+    }
+  }
+}
