@@ -1,0 +1,20 @@
+name: Build and publish Docker CLI image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - VERSION
+
+permissions:
+  id-token: write
+  packages: write
+  contents: read
+
+jobs:
+  docker:
+    uses: ./.github/workflows/docker.yml
+    with:
+      app: cli
