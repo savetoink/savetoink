@@ -1,0 +1,34 @@
+name: Build and publish Docker images
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - VERSION
+
+permissions:
+  id-token: write
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Set up Just
+        uses: extractions/setup-just@v3
+
+      - name: Build and push CLI Docker image
+        run: just build-cli-docker push-cli-docker
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push API Docker image
+        run: just build-http-docker push-http-docker
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
