@@ -24,7 +24,11 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-          persist-credentials: false
+
+      - name: Configure Git user
+        run: |
+          git config --global user.name "Opencode[bot]"
+          git config --global user.email "shaftoe@users.noreply.github.com"
 
       - name: Run OpenCode
         uses: anomalyco/opencode/github@latest
