@@ -10,6 +10,7 @@ Self-hosted read-later service with native e-readers delivery. Save articles in 
 
 - Fetch web pages (articles, blog posts, etc), strip markup with [go-trafilatura](https://github.com/markusmobius/go-trafilatura) and save main readable content as HTML
 - Run as self-hosted web application (Web Frontend + API server) or as standalone [CLI tool](#cli-tool)
+- Deploys anywhere with Docker, also as Serverless AWS application (Lambda, DynamoDB)
 - Convert content to EPUB format with [go-epub](https://github.com/go-shiori/go-epub) for e-reader devices
 - Optionally send to reader devices like Kindle, Kobo, etc. via email backend (only [MailJet](https://www.mailjet.com/) supported at the moment)
 - Browser extension to easy save/send pages
@@ -19,7 +20,24 @@ Self-hosted read-later service with native e-readers delivery. Save articles in 
 
 The CLI tool allows you to convert web articles to EPUB format and send them to your reader device directly from the terminal.
 
+### Docker
+
+You can run the CLI tool using Docker:
+
+```bash
+alias savetoink="docker run --rm ghcr.io/savetoink/savetoink-cli:latest"
+savetoink version
+```
+
+The API server is also available as a Docker image:
+
+```bash
+docker pull ghcr.io/savetoink/savetoink-http:latest
+```
+
 ### Installation
+
+You can build and install the CLI tool using Go:
 
 ```bash
 go install github.com/shaftoe/savetoink/cli/savetoink@latest
@@ -97,6 +115,7 @@ just server-extension-firefox
 
 - generic Go HTTP server with AWS DynamoDB backend
 - or deployed as AWS Lambda Function (with [HTTP adapter](https://github.com/akrylysov/algnhsa) + CloudFront for custom domain
+- pluggable database backend (DynamoDB or SQLite)
 - pluggable user backend
   -  single-user shared API key
   -  multi-user with [Auth0](https://auth0.com/)
