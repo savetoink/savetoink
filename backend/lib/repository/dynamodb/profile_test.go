@@ -169,3 +169,19 @@ func (s *DynamoDBRepositoryTestSuite) TestPutUserProfileEmptyAccount() {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account field is required")
 }
+
+func (s *DynamoDBRepositoryTestSuite) TestDeleteUserProfileNonExistent() {
+	ctx := context.Background()
+	t := s.T()
+
+	err := s.repositories.DeleteUserProfile(ctx, "nonexistent-account")
+	require.NoError(t, err)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestDeleteUserDeviceEmailNonExistent() {
+	ctx := context.Background()
+	t := s.T()
+
+	err := s.repositories.DeleteUserDeviceEmail(ctx, "nonexistent-account")
+	require.NoError(t, err)
+}

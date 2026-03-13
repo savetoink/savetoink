@@ -355,3 +355,12 @@ func (s *DynamoDBRepositoryTestSuite) TestStoreArticleEmptyAccount() {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account field is required")
 }
+
+func (s *DynamoDBRepositoryTestSuite) TestDeleteByAccountNonExistent() {
+	ctx := context.Background()
+	t := s.T()
+
+	count, err := s.repositories.DeleteByAccount(ctx, "nonexistent-account")
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
+}

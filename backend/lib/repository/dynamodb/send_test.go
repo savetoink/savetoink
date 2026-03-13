@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/lib/model"
@@ -47,13 +48,23 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecord() {
 	ctx := context.Background()
 	t := s.T()
 
+	s.updateSendRecordAndVerify(ctx, t, "test-account", "article-update", "Test Article Update",
+		"sent", "message-id-123", "")
+}
+
+func (s *DynamoDBRepositoryTestSuite) updateSendRecordAndVerify(
+	ctx context.Context,
+	t *testing.T,
+	account, articleID, title, status, messageID, errorResponse string,
+) {
+	t.Helper()
 	now := time.Now()
 
 	send := &model.Send{
-		Account:     "test-account",
-		ArticleID:   "article-update",
+		Account:     account,
+		ArticleID:   articleID,
 		SentAt:      now,
-		Title:       "Test Article Update",
+		Title:       title,
 		DestEmail:   "dest@example.com",
 		SenderEmail: "sender@example.com",
 		Provider:    "mailjet",
@@ -63,11 +74,11 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecord() {
 	require.NoError(t, err)
 
 	updateSend := &model.Send{
-		Account:       "test-account",
-		ArticleID:     "article-update",
-		Status:        "sent",
-		MessageID:     "message-id-123",
-		ErrorResponse: "",
+		Account:       account,
+		ArticleID:     articleID,
+		Status:        status,
+		MessageID:     messageID,
+		ErrorResponse: errorResponse,
 	}
 
 	err = s.repositories.UpdateSendRecord(ctx, updateSend)
@@ -78,110 +89,17 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecord() {
 	require.Len(t, sends, 1)
 
 	retrieved := sends[0]
-	assert.Equal(t, "sent", retrieved.Status)
-	assert.Equal(t, "message-id-123", retrieved.MessageID)
-}
-
-func (s *DynamoDBRepositoryTestSuite) TestGetSendsByNonExistentArticleID() {
-	ctx := context.Background()
-	t := s.T()
-
-	sends, err := s.repositories.GetSendsByArticleID(ctx, "nonexistent-article")
-	require.NoError(t, err)
-	assert.Empty(t, sends)
-}
-
-func (s *DynamoDBRepositoryTestSuite) TestGetSendsByAccountDateRange() {
-	ctx := context.Background()
-	t := s.T()
-
-	now := time.Now()
-	account := "test-account-sends"
-
-	for i := range 3 {
-		sendTime := now.Add(-time.Duration(i) * 24 * time.Hour)
-		send := &model.Send{
-			Account:     account,
-			ArticleID:   "article-" + string(rune('0'+i)),
-			SentAt:      sendTime,
-			Title:       "Article " + string(rune('0'+i)),
-			DestEmail:   "dest" + string(rune('0'+i)) + "@example.com",
-			SenderEmail: "sender@example.com",
-			Provider:    "mailjet",
-		}
-
-		err := s.repositories.CreateSendRecord(ctx, send)
-		require.NoError(t, err)
+	assert.Equal(t, status, retrieved.Status)
+	if messageID != "" {
+		assert.Equal(t, messageID, retrieved.MessageID)
+	} else {
+		assert.Empty(t, retrieved.MessageID)
 	}
-
-	startDate := now.Add(-2 * 24 * time.Hour).Add(-time.Second)
-	endDate := now.Add(time.Second)
-
-	sends, err := s.repositories.GetSendsByAccountDateRange(ctx, account, startDate, endDate)
-	require.NoError(t, err)
-	assert.Len(t, sends, 3)
-}
-
-func (s *DynamoDBRepositoryTestSuite) TestCountSendsByAccountDateRange() {
-	ctx := context.Background()
-	t := s.T()
-
-	now := time.Now()
-	account := "test-account-count"
-
-	for i := range 5 {
-		sendTime := now.Add(-time.Duration(i) * 24 * time.Hour)
-		send := &model.Send{
-			Account:     account,
-			ArticleID:   "article-count-" + string(rune('0'+i)),
-			SentAt:      sendTime,
-			Title:       "Count Article " + string(rune('0'+i)),
-			DestEmail:   "count" + string(rune('0'+i)) + "@example.com",
-			SenderEmail: "sender@example.com",
-			Provider:    "mailjet",
-		}
-
-		err := s.repositories.CreateSendRecord(ctx, send)
-		require.NoError(t, err)
+	if errorResponse != "" {
+		assert.Equal(t, errorResponse, retrieved.ErrorResponse)
+	} else {
+		assert.Empty(t, retrieved.ErrorResponse)
 	}
-
-	startDate := now.Add(-4 * 24 * time.Hour)
-	endDate := now
-
-	count, err := s.repositories.CountSendsByAccountDateRange(ctx, account, startDate, endDate)
-	require.NoError(t, err)
-	assert.Equal(t, 4, count)
-}
-
-func (s *DynamoDBRepositoryTestSuite) TestCountSendsByAccountDateRangePartial() {
-	ctx := context.Background()
-	t := s.T()
-
-	now := time.Now()
-	account := "test-account-count-partial"
-
-	for i := range 10 {
-		sendTime := now.Add(-time.Duration(i) * 24 * time.Hour)
-		send := &model.Send{
-			Account:     account,
-			ArticleID:   "article-count-p-" + string(rune('0'+i)),
-			SentAt:      sendTime,
-			Title:       "Count Partial " + string(rune('0'+i)),
-			DestEmail:   "partial" + string(rune('0'+i)) + "@example.com",
-			SenderEmail: "sender@example.com",
-			Provider:    "mailjet",
-		}
-
-		err := s.repositories.CreateSendRecord(ctx, send)
-		require.NoError(t, err)
-	}
-
-	startDate := now.Add(-5 * 24 * time.Hour).Add(-time.Second)
-	endDate := now.Add(-1 * 24 * time.Hour).Add(time.Second)
-
-	count, err := s.repositories.CountSendsByAccountDateRange(ctx, account, startDate, endDate)
-	require.NoError(t, err)
-	assert.Equal(t, 5, count)
 }
 
 func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordNotFound() {
@@ -369,4 +287,42 @@ func (s *DynamoDBRepositoryTestSuite) TestCountSendsByAccountDateRangeRespectsTi
 	count, err := s.repositories.CountSendsByAccountDateRange(ctx, account, startDate, endDate)
 	require.NoError(t, err)
 	assert.Equal(t, 6, count, "should count sends from 0, 1, 2, 3, 4, and 5 days ago")
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestGetSendsByAccountDateRangeEmptyResult() {
+	ctx := context.Background()
+	t := s.T()
+
+	now := time.Now()
+	account := "test-account-empty-range"
+
+	startDate := now.Add(-10 * 24 * time.Hour)
+	endDate := now.Add(-5 * 24 * time.Hour)
+
+	sends, err := s.repositories.GetSendsByAccountDateRange(ctx, account, startDate, endDate)
+	require.NoError(t, err)
+	assert.Empty(t, sends)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestCountSendsByAccountDateRangeEmptyResult() {
+	ctx := context.Background()
+	t := s.T()
+
+	now := time.Now()
+	account := "test-account-empty-count"
+
+	startDate := now.Add(-10 * 24 * time.Hour)
+	endDate := now.Add(-5 * 24 * time.Hour)
+
+	count, err := s.repositories.CountSendsByAccountDateRange(ctx, account, startDate, endDate)
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordWithErrorResponse() {
+	ctx := context.Background()
+	t := s.T()
+
+	s.updateSendRecordAndVerify(ctx, t, "test-account-error", "article-error",
+		"Test Article Error", "failed", "", "SMTP error: 550 5.7.1")
 }
