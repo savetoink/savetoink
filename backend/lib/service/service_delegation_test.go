@@ -1,10 +1,8 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"net/url"
 	"testing"
 	"time"
@@ -20,7 +18,6 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/html"
 )
 
 const testAccountID = "account-1"
@@ -883,78 +880,6 @@ type emailSenderMock struct{}
 
 func (m *emailSenderMock) SendEmail(_ context.Context, _ *svcemail.Request) (*svcemail.SendEmailResponse, error) {
 	return &svcemail.SendEmailResponse{MessageID: "msg-123"}, nil
-}
-
-type mockFetcher struct {
-	fetchErr  error
-	fetchResp *content.FetchedContent
-}
-
-func (m *mockFetcher) Fetch(_ context.Context, _ *url.URL) (*content.FetchedContent, error) {
-	if m.fetchErr != nil {
-		return nil, m.fetchErr
-	}
-	return m.fetchResp, nil
-}
-
-type mockExtractor struct {
-	extractErr error
-	doc        *html.Node
-}
-
-func (m *mockExtractor) Extract(_ context.Context, _ io.Reader) (*html.Node, error) {
-	if m.extractErr != nil {
-		return nil, m.extractErr
-	}
-	if m.doc == nil {
-		return &html.Node{Type: html.DocumentNode}, nil
-	}
-	return m.doc, nil
-}
-
-type mockCleaner struct {
-	cleanErr error
-	article  *model.Article
-}
-
-func (m *mockCleaner) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
-	if m.cleanErr != nil {
-		return nil, m.cleanErr
-	}
-	if m.article == nil {
-		return &model.Article{Title: "Test Article", Content: "<p>Test</p>"}, nil
-	}
-	return m.article, nil
-}
-
-type mockPublisher struct {
-	generateErr error
-	epubData    io.ReadCloser
-}
-
-func (m *mockPublisher) GenerateEPUB(_ *model.Article) (io.ReadCloser, error) {
-	if m.generateErr != nil {
-		return nil, m.generateErr
-	}
-	if m.epubData == nil {
-		return io.NopCloser(bytes.NewReader([]byte("epub data"))), nil
-	}
-	return m.epubData, nil
-}
-
-type mockSender struct {
-	sendErr error
-	resp    *svcemail.SendEmailResponse
-}
-
-func (m *mockSender) SendEmail(_ context.Context, _ *svcemail.Request) (*svcemail.SendEmailResponse, error) {
-	if m.sendErr != nil {
-		return nil, m.sendErr
-	}
-	if m.resp == nil {
-		return &svcemail.SendEmailResponse{MessageID: "msg-123"}, nil
-	}
-	return m.resp, nil
 }
 
 var _ repository.ArticlesRepository = (*testArticlesRepo)(nil)
