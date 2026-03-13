@@ -9,11 +9,11 @@
       Self-hostable · Open source · ELv2
     </p>
 
-    <h1>Your articles.<br /><em>Your hosting.</em><br />Your e-reader.</h1>
+    <h1>Your articles.<br /><em>Your server.</em><br />Your e-reader.</h1>
 
     <p class="hero-sub">
-      Save to Ink converts any URL into a clean EPUB and sends it straight to your e-reader device.
-      Host it yourself, use the CLI, or use the free cloud service — your call.
+      SaveToInk converts any URL into a clean EPUB and sends it straight to your Kindle or Kobo.
+      Run it yourself with Docker, use the CLI, or create a free account on the cloud — your call.
     </p>
 
     <div class="hero-cli">
@@ -26,35 +26,36 @@
       <div class="cli-body">
         <div class="cli-line">
           <span class="cli-prompt">$</span>
-          <span class="cli-cmd">go install github.com/shaftoe/savetoink/cli/savetoink@latest</span>
+          <span class="cli-cmd">docker run \</span>
         </div>
-        <div class="cli-line">
-          <span class="cli-prompt">$</span>
-          <span class="cli-cmd">savetoink send https://example.com/long-read --dest-email mydevice@kindle.com</span>
+        <div class="cli-line cli-continuation">
+          <span class="cli-cmd">ghcr.io/savetoink/savetoink-cli:latest \</span>
+        </div>
+        <div class="cli-line cli-continuation">
+          <span class="cli-cmd">send https://example.com/long-read</span>
         </div>
         <div class="cli-line cli-output">
-          <span class="cli-check">✓</span>Fetched
-          <span class="cli-check">✓</span>Cleaned
-          <span class="cli-check">✓</span>EPUB ready
-          <span class="cli-check">✓</span>Sent to Kindle
+          <span class="cli-check">✓</span>&nbsp;Fetched &nbsp;
+          <span class="cli-check">✓</span>&nbsp;Converted &nbsp;
+          <span class="cli-check">✓</span>&nbsp;Sent to Kindle
         </div>
       </div>
     </div>
 
     <div class="hero-actions">
-      <a href="https://github.com/Save to Ink/Save to Ink" target="_blank" rel="noopener" class="btn-primary">
+      <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener" class="btn-primary">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
         </svg>
         View on GitHub
       </a>
       <a href="https://app.saveto.ink/" class="btn-secondary">
-        Or try the hosted version →
+        Or try the cloud version →
       </a>
     </div>
 
     <p class="hero-footnote">
-      Omnivore shut down. Pocket was acquired... Own your stack.
+      Omnivore shut down. Pocket was acquired. Own your stack.
     </p>
 
   </div>
@@ -163,6 +164,10 @@
     display: flex;
     gap: 0.75rem;
     flex-wrap: wrap;
+  }
+
+  .cli-continuation {
+    padding-left: 1.25rem;
   }
 
   .cli-prompt {

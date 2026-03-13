@@ -20,9 +20,12 @@
           </div>
           <h3>CLI</h3>
         </div>
-        <p>Install with <code>go install</code>, pipe URLs, script it, cron it. Works without an account.</p>
+        <p>Install with <code>go install</code> or pull the Docker image. Pipe URLs, script it, cron it. No account needed.</p>
         <div class="way-code">
           <span class="cli-p">$</span> savetoink send https://…
+        </div>
+        <div class="way-code way-code-alt">
+          <span class="cli-p">$</span> docker run --rm ghcr.io/savetoink/savetoink-cli:latest send https://…
         </div>
       </div>
 
@@ -75,7 +78,7 @@
       </div>
       <p class="ps-arrow">→</p>
       <div class="pipeline-step">
-        <p class="ps-label">Clean</p>
+        <p class="ps-label">Distill</p>
         <p class="ps-desc">go-trafilatura strips everything but content</p>
       </div>
       <p class="ps-arrow">→</p>
@@ -172,6 +175,17 @@
     display: flex !important;
     flex-direction: row !important;
     gap: 0.5rem;
+    margin-bottom: 0.4rem;
+    word-break: break-all;
+  }
+
+  .way-code:last-child {
+    margin-bottom: 0;
+  }
+
+  .way-code-alt {
+    opacity: 0.6;
+    font-size: 0.74rem;
   }
 
   .cli-p {
