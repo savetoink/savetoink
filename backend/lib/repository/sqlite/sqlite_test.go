@@ -599,3 +599,457 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteUserDeviceEmail_NotFound() {
 	s.Error(err)
 	s.Equal(ErrNotFound, err)
 }
+
+func (s *SQLiteRepositoryTestSuite) TestToArticle_InvalidCreatedAt() {
+	const query = `INSERT INTO articles (account, id, url, created_at) VALUES (?, ?, ?, ?)`
+	_, err := s.repository.db.ExecContext(
+		s.ctx,
+		query,
+		"test-account",
+		"error-article-1",
+		"https://example.com",
+		"invalid-timestamp",
+	)
+	s.NoError(err)
+
+	const selectQuery = `SELECT account, id, url, created_at, title, content, author, site_name, 
+		source_domain, excerpt, image_url, content_type, language, error, 
+		word_count, reading_time_minutes, published_at, favorite 
+		FROM articles WHERE account = ? AND id = ?`
+	row := s.repository.db.QueryRowContext(s.ctx, selectQuery, "test-account", "error-article-1")
+
+	var a articleRow
+	err = row.Scan(
+		&a.Account, &a.ID, &a.URL, &a.CreatedAt,
+		&a.Title, &a.Content, &a.Author, &a.SiteName,
+		&a.SourceDomain, &a.Excerpt, &a.ImageURL, &a.ContentType,
+		&a.Language, &a.Error, &a.WordCount, &a.ReadingTimeMinutes,
+		&a.PublishedAt, &a.Favorite,
+	)
+	s.NoError(err)
+
+	_, err = a.toArticle()
+	s.Error(err)
+	s.Contains(err.Error(), "failed to parse created_at")
+}
+
+func (s *SQLiteRepositoryTestSuite) TestToArticle_InvalidPublishedAt() {
+	now := time.Now().UTC()
+	article := &model.Article{
+		Account:   "test-account",
+		ID:        "error-article-2",
+		URL:       "https://example.com/article",
+		CreatedAt: now,
+	}
+	err := s.repository.Store(s.ctx, article)
+	s.NoError(err)
+
+	query := `UPDATE articles SET published_at = 'invalid-date' WHERE account = ? AND id = ?`
+	_, err = s.repository.db.ExecContext(s.ctx, query, "test-account", "error-article-2")
+	s.NoError(err)
+
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", "error-article-2")
+	s.Error(err)
+	s.Contains(err.Error(), "failed to parse published_at")
+	s.Nil(retrieved)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestToUserProfile_InvalidBouncedEmailsJSON() {
+	const query = `INSERT INTO user_profiles (account, bounced_emails) VALUES (?, ?)`
+	_, err := s.repository.db.ExecContext(s.ctx, query, "test-account", "invalid-json{")
+	s.NoError(err)
+
+	const selectQuery = `SELECT account, email, device_email, auto_send, bounced_emails 
+		FROM user_profiles WHERE account = ?`
+	row := s.repository.db.QueryRowContext(s.ctx, selectQuery, "test-account")
+
+	var p profileRow
+	err = row.Scan(&p.Account, &p.Email, &p.DeviceEmail, &p.AutoSend, &p.BouncedEmails)
+	s.NoError(err)
+
+	_, err = p.toUserProfile()
+	s.Error(err)
+	s.Contains(err.Error(), "failed to unmarshal bounced emails")
+}
+
+func (s *SQLiteRepositoryTestSuite) TestProfileToRow_MarshalError() {
+	profile := &model.UserProfile{
+		Account: "test-account",
+		BouncedEmails: map[string]model.BounceInfo{
+			"test@example.com": {},
+		},
+	}
+
+	_, err := profileToRow(profile)
+	s.NoError(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestToSend_InvalidSentAt() {
+	const query = `INSERT INTO sends (account, article_id, sent_at) VALUES (?, ?, ?)`
+	_, err := s.repository.db.ExecContext(
+		s.ctx,
+		query,
+		"test-account",
+		"error-send-article",
+		"invalid-timestamp",
+	)
+	s.NoError(err)
+
+	const selectQuery = `SELECT account, article_id, sent_at, title, dest_email, status, 
+		sender_email, message_id, provider, error_response FROM sends WHERE article_id = ?`
+	rows, err := s.repository.db.QueryContext(s.ctx, selectQuery, "error-send-article")
+	s.NoError(err)
+	defer func() { _ = rows.Close() }()
+
+	var sr sendRow
+	if rows.Next() {
+		err = rows.Scan(
+			&sr.Account, &sr.ArticleID, &sr.SentAt,
+			&sr.Title, &sr.DestEmail, &sr.Status,
+			&sr.SenderEmail, &sr.MessageID, &sr.Provider, &sr.ErrorResponse,
+		)
+		s.NoError(err)
+
+		_, err = sr.toSend()
+		s.Error(err)
+		s.Contains(err.Error(), "failed to parse sent_at")
+	}
+}
+
+func (s *SQLiteRepositoryTestSuite) TestGetByAccountAndID_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	article := &model.Article{
+		Account:   "test-account",
+		ID:        "ctx-cancel-article",
+		URL:       "https://example.com/article",
+		CreatedAt: time.Now().UTC(),
+	}
+	err := s.repository.Store(s.ctx, article)
+	s.NoError(err)
+
+	_, err = s.repository.GetByAccountAndID(ctx, "test-account", "ctx-cancel-article")
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestDeleteByAccountAndID_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	article := &model.Article{
+		Account:   "test-account",
+		ID:        "ctx-del-article",
+		URL:       "https://example.com/article",
+		CreatedAt: time.Now().UTC(),
+	}
+	err := s.repository.Store(s.ctx, article)
+	s.NoError(err)
+
+	err = s.repository.DeleteByAccountAndID(ctx, "test-account", "ctx-del-article")
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	article := &model.Article{
+		Account:   "test-account",
+		ID:        "ctx-fav-article",
+		URL:       "https://example.com/article",
+		CreatedAt: time.Now().UTC(),
+	}
+	err := s.repository.Store(s.ctx, article)
+	s.NoError(err)
+
+	err = s.repository.UpdateFavorite(ctx, "test-account", "ctx-fav-article", true)
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestDeleteByAccount_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	article := &model.Article{
+		Account:   "test-account",
+		ID:        "ctx-del-all-article",
+		URL:       "https://example.com/article",
+		CreatedAt: time.Now().UTC(),
+	}
+	err := s.repository.Store(s.ctx, article)
+	s.NoError(err)
+
+	_, err = s.repository.DeleteByAccount(ctx, "test-account")
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	article := &model.Article{
+		Account:   "test-account",
+		ID:        "ctx-meta-article",
+		URL:       "https://example.com/article",
+		CreatedAt: time.Now().UTC(),
+	}
+	err := s.repository.Store(s.ctx, article)
+	s.NoError(err)
+
+	articles, lastKey, total, err := s.repository.GetMetadataByAccount(ctx, "test-account", 1, 10, nil)
+	_ = articles
+	_ = lastKey
+	_ = total
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestGetUserProfile_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	profile := &model.UserProfile{
+		Account: "test-account",
+	}
+	err := s.repository.PutUserProfile(s.ctx, profile)
+	s.NoError(err)
+
+	_, err = s.repository.GetUserProfile(ctx, "test-account")
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestGetAccountIDByDeviceEmail_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	profile := &model.UserProfile{
+		Account:     "test-account",
+		DeviceEmail: "device@kindle.com",
+	}
+	err := s.repository.PutUserProfile(s.ctx, profile)
+	s.NoError(err)
+
+	_, err = s.repository.GetAccountIDByDeviceEmail(ctx, "device@kindle.com")
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestPutUserProfile_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	profile := &model.UserProfile{
+		Account: "test-account",
+	}
+
+	err := s.repository.PutUserProfile(ctx, profile)
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestDeleteUserProfile_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	profile := &model.UserProfile{
+		Account: "test-account",
+	}
+	err := s.repository.PutUserProfile(s.ctx, profile)
+	s.NoError(err)
+
+	err = s.repository.DeleteUserProfile(ctx, "test-account")
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestDeleteUserDeviceEmail_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	profile := &model.UserProfile{
+		Account:     "test-account",
+		DeviceEmail: "device@kindle.com",
+	}
+	err := s.repository.PutUserProfile(s.ctx, profile)
+	s.NoError(err)
+
+	err = s.repository.DeleteUserDeviceEmail(ctx, "test-account")
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestCreateSendRecord_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	send := &model.Send{
+		Account:   "test-account",
+		ArticleID: "ctx-create-send",
+	}
+
+	err := s.repository.CreateSendRecord(ctx, send)
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestUpdateSendRecord_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	send := &model.Send{
+		Account:   "test-account",
+		ArticleID: "ctx-update-send",
+	}
+
+	err := s.repository.UpdateSendRecord(ctx, send)
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestGetSendsByArticleID_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	send := &model.Send{
+		Account:   "test-account",
+		ArticleID: "ctx-get-send",
+	}
+	err := s.repository.CreateSendRecord(s.ctx, send)
+	s.NoError(err)
+
+	_, err = s.repository.GetSendsByArticleID(ctx, "ctx-get-send")
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestGetSendsByAccountDateRange_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	_, err := s.repository.GetSendsByAccountDateRange(ctx, "test-account", time.Now().Add(-time.Hour), time.Now())
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestCountSendsByAccountDateRange_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	_, err := s.repository.CountSendsByAccountDateRange(ctx, "test-account", time.Now().Add(-time.Hour), time.Now())
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestQueryArticlesByAccount_ScanError() {
+	const insertQuery = `INSERT INTO articles (account, id, url, created_at) VALUES (?, ?, ?, ?)`
+	_, err := s.repository.db.ExecContext(
+		s.ctx,
+		insertQuery,
+		"test-account",
+		"scan-error-article",
+		"https://example.com/article",
+		time.Now().UTC().Format(time.RFC3339),
+	)
+	s.NoError(err)
+
+	const updateQuery = `UPDATE articles SET created_at = 'invalid-timestamp' 
+		WHERE account = ? AND id = ?`
+	_, err = s.repository.db.ExecContext(s.ctx, updateQuery, "test-account", "scan-error-article")
+	s.NoError(err)
+
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	articles, lastKey, total, err := s.repository.GetMetadataByAccount(ctx, "test-account", 1, 10, nil)
+	_ = articles
+	_ = lastKey
+	_ = total
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestQuerySends_ScanError() {
+	send := &model.Send{
+		Account:   "test-account",
+		ArticleID: "scan-error-send",
+		Title:     "Test Article",
+	}
+	err := s.repository.CreateSendRecord(s.ctx, send)
+	s.NoError(err)
+
+	query := `UPDATE sends SET sent_at = 'invalid-timestamp' WHERE article_id = ?`
+	_, err = s.repository.db.ExecContext(s.ctx, query, "scan-error-send")
+	s.NoError(err)
+
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	_, err = s.repository.GetSendsByArticleID(ctx, "scan-error-send")
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestNewSQLite_PingError() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := NewSQLite(ctx, ":memory:")
+	s.Error(err)
+	s.Contains(err.Error(), "failed to ping database")
+}
+
+func (s *SQLiteRepositoryTestSuite) TestCreateTables_Error() {
+	repo, err := NewSQLite(s.ctx, "file:/tmp/test-create-tables.db?mode=memory")
+	s.NoError(err)
+
+	_ = repo.db.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = repo.CreateTables(ctx)
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestCreateArticleTable_Error() {
+	repo, err := NewSQLite(s.ctx, "file:/tmp/test-create-article.db?mode=memory")
+	s.NoError(err)
+
+	_ = repo.db.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = repo.createArticleTable(ctx)
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestCreateUserProfileTable_Error() {
+	repo, err := NewSQLite(s.ctx, "file:/tmp/test-create-profile.db?mode=memory")
+	s.NoError(err)
+
+	_ = repo.db.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = repo.createUserProfileTable(ctx)
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestCreateSendsTable_Error() {
+	repo, err := NewSQLite(s.ctx, "file:/tmp/test-create-sends.db?mode=memory")
+	s.NoError(err)
+
+	_ = repo.db.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = repo.createSendsTable(ctx)
+	s.Error(err)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestStore_DatabaseError() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	article := &model.Article{
+		Account:   "test-account",
+		ID:        "store-error-article",
+		URL:       "https://example.com/article",
+		CreatedAt: time.Now().UTC(),
+	}
+
+	err := s.repository.Store(ctx, article)
+	s.Error(err)
+}

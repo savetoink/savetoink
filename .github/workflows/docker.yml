@@ -51,4 +51,4 @@ jobs:
           file: infra/Dockerfile.http
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/savetoink/savetoink-api:latest,ghcr.io/savetoink/savetoink-api:${{ env.VERSION }}
+          tags: ghcr.io/savetoink/savetoink-http:latest,ghcr.io/savetoink/savetoink-http:${{ env.VERSION }}
