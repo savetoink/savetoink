@@ -32,7 +32,7 @@ update-versions version_type:
 bump-version version_type:
     @just update-versions {{ version_type }}
     @git commit -m "chore: bump versions to $(cat VERSION)" .
-    @git tag "v$(cat VERSION)"
+    @if [[ {{ version_type }} != "dev" ]]; then git tag "v$(cat VERSION)"; fi
 
 install-hooks:
     @lefthook install
