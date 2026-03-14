@@ -10,10 +10,10 @@ run *ARGS: build-cli
     ./bin/savetoink convert {{ ARGS }}
 
 build-cli-docker:
-    docker build . -f infra/Dockerfile.cli -t ghcr.io/savetoink/savetoink-cli:$(cat VERSION)
+    docker build . -f infra/Dockerfile.cli -t ghcr.io/savetoink/savetoink-cli:local
 
 build-http-docker:
-    docker build . -f infra/Dockerfile.http -t ghcr.io/savetoink/savetoink-http:$(cat VERSION)
+    docker build . -f infra/Dockerfile.http -t ghcr.io/savetoink/savetoink-http:local
 
 push-cli-docker:
     docker tag ghcr.io/savetoink/savetoink-cli:$(cat VERSION) ghcr.io/savetoink/savetoink-cli:latest
