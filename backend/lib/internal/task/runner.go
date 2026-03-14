@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -57,6 +58,7 @@ func (r *TaskRunner) Run(ctx context.Context, name, schedule string) *RunResult 
 	runID := logging.GenerateRunID()
 	t, ok := r.tasks[name]
 	if !ok {
+		slog.With("run_id", runID).Error("unknown task")
 		return &RunResult{
 			Error: fmt.Errorf("unknown task: %s", name),
 			ID:    runID,
@@ -65,10 +67,7 @@ func (r *TaskRunner) Run(ctx context.Context, name, schedule string) *RunResult 
 
 	scheduledNext, err := r.calculateNextRun(schedule)
 	if err != nil {
-		return &RunResult{
-			Error: fmt.Errorf("failed to calculate next run time: %w", err),
-			ID:    runID,
-		}
+		slog.With("run_id", runID).Error("failed to calculate next run time: %w", err)
 	}
 
 	start := time.Now()

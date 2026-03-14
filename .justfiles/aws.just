@@ -26,6 +26,9 @@ logs-api:
 logs-processor:
     aws logs tail /aws/lambda/{{ project_name }}-processor --follow
 
+logs-scheduler:
+    aws logs tail /aws/lambda/{{ project_name }}-scheduler --follow
+
 # Get certificate ARN
 get-cert-arn:
     aws cloudformation describe-stacks \

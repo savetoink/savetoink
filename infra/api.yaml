@@ -405,6 +405,8 @@ Resources:
       MemorySize: 512
       Environment:
         Variables:
+          SAVETOINK_API_KEY: !Ref APIKeySecret
+          SAVETOINK_APP_URL: !Ref AppURL
           SAVETOINK_ARTICLE_TABLE_NAME: !Ref ArticleTable
           SAVETOINK_ARTICLE_TAGS_TABLE_NAME: !Ref ArticleTagsTable
           SAVETOINK_BACKUP_BUCKET_NAME: !Ref BackupS3Bucket
@@ -441,11 +443,12 @@ Resources:
     Properties:
       Name: !Sub "${ProjectName}-scheduler-schedule"
       Description: Daily execution of scheduled administrative tasks
-      ScheduleExpression: "rate(1 day)"
+      ScheduleExpression: "cron(0 * * * ? *)"
       State: ENABLED
       Targets:
         - Arn: !GetAtt SchedulerLambdaFunction.Arn
           Id: SchedulerLambdaTarget
+          Input: '{"task": "backup", "schedule": "0 0 * * * *"}'
 
   #############################
   # CloudFront Distribution
