@@ -6,16 +6,14 @@ on:
   pull_request:
   push:
     branches:
+      - dev
       - master
     paths:
       - backend/**
       - go.mod
       - go.sum
       - infra/**
-      - backend/**
-      - go.mod
-      - go.sum
-      - infra/**
+      - VERSION
 
 permissions:
   id-token: write
