@@ -1,5 +1,5 @@
 # Full deployment (bucket + upload + infra)
-deploy:
+deploy: lint-cfn
     just deploy-bucket
     just deploy-cert
     just upload-zip-api
@@ -9,7 +9,7 @@ deploy:
     @echo "Add DNS record: $SAVETOINK_DOMAIN CNAME $(just get-distribution-url)."
 
 # Destroy Lambda infrastructure
-destroy:
+destroy: lint-cfn
     aws cloudformation delete-stack --stack-name {{ project_name }}-infra
     aws cloudformation wait stack-delete-complete --stack-name {{ project_name }}-infra
     -aws s3 rm s3://$SAVETOINK_BUCKET --recursive

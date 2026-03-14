@@ -15,7 +15,7 @@ deploy-cert:
         --parameter-overrides ProjectName={{ project_name }} DomainName="$SAVETOINK_DOMAIN"
 
 # Deploy Lambda infrastructure
-deploy-api:
+deploy-api: lint-cfn
     aws cloudformation deploy \
         --template-file infra/api.yaml \
         --stack-name {{ project_name }}-infra \
