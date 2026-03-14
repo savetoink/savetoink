@@ -4,14 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/shaftoe/savetoink/backend/lib/auth"
 )
 
-func createLogRecord(r *http.Request, accountID string, requestID, version *string) slog.Record {
+func createLogRecord(r *http.Request, accountID string, requestID *string) slog.Record {
 	record := slog.NewRecord(time.Now(), slog.LevelInfo, "request completed", 0)
 	record.AddAttrs(
 		slog.String("client_ip", remoteAddr(r)),
@@ -29,9 +32,6 @@ func createLogRecord(r *http.Request, accountID string, requestID, version *stri
 	}
 	if requestID != nil {
 		record.AddAttrs(slog.String("request_id", *requestID))
-	}
-	if version != nil {
-		record.AddAttrs(slog.String("version", *version))
 	}
 	if accountID != "" {
 		record.AddAttrs(slog.String("account_id", accountID))
@@ -94,4 +94,74 @@ func userAgent(r *http.Request) string {
 		return ua
 	}
 	return "-"
+}
+
+// GenerateRunID generates a unique ID for a task execution.
+func GenerateRunID() string {
+	return uuid.New().String()
+}
+
+// LogTaskExecution logs a task execution with timing and result information.
+func LogTaskExecution(
+	ctx context.Context,
+	taskName, runID string,
+	start time.Time,
+	err error,
+	output string,
+	scheduledNext *time.Time,
+) {
+	record := slog.NewRecord(start, slog.LevelInfo, "task execution complete", 0)
+
+	record.AddAttrs(
+		String("task_name", taskName),
+		String("run_id", runID),
+		Duration("latency", time.Since(start)),
+	)
+
+	if err != nil {
+		record.AddAttrs(Any("error", err))
+		record.Level = slog.LevelError
+	}
+
+	if output != "" {
+		record.AddAttrs(String("output", output))
+	}
+
+	if scheduledNext != nil {
+		record.AddAttrs(Time("scheduled_next", *scheduledNext))
+	}
+
+	if logErr := slog.Default().Handler().Handle(ctx, record); logErr != nil { //nolint:gocritic
+		slog.Error("failed to log task execution completion", "error", logErr)
+	}
+}
+
+// LogSchedulerStarted logs when the background scheduler starts with enabled tasks.
+func LogSchedulerStarted(ctx context.Context, tasks map[string]struct{}) {
+	record := slog.NewRecord(time.Now(), slog.LevelInfo, "Save to Ink background scheduler started", 0)
+	keys := slices.Sorted(maps.Keys(tasks))
+	record.AddAttrs(
+		Any("tasks", keys),
+	)
+
+	if err := slog.Default().Handler().Handle(ctx, record); err != nil { //nolint:gocritic
+		slog.Error("failed to log scheduler start", "error", err)
+	}
+}
+
+// LogTaskFailed logs when a task execution fails.
+func LogTaskFailed(ctx context.Context, taskName string, err error, scheduledNext *time.Time) {
+	record := slog.NewRecord(time.Now(), slog.LevelError, "task execution failed", 0)
+	record.AddAttrs(
+		String("task_name", taskName),
+		String("error", err.Error()),
+	)
+
+	if scheduledNext != nil {
+		record.AddAttrs(Time("scheduled_next", *scheduledNext))
+	}
+
+	if logErr := slog.Default().Handler().Handle(ctx, record); logErr != nil { //nolint:gocritic
+		slog.Error("failed to log task execution failure", "error", logErr)
+	}
 }

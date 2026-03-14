@@ -41,6 +41,7 @@ deploy-api:
             MailjetWebhookSecret=${SAVETOINK_MAILJET_WEBHOOK_SECRET} \
             ProcessorSourceBucketKey={{ lambda_processor_archive }} \
             ProjectName={{ project_name }} \
+            SchedulerSourceBucketKey={{ lambda_scheduler_archive }} \
             SenderEmail="$SAVETOINK_SENDER_EMAIL" \
             SentryDSN=${SAVETOINK_SENTRY_DSN} \
             SentryEnvironment=${SAVETOINK_SENTRY_ENVIRONMENT} \
@@ -49,7 +50,7 @@ deploy-api:
             SourceBucketName=${SAVETOINK_BUCKET}
 
 # Upload API Lambda source zip to S3
-upload-zip-api:
+upload-zip-api: build-lambda-zip-api
     aws s3 cp bin/{{ lambda_archive }} s3://${SAVETOINK_BUCKET}/{{ lambda_archive }}
 
 # Build Lambda binary for Linux
@@ -70,7 +71,7 @@ deploy-lambda-api: build-lambda-zip-api upload-zip-api
         --publish
 
 # Upload Processor Lambda source zip to S3
-upload-zip-processor:
+upload-zip-processor: build-lambda-zip-processor
     aws s3 cp bin/{{ lambda_processor_archive }} s3://${SAVETOINK_BUCKET}/{{ lambda_processor_archive }}
 
 # Build Lambda binary for Linux
@@ -88,4 +89,25 @@ deploy-lambda-processor: build-lambda-zip-processor upload-zip-processor
         --function-name {{ project_name }}-processor \
         --s3-bucket ${SAVETOINK_BUCKET} \
         --s3-key {{ lambda_processor_archive }} \
+        --publish
+
+# Upload Scheduler Lambda source zip to S3
+upload-zip-scheduler: build-lambda-zip-scheduler
+    aws s3 cp bin/{{ lambda_scheduler_archive }} s3://${SAVETOINK_BUCKET}/{{ lambda_scheduler_archive }}
+
+# Build Lambda binary for Linux
+build-lambda-scheduler:
+    GOOS=linux GOARCH=amd64 go build -o bin/bootstrap ./backend/cmd/lambda/scheduler
+
+# Build Lambda zip for deployment
+[working-directory('bin')]
+build-lambda-zip-scheduler: build-lambda-scheduler
+    zip {{ lambda_scheduler_archive }} bootstrap
+
+# Update Lambda function code only
+deploy-lambda-scheduler: build-lambda-zip-scheduler upload-zip-scheduler
+    aws lambda update-function-code \
+        --function-name {{ project_name }}-scheduler \
+        --s3-bucket ${SAVETOINK_BUCKET} \
+        --s3-key {{ lambda_scheduler_archive }} \
         --publish
