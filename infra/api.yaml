@@ -432,23 +432,57 @@ Resources:
     Properties:
       FunctionName: !Ref SchedulerLambdaFunction
       Action: lambda:InvokeFunction
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt SchedulerScheduleRule.Arn
+      Principal: scheduler.amazonaws.com
+
+  ############################
+  # IAM Role for EventBridge Scheduler to invoke Lambda
+  ############################
+  SchedulerInvokeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-scheduler-invoke"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-scheduler-invoke-lambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt SchedulerLambdaFunction.Arn
 
   #############################
-  # EventBridge Schedule Rule for Daily Tasks
+  # Scheduler Schedule Group
+  #############################
+  SchedulerScheduleGroup:
+    Type: AWS::Scheduler::ScheduleGroup
+    Properties:
+      Name: !Sub "${ProjectName}-scheduler-group"
+
+  #############################
+  # EventBridge Scheduler Schedule for Daily Tasks
   #############################
   SchedulerScheduleRule:
-    Type: AWS::Events::Rule
+    Type: AWS::Scheduler::Schedule
     Properties:
       Name: !Sub "${ProjectName}-scheduler-schedule"
       Description: Daily execution of scheduled administrative tasks
-      ScheduleExpression: "cron(0 * * * ? *)"
+      GroupName: !Ref SchedulerScheduleGroup
+      ScheduleExpression: cron(0 0 * * ? *)
       State: ENABLED
-      Targets:
-        - Arn: !GetAtt SchedulerLambdaFunction.Arn
-          Id: SchedulerLambdaTarget
-          Input: '{"task": "backup", "schedule": "0 0 * * * *"}'
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      Target:
+        Arn: !GetAtt SchedulerLambdaFunction.Arn
+        RoleArn: !GetAtt SchedulerInvokeRole.Arn
+        Input: '{ "task": "backup", "schedule": "0 0 0 * * *" }'
 
   #############################
   # CloudFront Distribution
@@ -854,8 +888,8 @@ Outputs:
     Export:
       Name: !Sub "${ProjectName}-scheduler-function-arn"
 
-  SchedulerScheduleRuleArn:
-    Description: ARN of the scheduler EventBridge schedule rule
-    Value: !GetAtt SchedulerScheduleRule.Arn
+  SchedulerScheduleGroupArn:
+    Description: ARN of the scheduler schedule group
+    Value: !GetAtt SchedulerScheduleGroup.Arn
     Export:
-      Name: !Sub "${ProjectName}-scheduler-schedule-rule-arn"
+      Name: !Sub "${ProjectName}-scheduler-schedule-group-arn"

@@ -1,5 +1,8 @@
 # Run linters
-lint: lint-go
+lint: lint-cfn lint-go
+
+lint-cfn:
+    cfn-lint -t infra/*.yaml
 
 lint-go:
     CGO_ENABLED=0 golangci-lint run backend/... cli/...
