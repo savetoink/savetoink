@@ -36,11 +36,16 @@ func (s *BackgroundScheduler) Start(ctx context.Context) error {
 			continue
 		}
 		if _, ok := tasksEnabled[cfg.Name]; ok {
-			// ignore duplicate task
 			continue
 		}
+
+		params := make(map[string]ParamValue)
+		for k, v := range cfg.Params {
+			params[k] = StringParam(v)
+		}
+
 		if _, err := s.cron.AddFunc(cfg.Schedule, func() {
-			_ = s.runner.Run(ctx, cfg.Name, cfg.Schedule)
+			_ = s.runner.Run(ctx, cfg.Name, cfg.Schedule, params)
 		}); err != nil {
 			return fmt.Errorf("scheduling task %q: %w", cfg.Name, err)
 		}

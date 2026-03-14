@@ -14,14 +14,14 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/shaftoe/savetoink/backend/internal/email"
-	"github.com/shaftoe/savetoink/backend/internal/email/mailjet"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/internal/email"
+	"github.com/shaftoe/savetoink/backend/lib/internal/email/mailjet"
+	"github.com/shaftoe/savetoink/backend/lib/internal/repository"
+	repoimpl "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
+	repoimplsqlite "github.com/shaftoe/savetoink/backend/lib/internal/repository/sqlite"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/repository"
-	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
-	repoimplsqlite "github.com/shaftoe/savetoink/backend/lib/repository/sqlite"
 	"github.com/shaftoe/savetoink/backend/lib/service/articles"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
@@ -186,6 +186,21 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 	var articlesRepo repository.ArticlesRepository
 	var userProfileRepo repository.UserProfileRepository
 	var sendsRepo repository.SendsRepository
+
+	// disable repositories in CLI mode
+	if cfg.Mode == consts.ModeCLI {
+		return Dependencies{
+			Fetcher:         content.NewFetcher(cfg.BrowserlessKey),
+			Extractor:       content.NewDOMExtractor(),
+			Cleaner:         content.NewTrafilaturaCleaner(),
+			Publisher:       epub.NewPublisher(),
+			Sender:          sender,
+			ArticlesRepo:    articlesRepo,
+			UserProfileRepo: userProfileRepo,
+			SendsRepo:       sendsRepo,
+			Config:          cfg,
+		}
+	}
 
 	switch cfg.StorageBackend {
 	case consts.StorageBackendDynamoDB, "":

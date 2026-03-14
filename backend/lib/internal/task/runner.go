@@ -8,31 +8,39 @@ import (
 
 	"github.com/robfig/cron/v3"
 	"github.com/shaftoe/savetoink/backend/lib/config"
+	repository "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 )
 
 // Task represents a scheduled task that can be executed.
 type Task struct {
 	Name string
-	Run  func(ctx context.Context) *RunResult
+	Run  func(ctx context.Context, params map[string]ParamValue) *RunResult
 }
 
 // RunResult contains the output and any error from task execution.
 type RunResult struct {
-	Output string
-	Error  error
-	ID     string
+	Output []string `json:"output,omitempty"`
+	Error  error    `json:"error,omitempty"`
+	ID     string   `json:"id,omitempty"`
 }
 
 // TaskRunner manages and executes registered tasks.
 type TaskRunner struct { //nolint:revive // task.TaskRunner is acceptable naming
-	tasks  map[string]Task
-	config *config.Config
+	tasks   map[string]Task
+	config  *config.Config
+	BkpRepo *repository.BackupRepository
 }
 
 // NewTaskRunner creates a new TaskRunner with the given configuration.
+// Returns nil if AWSConfig is not configured.
 func NewTaskRunner(cfg *config.Config) *TaskRunner {
-	return &TaskRunner{tasks: make(map[string]Task), config: cfg}
+	if cfg.AWSConfig == nil {
+		return nil
+	}
+	bkpRepo := repository.NewBackupRepository(cfg)
+
+	return &TaskRunner{tasks: make(map[string]Task), config: cfg, BkpRepo: bkpRepo}
 }
 
 // Register adds a task to the runner's task registry.
@@ -54,7 +62,7 @@ func (r *TaskRunner) calculateNextRun(schedule string) (*time.Time, error) {
 }
 
 // Run executes a task with the given name and schedule, logging the result.
-func (r *TaskRunner) Run(ctx context.Context, name, schedule string) *RunResult {
+func (r *TaskRunner) Run(ctx context.Context, name, schedule string, params map[string]ParamValue) *RunResult {
 	runID := logging.GenerateRunID()
 	t, ok := r.tasks[name]
 	if !ok {
@@ -67,11 +75,17 @@ func (r *TaskRunner) Run(ctx context.Context, name, schedule string) *RunResult 
 
 	scheduledNext, err := r.calculateNextRun(schedule)
 	if err != nil {
-		slog.With("run_id", runID).Error("failed to calculate next run time: %w", err)
+		err = fmt.Errorf("failed to calculate next run time: %w", err)
+		slog.With("run_id", runID).Error(err.Error(),
+			slog.String("schedule", schedule))
+		return &RunResult{
+			Error: err,
+			ID:    runID,
+		}
 	}
 
 	start := time.Now()
-	result := t.Run(ctx)
+	result := t.Run(ctx, params)
 	result.ID = runID
 	logging.LogTaskExecution(ctx, t.Name, runID, start, result.Error, result.Output, scheduledNext)
 	return result

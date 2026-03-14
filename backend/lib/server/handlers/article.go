@@ -11,9 +11,10 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
+	"github.com/shaftoe/savetoink/backend/lib/internal/validation"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
@@ -21,7 +22,6 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/server/utils"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/validation"
 )
 
 // Handlers manages HTTP handlers for the savetoink application.

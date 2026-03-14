@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/shaftoe/savetoink/backend/lib/auth"
+	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
 )
 
 func createLogRecord(r *http.Request, accountID string, requestID *string) slog.Record {
@@ -107,7 +107,7 @@ func LogTaskExecution(
 	taskName, runID string,
 	start time.Time,
 	err error,
-	output string,
+	output []string,
 	scheduledNext *time.Time,
 ) {
 	record := slog.NewRecord(start, slog.LevelInfo, "task execution complete", 0)
@@ -123,8 +123,8 @@ func LogTaskExecution(
 		record.Level = slog.LevelError
 	}
 
-	if output != "" {
-		record.AddAttrs(String("output", output))
+	if len(output) > 0 {
+		record.AddAttrs(String("output", strings.Join(output, ", ")))
 	}
 
 	if scheduledNext != nil {
@@ -138,7 +138,7 @@ func LogTaskExecution(
 
 // LogSchedulerStarted logs when the background scheduler starts with enabled tasks.
 func LogSchedulerStarted(ctx context.Context, tasks map[string]struct{}) {
-	record := slog.NewRecord(time.Now(), slog.LevelInfo, "Save to Ink background scheduler started", 0)
+	record := slog.NewRecord(time.Now(), slog.LevelInfo, "background scheduler started", 0)
 	keys := slices.Sorted(maps.Keys(tasks))
 	record.AddAttrs(
 		Any("tasks", keys),

@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shaftoe/savetoink/backend/internal/email"
-	"github.com/shaftoe/savetoink/backend/lib/auth"
+	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
+	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"

@@ -30,7 +30,7 @@ func TestLogTaskExecution_Success(t *testing.T) {
 	ctx := context.Background()
 	start := time.Now()
 
-	LogTaskExecution(ctx, "test_task", "run-123", start, nil, "task output completed", nil)
+	LogTaskExecution(ctx, "test_task", "run-123", start, nil, []string{"task output completed"}, nil)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -68,7 +68,7 @@ func TestLogTaskExecution_WithScheduledNext(t *testing.T) {
 	start := time.Now()
 	nextRun := time.Now().Add(1 * time.Hour)
 
-	LogTaskExecution(ctx, "test_task", "run-123", start, nil, "task output completed", &nextRun)
+	LogTaskExecution(ctx, "test_task", "run-123", start, nil, []string{"task output completed"}, &nextRun)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -103,7 +103,7 @@ func TestLogTaskExecution_WithError(t *testing.T) {
 	start := time.Now()
 	testErr := errors.New("task failed")
 
-	LogTaskExecution(ctx, "test_task", "run-456", start, testErr, "", nil)
+	LogTaskExecution(ctx, "test_task", "run-456", start, testErr, nil, nil)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -140,7 +140,7 @@ func TestLogTaskExecution_WithErrorAndOutput(t *testing.T) {
 	start := time.Now()
 	testErr := errors.New("partial failure")
 
-	LogTaskExecution(ctx, "test_task", "run-789", start, testErr, "partial output", nil)
+	LogTaskExecution(ctx, "test_task", "run-789", start, testErr, []string{"partial output"}, nil)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -172,7 +172,7 @@ func TestLogTaskExecution_NoOutput(t *testing.T) {
 	ctx := context.Background()
 	start := time.Now()
 
-	LogTaskExecution(ctx, "test_task", "run-abc", start, nil, "", nil)
+	LogTaskExecution(ctx, "test_task", "run-abc", start, nil, nil, nil)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -202,7 +202,7 @@ func TestLogTaskExecution_Latency(t *testing.T) {
 	start := time.Now()
 
 	time.Sleep(10 * time.Millisecond)
-	LogTaskExecution(ctx, "test_task", "run-latency", start, nil, "", nil)
+	LogTaskExecution(ctx, "test_task", "run-latency", start, nil, nil, nil)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -234,7 +234,7 @@ func TestLogTaskExecution_HandlerError(t *testing.T) {
 	start := time.Now()
 
 	assert.NotPanics(t, func() {
-		LogTaskExecution(ctx, "test_task", "run-error", start, nil, "output", nil)
+		LogTaskExecution(ctx, "test_task", "run-error", start, nil, []string{"output"}, nil)
 	})
 
 	require.Len(t, capture.records, 1)
@@ -256,7 +256,7 @@ func TestLogSchedulerStarted(t *testing.T) {
 	record := capture.records[0]
 
 	assert.Equal(t, slog.LevelInfo, record.Level)
-	assert.Equal(t, "Save to Ink background scheduler started", record.Message)
+	assert.Equal(t, "background scheduler started", record.Message)
 
 	var attrs []slog.Attr
 	record.Attrs(func(a slog.Attr) bool {

@@ -150,9 +150,9 @@ func TestSetupLogging_RespectsOutput(t *testing.T) {
 	defaultLogger := slog.Default()
 	defer slog.SetDefault(defaultLogger)
 
-	oldStdout := os.Stdout
+	oldStderr := os.Stderr
 	r, w, _ := os.Pipe()
-	os.Stdout = w
+	os.Stderr = w
 
 	cfg := &config.Config{
 		Debug:             false,
@@ -169,7 +169,7 @@ func TestSetupLogging_RespectsOutput(t *testing.T) {
 	if err := w.Close(); err != nil {
 		t.Fatalf("failed to close pipe: %v", err)
 	}
-	os.Stdout = oldStdout
+	os.Stderr = oldStderr
 
 	buf := make([]byte, 1024)
 	n, _ := r.Read(buf)

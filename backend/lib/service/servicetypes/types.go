@@ -2,7 +2,7 @@
 package servicetypes
 
 import (
-	"github.com/shaftoe/savetoink/backend/internal/email"
+	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
-	"github.com/shaftoe/savetoink/backend/internal/email"
+	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"

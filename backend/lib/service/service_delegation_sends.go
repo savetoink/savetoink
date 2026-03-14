@@ -6,9 +6,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/shaftoe/savetoink/backend/internal/email"
-	apperrors "github.com/shaftoe/savetoink/backend/lib/apperrors"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	apperrors "github.com/shaftoe/savetoink/backend/lib/internal/apperrors"
+	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )

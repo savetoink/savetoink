@@ -22,7 +22,7 @@ func SetupLogging(cfg *config.Config) {
 		level = slog.LevelDebug
 	}
 
-	defaultHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+	defaultHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: level,
 	})
 

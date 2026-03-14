@@ -7,11 +7,11 @@ import (
 	"log/slog"
 	"time"
 
-	apperrors "github.com/shaftoe/savetoink/backend/lib/apperrors"
+	apperrors "github.com/shaftoe/savetoink/backend/lib/internal/apperrors"
+	"github.com/shaftoe/savetoink/backend/lib/internal/repository"
+	"github.com/shaftoe/savetoink/backend/lib/internal/validation"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/repository"
-	"github.com/shaftoe/savetoink/backend/lib/validation"
 )
 
 // UserProfileService manages user profiles and device email settings.

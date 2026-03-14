@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/shaftoe/savetoink/backend/lib/validation"
+	"github.com/shaftoe/savetoink/backend/lib/internal/validation"
 	"github.com/stretchr/testify/assert"
 )
 

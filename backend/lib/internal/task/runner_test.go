@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/shaftoe/savetoink/backend/lib/config"
-	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,9 +16,9 @@ const testCronScheduleHourly = "0 0 * * * *"
 func getTestConfig(t *testing.T) *config.Config {
 	t.Helper()
 
-	cfg, err := config.Load(consts.ModeCLI, nil)
-	require.NoError(t, err)
-	return cfg
+	return &config.Config{
+		AWSConfig: &aws.Config{},
+	}
 }
 
 func TestCalculateNextRun_Success(t *testing.T) {
@@ -113,14 +113,14 @@ func TestRun_WithSchedule(t *testing.T) {
 
 	runner.Register(Task{
 		Name: "test_task",
-		Run: func(_ context.Context) *RunResult {
+		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
 			taskExecuted = true
-			return &RunResult{Output: "task completed"}
+			return &RunResult{Output: []string{"task completed"}}
 		},
 	})
 
 	ctx := context.Background()
-	result := runner.Run(ctx, "test_task", testCronScheduleHourly)
+	result := runner.Run(ctx, "test_task", testCronScheduleHourly, nil)
 	require.Nil(t, result.Error)
 	assert.True(t, taskExecuted)
 }
@@ -130,15 +130,15 @@ func TestRun_WithInvalidSchedule(t *testing.T) {
 
 	runner.Register(Task{
 		Name: "test_task",
-		Run: func(_ context.Context) *RunResult {
-			return &RunResult{Output: "task completed"}
+		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
+			return &RunResult{Output: []string{"task completed"}}
 		},
 	})
 
 	ctx := context.Background()
 	schedule := "invalid schedule"
 
-	result := runner.Run(ctx, "test_task", schedule)
+	result := runner.Run(ctx, "test_task", schedule, nil)
 	require.NotNil(t, result.Error)
 	assert.Contains(t, result.Error.Error(), "failed to calculate next run time")
 }
@@ -149,16 +149,16 @@ func TestRun_WithEmptySchedule(t *testing.T) {
 
 	runner.Register(Task{
 		Name: "test_task",
-		Run: func(_ context.Context) *RunResult {
+		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
 			taskExecuted = true
-			return &RunResult{Output: "task completed"}
+			return &RunResult{Output: []string{"task completed"}}
 		},
 	})
 
 	ctx := context.Background()
 	schedule := ""
 
-	result := runner.Run(ctx, "test_task", schedule)
+	result := runner.Run(ctx, "test_task", schedule, nil)
 	require.Nil(t, result.Error)
 	assert.True(t, taskExecuted)
 }
@@ -167,7 +167,7 @@ func TestRun_UnknownTask(t *testing.T) {
 	runner := NewTaskRunner(getTestConfig(t))
 
 	ctx := context.Background()
-	result := runner.Run(ctx, "unknown_task", testCronScheduleHourly)
+	result := runner.Run(ctx, "unknown_task", testCronScheduleHourly, nil)
 	require.NotNil(t, result.Error)
 	assert.Contains(t, result.Error.Error(), "unknown task")
 }

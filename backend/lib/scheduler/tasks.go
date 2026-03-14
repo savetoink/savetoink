@@ -3,26 +3,118 @@ package scheduler
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/shaftoe/savetoink/backend/lib/config"
+	repo "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/internal/task"
 )
 
-// RegisterTasks registers all available tasks with the given task runner.
-func RegisterTasks(runner *task.TaskRunner) {
+// RegisterTasks registers all available tasks with the given task runner and configuration.
+func RegisterTasks(runner *task.TaskRunner, cfg *config.Config) {
 	runner.Register(task.Task{
 		Name: "backup",
-		Run: func(_ context.Context) *task.RunResult {
-			return &task.RunResult{
-				Output: "to be implemented",
+		Run: func(ctx context.Context, _ map[string]task.ParamValue) *task.RunResult {
+			tables := []string{
+				cfg.ArticlesTable,
+				cfg.UserProfileTable,
+				cfg.SendsTable,
 			}
+			results := runner.BkpRepo.BackupAllTables(ctx, tables)
+			out, err := formatBackupResults(results)
+
+			return &task.RunResult{
+				Error:  err,
+				Output: out,
+			}
+		},
+	})
+
+	runner.Register(task.Task{
+		Name: "restore",
+		Run: func(ctx context.Context, params map[string]task.ParamValue) *task.RunResult {
+			backupName, err := task.RequireString(params, "backup_name")
+			if err != nil {
+				return &task.RunResult{Error: err}
+			}
+
+			overwriteStr, err := task.OptionalString(params, "overwrite", "false")
+			if err != nil {
+				return &task.RunResult{Error: err}
+			}
+			overwrite := strings.EqualFold(overwriteStr, "true")
+
+			result := runner.BkpRepo.RestoreTable(ctx, backupName, overwrite)
+			return formatRestoreResult(result)
 		},
 	})
 }
 
-// NewBackgroundScheduler creates and initializes a new background scheduler with the given configuration.
+func formatBackupResults(results []*repo.BackupResult) ([]string, error) {
+	var out []string
+	var errs error
+	successCount := 0
+	failCount := 0
+
+	for _, result := range results {
+		if result.Error != nil {
+			failCount++
+			errs = errors.Join(errs, fmt.Errorf("failed to backup table %s: %w", result.TableName, result.Error))
+		} else {
+			successCount++
+			out = append(out, fmt.Sprintf("backed up table %s: %d items -> %s latency: %v",
+				result.TableName, result.ItemsCount, result.Key, result.Latency))
+		}
+	}
+
+	out = append(out, fmt.Sprintf("backup summary: %d succeeded, %d failed", successCount, failCount))
+
+	return out, errs
+}
+
+func formatRestoreResult(result *repo.RestoreResult) *task.RunResult {
+	var out strings.Builder
+
+	if result.Error != nil {
+		return &task.RunResult{
+			Error:  result.Error,
+			Output: []string{fmt.Sprintf("restore failed: %v", result.Error)},
+		}
+	}
+
+	fmt.Fprintf(&out, "restore completed for table %s from backup %s",
+		result.TableName, result.BackupName)
+	fmt.Fprintf(&out, " (overwrite: %v)", result.Overwrite)
+	fmt.Fprintf(&out, ": %d items restored", result.ItemsRestored)
+
+	if result.Overwrite {
+		fmt.Fprintf(&out, ", %d items deleted", result.ItemsDeleted)
+	} else {
+		fmt.Fprintf(&out, ", %d items skipped", result.ItemsSkipped)
+	}
+
+	fmt.Fprintf(&out, " latency: %v", result.Latency)
+
+	return &task.RunResult{
+		Output: strings.Split(strings.TrimSpace(out.String()), ", "),
+	}
+}
+
+// NewBackgroundScheduler creates and initializes a new background scheduler
+// with the given configuration.
+// NOTICE: if the task runner is not initialized, it returns nil.
 func NewBackgroundScheduler(cfg *config.Config) *task.BackgroundScheduler {
+	if len(cfg.Tasks) == 0 {
+		return nil
+	}
+
 	runner := task.NewTaskRunner(cfg)
-	RegisterTasks(runner)
+	if runner == nil {
+		return nil
+	}
+
+	RegisterTasks(runner, cfg)
 	return task.NewBackgroundScheduler(runner, cfg.Tasks)
 }
