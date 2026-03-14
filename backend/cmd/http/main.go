@@ -28,6 +28,7 @@ func main() {
 	}
 
 	logging.SetupLogging(cfg)
+	slog.Info("initializing Save to Ink API server")
 
 	var (
 		port    = "8080" // TODO move to config
@@ -35,15 +36,25 @@ func main() {
 		bgSched = scheduler.NewBackgroundScheduler(cfg)
 	)
 
-	if startErr := bgSched.Start(context.Background()); startErr != nil {
-		slog.Error("failed to start background scheduler", "error", startErr)
-		os.Exit(1)
+	if bgSched != nil {
+		if startErr := bgSched.Start(context.Background()); startErr != nil {
+			slog.Error("failed to start background scheduler", "error", startErr)
+			os.Exit(1)
+		}
+	} else {
+		switch len(cfg.Tasks) {
+		case 0:
+			slog.Debug("no background scheduler configured")
+		default:
+			slog.Warn("no background scheduler configured, tasks will not run",
+				slog.Any("tasks", cfg.Tasks))
+		}
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	slog.InfoContext(ctx, "starting Save to Ink HTTP server", "port", port)
+	slog.InfoContext(ctx, "starting HTTP server", "port", port)
 	srv := &http.Server{
 		Addr:         ":" + port,
 		Handler:      router,
@@ -60,7 +71,10 @@ func main() {
 
 	<-ctx.Done()
 	slog.Info("shutting down...")
-	bgSched.Stop()
+	if bgSched != nil {
+		bgSched.Stop()
+	}
+
 	if shutdownErr := srv.Shutdown(context.Background()); shutdownErr != nil {
 		slog.Error("failed to shutdown server", slog.String("error", shutdownErr.Error()))
 	} else {

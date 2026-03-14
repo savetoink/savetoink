@@ -138,7 +138,7 @@ func LogTaskExecution(
 
 // LogSchedulerStarted logs when the background scheduler starts with enabled tasks.
 func LogSchedulerStarted(ctx context.Context, tasks map[string]struct{}) {
-	record := slog.NewRecord(time.Now(), slog.LevelInfo, "Save to Ink background scheduler started", 0)
+	record := slog.NewRecord(time.Now(), slog.LevelInfo, "background scheduler started", 0)
 	keys := slices.Sorted(maps.Keys(tasks))
 	record.AddAttrs(
 		Any("tasks", keys),

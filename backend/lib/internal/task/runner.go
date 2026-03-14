@@ -9,6 +9,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
+	repository "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
 )
 
 // Task represents a scheduled task that can be executed.
@@ -26,13 +27,20 @@ type RunResult struct {
 
 // TaskRunner manages and executes registered tasks.
 type TaskRunner struct { //nolint:revive // task.TaskRunner is acceptable naming
-	tasks  map[string]Task
-	config *config.Config
+	tasks   map[string]Task
+	config  *config.Config
+	BkpRepo *repository.BackupRepository
 }
 
 // NewTaskRunner creates a new TaskRunner with the given configuration.
+// Returns nil if AWSConfig is not configured.
 func NewTaskRunner(cfg *config.Config) *TaskRunner {
-	return &TaskRunner{tasks: make(map[string]Task), config: cfg}
+	if cfg.AWSConfig == nil {
+		return nil
+	}
+	bkpRepo := repository.NewBackupRepository(cfg)
+
+	return &TaskRunner{tasks: make(map[string]Task), config: cfg, BkpRepo: bkpRepo}
 }
 
 // Register adds a task to the runner's task registry.

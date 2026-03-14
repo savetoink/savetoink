@@ -13,6 +13,8 @@ import (
 func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 	runner := NewTaskRunner(getTestConfig(t))
 
+	assert.NotNil(t, runner)
+
 	task1Count := 0
 	runner.Register(Task{
 		Name: "task1",

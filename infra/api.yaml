@@ -22,6 +22,10 @@ Parameters:
     Type: String
     Description: S3 key for Scheduler Lambda source zip file
 
+  BackupBucketName:
+    Type: String
+    Description: Name of the S3 bucket for storing backups
+
   AppURL:
     Type: String
     Description: URL of the Save to Ink app
@@ -687,7 +691,7 @@ Resources:
   BackupS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${ProjectName}-backups"
+      BucketName: !Ref BackupBucketName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true

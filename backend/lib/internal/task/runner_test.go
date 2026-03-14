@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/stretchr/testify/assert"
@@ -16,8 +17,14 @@ const testCronScheduleHourly = "0 0 * * * *"
 func getTestConfig(t *testing.T) *config.Config {
 	t.Helper()
 
-	cfg, err := config.Load(consts.ModeCLI, nil)
+	cfg, err := config.Load(consts.ModeServer, func(_ context.Context) (aws.Config, error) {
+		return aws.Config{}, nil
+	})
 	require.NoError(t, err)
+
+	awsCfg := aws.Config{}
+	cfg.AWSConfig = &awsCfg
+
 	return cfg
 }
 

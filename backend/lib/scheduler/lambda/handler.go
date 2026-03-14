@@ -3,6 +3,7 @@ package lambda
 
 import (
 	"context"
+	"errors"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/shaftoe/savetoink/backend/lib/config"
@@ -26,7 +27,13 @@ func NewHandler(cfg *config.Config) func(context.Context, event) (*task.RunResul
 		}
 
 		runner := task.NewTaskRunner(cfg)
-		scheduler.RegisterTasks(runner)
+		if runner == nil {
+			return &task.RunResult{
+				Error: errors.New("task runner not initialized: missing AWSConfig"),
+			}, nil
+		}
+
+		scheduler.RegisterTasks(runner, cfg)
 		result := runner.Run(ctx, ev.Task, ev.Schedule)
 		return result, nil
 	}

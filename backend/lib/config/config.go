@@ -18,8 +18,10 @@ import (
 type Config struct {
 	Debug            bool
 	ArticlesTable    string
+	ArticleTagsTable string
 	UserProfileTable string
 	SendsTable       string
+	BackupBucketName string
 	AppURL           string
 	Mode             consts.RunMode
 	CorsAllowOrigin  string
@@ -100,8 +102,10 @@ func bindEnvVars() error {
 		{"api-secret", "SAVETOINK_MAILJET_API_SECRET"},
 		{"api-webhook-secret", "SAVETOINK_MAILJET_WEBHOOK_SECRET"},
 		{"app-url", "SAVETOINK_APP_URL"},
+		{"article-tags-table", "SAVETOINK_ARTICLE_TAGS_TABLE_NAME"},
 		{"articles-table", "SAVETOINK_ARTICLE_TABLE_NAME"},
 		{"auth-backend", "SAVETOINK_AUTH_BACKEND"},
+		{"backup-bucket-name", "SAVETOINK_BACKUP_BUCKET_NAME"},
 		{"auth0-audience", "SAVETOINK_AUTH0_AUDIENCE"},
 		{"auth0-client-id", "SAVETOINK_AUTH0_CLIENT_ID"},
 		{"auth0-client-secret", "SAVETOINK_AUTH0_CLIENT_SECRET"},
@@ -135,12 +139,14 @@ func loadConfig(mode consts.RunMode) *Config {
 	cfg := &Config{
 		APIKeySecret:         viper.GetString("api-key-secret"),
 		AppURL:               viper.GetString("app-url"),
+		ArticleTagsTable:     viper.GetString("article-tags-table"),
 		ArticlesTable:        viper.GetString("articles-table"),
 		Auth0Audience:        viper.GetString("auth0-audience"),
 		Auth0ClientID:        viper.GetString("auth0-client-id"),
 		Auth0ClientSecret:    viper.GetString("auth0-client-secret"),
 		Auth0Domain:          viper.GetString("auth0-domain"),
 		AuthBackend:          consts.AuthBackend(viper.GetString("auth-backend")),
+		BackupBucketName:     viper.GetString("backup-bucket-name"),
 		BrowserlessKey:       viper.GetString("browserless-key"),
 		CorsAllowOrigin:      viper.GetString("cors-allow-origin"),
 		Debug:                viper.GetBool("debug"),

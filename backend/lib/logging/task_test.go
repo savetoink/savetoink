@@ -256,7 +256,7 @@ func TestLogSchedulerStarted(t *testing.T) {
 	record := capture.records[0]
 
 	assert.Equal(t, slog.LevelInfo, record.Level)
-	assert.Equal(t, "Save to Ink background scheduler started", record.Message)
+	assert.Equal(t, "background scheduler started", record.Message)
 
 	var attrs []slog.Attr
 	record.Attrs(func(a slog.Attr) bool {
