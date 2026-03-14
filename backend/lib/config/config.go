@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/joho/godotenv"
@@ -172,7 +173,10 @@ func loadTasksConfig() []consts.TaskConfig {
 
 	var tasks []consts.TaskConfig
 	if err := json.Unmarshal([]byte(tasksJSON), &tasks); err != nil {
-		panic(err)
+		slog.With("version", *consts.Version()).
+			Error("failed to unmarshal tasks config, background scheduler will not be loaded",
+				slog.Any("error", err))
+		return nil
 	}
 
 	return tasks
