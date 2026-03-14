@@ -2,6 +2,7 @@ package logging
 
 import (
 	"log/slog"
+	"strings"
 	"time"
 )
 
@@ -112,4 +113,28 @@ func ConvertSlogAttrsToMap(attrs []slog.Attr) []map[string]any {
 		result[i] = map[string]any{attr.Key: attr.Value.Any()}
 	}
 	return result
+}
+
+// TaskExecution returns attributes for task execution events.
+func TaskExecution(taskName, runID string, latency time.Duration) []slog.Attr {
+	return []slog.Attr{
+		String("task_name", taskName),
+		String("run_id", runID),
+		Duration("latency", latency),
+	}
+}
+
+// SchedulerStarted returns attributes for scheduler start events.
+func SchedulerStarted(tasks []string) []slog.Attr {
+	return []slog.Attr{
+		String("tasks", strings.Join(tasks, ", ")),
+	}
+}
+
+// TaskUnknown returns attributes for unknown task events.
+func TaskUnknown(taskName string, err error) []slog.Attr {
+	return []slog.Attr{
+		String("task_name", taskName),
+		Any("error", err),
+	}
 }

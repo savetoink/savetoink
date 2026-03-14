@@ -47,3 +47,8 @@ jobs:
         run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda-processor > /dev/null
         env:
           SAVETOINK_BUCKET: ${{ inputs.bucket }}
+
+      - name: Deploy Scheduler Lambda (hide output to avoid leaking secrets)
+        run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda-scheduler > /dev/null
+        env:
+          SAVETOINK_BUCKET: ${{ inputs.bucket }}

@@ -3,6 +3,7 @@ set dotenv-load := true
 project_name := 'savetoink'
 lambda_archive := 'lambda-source.zip'
 lambda_processor_archive := 'lambda-processor-source.zip'
+lambda_scheduler_archive := 'lambda-scheduler-source.zip'
 build_flags := "-X github.com/shaftoe/savetoink/backend/lib/consts.version"
 
 import '.justfiles/auth0.just'

@@ -18,6 +18,10 @@ Parameters:
     Type: String
     Description: S3 key for Processor Lambda source zip file
 
+  SchedulerSourceBucketKey:
+    Type: String
+    Description: S3 key for Scheduler Lambda source zip file
+
   AppURL:
     Type: String
     Description: URL of the Save to Ink app
@@ -217,6 +221,46 @@ Resources:
                   - !GetAtt UserProfileTable.Arn
                   - !Sub "${UserProfileTable.Arn}/index/*"
 
+  SchedulerLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-scheduler-lambda-exec"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-scheduler-dynamodb-access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt ArticleTable.Arn
+                  - !GetAtt ArticleTagsTable.Arn
+                  - !GetAtt UserProfileTable.Arn
+                  - !GetAtt SendsTable.Arn
+        - PolicyName: !Sub "${ProjectName}-scheduler-s3-access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt BackupS3Bucket.Arn
+                  - !Sub "${BackupS3Bucket.Arn}/*"
+
   #############################
   # Lambda function for the API
   #############################
@@ -343,6 +387,69 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: !GetAtt LambdaExecutionRole.Arn
 
+  #############################
+  # Lambda function for Scheduler
+  #############################
+  SchedulerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-scheduler"
+      Description: !Sub "${ProjectName} Scheduler - Scheduled administrative tasks"
+      Runtime: provided.al2023
+      Handler: bootstrap
+      Role: !GetAtt SchedulerLambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref SourceBucketName
+        S3Key: !Ref SchedulerSourceBucketKey
+      Timeout: 900
+      MemorySize: 512
+      Environment:
+        Variables:
+          SAVETOINK_ARTICLE_TABLE_NAME: !Ref ArticleTable
+          SAVETOINK_ARTICLE_TAGS_TABLE_NAME: !Ref ArticleTagsTable
+          SAVETOINK_BACKUP_BUCKET_NAME: !Ref BackupS3Bucket
+          SAVETOINK_DEBUG: !Ref Debug
+          SAVETOINK_LOGGING_PROVIDER: !Ref LoggingProvider
+          SAVETOINK_SENDS_TABLE_NAME: !Ref SendsTable
+          SAVETOINK_SENTRY_DSN: !Ref SentryDSN
+          SAVETOINK_SENTRY_ENVIRONMENT: !Ref SentryEnvironment
+          SAVETOINK_SENTRY_SAMPLE_RATE: !Ref SentrySampleRate
+          SAVETOINK_STORAGE_BACKEND: !Ref StorageBackend
+          SAVETOINK_USER_PROFILE_TABLE_NAME: !Ref UserProfileTable
+      TracingConfig:
+        Mode: PassThrough
+
+  SchedulerLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${SchedulerLambdaFunction}"
+      RetentionInDays: 30
+
+  SchedulerLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SchedulerLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt SchedulerScheduleRule.Arn
+
+  #############################
+  # EventBridge Schedule Rule for Daily Tasks
+  #############################
+  SchedulerScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${ProjectName}-scheduler-schedule"
+      Description: Daily execution of scheduled administrative tasks
+      ScheduleExpression: "rate(1 day)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt SchedulerLambdaFunction.Arn
+          Id: SchedulerLambdaTarget
+
+  #############################
+  # CloudFront Distribution
+  #############################
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Condition: UseCustomDomain
@@ -538,6 +645,26 @@ Resources:
       BillingMode: PAY_PER_REQUEST
 
   #############################
+  # Backup S3 Bucket
+  #############################
+  BackupS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-backups"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldBackups
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 90
+
+  #############################
   # GitHub OIDC Provider
   #############################
   GitHubOIDCProvider:
@@ -587,10 +714,16 @@ Resources:
             Resource: !Sub "arn:aws:s3:::${SourceBucketName}/${ProcessorSourceBucketKey}"
           - Effect: Allow
             Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Sub "arn:aws:s3:::${SourceBucketName}/${SchedulerSourceBucketKey}"
+          - Effect: Allow
+            Action:
               - lambda:UpdateFunctionCode
             Resource:
               - !Sub "arn:aws:lambda:*:*:function:${ProjectName}-api"
               - !Sub "arn:aws:lambda:*:*:function:${ProjectName}-processor"
+              - !Sub "arn:aws:lambda:*:*:function:${ProjectName}-scheduler"
 
 Outputs:
   FunctionName:
@@ -693,3 +826,33 @@ Outputs:
     Value: !GetAtt ProcessorLambdaFunction.Arn
     Export:
       Name: !Sub "${ProjectName}-processor-function-arn"
+
+  BackupS3BucketName:
+    Description: Name of the backup S3 bucket
+    Value: !Ref BackupS3Bucket
+    Export:
+      Name: !Sub "${ProjectName}-backup-bucket-name"
+
+  BackupS3BucketArn:
+    Description: ARN of the backup S3 bucket
+    Value: !GetAtt BackupS3Bucket.Arn
+    Export:
+      Name: !Sub "${ProjectName}-backup-bucket-arn"
+
+  SchedulerFunctionName:
+    Description: Name of Scheduler Lambda function
+    Value: !Ref SchedulerLambdaFunction
+    Export:
+      Name: !Sub "${ProjectName}-scheduler-function-name"
+
+  SchedulerFunctionArn:
+    Description: ARN of Scheduler Lambda function
+    Value: !GetAtt SchedulerLambdaFunction.Arn
+    Export:
+      Name: !Sub "${ProjectName}-scheduler-function-arn"
+
+  SchedulerScheduleRuleArn:
+    Description: ARN of the scheduler EventBridge schedule rule
+    Value: !GetAtt SchedulerScheduleRule.Arn
+    Export:
+      Name: !Sub "${ProjectName}-scheduler-schedule-rule-arn"
