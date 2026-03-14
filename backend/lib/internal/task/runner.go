@@ -67,7 +67,13 @@ func (r *TaskRunner) Run(ctx context.Context, name, schedule string) *RunResult 
 
 	scheduledNext, err := r.calculateNextRun(schedule)
 	if err != nil {
-		slog.With("run_id", runID).Error("failed to calculate next run time: %w", err)
+		err = fmt.Errorf("failed to calculate next run time: %w", err)
+		slog.With("run_id", runID).Error(err.Error(),
+			slog.String("schedule", schedule))
+		return &RunResult{
+			Error: err,
+			ID:    runID,
+		}
 	}
 
 	start := time.Now()
