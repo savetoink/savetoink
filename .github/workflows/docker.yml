@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 1
 
       - name: Grab VERSION
         run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
@@ -38,7 +38,8 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: infra/Dockerfile.${{ inputs.app }}
+          build-args: "APP=${{ inputs.app }}"
+          file: infra/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/savetoink/savetoink-${{ inputs.app }}:latest,ghcr.io/savetoink/savetoink-${{ inputs.app }}:${{ env.VERSION }}
