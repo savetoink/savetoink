@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/lib/auth"
-	"github.com/shaftoe/savetoink/backend/lib/consts"
 )
 
 type responseStatusRecorder struct {
@@ -28,10 +27,9 @@ func Middleware(next http.Handler) http.Handler {
 			start     = time.Now()
 			accountID = auth.GetAccountIDFromCtx(r.Context())
 			requestID = getRequestIDFromContext(r.Context())
-			version   = consts.Version()
 		)
 
-		record := createLogRecord(r, accountID, requestID, version)
+		record := createLogRecord(r, accountID, requestID)
 
 		ctx := WithLogRecord(r.Context())
 		// Initialize the log record with the created record

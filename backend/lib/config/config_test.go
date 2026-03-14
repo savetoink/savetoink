@@ -37,6 +37,7 @@ func TestMain(m *testing.M) {
 	_ = os.Unsetenv("SAVETOINK_SQLITE_PATH")
 	_ = os.Unsetenv("SAVETOINK_BROWSERLESS_KEY")
 	_ = os.Unsetenv("SAVETOINK_PROCESS_ARTICLE_LAMBDA")
+	_ = os.Unsetenv("SAVETOINK_TASKS")
 	os.Exit(m.Run())
 }
 
@@ -792,4 +793,65 @@ func setupEnvVars(t *testing.T, envVars map[string]string) {
 			}
 		}
 	})
+}
+
+func TestLoad_Tasks_Config(t *testing.T) {
+	tests := []struct {
+		name     string
+		tasksEnv string
+		expected []string
+	}{
+		{
+			name:     "single task",
+			tasksEnv: `[{"name":"task1","schedule":"0 * * * *","enabled":true}]`,
+			expected: []string{"task1"},
+		},
+		{
+			name: "multiple tasks",
+			tasksEnv: `[{"name":"task1","schedule":"0 * * * *","enabled":true},` +
+				`{"name":"task2","schedule":"0 2 * * *","enabled":false}]`,
+			expected: []string{"task1", "task2"},
+		},
+		{
+			name:     "empty tasks",
+			tasksEnv: `[]`,
+			expected: []string{},
+		},
+		{
+			name:     "no tasks env",
+			tasksEnv: "",
+			expected: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			envVars := map[string]string{
+				"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+				"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+				"SAVETOINK_API_KEY":                 "test-api-key",
+				"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+				"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+				"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+				"SAVETOINK_APP_URL":                 "https://example.com",
+			}
+			if tt.tasksEnv != "" {
+				envVars["SAVETOINK_TASKS"] = tt.tasksEnv
+			}
+
+			setupEnvVars(t, envVars)
+
+			cfg, err := Load(consts.ModeServer, nil)
+			require.NoError(t, err)
+
+			if tt.expected == nil {
+				assert.Nil(t, cfg.Tasks)
+			} else {
+				require.Len(t, cfg.Tasks, len(tt.expected))
+				for i, name := range tt.expected {
+					assert.Equal(t, name, cfg.Tasks[i].Name)
+				}
+			}
+		})
+	}
 }

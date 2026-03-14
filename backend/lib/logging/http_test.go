@@ -22,7 +22,7 @@ func TestCreateLogRecord_Basic(t *testing.T) {
 	req.Header.Set("User-Agent", "test-agent")
 	req.RemoteAddr = "192.168.1.1:8080"
 
-	record := createLogRecord(req, "", nil, nil)
+	record := createLogRecord(req, "", nil)
 
 	var attrs []slog.Attr
 	record.Attrs(func(a slog.Attr) bool {
@@ -51,7 +51,7 @@ func TestCreateLogRecord_WithRequestID(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/test", http.NoBody)
 	requestID := "req-123"
 
-	record := createLogRecord(req, "", &requestID, nil)
+	record := createLogRecord(req, "", &requestID)
 
 	var attrs []slog.Attr
 	record.Attrs(func(a slog.Attr) bool {
@@ -67,31 +67,11 @@ func TestCreateLogRecord_WithRequestID(t *testing.T) {
 	assert.Equal(t, requestID, attrMap["request_id"])
 }
 
-func TestCreateLogRecord_WithVersion(t *testing.T) {
-	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-	version := "1.0.0"
-
-	record := createLogRecord(req, "", nil, &version)
-
-	var attrs []slog.Attr
-	record.Attrs(func(a slog.Attr) bool {
-		attrs = append(attrs, a)
-		return true
-	})
-
-	attrMap := make(map[string]string)
-	for _, attr := range attrs {
-		attrMap[attr.Key] = attr.Value.String()
-	}
-
-	assert.Equal(t, version, attrMap["version"])
-}
-
 func TestCreateLogRecord_WithAccountID(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	accountID := "account-456"
 
-	record := createLogRecord(req, accountID, nil, nil)
+	record := createLogRecord(req, accountID, nil)
 
 	var attrs []slog.Attr
 	record.Attrs(func(a slog.Attr) bool {
@@ -113,9 +93,8 @@ func TestCreateLogRecord_WithAllFields(t *testing.T) {
 	req.RemoteAddr = "10.0.0.1:9000"
 	accountID := "acct-789"
 	requestID := "req-abc"
-	version := "2.1.3"
 
-	record := createLogRecord(req, accountID, &requestID, &version)
+	record := createLogRecord(req, accountID, &requestID)
 
 	var attrs []slog.Attr
 	record.Attrs(func(a slog.Attr) bool {
@@ -133,7 +112,6 @@ func TestCreateLogRecord_WithAllFields(t *testing.T) {
 	assert.Equal(t, "DELETE", attrMap["method"])
 	assert.Equal(t, "/api/test", attrMap["path"])
 	assert.Equal(t, requestID, attrMap["request_id"])
-	assert.Equal(t, version, attrMap["version"])
 	assert.Equal(t, accountID, attrMap["account_id"])
 }
 

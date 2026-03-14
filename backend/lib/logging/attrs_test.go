@@ -243,3 +243,40 @@ func TestConvertSlogAttrsToMap(t *testing.T) {
 		assert.Equal(t, true, result[0]["enabled"])
 	})
 }
+
+func TestTaskExecution(t *testing.T) {
+	attrs := TaskExecution("test_task", "run-123", 5*time.Second)
+	assert.Len(t, attrs, 3)
+	assert.Equal(t, "task_name", attrs[0].Key)
+	assert.Equal(t, "test_task", attrs[0].Value.String())
+	assert.Equal(t, "run_id", attrs[1].Key)
+	assert.Equal(t, "run-123", attrs[1].Value.String())
+	assert.Equal(t, "latency", attrs[2].Key)
+	assert.Equal(t, 5*time.Second, attrs[2].Value.Duration())
+}
+
+func TestSchedulerStarted(t *testing.T) {
+	tasks := []string{"task1", "task2", "task3"}
+	attrs := SchedulerStarted(tasks)
+	assert.Len(t, attrs, 1)
+	assert.Equal(t, "tasks", attrs[0].Key)
+	assert.Equal(t, "task1, task2, task3", attrs[0].Value.String())
+}
+
+func TestSchedulerStarted_EmptyTasks(t *testing.T) {
+	tasks := []string{}
+	attrs := SchedulerStarted(tasks)
+	assert.Len(t, attrs, 1)
+	assert.Equal(t, "tasks", attrs[0].Key)
+	assert.Equal(t, "", attrs[0].Value.String())
+}
+
+func TestTaskUnknown(t *testing.T) {
+	testErr := errors.New("unknown task error")
+	attrs := TaskUnknown("missing_task", testErr)
+	assert.Len(t, attrs, 2)
+	assert.Equal(t, "task_name", attrs[0].Key)
+	assert.Equal(t, "missing_task", attrs[0].Value.String())
+	assert.Equal(t, "error", attrs[1].Key)
+	assert.Equal(t, testErr, attrs[1].Value.Any())
+}

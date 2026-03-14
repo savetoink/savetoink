@@ -26,7 +26,7 @@ func SetupLogging(cfg *config.Config) {
 		Level: level,
 	})
 
-	slog.SetDefault(slog.New(defaultHandler))
+	slog.SetDefault(slog.New(defaultHandler).With(slog.String("version", *consts.Version())))
 
 	if cfg.LoggingProvider == consts.LoggingBackendNone {
 		return

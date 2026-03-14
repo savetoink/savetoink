@@ -3,6 +3,7 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -53,6 +54,9 @@ type Config struct {
 
 	// Lambda
 	ProcessArticleLambda string
+
+	// Tasks
+	Tasks []consts.TaskConfig
 }
 
 // AWSConfigLoader is a function type for loading AWS configuration.
@@ -112,8 +116,9 @@ func bindEnvVars() error {
 		{"sentry-dsn", "SAVETOINK_SENTRY_DSN"},
 		{"sentry-environment", "SAVETOINK_SENTRY_ENVIRONMENT"},
 		{"sentry-sample-rate", "SAVETOINK_SENTRY_SAMPLE_RATE"},
-		{"storage-backend", "SAVETOINK_STORAGE_BACKEND"},
 		{"sqlite-path", "SAVETOINK_SQLITE_PATH"},
+		{"storage-backend", "SAVETOINK_STORAGE_BACKEND"},
+		{"tasks", "SAVETOINK_TASKS"},
 		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
 	}
 
@@ -135,27 +140,42 @@ func loadConfig(mode consts.RunMode) *Config {
 		Auth0ClientSecret:    viper.GetString("auth0-client-secret"),
 		Auth0Domain:          viper.GetString("auth0-domain"),
 		AuthBackend:          consts.AuthBackend(viper.GetString("auth-backend")),
+		BrowserlessKey:       viper.GetString("browserless-key"),
 		CorsAllowOrigin:      viper.GetString("cors-allow-origin"),
 		Debug:                viper.GetBool("debug"),
 		EmailProvider:        consts.EmailProvider(viper.GetString("email-backend")),
+		LoggingProvider:      consts.LoggingProvider(viper.GetString("logging-provider")),
 		MailjetAPIKey:        viper.GetString("api-key"),
 		MailjetAPISecret:     viper.GetString("api-secret"),
 		MailjetWebhookSecret: viper.GetString("api-webhook-secret"),
+		Mode:                 mode,
+		ProcessArticleLambda: viper.GetString("process-article-lambda"),
+		SQLitePath:           viper.GetString("sqlite-path"),
 		SenderEmail:          viper.GetString("sender-email"),
 		SendsTable:           viper.GetString("sends-table"),
-		UserProfileTable:     viper.GetString("user-profile-table"),
-		LoggingProvider:      consts.LoggingProvider(viper.GetString("logging-provider")),
 		SentryDSN:            viper.GetString("sentry-dsn"),
 		SentryEnvironment:    viper.GetString("sentry-environment"),
 		SentrySampleRate:     viper.GetFloat64("sentry-sample-rate"),
-		BrowserlessKey:       viper.GetString("browserless-key"),
-		ProcessArticleLambda: viper.GetString("process-article-lambda"),
 		StorageBackend:       consts.StorageBackend(viper.GetString("storage-backend")),
-		SQLitePath:           viper.GetString("sqlite-path"),
-		Mode:                 mode,
+		Tasks:                loadTasksConfig(),
+		UserProfileTable:     viper.GetString("user-profile-table"),
 	}
 
 	return cfg
+}
+
+func loadTasksConfig() []consts.TaskConfig {
+	tasksJSON := viper.GetString("tasks")
+	if tasksJSON == "" {
+		return nil
+	}
+
+	var tasks []consts.TaskConfig
+	if err := json.Unmarshal([]byte(tasksJSON), &tasks); err != nil {
+		panic(err)
+	}
+
+	return tasks
 }
 
 func (c *Config) validate(awsLoader AWSConfigLoader) error {
