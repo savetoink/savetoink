@@ -14,8 +14,7 @@ permissions:
 jobs:
   opencode:
     if: |
-      contains(github.event.comment.body, '/oc') &&
-      github.actor_permissions.write == true
+      contains(github.event.comment.body, '/oc') && github.actor == 'shaftoe'
 
     runs-on: ubuntu-latest
 
