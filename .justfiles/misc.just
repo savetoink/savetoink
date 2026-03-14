@@ -27,8 +27,7 @@ update-versions version_type:
     @bun i
     @bun update_versions.ts {{ version_type }}
 
-# Bump semver in VERSION and package.json files, create bump commit
-# Tag the commit with the new version if version_type is not "dev"
+# Bump semver in VERSION and package.json files, create bump commit. Tag the commit with the new version if version_type is not "dev"
 bump-version version_type:
     @just update-versions {{ version_type }}
     @git commit -m "chore: bump versions to $(cat VERSION)" .
@@ -39,6 +38,9 @@ install-hooks:
 
 init-frontend: init-extension
 
-dotenv ENV:
+dotenv ENV="local":
     @rm -f .env
     @ln -s .env.{{ ENV }} .env
+
+zai-remaining:
+    @bun run ./tools/zai_usage.ts

@@ -19,19 +19,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Determine PR branch
-        id: branch
-        run: |
-          if [ "${{ github.event_name }}" == "pull_request_review_comment" ]; then
-            echo "ref=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" == "issue_comment" ]; then
-            echo "ref=${{ github.event.issue.pull_request.head.ref }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ steps.branch.outputs.ref }}
+          ref: dev
           fetch-depth: 1
 
       - name: Configure Git user

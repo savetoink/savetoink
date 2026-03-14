@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
@@ -33,6 +34,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 		var err error
 
+		_ = godotenv.Load()
 		cfg, err = config.Load(consts.ModeCLI, nil)
 		if err != nil {
 			return fmt.Errorf("failed to load config: %w", err)
@@ -47,7 +49,7 @@ var convertCmd = &cobra.Command{
 	Use:   "convert [url-or-file]",
 	Short: "Convert a URL or local HTML file to EPUB",
 	Long: `Fetch a web article from given URL or convert a local HTML file to EPUB format.
-The output filename is derived from the input (e.g., ./article.html → ./article.epub).`,
+By default, prints the EPUB to stdout. Use -o to write to a file.`,
 	Args: cobra.ExactArgs(1),
 	RunE: runConvert,
 }
@@ -73,18 +75,22 @@ var versionCmd = &cobra.Command{
 var cleanCmd = &cobra.Command{
 	Use:   "clean [url]",
 	Short: "Fetch and clean a URL, print cleaned content to stdout",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runClean,
+	Long: `Fetch and clean a URL, printing the cleaned content to stdout by default.
+Use -o to write to a file instead.`,
+	Args: cobra.ExactArgs(1),
+	RunE: runClean,
 }
 
 func main() {
-	convertCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output file path (default: derived from input)")
+	convertCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output file path (default: print to stdout)")
 	convertCmd.Flags().DurationVarP(&timeout, "timeout", "t",
 		defaultTimeoutSeconds*time.Second, "Timeout for HTTP requests")
 
 	sendCmd.Flags().StringVar(&destEmail, "dest-email", "", "Destination Kindle email address (required)")
 	sendCmd.Flags().DurationVarP(&timeout, "timeout", "t",
 		defaultTimeoutSeconds*time.Second, "Timeout for HTTP requests")
+
+	cleanCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output file path (default: print to stdout)")
 
 	rootCmd.AddCommand(convertCmd)
 	rootCmd.AddCommand(sendCmd)

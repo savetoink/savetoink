@@ -28,6 +28,7 @@ deploy-api: lint-cfn
             Auth0ClientSecret="$SAVETOINK_AUTH0_CLIENT_SECRET" \
             Auth0Domain="$SAVETOINK_AUTH0_DOMAIN" \
             AuthBackend="${SAVETOINK_AUTH_BACKEND}" \
+            BackupBucketName="$SAVETOINK_BACKUP_BUCKET_NAME" \
             BrowserlessKey="${SAVETOINK_BROWSERLESS_KEY}" \
             CertificateArn=$(just get-cert-arn) \
             CORSAllowOrigin="${SAVETOINK_CORS_ALLOW_ORIGIN}" \

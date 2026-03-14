@@ -4,7 +4,7 @@
 
 Self-hosted read-later service with native e-readers delivery. Save articles in the cloud, send to your e-reader, keep them forever. Open-source alternative to Pocket + Send-to-Kindle.
 
-**DISCLAIMER**: This project is under development (alpha)and not affiliated with Amazon or Kindle. Use at your own risk.
+**DISCLAIMER**: This project is under development and not affiliated with Amazon or Kindle nor Kobo or other e-readers. Use at your own risk.
 
 ## Features
 

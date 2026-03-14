@@ -8,5 +8,10 @@ scan-table TABLE_NAME="savetoink-articles":
 dump-table TABLE_NAME:
     uvx dynamodump -r $AWS_REGION -m backup -s {{ TABLE_NAME }}
 
-restore-table TABLE_NAME:
-    uvx dynamodump -r $AWS_REGION -m restore -s {{ TABLE_NAME }}
+backup:
+    aws lambda invoke \
+        --function-name {{ project_name }}-scheduler \
+        --cli-binary-format raw-in-base64-out \
+        --payload '{"task": "backup"}' \
+        /dev/stdout \
+        | jq .
