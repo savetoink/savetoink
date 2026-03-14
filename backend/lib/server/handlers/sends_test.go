@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shaftoe/savetoink/backend/lib/apperrors"
 	"github.com/shaftoe/savetoink/backend/lib/auth"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/email"
+	"github.com/shaftoe/savetoink/backend/lib/internal/apperrors"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"

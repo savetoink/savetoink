@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"time"
 
-	apperrors "github.com/shaftoe/savetoink/backend/lib/apperrors"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	apperrors "github.com/shaftoe/savetoink/backend/lib/internal/apperrors"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/repository/dynamodb"
