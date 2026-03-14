@@ -40,6 +40,11 @@ func (r *TaskRunner) Register(t Task) {
 	r.tasks[t.Name] = t
 }
 
+// GetConfig returns the configuration for the task runner.
+func (r *TaskRunner) GetConfig() *config.Config {
+	return r.config
+}
+
 func (r *TaskRunner) calculateNextRun(schedule string) (*time.Time, error) {
 	if schedule == "" {
 		return nil, nil
@@ -67,7 +72,14 @@ func (r *TaskRunner) Run(ctx context.Context, name, schedule string) *RunResult 
 
 	scheduledNext, err := r.calculateNextRun(schedule)
 	if err != nil {
-		slog.With("run_id", runID).Error("failed to calculate next run time: %w", err)
+		slog.With("run_id", runID, "error", err).Error("failed to calculate next run time")
+		start := time.Now()
+		result := &RunResult{
+			Error: fmt.Errorf("failed to calculate next run time: %w", err),
+			ID:    runID,
+		}
+		logging.LogTaskExecution(ctx, t.Name, runID, start, result.Error, result.Output, scheduledNext)
+		return result
 	}
 
 	start := time.Now()
