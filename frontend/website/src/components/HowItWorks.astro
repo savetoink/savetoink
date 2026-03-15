@@ -1,5 +1,5 @@
 ---
-const appUrl = new URL(import.meta.env.PUBLIC_APP_URL).hostname;
+const appUrl = new URL(import.meta.env.PUBLIC_APP_URL || 'http://localhost').hostname;
 ---
 
 <section class="section">

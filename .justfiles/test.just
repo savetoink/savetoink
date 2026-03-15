@@ -19,10 +19,12 @@ test-go-coverage:
     CGO_ENABLED=0 go test -coverprofile=coverage.txt ./backend/...
 
 # Run all tests
-test: test-go test-webapp test-extension test-website
+test: test-go test-frontend
 
 # Run linter and tests
 check: lint test
+
+test-frontend: test-webapp test-extension test-website
 
 [working-directory('frontend/webapp')]
 test-webapp:
