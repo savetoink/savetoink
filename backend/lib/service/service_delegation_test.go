@@ -352,6 +352,37 @@ func TestCountSendsByAccountDateRange_Success(t *testing.T) {
 	}
 }
 
+func TestCountSendsByAccountDateRange_NoSendsRepo(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       nil,
+	})
+
+	count, err := svc.CountSendsByAccountDateRange(
+		context.Background(),
+		"account-1",
+		time.Now().Add(-24*time.Hour),
+		time.Now(),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if count != 0 {
+		t.Errorf("expected count 0 (no sends repo), got %d", count)
+	}
+}
+
 func TestCountSendsByAccountDateRange_Error(t *testing.T) {
 	repo := &testArticlesRepo{}
 	profileRepo := &testUserProfileRepo{}
@@ -563,6 +594,32 @@ func TestGetUserProfile_Success(t *testing.T) {
 			DeviceEmail: "device@example.com",
 		},
 	}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       &testSendsRepo{},
+	})
+
+	profile, err := svc.GetUserProfile(context.Background(), "account-1")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if profile.Account != testAccountID {
+		t.Errorf("expected account '%s', got '%s'", testAccountID, profile.Account)
+	}
+}
+
+func TestSendArticle_Success(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
 	sendsRepo := &testSendsRepo{}
 
 	svc := New(&Dependencies{
@@ -576,15 +633,207 @@ func TestGetUserProfile_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	profile, err := svc.GetUserProfile(context.Background(), "account-1")
+	reader := &testReadCloser{data: []byte("epub content")}
+	resp, err := svc.SendArticle(context.Background(), "test@example.com", reader, "Test Article")
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if profile.Account != testAccountID {
-		t.Errorf("expected account '%s', got '%s'", testAccountID, profile.Account)
+	if resp.MessageID != "msg-123" {
+		t.Errorf("expected message ID 'msg-123', got '%s'", resp.MessageID)
 	}
+}
+
+func TestSendArticle_Error(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	sender := &errorSenderMock{}
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          sender,
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	reader := &testReadCloser{data: []byte("epub content")}
+	_, err := svc.SendArticle(context.Background(), "test@example.com", reader, "Test Article")
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestSendArticleByID_Success(t *testing.T) {
+	repo := &testArticlesRepo{
+		articles: []*model.Article{
+			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+		},
+	}
+	profileRepo := &testUserProfileRepo{
+		profile: &model.UserProfile{
+			Account:     "account-1",
+			DeviceEmail: "device@example.com",
+			AutoSend:    true,
+		},
+	}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+		Config:          &config.Config{SenderEmail: "sender@example.com", EmailProvider: consts.EmailBackendMailjet},
+	})
+
+	result, err := svc.SendArticleByID(context.Background(), "account-1", "article-1")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Article.ID != "article-1" {
+		t.Errorf("expected article ID 'article-1', got '%s'", result.Article.ID)
+	}
+
+	if result.DeviceEmail != "device@example.com" {
+		t.Errorf("expected device email 'device@example.com', got '%s'", result.DeviceEmail)
+	}
+
+	if result.EmailResp.MessageID != "msg-123" {
+		t.Errorf("expected message ID 'msg-123', got '%s'", result.EmailResp.MessageID)
+	}
+}
+
+func TestSendArticleByID_NoDeviceEmail(t *testing.T) {
+	repo := &testArticlesRepo{
+		articles: []*model.Article{
+			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+		},
+	}
+	profileRepo := &testUserProfileRepo{
+		profile: &model.UserProfile{
+			Account:  "account-1",
+			AutoSend: true,
+		},
+	}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+		Config:          &config.Config{SenderEmail: "sender@example.com", EmailProvider: consts.EmailBackendMailjet},
+	})
+
+	_, err := svc.SendArticleByID(context.Background(), "account-1", "article-1")
+
+	if err == nil {
+		t.Fatal("expected error for missing device email")
+	}
+}
+
+func TestFetch_Success(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	testURL, _ := url.Parse("https://example.com")
+
+	result, err := svc.Fetch(context.Background(), testURL)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("expected result to not be nil")
+	}
+}
+
+func TestGenerateEPUB_Success(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	article := &model.Article{
+		Title:   "Test Article",
+		Content: "<p>Test content</p>",
+	}
+
+	reader, err := svc.GenerateEPUB(article)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if reader == nil {
+		t.Fatal("expected reader to not be nil")
+	}
+
+	reader.Close()
+}
+
+type testReadCloser struct {
+	data []byte
+	pos  int
+}
+
+func (r *testReadCloser) Read(p []byte) (n int, err error) {
+	if r.pos >= len(r.data) {
+		return 0, nil
+	}
+	n = copy(p, r.data[r.pos:])
+	r.pos += n
+	return n, nil
+}
+
+func (r *testReadCloser) Close() error {
+	return nil
+}
+
+type errorSenderMock struct{}
+
+func (m *errorSenderMock) SendEmail(_ context.Context, _ *svcemail.Request) (*svcemail.SendEmailResponse, error) {
+	return nil, errors.New("send error")
 }
 
 func TestGetUserProfile_Error(t *testing.T) {
