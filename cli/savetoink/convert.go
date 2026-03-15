@@ -89,18 +89,14 @@ func runConvert(_ *cobra.Command, args []string) error {
 
 	output := outputPath
 	if output == "" {
-		base := filepath.Base(input)
-		ext := filepath.Ext(base)
-		if ext != "" {
-			base = base[:len(base)-len(ext)]
+		fmt.Print(string(epubData))
+	} else {
+		if writeErr := os.WriteFile(output, epubData, defaultFilePerms); writeErr != nil {
+			return fmt.Errorf("failed to write EPUB: %w", writeErr)
 		}
-		output = base + ".epub"
+		absPath, _ := filepath.Abs(output)
+		slog.Info("✓ EPUB saved to " + absPath)
 	}
-	if writeErr := os.WriteFile(output, epubData, defaultFilePerms); writeErr != nil {
-		return fmt.Errorf("failed to write EPUB: %w", writeErr)
-	}
-	absPath, _ := filepath.Abs(output)
-	slog.Info("✓ EPUB saved to " + absPath)
 
 	return nil
 }

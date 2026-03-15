@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"os"
 
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/spf13/cobra"
@@ -45,6 +46,14 @@ func runClean(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to clean content: %w", err)
 	}
 
-	fmt.Print(article.Content)
+	output := outputPath
+	if output == "" {
+		fmt.Print(article.Content)
+	} else {
+		if writeErr := os.WriteFile(output, []byte(article.Content), defaultFilePerms); writeErr != nil {
+			return fmt.Errorf("failed to write output: %w", writeErr)
+		}
+		slog.Info("✓ cleaned content saved to " + output)
+	}
 	return nil
 }
