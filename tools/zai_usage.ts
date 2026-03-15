@@ -1,4 +1,4 @@
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "@savetoink/shared";
 
 const ZAI_API_KEY = process.env.ZAI_API_KEY;
 

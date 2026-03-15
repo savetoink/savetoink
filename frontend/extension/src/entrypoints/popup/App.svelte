@@ -5,6 +5,7 @@
 	import { Footer } from '@savetoink/shared/components';
 	import { getAPIKey, getUserProfile } from '../../lib/storage';
 	import { APP_URL, isDev } from '../../lib/api';
+	import { getVersionText } from '../../lib/appUtils';
 	import '@savetoink/shared/css';
 	import type { UserProfile } from '@savetoink/shared';
 
@@ -37,7 +38,7 @@
 	<section>
 		<Account bind:profile bind:apiKey />
 	</section>
-	<Footer {isDev} />
+	<Footer version={getVersionText()} />
 </main>
 
 <style>

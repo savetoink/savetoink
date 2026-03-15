@@ -1,5 +1,5 @@
 import { PUBLIC_IS_DEV_WORKER } from '$env/static/public';
-import { getIsDev } from '@savetoink/shared';
+import { getIsDev } from './appUtils';
 
 const unauthenticatedPaths = ['/account', '/auth/callback', '/sentry/tunnel'];
 export const isAuthenticatedPath = (path: string) => {

@@ -3,7 +3,7 @@
 	import Nav from '$lib/components/Nav.svelte';
 	import { Footer } from '@savetoink/shared/components';
 	import { isDev } from '$lib/consts';
-	import { getAppTitle } from '@savetoink/shared';
+	import { getAppTitle, getVersionText } from '$lib/appUtils';
 	import '@savetoink/shared/css';
 
 	if (isDev) {
@@ -40,4 +40,4 @@
 	{/if}
 </main>
 
-<Footer {isDev} />
+<Footer version={getVersionText()} />

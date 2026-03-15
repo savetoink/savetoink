@@ -1,14 +1,13 @@
 <script lang="ts">
   import Landing from "./Landing.svelte";
-  import { getVersionText } from "../lib/utils";
-  let { isDev }: { isDev: boolean } = $props();
+  let { version }: { version: string } = $props();
 </script>
 
 <footer class="container">
   <hr />
   <small>
     <Landing />
-    - {getVersionText(isDev)} - Source on
+    - {version} - Source on
     <a
       href="https://github.com/savetoink/savetoink"
       target="_blank"

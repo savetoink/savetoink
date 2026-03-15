@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import git from "isomorphic-git";
 import * as jsonc from "jsonc-parser";
 import path from "path";
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "@savetoink/shared";
 
 type BumpType = "major" | "minor" | "patch" | "dev";
 
@@ -36,7 +36,9 @@ Example:
 }
 
 function parseVersion(versionStr: string): Version | null {
-  const match = versionStr.trim().match(/^(\d+)\.(\d+)\.(\d+)(?:-dev\+(\d{8})\.([a-f0-9]{7}))?$/);
+  const match = versionStr
+    .trim()
+    .match(/^(\d+)\.(\d+)\.(\d+)(?:-dev\+(\d{8})\.([a-f0-9]{7}))?$/);
   if (!match) return null;
   return {
     major: parseInt(match[1], 10),
@@ -68,7 +70,11 @@ function getCurrentDevDate(): string {
   return `${month}${day}${hour}${minute}`;
 }
 
-async function bumpVersion(version: Version, bumpType: BumpType, repoRoot: string): Promise<Version> {
+async function bumpVersion(
+  version: Version,
+  bumpType: BumpType,
+  repoRoot: string,
+): Promise<Version> {
   switch (bumpType) {
     case "major":
       return { major: version.major + 1, minor: 0, patch: 0 };
@@ -207,8 +213,15 @@ async function main(): Promise<void> {
   }
 
   const bumpType = args[0] as BumpType;
-  if (bumpType !== "major" && bumpType !== "minor" && bumpType !== "patch" && bumpType !== "dev") {
-    console.error("Error: argument must be 'major', 'minor', 'patch', or 'dev'");
+  if (
+    bumpType !== "major" &&
+    bumpType !== "minor" &&
+    bumpType !== "patch" &&
+    bumpType !== "dev"
+  ) {
+    console.error(
+      "Error: argument must be 'major', 'minor', 'patch', or 'dev'",
+    );
     showUsage();
     process.exit(1);
   }
@@ -228,9 +241,10 @@ async function main(): Promise<void> {
   const oldVersionStr = formatVersion(version);
   const newVersionStr = formatVersion(newVersion);
 
-  const updateMessage = bumpType === "dev"
-    ? `\n📦 Updating version: ${oldVersionStr} → ${newVersionStr} (dev suffix)\n`
-    : `\n📦 Updating version: ${oldVersionStr} → ${newVersionStr} (${bumpType})\n`;
+  const updateMessage =
+    bumpType === "dev"
+      ? `\n📦 Updating version: ${oldVersionStr} → ${newVersionStr} (dev suffix)\n`
+      : `\n📦 Updating version: ${oldVersionStr} → ${newVersionStr} (${bumpType})\n`;
   console.log(updateMessage);
 
   const files = await git.listFiles({ fs, dir: repoRoot, ref: "HEAD" });
