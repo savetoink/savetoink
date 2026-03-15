@@ -1,20 +1,27 @@
-import { format } from "date-fns";
+import { Temporal as PolyfillTemporal } from "temporal-polyfill";
+
+const Temporal =
+  (globalThis as typeof globalThis & { Temporal?: typeof PolyfillTemporal }).Temporal ?? PolyfillTemporal;
 
 declare const __APP_VERSION__: string;
 
 export const APP_VERSION = __APP_VERSION__;
 
 export function getVersionText(isDev: boolean): string {
-	return APP_VERSION;
+  return APP_VERSION;
 }
 
 export function getAppTitle(isDev: boolean): string {
-	const versionTxt = getVersionText(isDev);
-	return isDev ? `Save to Ink - ${versionTxt}` : 'Save to Ink';
+  const versionTxt = getVersionText(isDev);
+  return isDev ? `Save to Ink - ${versionTxt}` : "Save to Ink";
 }
 
 export function formatDate(iso: string): string {
-  return format(new Date(iso), "d MMM y");
+  return Temporal.Instant.from(iso).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function truncate(str: string, max: number): string {
@@ -39,6 +46,9 @@ export const DeviceDomains = [
   "@mytolino.com",
 ];
 
-export const getIsDev = (isViteDev?: boolean, isDevWorker?: string): boolean => {
-  return isViteDev === true || isDevWorker === 'true';
+export const getIsDev = (
+  isViteDev?: boolean,
+  isDevWorker?: string,
+): boolean => {
+  return isViteDev === true || isDevWorker === "true";
 };

@@ -6,6 +6,9 @@ import { getAuthCookie, getUserCookie, setUserCookie } from '$lib/server/cookies
 import { isAuthenticatedPath } from '$lib/consts';
 import { getProfile } from '$lib/server/apiClient';
 
+// Load Temporal polyfill for Node.js (no native support)
+import 'temporal-polyfill/global';
+
 import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = sequence(sentryHandle(), async ({ event, resolve }) => {

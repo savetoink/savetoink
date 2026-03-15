@@ -1,11 +1,11 @@
 [working-directory('backend')]
-server-http:
+http:
     reflex -r '\.go$' -s -- go run cmd/http/main.go
 
 [working-directory('frontend/webapp')]
-server-webapp:
+webapp:
     bun run dev --open
 
 [working-directory('frontend/website')]
-server-website:
-    bun run dev
+website:
+    bun run dev --open
