@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -64,16 +63,12 @@ func NewBackupRepository(cfg *config.Config) *BackupRepository {
 
 // BackupAllTables backs up all specified DynamoDB tables.
 func (b *BackupRepository) BackupAllTables(ctx context.Context, tables []string) []*BackupResult {
-	results := make([]*BackupResult, 0, len(tables))
-	mux := sync.Mutex{}
+	results := make([]*BackupResult, len(tables))
 	eg := errgroup.Group{}
 
-	for _, tableName := range tables {
+	for i, tableName := range tables {
 		eg.Go(func() error {
-			result := b.BackupTable(ctx, tableName)
-			mux.Lock()
-			results = append(results, result)
-			mux.Unlock()
+			results[i] = b.BackupTable(ctx, tableName)
 			return nil
 		})
 	}
