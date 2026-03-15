@@ -187,6 +187,21 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 	var userProfileRepo repository.UserProfileRepository
 	var sendsRepo repository.SendsRepository
 
+	// disable repositories in CLI mode
+	if cfg.Mode == consts.ModeCLI {
+		return Dependencies{
+			Fetcher:         content.NewFetcher(cfg.BrowserlessKey),
+			Extractor:       content.NewDOMExtractor(),
+			Cleaner:         content.NewTrafilaturaCleaner(),
+			Publisher:       epub.NewPublisher(),
+			Sender:          sender,
+			ArticlesRepo:    articlesRepo,
+			UserProfileRepo: userProfileRepo,
+			SendsRepo:       sendsRepo,
+			Config:          cfg,
+		}
+	}
+
 	switch cfg.StorageBackend {
 	case consts.StorageBackendDynamoDB, "":
 		if cfg.AWSConfig != nil {
