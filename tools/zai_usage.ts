@@ -1,3 +1,5 @@
+import { Temporal } from "@js-temporal/polyfill";
+
 const ZAI_API_KEY = process.env.ZAI_API_KEY;
 
 if (!ZAI_API_KEY) {
@@ -39,11 +41,11 @@ async function main(): Promise<void> {
   }
 
   console.log(`z.ai Token Usage: ${tokensLimit.percentage}%`);
-  const resetDate: Date | null = tokensLimit.nextResetTime
-    ? new Date(tokensLimit.nextResetTime)
+  const resetDate: Temporal.Instant | null = tokensLimit.nextResetTime
+    ? Temporal.Instant.fromEpochMilliseconds(tokensLimit.nextResetTime)
     : null;
   if (resetDate) {
-    console.log(`Resets at: ${resetDate}`);
+    console.log(`Resets at: ${resetDate.toLocaleString()}`);
   }
 }
 

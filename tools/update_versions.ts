@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import git from "isomorphic-git";
 import * as jsonc from "jsonc-parser";
 import path from "path";
+import { Temporal } from "@js-temporal/polyfill";
 
 type BumpType = "major" | "minor" | "patch" | "dev";
 
@@ -59,11 +60,11 @@ async function getCurrentCommitSha(repoRoot: string): Promise<string> {
 }
 
 function getCurrentDevDate(): string {
-  const now = new Date();
-  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(now.getUTCDate()).padStart(2, "0");
-  const hour = String(now.getUTCHours()).padStart(2, "0");
-  const minute = String(now.getUTCMinutes()).padStart(2, "0");
+  const now = Temporal.Now.plainDateTimeISO();
+  const month = String(now.month).padStart(2, "0");
+  const day = String(now.day).padStart(2, "0");
+  const hour = String(now.hour).padStart(2, "0");
+  const minute = String(now.minute).padStart(2, "0");
   return `${month}${day}${hour}${minute}`;
 }
 
