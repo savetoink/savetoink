@@ -11,12 +11,6 @@ import (
 
 	"github.com/shaftoe/savetoink/backend/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
-<<<<<<<< HEAD:backend/internal/email/mailjet/sender_test.go
-|||||||| parent of b2917d2 (refactor(backend): make repo and email internal):backend/lib/email/mailjet/sender_test.go
-	"github.com/shaftoe/savetoink/backend/lib/email"
-========
-	"github.com/shaftoe/savetoink/backend/lib/internal/email"
->>>>>>>> b2917d2 (refactor(backend): make repo and email internal):backend/lib/internal/email/mailjet/sender_test.go
 )
 
 const (

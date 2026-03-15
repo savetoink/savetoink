@@ -12,12 +12,6 @@ import (
 
 	"github.com/shaftoe/savetoink/backend/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
-<<<<<<<< HEAD:backend/internal/email/mailjet/sender.go
-|||||||| parent of b2917d2 (refactor(backend): make repo and email internal):backend/lib/email/mailjet/sender.go
-	"github.com/shaftoe/savetoink/backend/lib/email"
-========
-	"github.com/shaftoe/savetoink/backend/lib/internal/email"
->>>>>>>> b2917d2 (refactor(backend): make repo and email internal):backend/lib/internal/email/mailjet/sender.go
 )
 
 // Sender implements the email.Sender interface using Mailjet.
