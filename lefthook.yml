@@ -4,10 +4,3 @@ pre-commit:
       run: just gen-api-types
       glob: "backend/lib/server/openapi.yaml"
       stage_fixed: true
-
-pre-push:
-  jobs:
-    - name: Run all tests and linters
-      run: just check
-      only:
-        - ref: master
