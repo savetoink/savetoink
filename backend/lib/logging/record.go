@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/shaftoe/savetoink/backend/lib/auth"
+	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
 )
 
 func createLogRecord(r *http.Request, accountID string, requestID *string) slog.Record {
