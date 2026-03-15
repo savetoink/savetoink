@@ -703,7 +703,7 @@ Resources:
         Rules:
           - Id: DeleteOldBackups
             Status: Enabled
-            NoncurrentVersionExpirationInDays: 90
+            NoncurrentVersionExpirationInDays: 30
 
   #############################
   # GitHub OIDC Provider
