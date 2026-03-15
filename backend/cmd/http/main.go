@@ -11,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/joho/godotenv"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
@@ -19,6 +20,7 @@ import (
 )
 
 func main() {
+	_ = godotenv.Load()
 	cfg, err := config.Load(consts.ModeServer, func(ctx context.Context) (aws.Config, error) {
 		return awsconfig.LoadDefaultConfig(ctx)
 	})
@@ -30,11 +32,7 @@ func main() {
 	logging.SetupLogging(cfg)
 	slog.Info("initializing Save to Ink API server")
 
-	var (
-		port    = "8080" // TODO move to config
-		router  = server.NewRouter(cfg)
-		bgSched = scheduler.NewBackgroundScheduler(cfg)
-	)
+	bgSched := scheduler.NewBackgroundScheduler(cfg)
 
 	if bgSched != nil {
 		if startErr := bgSched.Start(context.Background()); startErr != nil {
@@ -54,6 +52,27 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	srv := startServer(ctx, cfg)
+
+	<-ctx.Done()
+	slog.Info("shutting down...")
+	if bgSched != nil {
+		bgSched.Stop()
+	}
+
+	if shutdownErr := srv.Shutdown(context.Background()); shutdownErr != nil {
+		slog.Error("failed to shutdown server", slog.String("error", shutdownErr.Error()))
+	} else {
+		slog.Info("server shutdown successfully")
+	}
+}
+
+func startServer(ctx context.Context, cfg *config.Config) *http.Server {
+	var (
+		port   = "8080" // TODO move to config
+		router = server.NewRouter(cfg)
+	)
+
 	slog.InfoContext(ctx, "starting HTTP server", "port", port)
 	srv := &http.Server{
 		Addr:         ":" + port,
@@ -69,15 +88,5 @@ func main() {
 		}
 	}()
 
-	<-ctx.Done()
-	slog.Info("shutting down...")
-	if bgSched != nil {
-		bgSched.Stop()
-	}
-
-	if shutdownErr := srv.Shutdown(context.Background()); shutdownErr != nil {
-		slog.Error("failed to shutdown server", slog.String("error", shutdownErr.Error()))
-	} else {
-		slog.Info("server shutdown successfully")
-	}
+	return srv
 }

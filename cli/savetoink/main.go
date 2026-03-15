@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
@@ -33,6 +34,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 		var err error
 
+		_ = godotenv.Load()
 		cfg, err = config.Load(consts.ModeCLI, nil)
 		if err != nil {
 			return fmt.Errorf("failed to load config: %w", err)
