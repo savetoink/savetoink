@@ -1,6 +1,6 @@
 {
   "name": "@savetoink/shared",
-  "version": "0.33.0-dev+03152036.9ab6919",
+  "version": "0.33.0-dev+03151853.f969abe",
   "private": true,
   "type": "module",
   "dependencies": {
