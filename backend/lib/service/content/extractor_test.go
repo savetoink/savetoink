@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const notHTML = "this is not some kind of HTML"
+
 func TestDOMExtractor_ExtractHTML(t *testing.T) {
 	extractor := NewDOMExtractor()
 
@@ -72,7 +74,7 @@ func TestDOMExtractor_ExtractHTML(t *testing.T) {
 	})
 
 	t.Run("invalid html", func(t *testing.T) {
-		html := "not html at all"
+		html := notHTML
 
 		doc, err := extractor.Extract(context.Background(), strings.NewReader(html))
 		require.NoError(t, err)
