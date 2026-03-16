@@ -405,22 +405,6 @@ paths:
               schema:
                 type: string
 
-  /robots.txt:
-    get:
-      summary: Robots.txt
-      description: Get the robots.txt file for search engine crawling
-      operationId: robotsTxt
-      tags:
-        - System
-      responses:
-        "200":
-          description: Robots.txt content
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "User-agent: *\nAllow: /v1/openapi.yaml\nDisallow: /"
-
   /articles:
     get:
       summary: List articles

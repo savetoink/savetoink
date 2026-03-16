@@ -24,6 +24,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get sends quota status
+         * @description Get the current sends quota status for the authenticated user. Returns full quota information for Auth0 users, or total sends only for shared API key users.
+         */
+        get: operations["getSends"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/openapi.yaml": {
         parameters: {
             query?: never;
@@ -36,26 +56,6 @@ export interface paths {
          * @description Get the OpenAPI 3.0 specification in YAML format
          */
         get: operations["openapiSpec"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/robots.txt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Robots.txt
-         * @description Get the robots.txt file for search engine crawling
-         */
-        get: operations["robotsTxt"];
         put?: never;
         post?: never;
         delete?: never;
@@ -348,6 +348,27 @@ export interface components {
             /** @description Whether to auto-send articles */
             auto_send: boolean;
         };
+        SendsResponse: {
+            /** @description Total number of sends (all time) */
+            total_sends: number;
+            /** @description Number of sends in the current period */
+            current_sends: number;
+            /** @description Maximum number of sends allowed per period */
+            max_sends_per_period: number;
+            /** @description Number of days in the send period */
+            period_days: number;
+            /** @description Number of sends remaining in the current period */
+            remaining_sends: number;
+            /**
+             * Format: date-time
+             * @description When the current period resets
+             */
+            period_reset_date: string;
+        };
+        SendsResponseNoLimits: {
+            /** @description Total number of sends (no quota limits) */
+            total_sends: number;
+        };
         BounceInfo: {
             /**
              * Format: date-time
@@ -437,6 +458,44 @@ export interface operations {
             };
         };
     };
+    getSends: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sends quota status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     openapiSpec: {
         parameters: {
             query?: never;
@@ -453,26 +512,6 @@ export interface operations {
                 };
                 content: {
                     "text/yaml": string;
-                };
-            };
-        };
-    };
-    robotsTxt: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Robots.txt content */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/plain": string;
                 };
             };
         };
