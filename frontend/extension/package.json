@@ -2,7 +2,7 @@
 	"name": "savetoink",
 	"description": "Save to Ink browser extension",
 	"private": true,
-	"version": "0.33.1-dev+16031134.14956bd",
+	"version": "0.33.2",
 	"type": "module",
 	"scripts": {
 		"dev": "wxt",
