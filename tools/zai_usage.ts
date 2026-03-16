@@ -1,4 +1,7 @@
-import { formatInstantFromEpochMs } from "@savetoink/shared";
+import {
+  formatInstantFromEpochMs,
+  formatTimeRemainingFromEpochMs,
+} from "@savetoink/shared";
 
 const ZAI_API_KEY = process.env.ZAI_API_KEY;
 
@@ -43,7 +46,10 @@ async function main(): Promise<void> {
   console.log(`z.ai Token Usage: ${tokensLimit.percentage}%`);
   if (tokensLimit.nextResetTime) {
     const resetDate = formatInstantFromEpochMs(tokensLimit.nextResetTime);
-    console.log(`Resets at: ${resetDate}`);
+    const timeRemaining = formatTimeRemainingFromEpochMs(
+      tokensLimit.nextResetTime,
+    );
+    console.log(`Resets at: ${resetDate} (in ${timeRemaining})`);
   }
 }
 

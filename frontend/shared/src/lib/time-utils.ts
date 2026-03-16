@@ -27,3 +27,26 @@ export function getCurrentDevDate(): string {
 export function getCurrentYear(): number {
   return Temporal.Now.plainDateTimeISO().year;
 }
+
+export function formatTimeRemainingFromEpochMs(ms: number): string {
+  const now = Temporal.Now.instant();
+  const target = Temporal.Instant.fromEpochMilliseconds(ms);
+  const duration = target.since(now);
+
+  if (duration.sign < 0) {
+    return "0h 0m 0s";
+  }
+
+  const totalSeconds = duration.seconds;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  } else {
+    return `${seconds}s`;
+  }
+}
