@@ -1,10 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
-import {
-	PUBLIC_AUTH0_CLIENT_ID,
-	PUBLIC_AUTH0_DOMAIN,
-	PUBLIC_AUTH_BACKEND,
-	PUBLIC_APP_URL
-} from '$env/static/public';
+import { env as publicEnv } from '$env/dynamic/public';
 import {
 	AUTH_KEY,
 	setAuthCookie,
@@ -18,7 +13,7 @@ import type { UserProfile } from '@savetoink/shared';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	return { user: locals.user };
+	return { user: locals.user, publicAppUrl: publicEnv.PUBLIC_APP_URL };
 };
 
 export const actions: Actions = {
@@ -26,10 +21,10 @@ export const actions: Actions = {
 		deleteAuthCookie(cookies);
 		deleteUserCookie(cookies);
 
-		if (PUBLIC_AUTH_BACKEND === Auth0) {
-			const auth0LogoutUrl = new URL(`https://${PUBLIC_AUTH0_DOMAIN}/logout`);
-			auth0LogoutUrl.searchParams.set('client_id', PUBLIC_AUTH0_CLIENT_ID);
-			auth0LogoutUrl.searchParams.set('returnTo', `${PUBLIC_APP_URL}/account`);
+		if (publicEnv.PUBLIC_AUTH_BACKEND === Auth0) {
+			const auth0LogoutUrl = new URL(`https://${publicEnv.PUBLIC_AUTH0_DOMAIN}/logout`);
+			auth0LogoutUrl.searchParams.set('client_id', publicEnv.PUBLIC_AUTH0_CLIENT_ID);
+			auth0LogoutUrl.searchParams.set('returnTo', `${publicEnv.PUBLIC_APP_URL}/account`);
 			redirect(303, auth0LogoutUrl.toString());
 		}
 

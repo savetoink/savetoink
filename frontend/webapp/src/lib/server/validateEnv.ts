@@ -1,24 +1,18 @@
 import { error } from '@sveltejs/kit';
-import {
-	PUBLIC_API_URL,
-	PUBLIC_AUTH_BACKEND,
-	PUBLIC_AUTH0_CLIENT_ID,
-	PUBLIC_AUTH0_DOMAIN,
-	PUBLIC_AUTH0_AUDIENCE
-} from '$env/static/public';
+import { env as publicEnv } from '$env/dynamic/public';
 import { Auth0, SharedKey } from '@savetoink/shared';
 
 export const validateEnv = () => {
 	const requiredEnvVars = [
-		{ name: 'PUBLIC_API_URL', value: PUBLIC_API_URL },
-		{ name: 'PUBLIC_AUTH_BACKEND', value: PUBLIC_AUTH_BACKEND }
+		{ name: 'PUBLIC_API_URL', value: publicEnv.PUBLIC_API_URL },
+		{ name: 'PUBLIC_AUTH_BACKEND', value: publicEnv.PUBLIC_AUTH_BACKEND }
 	];
 
-	if (PUBLIC_AUTH_BACKEND === Auth0) {
+	if (publicEnv.PUBLIC_AUTH_BACKEND === Auth0) {
 		requiredEnvVars.push(
-			{ name: 'PUBLIC_AUTH0_CLIENT_ID', value: PUBLIC_AUTH0_CLIENT_ID },
-			{ name: 'PUBLIC_AUTH0_DOMAIN', value: PUBLIC_AUTH0_DOMAIN },
-			{ name: 'PUBLIC_AUTH0_AUDIENCE', value: PUBLIC_AUTH0_AUDIENCE }
+			{ name: 'PUBLIC_AUTH0_CLIENT_ID', value: publicEnv.PUBLIC_AUTH0_CLIENT_ID },
+			{ name: 'PUBLIC_AUTH0_DOMAIN', value: publicEnv.PUBLIC_AUTH0_DOMAIN },
+			{ name: 'PUBLIC_AUTH0_AUDIENCE', value: publicEnv.PUBLIC_AUTH0_AUDIENCE }
 		);
 	}
 
@@ -28,7 +22,7 @@ export const validateEnv = () => {
 		error(500, `Required environment variables are not defined: ${missing.join(', ')}`);
 	}
 
-	if (PUBLIC_AUTH_BACKEND !== SharedKey && PUBLIC_AUTH_BACKEND !== Auth0) {
+	if (publicEnv.PUBLIC_AUTH_BACKEND !== SharedKey && publicEnv.PUBLIC_AUTH_BACKEND !== Auth0) {
 		error(500, 'Invalid auth backend');
 	}
 };

@@ -19,12 +19,7 @@ build-http-docker:
 
 build-webapp-docker:
     docker build . \
-    --build-arg PUBLIC_API_URL \
-    --build-arg PUBLIC_APP_URL \
     --build-arg PUBLIC_AUTH_BACKEND \
-    --build-arg PUBLIC_AUTH0_CLIENT_ID \
-    --build-arg PUBLIC_AUTH0_DOMAIN \
-    --build-arg PUBLIC_AUTH0_AUDIENCE \
     --build-arg PUBLIC_IS_DEV_WORKER \
     -f frontend/Dockerfile \
     -t ghcr.io/savetoink/savetoink-webapp:local

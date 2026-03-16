@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { env as publicEnv } from '$env/dynamic/public';
 import { error, fail } from '@sveltejs/kit';
 import { createApiClient as createBaseApiClient, ApiError } from '@savetoink/shared';
 import type { ApiClientOptions } from '@savetoink/shared';
@@ -40,7 +40,7 @@ function createApiClient(event: RequestEvent) {
 	const cloudFlareRay = event.request.headers.get('cf-ray');
 
 	return createBaseApiClient({
-		baseUrl: PUBLIC_API_URL,
+		baseUrl: publicEnv.PUBLIC_API_URL,
 		fetch: event.fetch,
 		userAgent: event.request.headers.get('User-Agent') || undefined,
 		xForwardedFor,

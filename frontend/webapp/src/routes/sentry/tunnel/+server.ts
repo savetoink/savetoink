@@ -1,10 +1,10 @@
-import { PUBLIC_SENTRY_DSN } from '$env/static/public';
+import { env as publicEnv } from '$env/dynamic/public';
 import type { RequestHandler } from './$types';
 
-const sentryDsnUrl = new URL(PUBLIC_SENTRY_DSN);
-const sentryIngestUrl = `${sentryDsnUrl.protocol}//${sentryDsnUrl.host}/api${sentryDsnUrl.pathname}`;
-
 export const POST: RequestHandler = async ({ request }) => {
+	const sentryDsnUrl = new URL(publicEnv.PUBLIC_SENTRY_DSN);
+	const sentryIngestUrl = `${sentryDsnUrl.protocol}//${sentryDsnUrl.host}/api${sentryDsnUrl.pathname}`;
+
 	const body = await request.text();
 	const headers = new Headers();
 

@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { PUBLIC_APP_URL } from '$env/static/public';
+import { env as publicEnv } from '$env/dynamic/public';
 import { exchangeCodeForToken, getProfile } from '$lib/server/apiClient';
 import { setAuthCookie, setUserCookie } from '$lib/server/cookies';
 import type { RequestHandler, RequestEvent } from './$types';
@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({ fetch, url, cookies, request, getCli
 	const response = await exchangeCodeForToken(
 		{ fetch, request, getClientAddress } as RequestEvent,
 		code,
-		`${PUBLIC_APP_URL || url.origin}/auth/callback`
+		`${publicEnv.PUBLIC_APP_URL || url.origin}/auth/callback`
 	);
 
 	if (!response.access_token) {
