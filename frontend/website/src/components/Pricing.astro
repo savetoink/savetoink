@@ -3,41 +3,25 @@
 
 <section class="section" id="pricing">
   <div class="container">
-    <p class="section-label">Hosted option</p>
-    <h2 class="section-heading">Cloud if you want it.<br />Free if you self-host.</h2>
+    <h2 class="section-heading">Cloud offer if you don't want to self-host it</h2>
     <p class="section-sub">
-      Self-hosting is always free. The hosted version has two tiers — start free, upgrade when you need unlimited sends.
+      The hosted version has two tiers — start free, upgrade when you need unlimited sends.
     </p>
 
     <div class="pricing-grid">
 
       <div class="pricing-card featured">
-        <div class="pricing-badge-top">Self-hosted · Recommended</div>
-        <h3>Self-host</h3>
-        <p class="pricing-desc">Clone the repo, deploy to AWS, done. No account needed.</p>
-        <ul class="pricing-features">
-          <li>Unlimited everything</li>
-          <li>Full data ownership</li>
-          <li>CLI + REST API + extension + web app</li>
-          <li>ELv2 — audit &amp; fork freely</li>
-        </ul>
-        <a href="https://github.com/savetoink/savetoink#self-hosting" target="_blank" rel="noopener" class="btn-primary" style="width:100%;justify-content:center;">
-          Read the docs →
-        </a>
-      </div>
-
-      <div class="pricing-card">
         <h3>Free</h3>
         <div class="pricing-price">$0</div>
         <p class="pricing-desc">Forever free, no credit card.</p>
         <ul class="pricing-features">
-          <li class="highlight">Unlimited use for now</li>
-          <li>20 article sends / month</li>
+          <li class="highlight"><s>20 article sends / month</s> unlimited sends for now</li>
+          <li>Unlimited saves</li>
           <li>Kindle &amp; Kobo delivery</li>
           <li>Browser extension</li>
           <li>Article library</li>
         </ul>
-        <a href={import.meta.env.PUBLIC_APP_URL} class="btn-secondary" style="width:100%;justify-content:center;">
+        <a href={import.meta.env.PUBLIC_APP_URL} class="btn-secondary">
           Get started free
         </a>
       </div>
@@ -48,11 +32,10 @@
         <div class="pricing-price">$4 <span>/ month</span></div>
         <p class="pricing-desc">Or $24/year — save 50%.</p>
         <ul class="pricing-features">
-          <li>Unlimited sends</li>
           <li>Everything in Free</li>
-          <li>Early access to features</li>
+          <li>Unlimited sends</li>
         </ul>
-        <button disabled style="width:100%;justify-content:center;opacity:0.45;cursor:not-allowed;">
+        <button disabled class="disabled">
           Not available yet
         </button>
       </div>
@@ -62,9 +45,19 @@
 </section>
 
 <style>
+  .disabled {
+    width: 100%;
+    justify-content: center;
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
   .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
     margin-top: 2.5rem;
   }
