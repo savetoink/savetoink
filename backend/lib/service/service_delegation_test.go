@@ -3,7 +3,10 @@ package service
 import (
 	"context"
 	"errors"
+	"io"
 	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -18,6 +21,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/html"
 )
 
 const (
@@ -823,7 +827,7 @@ type testReadCloser struct {
 
 func (r *testReadCloser) Read(p []byte) (n int, err error) {
 	if r.pos >= len(r.data) {
-		return 0, nil
+		return 0, io.EOF
 	}
 	n = copy(p, r.data[r.pos:])
 	r.pos += n
@@ -1354,4 +1358,638 @@ func (r *testSendsRepoTracking) GetSendsByAccountDateRange(
 
 func (r *testSendsRepoTracking) CountSendsByAccountDateRange(_ context.Context, _ string, _, _ time.Time) (int, error) {
 	return 0, nil
+}
+
+func TestParseHTMLFromSource_HttpSuccess(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	testURL, _ := url.Parse("https://example.com")
+
+	doc, err := svc.ParseHTMLFromSource(context.Background(), testURL)
+
+	require.NoError(t, err)
+	assert.NotNil(t, doc)
+}
+
+func TestParseHTMLFromSource_FileSuccess(t *testing.T) {
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.html")
+	htmlContent := "<html><body><h1>Test</h1></body></html>"
+	require.NoError(t, os.WriteFile(testFile, []byte(htmlContent), 0o600))
+
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	testURL, _ := url.Parse("file://" + testFile)
+
+	doc, err := svc.ParseHTMLFromSource(context.Background(), testURL)
+
+	require.NoError(t, err)
+	assert.NotNil(t, doc)
+}
+
+func TestParseHTMLFromSource_FileNotExists(t *testing.T) {
+	testURL, _ := url.Parse("file:///nonexistent/file.html")
+
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	_, err := svc.ParseHTMLFromSource(context.Background(), testURL)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to stat file")
+}
+
+func TestParseHTMLFromSource_FileIsDirectory(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	testURL, _ := url.Parse("file://" + tmpDir)
+
+	_, err := svc.ParseHTMLFromSource(context.Background(), testURL)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "path is a directory")
+}
+
+func TestFetch_Error(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	fetcher := content.NewFetcher("")
+	svc := New(&Dependencies{
+		Fetcher:         fetcher,
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	invalidURL, _ := url.Parse("invalid://not-a-valid-url")
+
+	_, err := svc.Fetch(context.Background(), invalidURL)
+
+	require.Error(t, err)
+}
+
+func TestParseHTML_Success(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	fetched := &content.FetchedContent{
+		HTML: &testReadCloser{data: []byte("<html><body><h1>Test</h1></body></html>")},
+		URL:  &url.URL{Scheme: "https", Host: "example.com"},
+		Type: content.FetcherTypeGo,
+	}
+
+	doc, err := svc.ParseHTML(context.Background(), fetched)
+
+	require.NoError(t, err)
+	assert.NotNil(t, doc)
+}
+
+func TestParseHTML_Error(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	fetched := &content.FetchedContent{
+		HTML: &testReadCloser{data: []byte("invalid html")},
+		URL:  &url.URL{Scheme: "https", Host: "example.com"},
+		Type: content.FetcherTypeGo,
+	}
+
+	_, err := svc.ParseHTML(context.Background(), fetched)
+
+	require.NoError(t, err)
+}
+
+func TestClean_Success(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	doc := &html.Node{
+		Type: html.ElementNode,
+		Data: "html",
+		FirstChild: &html.Node{
+			Type: html.ElementNode,
+			Data: "body",
+			FirstChild: &html.Node{
+				Type: html.ElementNode,
+				Data: "p",
+				FirstChild: &html.Node{
+					Type: html.TextNode,
+					Data: "Test content",
+				},
+			},
+		},
+	}
+
+	testURL, _ := url.Parse("https://example.com")
+
+	article, err := svc.Clean(context.Background(), doc, testURL)
+
+	require.NoError(t, err)
+	assert.NotNil(t, article)
+}
+
+func TestClean_Error(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	cleaner := &errorCleanerMock{}
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         cleaner,
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	doc := &html.Node{
+		Type: html.ElementNode,
+		Data: "html",
+	}
+
+	testURL, _ := url.Parse("https://example.com")
+
+	_, err := svc.Clean(context.Background(), doc, testURL)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to clean content")
+}
+
+func TestGetArticle_Success(t *testing.T) {
+	repo := &testArticlesRepo{
+		articles: []*model.Article{
+			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+		},
+	}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	article, err := svc.GetArticle(context.Background(), "account-1", "article-1")
+
+	require.NoError(t, err)
+	assert.NotNil(t, article)
+	assert.Equal(t, "article-1", article.ID)
+}
+
+func TestGetArticle_Error(t *testing.T) {
+	repo := &testArticlesRepo{getErr: errors.New("get error")}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	_, err := svc.GetArticle(context.Background(), "account-1", "article-1")
+
+	require.Error(t, err)
+}
+
+func TestGetArticlesMetadata_Success(t *testing.T) {
+	repo := &testArticlesRepo{
+		articles: []*model.Article{
+			{Account: "account-1", ID: "article-1", Title: "Test Article", CreatedAt: time.Now()},
+		},
+	}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	result, err := svc.GetArticlesMetadata(context.Background(), "account-1", 1, 10, nil)
+
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Len(t, result.Articles, 1)
+}
+
+func TestGetArticlesMetadata_Error(t *testing.T) {
+	repo := &testArticlesRepo{metadataErr: errors.New("metadata error")}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	_, err := svc.GetArticlesMetadata(context.Background(), "account-1", 1, 10, nil)
+
+	require.Error(t, err)
+}
+
+func TestDeleteArticle_Success(t *testing.T) {
+	repo := &testArticlesRepo{
+		articles: []*model.Article{
+			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+		},
+	}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	result, err := svc.DeleteArticle(context.Background(), "account-1", "article-1")
+
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 1, result.Deleted)
+}
+
+func TestDeleteArticle_Error(t *testing.T) {
+	repo := &testArticlesRepo{
+		articles: []*model.Article{
+			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+		},
+		deleteErr: errors.New("delete error"),
+	}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	_, err := svc.DeleteArticle(context.Background(), "account-1", "article-1")
+
+	require.Error(t, err)
+}
+
+func TestDeleteAllArticles_Success(t *testing.T) {
+	repo := &testArticlesRepo{
+		articles: []*model.Article{
+			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+			{Account: "account-1", ID: "article-2", Title: "Test Article 2"},
+		},
+	}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	result, err := svc.DeleteAllArticles(context.Background(), "account-1")
+
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 2, result.Deleted)
+}
+
+func TestDeleteAllArticles_Error(t *testing.T) {
+	repo := &testArticlesRepo{deleteErr: errors.New("delete error")}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+	})
+
+	_, err := svc.DeleteAllArticles(context.Background(), "account-1")
+
+	require.Error(t, err)
+}
+
+func TestSendArticleByID_EmailSendFailure(t *testing.T) {
+	repo := &testArticlesRepo{
+		articles: []*model.Article{
+			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+		},
+	}
+	profileRepo := &testUserProfileRepo{
+		profile: &model.UserProfile{
+			Account:     "account-1",
+			DeviceEmail: testEmail,
+			AutoSend:    true,
+		},
+	}
+	sendsRepo := &testSendsRepo{}
+
+	sender := &errorSenderMock{}
+	cfg := &config.Config{
+		SenderEmail:   "test@example.com",
+		EmailProvider: consts.EmailBackendMailjet,
+	}
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          sender,
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+		Config:          cfg,
+	})
+
+	_, err := svc.SendArticleByID(context.Background(), "account-1", "article-1")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "send error")
+}
+
+func TestSendArticleByID_CreateSendRecordError(t *testing.T) {
+	repo := &testArticlesRepo{
+		articles: []*model.Article{
+			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+		},
+	}
+	profileRepo := &testUserProfileRepo{
+		profile: &model.UserProfile{
+			Account:     "account-1",
+			DeviceEmail: testEmail,
+			AutoSend:    true,
+		},
+	}
+	sendsRepo := &testSendsRepo{createErr: errors.New("create error")}
+
+	cfg := &config.Config{
+		SenderEmail:   "test@example.com",
+		EmailProvider: consts.EmailBackendMailjet,
+	}
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+		Config:          cfg,
+	})
+
+	_, err := svc.SendArticleByID(context.Background(), "account-1", "article-1")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create send record")
+}
+
+func TestUpdateSendRecordOnFailure_WithSendsRepo(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	cfg := &config.Config{
+		SenderEmail:   "test@example.com",
+		EmailProvider: consts.EmailBackendMailjet,
+	}
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+		Config:          cfg,
+	})
+
+	err := svc.updateSendRecordOnFailure(context.Background(), "account-1", "article-1", errors.New("send failed"))
+
+	require.NoError(t, err)
+}
+
+func TestUpdateSendRecordOnFailure_WithoutSendsRepo(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+
+	cfg := &config.Config{
+		SenderEmail:   "test@example.com",
+		EmailProvider: consts.EmailBackendMailjet,
+	}
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       nil,
+		Config:          cfg,
+	})
+
+	err := svc.updateSendRecordOnFailure(context.Background(), "account-1", "article-1", errors.New("send failed"))
+
+	require.NoError(t, err)
+}
+
+func TestUpdateSendRecordOnSuccess_WithSendsRepo(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+	sendsRepo := &testSendsRepo{}
+
+	cfg := &config.Config{
+		SenderEmail:   "test@example.com",
+		EmailProvider: consts.EmailBackendMailjet,
+	}
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       sendsRepo,
+		Config:          cfg,
+	})
+
+	err := svc.updateSendRecordOnSuccess(context.Background(), "account-1", "article-1", "msg-123")
+
+	require.NoError(t, err)
+}
+
+func TestUpdateSendRecordOnSuccess_WithoutSendsRepo(t *testing.T) {
+	repo := &testArticlesRepo{}
+	profileRepo := &testUserProfileRepo{}
+
+	cfg := &config.Config{
+		SenderEmail:   "test@example.com",
+		EmailProvider: consts.EmailBackendMailjet,
+	}
+	svc := New(&Dependencies{
+		Fetcher:         content.NewFetcher(""),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(),
+		Sender:          &emailSenderMock{},
+		ArticlesRepo:    repo,
+		UserProfileRepo: profileRepo,
+		SendsRepo:       nil,
+		Config:          cfg,
+	})
+
+	err := svc.updateSendRecordOnSuccess(context.Background(), "account-1", "article-1", "msg-123")
+
+	require.NoError(t, err)
+}
+
+type errorCleanerMock struct{}
+
+func (m *errorCleanerMock) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
+	return nil, errors.New("clean error")
 }
