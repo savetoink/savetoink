@@ -9,12 +9,12 @@ Self-hosted read-later service with native e-readers delivery. Save articles in 
 ## Features
 
 - Fetch web pages (articles, blog posts, etc), strip markup with [go-trafilatura](https://github.com/markusmobius/go-trafilatura) and save main readable content as HTML
-- Run as self-hosted web application (Web Frontend + API server) or as standalone [CLI tool](#cli-tool)
-- Deploys anywhere with Docker, also as Serverless AWS application (Lambda, DynamoDB)
 - Convert content to EPUB format with [go-epub](https://github.com/go-shiori/go-epub) for e-reader devices
 - Optionally send to reader devices like Kindle, Kobo, etc. via email backend (only [MailJet](https://www.mailjet.com/) supported at the moment)
-- Browser extension to easy save/send pages
-- REST APIs for programmatic access
+- Deploys anywhere with Docker, also as Serverless AWS applicatio. Pluggable storage backend (Sqlite/DynamoDB)
+- Run as self-hosted web application (Web Frontend + API server) or as standalone [CLI tool](#cli-tool)
+- Browser extension (Chrome, Firefox)to easy save/send pages
+- [REST APIs](https://www.saveto.ink/api-reference/) for programmatic access
 
 ## CLI Tool
 
