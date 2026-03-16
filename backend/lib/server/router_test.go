@@ -166,8 +166,6 @@ func (m *mockService) GetAccountIDByDeviceEmail(_ context.Context, _ string) (st
 }
 
 func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
-	logging.SetupLogging(cfg)
-
 	r := chi.NewRouter()
 	svc := &mockService{}
 

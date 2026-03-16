@@ -240,7 +240,8 @@ func TestAuth0Middleware(t *testing.T) {
 		})
 
 		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-		token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIiwidHlwIjoiUlNBIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
+		token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIiwidHlwIjoiUlNBIiwiYWxnIjoiUlMyNTYifQ." +
+			"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
 			"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature"
 		req.Header.Set(authHeader, authHeaderPrefix+token)
 		w := httptest.NewRecorder()
@@ -254,36 +255,6 @@ func TestAuth0Middleware(t *testing.T) {
 		err := auth.GetAuthErrorFromCtx(capturedContext)
 		if err == nil {
 			t.Error("expected auth error in context")
-		}
-	})
-
-	t.Run("JWT with invalid signature adds error to context", func(t *testing.T) {
-		jwksServer := setupMockJWKSServer()
-		defer jwksServer.Close()
-
-		middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
-
-		var capturedContext context.Context
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			capturedContext = r.Context()
-			w.WriteHeader(http.StatusOK)
-		})
-
-		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-		token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIiwidHlwIjoiUlNBIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
-			"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature"
-		req.Header.Set(authHeader, authHeaderPrefix+token)
-		w := httptest.NewRecorder()
-
-		middleware(next).ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
-		}
-
-		err := auth.GetAuthErrorFromCtx(capturedContext)
-		if err == nil {
-			t.Error("expected auth error for invalid signature")
 		}
 	})
 }
@@ -508,12 +479,12 @@ func TestNewAccountIDMiddleware(t *testing.T) {
 			assert.NotNil(t, middleware)
 
 			nextCalled := false
-			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				nextCalled = true
 				w.WriteHeader(http.StatusOK)
 			})
 
-			req := httptest.NewRequest("GET", "/test", http.NoBody)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 			w := httptest.NewRecorder()
 
 			middleware(next).ServeHTTP(w, req)
@@ -533,7 +504,7 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		})
 
-		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
 		middleware(next).ServeHTTP(w, req)
@@ -548,55 +519,49 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 		assert.Empty(t, accountID)
 	})
 
-	t.Run("malformed auth header - no Bearer prefix", func(t *testing.T) {
-		middleware := sharedAPIKeyMiddleware("secret-key")
+	tests := []struct {
+		name          string
+		authHeader    string
+		expectedError string
+	}{
+		{
+			name:          "malformed auth header - no Bearer prefix",
+			authHeader:    "secret-key",
+			expectedError: "malformed auth header",
+		},
+		{
+			name:          "invalid API key",
+			authHeader:    "Bearer wrong-key",
+			expectedError: "invalid API key",
+		},
+	}
 
-		var capturedContext context.Context
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			capturedContext = r.Context()
-			w.WriteHeader(http.StatusOK)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			middleware := sharedAPIKeyMiddleware("secret-key")
+
+			var capturedContext context.Context
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				capturedContext = r.Context()
+				w.WriteHeader(http.StatusOK)
+			})
+
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+			req.Header.Set("Authorization", tt.authHeader)
+			w := httptest.NewRecorder()
+
+			middleware(next).ServeHTTP(w, req)
+
+			assert.True(t, w.Code == http.StatusOK)
+
+			err := auth.GetAuthErrorFromCtx(capturedContext)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.expectedError)
+
+			accountID := auth.GetAccountIDFromCtx(capturedContext)
+			assert.Empty(t, accountID)
 		})
-
-		req := httptest.NewRequest("GET", "/test", http.NoBody)
-		req.Header.Set("Authorization", "secret-key")
-		w := httptest.NewRecorder()
-
-		middleware(next).ServeHTTP(w, req)
-
-		assert.True(t, w.Code == http.StatusOK)
-
-		err := auth.GetAuthErrorFromCtx(capturedContext)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "malformed auth header")
-
-		accountID := auth.GetAccountIDFromCtx(capturedContext)
-		assert.Empty(t, accountID)
-	})
-
-	t.Run("invalid API key", func(t *testing.T) {
-		middleware := sharedAPIKeyMiddleware("secret-key")
-
-		var capturedContext context.Context
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			capturedContext = r.Context()
-			w.WriteHeader(http.StatusOK)
-		})
-
-		req := httptest.NewRequest("GET", "/test", http.NoBody)
-		req.Header.Set("Authorization", "Bearer wrong-key")
-		w := httptest.NewRecorder()
-
-		middleware(next).ServeHTTP(w, req)
-
-		assert.True(t, w.Code == http.StatusOK)
-
-		err := auth.GetAuthErrorFromCtx(capturedContext)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid API key")
-
-		accountID := auth.GetAccountIDFromCtx(capturedContext)
-		assert.Empty(t, accountID)
-	})
+	}
 
 	t.Run("valid API key", func(t *testing.T) {
 		middleware := sharedAPIKeyMiddleware("secret-key")
@@ -607,7 +572,7 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		})
 
-		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		req.Header.Set("Authorization", "Bearer secret-key")
 		w := httptest.NewRecorder()
 
@@ -631,7 +596,7 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		})
 
-		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		req.Header.Set("Authorization", "Bearer Secret-Key")
 		w := httptest.NewRecorder()
 
@@ -660,7 +625,7 @@ func TestAuth0Middleware_ContextPropagation(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		})
 
-		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
 		middleware(next).ServeHTTP(w, req)

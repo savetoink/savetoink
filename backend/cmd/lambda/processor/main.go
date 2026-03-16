@@ -1,4 +1,4 @@
-// Lambda processor handles async article processing.
+// Package main implements the Lambda processor handles async article processing.
 package main
 
 import (
@@ -11,10 +11,8 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
-	"github.com/shaftoe/savetoink/backend/lib/logging"
-	lambdahandler "github.com/shaftoe/savetoink/backend/lib/processor/lambda"
+	handler "github.com/shaftoe/savetoink/backend/lib/processor/lambda"
 	"github.com/shaftoe/savetoink/backend/lib/service"
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
 )
 
 func main() {
@@ -26,9 +24,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	logging.SetupLogging(cfg)
 	svc := service.NewFromConfig(cfg)
-	lambda.Start(func(ctx context.Context, event *content.ProcessArticleEvent) error {
-		return lambdahandler.HandleEvent(ctx, event, svc)
-	})
+	lambda.Start(handler.NewHandler(cfg, svc))
 }

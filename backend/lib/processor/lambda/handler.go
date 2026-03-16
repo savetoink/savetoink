@@ -5,14 +5,26 @@ import (
 	"log/slog"
 
 	lambdacontext "github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 )
 
-// HandleEvent is the entry point for processing a single article event via AWS Lambda.
-func HandleEvent(ctx context.Context, event *content.ProcessArticleEvent, svc processor.Service) error {
+// NewHandler returns the entry point for processing a single article event via AWS Lambda.
+func NewHandler(
+	cfg *config.Config,
+	svc processor.Service,
+) func(ctx context.Context, event *content.ProcessArticleEvent) error {
+	logging.SetupLogging(cfg)
+
+	return func(ctx context.Context, event *content.ProcessArticleEvent) error {
+		return handleEvent(ctx, event, svc)
+	}
+}
+
+func handleEvent(ctx context.Context, event *content.ProcessArticleEvent, svc processor.Service) error {
 	if event == nil {
 		event = &content.ProcessArticleEvent{}
 	}

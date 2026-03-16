@@ -1,4 +1,4 @@
-// Lambda is the entry point for AWS Lambda deployment using API Gateway.
+// Package main implements the Lambda entry point for the API server.
 package main
 
 import (

@@ -92,7 +92,7 @@ func TestHandleEvent_NilEvent(t *testing.T) {
 		AwsRequestID: "lambda-req-123",
 	})
 
-	err := HandleEvent(ctx, nil, mockSvc)
+	err := handleEvent(ctx, nil, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertNotCalled(t, "Fetch")
@@ -109,7 +109,7 @@ func TestHandleEvent_MissingRequestID(t *testing.T) {
 		AccountID: "account-456",
 	}
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertNotCalled(t, "Fetch")
@@ -126,7 +126,7 @@ func TestHandleEvent_MissingURL(t *testing.T) {
 		AccountID: "account-456",
 	}
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertNotCalled(t, "Fetch")
@@ -143,7 +143,7 @@ func TestHandleEvent_MissingArticleID(t *testing.T) {
 		AccountID: "account-456",
 	}
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertNotCalled(t, "Fetch")
@@ -160,7 +160,7 @@ func TestHandleEvent_MissingAccountID(t *testing.T) {
 		ArticleID: "article-123",
 	}
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertNotCalled(t, "Fetch")
@@ -184,7 +184,7 @@ func TestHandleEvent_FetchError(t *testing.T) {
 		"GetArticle", mock.Anything, event.AccountID, event.ArticleID).Return(&model.Article{ID: event.ArticleID}, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "Fetch", mock.Anything, eventURL)
@@ -219,7 +219,7 @@ func TestHandleEvent_ParseHTMLError(t *testing.T) {
 		"GetArticle", mock.Anything, event.AccountID, event.ArticleID).Return(&model.Article{ID: event.ArticleID}, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "Fetch", mock.Anything, eventURL)
@@ -252,7 +252,7 @@ func TestHandleEvent_UpdateError(t *testing.T) {
 	mockSvc.On(
 		"GetArticle", mock.Anything, event.AccountID, event.ArticleID).Return(&model.Article{ID: event.ArticleID}, nil)
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "Fetch", mock.Anything, eventURL)
@@ -286,7 +286,7 @@ func TestHandleEvent_Success(t *testing.T) {
 	mockSvc.On("Clean", mock.Anything, mock.AnythingOfType("*html.Node"), mock.Anything).Return(article, nil)
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "Fetch", mock.Anything, eventURL)
@@ -328,7 +328,7 @@ func TestHandleEvent_SendOnComplete_Success(t *testing.T) {
 		mock.Anything, "Test Article").Return(
 		&email.SendEmailResponse{MessageID: "msg-123"}, nil)
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID)
@@ -364,7 +364,7 @@ func TestHandleEvent_SendOnComplete_NoDeviceEmail(t *testing.T) {
 	mockSvc.On("UpdateArticle", mock.Anything, mock.Anything).Return(nil)
 	mockSvc.On("GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID).Return("", false, nil)
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID)
@@ -404,7 +404,7 @@ func TestHandleEvent_SendOnComplete_SendError(t *testing.T) {
 		mock.Anything, "Test Article").Return(nil,
 		errors.New("send failed"))
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "GenerateEPUB", mock.AnythingOfType("*model.Article"))
@@ -443,7 +443,7 @@ func TestHandleEvent_InheritedAttrs(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := HandleEvent(ctx, event, mockSvc)
+	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
 	assert.Contains(t, event.InheritedAttrs, map[string]any{"orig_request_id": "req-123"})
