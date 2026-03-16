@@ -15,7 +15,7 @@
       <div class="deploy-option">
         <div class="deploy-option-header">
           <div class="deploy-badge">Docker</div>
-          <p class="deploy-option-desc">Fastest way to get running. One pull, one run.</p>
+          <p class="deploy-option-desc">Fastest way to get running.</p>
         </div>
         <div class="sh-panel">
           <p class="sh-panel-label">API server</p>
@@ -24,9 +24,15 @@
             <div class="code-line"><span class="indent"></span><span class="cm">--env-file .env \</span></div>
             <div class="code-line"><span class="indent"></span><span class="str">ghcr.io/savetoink/savetoink-http:latest</span></div>
           </div>
+          <p class="sh-panel-label">Web frontend</p>
+          <div class="sh-code sh-code-noborder">
+            <div class="code-line"><span class="cli-prompt">$</span> <span class="cmd">docker run -p 3000:3000 \</span></div>
+            <div class="code-line"><span class="indent"></span><span class="cm">--env-file .env \</span></div>
+            <div class="code-line"><span class="indent"></span><span class="str">ghcr.io/savetoink/savetoink-webapp:latest</span></div>
+          </div>
           <p class="sh-panel-label">CLI</p>
           <div class="sh-code sh-code-noborder">
-            <div class="code-line"><span class="cli-prompt">$</span> <span class="cmd">docker run --rm \</span></div>
+            <div class="code-line"><span class="cli-prompt">$</span> <span class="cmd">docker run \</span></div>
             <div class="code-line"><span class="indent"></span><span class="cm">--env-file .env \</span></div>
             <div class="code-line"><span class="indent"></span><span class="str">ghcr.io/savetoink/savetoink-cli:latest \</span></div>
             <div class="code-line"><span class="indent"></span><span class="cmd">send https://example.com/article</span></div>

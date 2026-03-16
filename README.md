@@ -29,10 +29,14 @@ alias savetoink="docker run --rm ghcr.io/savetoink/savetoink-cli:latest"
 savetoink version
 ```
 
-The API server is also available as a Docker image:
+Frontend and API server are also available as a Docker image:
 
 ```bash
-docker pull ghcr.io/savetoink/savetoink-http:latest
+# HTTP server
+docker run --rm --env-file .env -p 8080:8080 ghcr.io/savetoink/savetoink-http:latest
+
+# Web frontend
+docker run --rm --env-file .env -p 3000:3000 ghcr.io/savetoink/savetoink-webapp:latest
 ```
 
 ### Installation
