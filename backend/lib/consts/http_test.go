@@ -34,3 +34,7 @@ func TestHTTPServer_ExpectedValues(t *testing.T) {
 	assert.Equal(t, 10*time.Second, WriteTimeout, "WriteTimeout should be 10 seconds")
 	assert.Equal(t, 15*time.Second, IdleTimeout, "IdleTimeout should be 15 seconds")
 }
+
+func TestHTTPServer_DefaultPort(t *testing.T) {
+	assert.Equal(t, 8080, DefaultHTTPPort, "DefaultHTTPPort should be 8080")
+}

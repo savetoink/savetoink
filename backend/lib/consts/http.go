@@ -12,6 +12,9 @@ const (
 	WriteTimeout = 10 * time.Second
 	// IdleTimeout is the maximum amount of time to wait for the next request when keep-alives are enabled.
 	IdleTimeout = 15 * time.Second
+
+	// DefaultHTTPPort is the default HTTP port for the standalon backend process..
+	DefaultHTTPPort = 8080
 )
 
 // RequestIDFormat is the generated request ID format (YYYYMMDD-HHMMSS.mmm).

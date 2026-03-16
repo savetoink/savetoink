@@ -38,6 +38,7 @@ func TestMain(m *testing.M) {
 	_ = os.Unsetenv("SAVETOINK_BROWSERLESS_KEY")
 	_ = os.Unsetenv("SAVETOINK_PROCESS_ARTICLE_LAMBDA")
 	_ = os.Unsetenv("SAVETOINK_TASKS")
+	_ = os.Unsetenv("SAVETOINK_HTTP_PORT")
 	os.Exit(m.Run())
 }
 
@@ -854,4 +855,55 @@ func TestLoad_Tasks_Config(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLoad_DefaultPort(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.DefaultHTTPPort, cfg.Port)
+}
+
+func TestLoad_CustomPort(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+		"SAVETOINK_HTTP_PORT":               "3000",
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 3000, cfg.Port)
+}
+
+func TestLoad_CLI_Mode_DefaultPort(t *testing.T) {
+	setupEnvVars(t, map[string]string{})
+
+	cfg, err := Load(consts.ModeCLI, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.DefaultHTTPPort, cfg.Port)
+}
+
+func TestLoad_CLI_Mode_CustomPort(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_HTTP_PORT": "9000",
+	})
+
+	cfg, err := Load(consts.ModeCLI, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 9000, cfg.Port)
 }

@@ -24,6 +24,5 @@ func main() {
 	}
 
 	router := server.NewRouter(cfg)
-
 	algnhsa.ListenAndServe(router, nil)
 }

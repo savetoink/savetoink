@@ -24,6 +24,7 @@ type Config struct {
 	AppURL           string
 	Mode             consts.RunMode
 	CorsAllowOrigin  string
+	Port             int
 
 	// Storage
 	StorageBackend consts.StorageBackend
@@ -82,6 +83,10 @@ func Load(mode consts.RunMode, awsLoader AWSConfigLoader) (*Config, error) {
 		cfg.AuthBackend = consts.AuthBackendSharedAPIKey
 	}
 
+	if cfg.Port == 0 {
+		cfg.Port = consts.DefaultHTTPPort
+	}
+
 	if err := cfg.validate(awsLoader); err != nil {
 		return nil, err
 	}
@@ -111,6 +116,7 @@ func bindEnvVars() error {
 		{"cors-allow-origin", "SAVETOINK_CORS_ALLOW_ORIGIN"},
 		{"debug", "SAVETOINK_DEBUG"},
 		{"email-backend", "SAVETOINK_EMAIL_BACKEND"},
+		{"http-port", "SAVETOINK_HTTP_PORT"},
 		{"logging-provider", "SAVETOINK_LOGGING_PROVIDER"},
 		{"process-article-lambda", "SAVETOINK_PROCESS_ARTICLE_LAMBDA"},
 		{"sender-email", "SAVETOINK_SENDER_EMAIL"},
@@ -151,6 +157,7 @@ func loadConfig(mode consts.RunMode) *Config {
 		LoggingProvider:      consts.LoggingProvider(viper.GetString("logging-provider")),
 		MailjetAPIKey:        viper.GetString("api-key"),
 		MailjetAPISecret:     viper.GetString("api-secret"),
+		Port:                 viper.GetInt("http-port"),
 		MailjetWebhookSecret: viper.GetString("api-webhook-secret"),
 		Mode:                 mode,
 		ProcessArticleLambda: viper.GetString("process-article-lambda"),

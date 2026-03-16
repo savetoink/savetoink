@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -68,14 +69,11 @@ func main() {
 }
 
 func startServer(ctx context.Context, cfg *config.Config) *http.Server {
-	var (
-		port   = "8080" // TODO move to config
-		router = server.NewRouter(cfg)
-	)
+	router := server.NewRouter(cfg)
 
-	slog.InfoContext(ctx, "starting HTTP server", "port", port)
+	slog.InfoContext(ctx, "starting HTTP server", "port", cfg.Port)
 	srv := &http.Server{
-		Addr:         ":" + port,
+		Addr:         ":" + strconv.Itoa(cfg.Port),
 		Handler:      router,
 		ReadTimeout:  consts.ReadTimeout,
 		WriteTimeout: consts.WriteTimeout,
