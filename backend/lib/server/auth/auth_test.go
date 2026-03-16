@@ -8,14 +8,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/config"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"
 )
 
@@ -235,7 +240,9 @@ func TestAuth0Middleware(t *testing.T) {
 		})
 
 		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-		req.Header.Set(authHeader, authHeaderPrefix+"invalid.jwt.token")
+		token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIiwidHlwIjoiUlNBIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
+			"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature"
+		req.Header.Set(authHeader, authHeaderPrefix+token)
 		w := httptest.NewRecorder()
 
 		middleware(next).ServeHTTP(w, req)
@@ -263,8 +270,7 @@ func TestAuth0Middleware(t *testing.T) {
 		})
 
 		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-		token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0." +
-			"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
+		token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIiwidHlwIjoiUlNBIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
 			"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature"
 		req.Header.Set(authHeader, authHeaderPrefix+token)
 		w := httptest.NewRecorder()
@@ -409,4 +415,262 @@ func TestEnsureAuthenticatedMiddleware_NoAccountID(t *testing.T) {
 	if resp.Error != expectedMsg {
 		t.Errorf("expected error message '%s', got '%s'", expectedMsg, resp.Error)
 	}
+}
+
+func TestAddAuthErrorToCtx(t *testing.T) {
+	tests := []struct {
+		name     string
+		errorMsg string
+	}{
+		{
+			name:     "add error message",
+			errorMsg: "invalid credentials",
+		},
+		{
+			name:     "empty error message",
+			errorMsg: "",
+		},
+		{
+			name:     "long error message",
+			errorMsg: strings.Repeat("error ", 100),
+		},
+		{
+			name:     "error with special characters",
+			errorMsg: "error: authentication failed (code: 401)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			ctx = auth.AddAuthErrorToCtx(ctx, tt.errorMsg)
+
+			err := auth.GetAuthErrorFromCtx(ctx)
+			require.Error(t, err)
+			assert.Equal(t, tt.errorMsg, err.Error())
+
+			accountID := auth.GetAccountIDFromCtx(ctx)
+			assert.Empty(t, accountID)
+		})
+	}
+}
+
+func TestAddAuthErrorToCtx_PreservesExistingAccountID(t *testing.T) {
+	ctx := context.Background()
+	ctx = auth.AddAccountIDToCtx(ctx, "test-account")
+	ctx = auth.AddAuthErrorToCtx(ctx, "auth failed")
+
+	accountID := auth.GetAccountIDFromCtx(ctx)
+	assert.Equal(t, "test-account", accountID)
+
+	err := auth.GetAuthErrorFromCtx(ctx)
+	require.Error(t, err)
+	assert.Equal(t, "auth failed", err.Error())
+}
+
+func TestNewAccountIDMiddleware(t *testing.T) {
+	tests := []struct {
+		name        string
+		authBackend consts.AuthBackend
+		apiKey      string
+		auth0Domain string
+		auth0Aud    string
+	}{
+		{
+			name:        "shared API key backend",
+			authBackend: consts.AuthBackendSharedAPIKey,
+			apiKey:      "test-api-key",
+		},
+		{
+			name:        "auth0 backend",
+			authBackend: consts.AuthBackendAuth0,
+			auth0Domain: "test.auth0.com",
+			auth0Aud:    "test-audience",
+		},
+		{
+			name:        "default backend (empty) falls back to shared API key",
+			authBackend: "",
+			apiKey:      "default-api-key",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.Config{
+				AuthBackend:   tt.authBackend,
+				APIKeySecret:  tt.apiKey,
+				Auth0Domain:   tt.auth0Domain,
+				Auth0Audience: tt.auth0Aud,
+			}
+
+			middleware := NewAccountIDMiddleware(cfg)
+
+			assert.NotNil(t, middleware)
+
+			nextCalled := false
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				nextCalled = true
+				w.WriteHeader(http.StatusOK)
+			})
+
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
+			w := httptest.NewRecorder()
+
+			middleware(next).ServeHTTP(w, req)
+
+			assert.True(t, nextCalled)
+		})
+	}
+}
+
+func TestSharedAPIKeyMiddleware(t *testing.T) {
+	t.Run("missing auth header", func(t *testing.T) {
+		middleware := sharedAPIKeyMiddleware("secret-key")
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		assert.True(t, w.Code == http.StatusOK)
+
+		err := auth.GetAuthErrorFromCtx(capturedContext)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "missing auth header")
+
+		accountID := auth.GetAccountIDFromCtx(capturedContext)
+		assert.Empty(t, accountID)
+	})
+
+	t.Run("malformed auth header - no Bearer prefix", func(t *testing.T) {
+		middleware := sharedAPIKeyMiddleware("secret-key")
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		req.Header.Set("Authorization", "secret-key")
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		assert.True(t, w.Code == http.StatusOK)
+
+		err := auth.GetAuthErrorFromCtx(capturedContext)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "malformed auth header")
+
+		accountID := auth.GetAccountIDFromCtx(capturedContext)
+		assert.Empty(t, accountID)
+	})
+
+	t.Run("invalid API key", func(t *testing.T) {
+		middleware := sharedAPIKeyMiddleware("secret-key")
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		req.Header.Set("Authorization", "Bearer wrong-key")
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		assert.True(t, w.Code == http.StatusOK)
+
+		err := auth.GetAuthErrorFromCtx(capturedContext)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid API key")
+
+		accountID := auth.GetAccountIDFromCtx(capturedContext)
+		assert.Empty(t, accountID)
+	})
+
+	t.Run("valid API key", func(t *testing.T) {
+		middleware := sharedAPIKeyMiddleware("secret-key")
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		req.Header.Set("Authorization", "Bearer secret-key")
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		err := auth.GetAuthErrorFromCtx(capturedContext)
+		assert.NoError(t, err)
+
+		accountID := auth.GetAccountIDFromCtx(capturedContext)
+		assert.Equal(t, adminAccountID, accountID)
+	})
+
+	t.Run("valid API key with different case", func(t *testing.T) {
+		middleware := sharedAPIKeyMiddleware("Secret-Key")
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		req.Header.Set("Authorization", "Bearer Secret-Key")
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		err := auth.GetAuthErrorFromCtx(capturedContext)
+		assert.NoError(t, err)
+
+		accountID := auth.GetAccountIDFromCtx(capturedContext)
+		assert.Equal(t, adminAccountID, accountID)
+	})
+}
+
+func TestAuth0Middleware_ContextPropagation(t *testing.T) {
+	jwksServer := setupMockJWKSServer()
+	defer jwksServer.Close()
+
+	t.Run("auth0 middleware continues without auth header", func(t *testing.T) {
+		middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		err := auth.GetAuthErrorFromCtx(capturedContext)
+		assert.NoError(t, err)
+
+		accountID := auth.GetAccountIDFromCtx(capturedContext)
+		assert.Empty(t, accountID)
+	})
 }
