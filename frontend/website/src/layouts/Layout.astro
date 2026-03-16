@@ -1,11 +1,13 @@
 ---
+import { DEFAULT_TITLE, DEFAULT_DESCRIPTION } from "../lib/constants.astro";
+
 interface Props {
   title?: string;
   description?: string;
 }
 const {
-  title = "Save To Ink — Save articles to your e-reader",
-  description = "Save any article to your Kindle or Kobo in seconds. Clean EPUB delivery for focused reading.",
+  title = DEFAULT_TITLE,
+  description = DEFAULT_DESCRIPTION,
 } = Astro.props;
 import Head from "../components/Head.astro";
 ---

@@ -1,31 +1,16 @@
 ---
-interface Props {
-  title?: string;
-  description?: string;
-}
-const {
-  title = "Save To Ink — Save articles to your e-reader",
-  description = "Save any article to your Kindle or Kobo in seconds. Clean EPUB delivery for focused reading.",
-} = Astro.props;
+import Layout from "./Layout.astro";
 import SiteNav from "../components/SiteNav.astro";
 import SiteFooter from "../components/SiteFooter.astro";
-import Head from "../components/Head.astro";
 ---
 
-<!doctype html>
-<html lang="en">
-  <Head title={title} description={description} />
-
-  <body>
-    <SiteNav />
-
-    <main class="container">
-        <slot />
-    </main>
-
-    <SiteFooter />
-  </body>
-</html>
+<Layout slot={Astro.props}>
+  <SiteNav />
+  <main class="container">
+    <slot />
+  </main>
+  <SiteFooter />
+</Layout>
 
 <style>
 	.container :global(h1) {
