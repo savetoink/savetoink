@@ -639,3 +639,179 @@ func TestAuth0Middleware_ContextPropagation(t *testing.T) {
 		assert.Empty(t, accountID)
 	})
 }
+
+func TestAuth0Middleware_MalformedAuthHeader(t *testing.T) {
+	jwksServer := setupMockJWKSServer()
+	defer jwksServer.Close()
+
+	tests := []struct {
+		name       string
+		authHeader string
+	}{
+		{
+			name:       "auth header without Bearer prefix",
+			authHeader: "invalid-token",
+		},
+		{
+			name:       "auth header with lowercase bearer",
+			authHeader: "bearer token",
+		},
+		{
+			name:       "auth header with Bearer but no space",
+			authHeader: "Bearertoken",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
+
+			var capturedContext context.Context
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				capturedContext = r.Context()
+				w.WriteHeader(http.StatusOK)
+			})
+
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+			if tt.authHeader != "" {
+				req.Header.Set(authHeader, tt.authHeader)
+			}
+			w := httptest.NewRecorder()
+
+			middleware(next).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+
+			err := auth.GetAuthErrorFromCtx(capturedContext)
+			assert.NoError(t, err)
+
+			accountID := auth.GetAccountIDFromCtx(capturedContext)
+			assert.Empty(t, accountID)
+		})
+	}
+}
+
+func TestAuth0Middleware_InvalidJWTScenarios(t *testing.T) {
+	jwksServer := setupMockJWKSServer()
+	defer jwksServer.Close()
+
+	tests := []struct {
+		name       string
+		token      string
+		wantErrMsg string
+	}{
+		{
+			name:       "empty token",
+			token:      "",
+			wantErrMsg: "invalid JWT token",
+		},
+		{
+			name:       "malformed JWT - missing header",
+			token:      "invalid.jwt",
+			wantErrMsg: "invalid JWT token",
+		},
+		{
+			name:       "malformed JWT - invalid base64",
+			token:      "invalid.token.format@#",
+			wantErrMsg: "invalid JWT token",
+		},
+		{
+			name:       "malformed JWT - wrong separator",
+			token:      "invalid|token|format",
+			wantErrMsg: "invalid JWT token",
+		},
+		{
+			name: "JWT with invalid signature",
+			token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0." +
+				"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
+				"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature",
+			wantErrMsg: "invalid JWT token",
+		},
+		{
+			name: "expired JWT token",
+			token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0." +
+				"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
+				"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxNjAwMDAwMDAwLCJpYXQiOjE1OTk5OTk5OTl9.invalid_signature",
+			wantErrMsg: "invalid JWT token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
+
+			var capturedContext context.Context
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				capturedContext = r.Context()
+				w.WriteHeader(http.StatusOK)
+			})
+
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+			req.Header.Set(authHeader, authHeaderPrefix+tt.token)
+			w := httptest.NewRecorder()
+
+			middleware(next).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+
+			err := auth.GetAuthErrorFromCtx(capturedContext)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErrMsg)
+
+			accountID := auth.GetAccountIDFromCtx(capturedContext)
+			assert.Empty(t, accountID)
+		})
+	}
+}
+
+func TestAuth0Middleware_ClaimsParsingFailure(t *testing.T) {
+	jwksServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		jwksResponse := `{
+			"keys": [{
+				"kty": "RSA",
+				"kid": "test-key-id",
+				"n": "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1` +
+			`L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-` +
+			`65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08q` +
+			`NLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awap` +
+			`JzKnqDKgw",
+				"e": "AQAB",
+				"alg": "RS256"
+			}]
+		}`
+		if _, err := w.Write([]byte(jwksResponse)); err != nil {
+			panic(fmt.Sprintf("failed to write JWKS response: %v", err))
+		}
+	}))
+	defer jwksServer.Close()
+
+	t.Run("claims type assertion failure", func(t *testing.T) {
+		middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+		req.Header.Set(authHeader, authHeaderPrefix+
+			"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0."+
+			"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0"+
+			"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature")
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		err := auth.GetAuthErrorFromCtx(capturedContext)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid JWT token")
+
+		accountID := auth.GetAccountIDFromCtx(capturedContext)
+		assert.Empty(t, accountID)
+	})
+}
