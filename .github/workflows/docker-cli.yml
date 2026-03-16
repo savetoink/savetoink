@@ -18,3 +18,6 @@ jobs:
     uses: ./.github/workflows/docker.yml
     with:
       app: cli
+      dockerfile: infra/Dockerfile
+      build-args: |
+        APP=cli

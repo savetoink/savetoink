@@ -6,6 +6,12 @@ on:
       app:
         required: true
         type: string
+      dockerfile:
+        required: true
+        type: string
+      build-args:
+        required: true
+        type: string
 
 permissions:
   id-token: write
@@ -38,8 +44,8 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          build-args: "APP=${{ inputs.app }}"
-          file: infra/Dockerfile
+          build-args: ${{ inputs.build-args }}
+          file: ${{ inputs.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/savetoink/savetoink-${{ inputs.app }}:latest,ghcr.io/savetoink/savetoink-${{ inputs.app }}:${{ env.VERSION }}

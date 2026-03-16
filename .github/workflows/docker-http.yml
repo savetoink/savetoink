@@ -18,3 +18,6 @@ jobs:
     uses: ./.github/workflows/docker.yml
     with:
       app: http
+      dockerfile: infra/Dockerfile
+      build-args: |
+        APP=http
