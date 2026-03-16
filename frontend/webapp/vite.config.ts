@@ -14,7 +14,10 @@ export default defineConfig({
 			adapter: 'cloudflare',
 			autoUploadSourceMaps: true,
 			sourcemaps: {
-				assets: ['./.svelte-kit/output/client/**/*.{js,js.map}', './.svelte-kit/output/server/**/*.{js,js.map}']
+				assets: [
+					'./.svelte-kit/output/client/**/*.{js,js.map}',
+					'./.svelte-kit/output/server/**/*.{js,js.map}'
+				]
 			},
 			release: {
 				name: version,
