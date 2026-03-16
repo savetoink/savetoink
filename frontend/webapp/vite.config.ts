@@ -11,7 +11,15 @@ export default defineConfig({
 		sentrySvelteKit({
 			org: process.env.PUBLIC_SENTRY_TEAM,
 			project: process.env.PUBLIC_SENTRY_PROJECT,
-			adapter: 'cloudflare'
+			adapter: 'cloudflare',
+			autoUploadSourceMaps: true,
+			sourcemaps: {
+				assets: ['./.svelte-kit/output/client/**/*.{js,js.map}', './.svelte-kit/output/server/**/*.{js,js.map}']
+			},
+			release: {
+				name: version,
+				inject: true
+			}
 		}),
 		sveltekit()
 	],

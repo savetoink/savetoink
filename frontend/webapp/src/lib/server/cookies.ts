@@ -1,4 +1,4 @@
-import { COOKIE_SECRET } from '$env/static/private';
+import { env as privateEnv } from '$env/dynamic/private';
 import type { Cookies } from '@sveltejs/kit';
 import type { UserProfile } from '@savetoink/shared';
 
@@ -6,8 +6,8 @@ const AUTH_KEY = 'auth';
 const USER_COOKIE_KEY = 'profile';
 
 function getCookieSecret(): string {
-	if (COOKIE_SECRET) {
-		return COOKIE_SECRET;
+	if (privateEnv.COOKIE_SECRET) {
+		return privateEnv.COOKIE_SECRET;
 	}
 	return 'default-secret-change-in-production';
 }

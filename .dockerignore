@@ -2,9 +2,9 @@
 .github/
 .gitignore
 bin/
-frontend/
 infra/
 tools/
+**node_modules/**
 *.yml
 *.md
 *.svg
