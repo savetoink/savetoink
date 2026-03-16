@@ -17,7 +17,7 @@
 	{/if}
 
 	{#if loggedIn}
-		<form method="POST" action="?/clean">
+		<form method="POST" action="?/clean" onsubmit={() => console.log('Logout form submitted')}>
 			<fieldset>
 				<label>
 					API Key

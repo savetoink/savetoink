@@ -4,7 +4,7 @@ import SiteNav from "../components/SiteNav.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 ---
 
-<Layout slot={Astro.props}>
+<Layout {...Astro.props}>
   <SiteNav />
   <main class="container">
     <slot />

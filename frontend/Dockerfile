@@ -27,4 +27,4 @@ FROM oven/bun:1-distroless AS runner
 ENV NODE_ENV=production
 COPY --from=builder /app/ /app/
 EXPOSE 3000
-CMD ["bun", "/app/frontend/webapp/build/index.js"]
+CMD ["node", "/app/frontend/webapp/build/index.js"]

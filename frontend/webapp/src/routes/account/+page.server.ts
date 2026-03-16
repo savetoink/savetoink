@@ -1,5 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
+	PUBLIC_AUTH0_CLIENT_ID,
+	PUBLIC_AUTH0_DOMAIN,
+	PUBLIC_AUTH_BACKEND,
+	PUBLIC_APP_URL
+} from '$env/static/public';
+import {
 	AUTH_KEY,
 	setAuthCookie,
 	deleteAuthCookie,
@@ -7,7 +13,7 @@ import {
 	deleteUserCookie
 } from '$lib/server/cookies';
 import { getProfile, updateDevice, deleteDevice } from '$lib/server/apiClient';
-import { ApiError, DeviceDomains } from '@savetoink/shared';
+import { ApiError, DeviceDomains, Auth0 } from '@savetoink/shared';
 import type { UserProfile } from '@savetoink/shared';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
@@ -16,6 +22,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	clean: async ({ cookies }) => {
+		deleteAuthCookie(cookies);
+		deleteUserCookie(cookies);
+
+		if (PUBLIC_AUTH_BACKEND === Auth0) {
+			const auth0LogoutUrl = new URL(`https://${PUBLIC_AUTH0_DOMAIN}/logout`);
+			auth0LogoutUrl.searchParams.set('client_id', PUBLIC_AUTH0_CLIENT_ID);
+			auth0LogoutUrl.searchParams.set('returnTo', `${PUBLIC_APP_URL}/account`);
+			redirect(303, auth0LogoutUrl.toString());
+		}
+
+		redirect(303, '/account');
+	},
 	save: async ({ cookies, request, fetch, getClientAddress }) => {
 		const data = await request.formData();
 		const token = data.get(AUTH_KEY);
@@ -48,11 +67,6 @@ export const actions: Actions = {
 		});
 
 		redirect(303, '/');
-	},
-	clean: async ({ cookies }) => {
-		deleteAuthCookie(cookies);
-		deleteUserCookie(cookies);
-		redirect(303, '/account');
 	},
 	updateAutoSend: async ({ locals, request, fetch, cookies, getClientAddress }) => {
 		const data = await request.formData();

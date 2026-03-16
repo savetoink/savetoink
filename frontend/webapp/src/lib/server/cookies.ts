@@ -12,6 +12,10 @@ function getCookieSecret(): string {
 	return 'default-secret-change-in-production';
 }
 
+function getSecure(): boolean {
+	return !!privateEnv.COOKIE_SECRET;
+}
+
 const cookieSecret = getCookieSecret();
 
 async function getCryptoKey(): Promise<CryptoKey> {
@@ -41,11 +45,7 @@ export interface SetAuthCookieOptions {
 }
 
 export function setAuthCookie(cookies: Cookies, token: string, options?: SetAuthCookieOptions) {
-	const {
-		trim = false,
-		maxAge = 60 * 60 * 24 * 365,
-		secure = import.meta.env.PROD
-	} = options ?? {};
+	const { trim = false, maxAge = 60 * 60 * 24 * 365, secure = getSecure() } = options ?? {};
 
 	const value = trim ? token.trim() : token;
 	cookies.set(AUTH_KEY, value, {
@@ -58,7 +58,7 @@ export function setAuthCookie(cookies: Cookies, token: string, options?: SetAuth
 }
 
 export function deleteAuthCookie(cookies: Cookies) {
-	cookies.delete(AUTH_KEY, { path: '/' });
+	cookies.delete(AUTH_KEY, { path: '/', secure: getSecure() });
 }
 
 export function getAuthCookie(cookies: Cookies) {
@@ -124,12 +124,12 @@ export async function setUserCookie(cookies: Cookies, userData: UserProfile) {
 	cookies.set(USER_COOKIE_KEY, value, {
 		path: '/',
 		httpOnly: true,
-		secure: import.meta.env.PROD,
+		secure: getSecure(),
 		sameSite: 'lax',
 		maxAge: 60 * 60 * 24 * 365
 	});
 }
 
 export function deleteUserCookie(cookies: Cookies) {
-	cookies.delete(USER_COOKIE_KEY, { path: '/' });
+	cookies.delete(USER_COOKIE_KEY, { path: '/', secure: getSecure() });
 }

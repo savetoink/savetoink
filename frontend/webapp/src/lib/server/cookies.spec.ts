@@ -1,6 +1,12 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 
+vi.mock('$env/dynamic/private', () => ({
+	env: {
+		COOKIE_SECRET: ''
+	}
+}));
+
 const mockSet = vi.fn();
 const mockDelete = vi.fn();
 const mockGet = vi.fn();
@@ -90,7 +96,7 @@ describe('cookies', () => {
 
 			deleteJwtCookie(mockCookies);
 
-			expect(mockDelete).toHaveBeenCalledWith('auth', { path: '/' });
+			expect(mockDelete).toHaveBeenCalledWith('auth', { path: '/', secure: false });
 		});
 	});
 
@@ -199,6 +205,6 @@ describe('deleteUserCookie', () => {
 
 		await deleteUserCookie(mockCookies);
 
-		expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/' });
+		expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/', secure: false });
 	});
 });

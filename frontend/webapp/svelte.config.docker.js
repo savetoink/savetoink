@@ -8,6 +8,9 @@ const config = {
 		}),
 		alias: {
 			'@savetoink/shared': '../shared/src'
+		},
+		csrf: {
+			checkOrigin: false
 		}
 	}
 };
