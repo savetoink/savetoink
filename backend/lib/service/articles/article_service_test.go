@@ -546,3 +546,126 @@ func TestToggleFavorite_NotFound(t *testing.T) {
 		t.Error("expected not found error")
 	}
 }
+
+func TestToggleFavorite_UpdateError(t *testing.T) {
+	mockRepo := &MockRepository{
+		articles: []*model.Article{
+			{Account: "account-123", ID: "article-456", Favorite: false, CreatedAt: time.Now()},
+		},
+		updateFavErr: errors.New("update error"),
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	_, err := svc.ToggleFavorite(ctx, "account-123", "article-456")
+	if err == nil {
+		t.Error("expected update error")
+	}
+}
+
+func TestDeleteAllArticles_DeleteError(t *testing.T) {
+	mockRepo := &MockRepository{
+		articles: []*model.Article{
+			{Account: "account-123", ID: "article-1", CreatedAt: time.Now()},
+		},
+		deleteErr: errors.New("delete error"),
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	_, err := svc.DeleteAllArticles(ctx, "account-123")
+	if err == nil {
+		t.Error("expected delete error")
+	}
+}
+
+func TestDeleteArticle_GetError(t *testing.T) {
+	mockRepo := &MockRepository{
+		articles: []*model.Article{
+			{Account: "account-123", ID: "article-456", Title: "To Delete", CreatedAt: time.Now()},
+		},
+		getErr: errors.New("get error"),
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	_, err := svc.DeleteArticle(ctx, "account-123", "article-456")
+	if err == nil {
+		t.Error("expected get error")
+	}
+}
+
+func TestDeleteArticle_DeleteError(t *testing.T) {
+	mockRepo := &MockRepository{
+		articles: []*model.Article{
+			{Account: "account-123", ID: "article-456", Title: "To Delete", CreatedAt: time.Now()},
+		},
+		deleteErr: errors.New("delete error"),
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	_, err := svc.DeleteArticle(ctx, "account-123", "article-456")
+	if err == nil {
+		t.Error("expected delete error")
+	}
+}
+
+func TestGetArticlesMetadata_Error(t *testing.T) {
+	mockRepo := &MockRepository{
+		articles:    []*model.Article{},
+		metadataErr: errors.New("metadata error"),
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	_, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, nil)
+	if err == nil {
+		t.Error("expected metadata error")
+	}
+}
+
+func TestGetArticle_RepoError(t *testing.T) {
+	mockRepo := &MockRepository{
+		articles: []*model.Article{},
+		getErr:   errors.New("repository error"),
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	_, err := svc.GetArticle(ctx, "account-123", "article-456")
+	if err == nil {
+		t.Error("expected repository error")
+	}
+}
+
+func TestUpdateArticle_RepoError(t *testing.T) {
+	mockRepo := &MockRepository{
+		articles: []*model.Article{},
+		storeErr: errors.New("store error"),
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	article := &model.Article{
+		Account:   "user1",
+		ID:        "test-id",
+		URL:       "https://example.com/test",
+		Title:     "Updated Title",
+		Content:   "<p>Updated content</p>",
+		Author:    "Updated Author",
+		CreatedAt: time.Now(),
+	}
+
+	err := svc.UpdateArticle(ctx, article)
+	if err == nil {
+		t.Error("expected store error")
+	}
+}
