@@ -87,6 +87,10 @@ func Load(mode consts.RunMode, awsLoader AWSConfigLoader) (*Config, error) {
 		cfg.Port = consts.DefaultHTTPPort
 	}
 
+	if cfg.CorsAllowOrigin == "" {
+		cfg.CorsAllowOrigin = "*"
+	}
+
 	if err := cfg.validate(awsLoader); err != nil {
 		return nil, err
 	}

@@ -570,7 +570,7 @@ func TestLoad_CorsAllowOrigin(t *testing.T) {
 		{"specific origin", "https://example.com", "https://example.com"},
 		{"localhost", "http://localhost:3000", "http://localhost:3000"},
 		{"wildcard", "*", "*"},
-		{"empty string", "", ""},
+		{"empty string", "", "*"},
 		{"multiple origins (as-is)", "https://example.com,https://test.com", "https://example.com,https://test.com"},
 	}
 
