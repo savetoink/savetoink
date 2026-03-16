@@ -1,5 +1,6 @@
 ---
 import { getCurrentYear } from "@savetoink/shared/lib/time-utils";
+const version = __APP_VERSION__;
 ---
 <footer class="site-footer">
   <div class="footer-inner">
@@ -13,7 +14,7 @@ import { getCurrentYear } from "@savetoink/shared/lib/time-utils";
     </nav>
 
     <p class="footer-copy">
-      © {getCurrentYear()} Save to Ink · Self-hostable · ELv2 · Built by a reader, for readers.
+      © {getCurrentYear()} Save to Ink · v{version}
     </p>
   </div>
 </footer>
