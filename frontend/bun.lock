@@ -80,6 +80,7 @@
       "version": "0.33.0-dev+03151930.2afac67",
       "dependencies": {
         "@astrojs/sitemap": "3.7.1",
+        "@savetoink/shared": "workspace:*",
         "@scalar/astro": "^0.2.3",
         "astro": "^6.0.4",
       },

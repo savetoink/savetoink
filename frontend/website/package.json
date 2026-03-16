@@ -13,6 +13,7 @@
 	},
 	"dependencies": {
 		"@astrojs/sitemap": "3.7.1",
+		"@savetoink/shared": "workspace:*",
 		"@scalar/astro": "^0.2.3",
 		"astro": "^6.0.4"
 	},

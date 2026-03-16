@@ -23,3 +23,7 @@ export function getCurrentDevDate(): string {
   const minute = String(now.minute).padStart(2, "0");
   return `${day}${month}${hour}${minute}`;
 }
+
+export function getCurrentYear(): number {
+  return Temporal.Now.plainDateTimeISO().year;
+}

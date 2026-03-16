@@ -12,6 +12,7 @@
     "./types": "./src/types/index.ts",
     "./lib": "./src/lib/index.ts",
     "./lib/build-config": "./src/lib/build-config.js",
+    "./lib/time-utils": "./src/lib/time-utils.ts",
     "./components": "./src/components/index.ts",
     "./css": "./src/css.ts"
   }
