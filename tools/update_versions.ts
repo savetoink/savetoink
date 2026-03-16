@@ -264,6 +264,31 @@ async function main(): Promise<void> {
     );
   }
 
+  const openapiPath = path.join(
+    repoRoot,
+    "backend",
+    "lib",
+    "server",
+    "handlers",
+    "openapi.yaml",
+  );
+  try {
+    const yamlContent = await fs.readFile(openapiPath, "utf-8");
+    const newYamlContent = yamlContent.replace(
+      /version: \d+\.\d+\.\d+(?:-dev\+\d{8}\.[a-f0-9]{7})?/,
+      `version: ${newVersionStr}`,
+    );
+    if (yamlContent !== newYamlContent) {
+      await fs.writeFile(openapiPath, newYamlContent);
+      console.log(`✅ ${path.relative(repoRoot, openapiPath)} (version updated)`);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(
+      `⚠️  Could not update ${path.relative(repoRoot, openapiPath)}: ${message}`,
+    );
+  }
+
   let updatedCount = 0;
 
   for (const filePath of packageJsonFiles) {
@@ -319,7 +344,7 @@ async function main(): Promise<void> {
 
   console.log(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Done! Updated VERSION, Go version constant, ${packageCount} package.json files, and ${updatedCount - packageCount} bun.lock workspace versions
+ Done! Updated VERSION, Go version constant, OpenAPI spec, ${packageCount} package.json files, and ${updatedCount - packageCount} bun.lock workspace versions
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
 }
