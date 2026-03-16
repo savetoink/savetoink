@@ -28,8 +28,10 @@ test-frontend: test-webapp test-extension test-website
 
 [working-directory('frontend/webapp')]
 test-webapp:
-    bun run check
+    bun run format > /dev/null
     bun run lint
+    bun run check
+
     bun run test
 
 [working-directory('frontend/extension')]

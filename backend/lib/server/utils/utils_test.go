@@ -19,15 +19,15 @@ import (
 
 func TestWriteJSONError(t *testing.T) {
 	w := httptest.NewRecorder()
-	err := errors.New("test error")
+	testErr := errors.New("test error")
 
-	WriteJSONError(w, http.StatusBadRequest, err)
+	WriteJSONError(w, http.StatusBadRequest, testErr)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
 	var response map[string]string
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
-		t.Fatalf("failed to unmarshal response: %v", err)
+	if unmarshalErr := json.Unmarshal(w.Body.Bytes(), &response); unmarshalErr != nil {
+		t.Fatalf("failed to unmarshal response: %v", unmarshalErr)
 	}
 
 	assert.Equal(t, "test error", response["error"])
@@ -92,7 +92,7 @@ func TestDecodeAndValidateRequest(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		body           interface{}
+		body           any
 		expectedStatus int
 		expectError    bool
 	}{
@@ -136,26 +136,26 @@ func TestDecodeAndValidateRequest(t *testing.T) {
 			if strBody, ok := tt.body.(string); ok {
 				bodyReader = strings.NewReader(strBody)
 			} else {
-				bodyBytes, err := json.Marshal(tt.body)
-				assert.NoError(t, err)
+				bodyBytes, marshalErr := json.Marshal(tt.body)
+				assert.NoError(t, marshalErr)
 				bodyReader = bytes.NewReader(bodyBytes)
 			}
 
-			r := httptest.NewRequest("POST", "/test", bodyReader)
+			r := httptest.NewRequestWithContext(context.Background(), "POST", "/test", bodyReader)
 			req := &TestRequest{}
 
-			err := DecodeAndValidateRequest(w, r, req)
+			decodeErr := DecodeAndValidateRequest(w, r, req)
 
 			if tt.expectError {
-				assert.NotNil(t, err)
+				assert.NotNil(t, decodeErr)
 				assert.Equal(t, tt.expectedStatus, w.Code)
 
 				var response map[string]string
-				if decodeErr := json.Unmarshal(w.Body.Bytes(), &response); decodeErr == nil {
+				if unmarshalErr := json.Unmarshal(w.Body.Bytes(), &response); unmarshalErr == nil {
 					assert.Contains(t, response["error"], "failed to decode request body")
 				}
 			} else {
-				assert.Nil(t, err)
+				assert.Nil(t, decodeErr)
 				assert.Equal(t, http.StatusOK, w.Code)
 			}
 		})
@@ -210,14 +210,14 @@ func TestHandleServiceError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			r := httptest.NewRequest("GET", "/test", http.NoBody)
+			r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 
 			HandleServiceError(w, r, tt.err, tt.contextStr)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			var response map[string]string
-			if err := json.Unmarshal(w.Body.Bytes(), &response); err == nil {
+			if unmarshalErr := json.Unmarshal(w.Body.Bytes(), &response); unmarshalErr == nil {
 				assert.NotEmpty(t, response["error"])
 			}
 		})
@@ -264,7 +264,7 @@ func TestGetArticleID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := httptest.NewRequest("GET", tt.url, http.NoBody)
+			r := httptest.NewRequestWithContext(context.Background(), "GET", tt.url, http.NoBody)
 
 			if tt.paramName != "" {
 				rctx := chi.NewRouteContext()

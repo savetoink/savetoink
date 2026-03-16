@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/shaftoe/savetoink)](https://goreportcard.com/report/github.com/shaftoe/savetoink) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=savetoink_savetoink&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=savetoink_savetoink) [![codecov](https://codecov.io/gh/savetoink/savetoink/graph/badge.svg?token=1UHXX9P625)](https://codecov.io/gh/savetoink/savetoink) [![Coverage Status](https://coveralls.io/repos/github/savetoink/savetoink/badge.svg)](https://coveralls.io/github/savetoink/savetoink)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shaftoe/savetoink)](https://goreportcard.com/report/github.com/shaftoe/savetoink) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=savetoink_savetoink&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=savetoink_savetoink) [![codecov](https://codecov.io/gh/savetoink/savetoink/graph/badge.svg?token=1UHXX9P625)](https://codecov.io/gh/savetoink/savetoink) [![Coverage Status](https://coveralls.io/repos/github/savetoink/savetoink/badge.svg)](https://coveralls.io/github/savetoink/savetoink) ![Api Reference](https://img.shields.io/badge/API-Reference-orange?link=https%3A%2F%2Fwww.saveto.ink%2Fapi-reference%2F)
 
 # Save To Ink
 
@@ -104,15 +104,15 @@ $ savetoink send https://golang.org/doc/effective_go.html --dest-email my-kindle
 To develop the frontend app locally:
 
 ```bash
-just server-webapp
+just webapp
 ```
 
 To develop the extension locally
 
 ```bash
-just server-extension
+just extension
 # or
-just server-extension-firefox
+just extension-firefox
 ```
 
 ### Backend
@@ -131,7 +131,7 @@ just server-extension-firefox
 To run locally:
 
 ```bash
-just server-http
+just http
 ```
 
 To deploy to AWS Lambda:

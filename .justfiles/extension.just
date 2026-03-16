@@ -7,9 +7,14 @@ init-extension:
     bun init
 
 [working-directory('frontend/extension')]
-server-extension:
+extension:
     bun install
     bun run dev
+
+[working-directory('frontend/extension')]
+extension-firefox:
+    bun install
+    bun run dev:firefox
 
 [working-directory('frontend/extension')]
 build-extension:
@@ -18,8 +23,3 @@ build-extension:
     bun run build:firefox
     bun run zip
     bun run zip:firefox
-
-[working-directory('frontend/extension')]
-server-extension-firefox:
-    bun install
-    bun run dev:firefox
