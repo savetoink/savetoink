@@ -1,4 +1,4 @@
-import { Temporal } from "@savetoink/shared";
+import { formatInstantFromEpochMs } from "@savetoink/shared";
 
 const ZAI_API_KEY = process.env.ZAI_API_KEY;
 
@@ -41,11 +41,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`z.ai Token Usage: ${tokensLimit.percentage}%`);
-  const resetDate: Temporal.Instant | null = tokensLimit.nextResetTime
-    ? Temporal.Instant.fromEpochMilliseconds(tokensLimit.nextResetTime)
-    : null;
-  if (resetDate) {
-    console.log(`Resets at: ${resetDate.toLocaleString()}`);
+  if (tokensLimit.nextResetTime) {
+    const resetDate = formatInstantFromEpochMs(tokensLimit.nextResetTime);
+    console.log(`Resets at: ${resetDate}`);
   }
 }
 

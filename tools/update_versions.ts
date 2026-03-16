@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import git from "isomorphic-git";
 import * as jsonc from "jsonc-parser";
 import path from "path";
-import { Temporal } from "@savetoink/shared";
+import { getCurrentDevDate } from "@savetoink/shared";
 
 type BumpType = "major" | "minor" | "patch" | "dev";
 
@@ -59,15 +59,6 @@ function formatVersion(version: Version): string {
 async function getCurrentCommitSha(repoRoot: string): Promise<string> {
   const sha = await git.resolveRef({ fs, dir: repoRoot, ref: "HEAD" });
   return sha.slice(0, 7);
-}
-
-function getCurrentDevDate(): string {
-  const now = Temporal.Now.plainDateTimeISO();
-  const month = String(now.month).padStart(2, "0");
-  const day = String(now.day).padStart(2, "0");
-  const hour = String(now.hour).padStart(2, "0");
-  const minute = String(now.minute).padStart(2, "0");
-  return `${month}${day}${hour}${minute}`;
 }
 
 async function bumpVersion(
