@@ -45,8 +45,7 @@ func SetupLogging(cfg *config.Config) {
 	})
 
 	if err != nil {
-		slog.With("version", *consts.Version()).
-			Error("failed to initialize Sentry, fall back to default logger", "error", err)
+		slog.Error("failed to initialize Sentry, fall back to default logger", "error", err)
 		return
 	}
 
