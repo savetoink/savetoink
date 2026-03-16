@@ -1,7 +1,7 @@
 {
 	"name": "webapp",
 	"private": true,
-	"version": "0.33.3-dev+16031553.7e4cb20",
+	"version": "0.33.4",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
