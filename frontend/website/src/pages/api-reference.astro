@@ -1,16 +1,13 @@
 ---
-import Layout from "../layouts/Layout.astro";
 import { ScalarComponent } from '@scalar/astro'
 ---
 
-<Layout title="SaveToInk API Reference" description="API documentation for SaveToInk">
-  <ScalarComponent
-    configuration={{
-      url: '/openapi.yaml',
-      pageTitle: 'Save To Ink API Reference',
-      theme: 'default',
-      baseServerURL: import.meta.env.PUBLIC_API_URL,
-      darkMode: true,
-    }}
-  />
-</Layout>
+<ScalarComponent
+  configuration={{
+    url: '/openapi.yaml',
+    pageTitle: 'Save To Ink API Reference',
+    theme: 'default',
+    baseServerURL: import.meta.env.PUBLIC_API_URL,
+    darkMode: true,
+  }}
+/>
