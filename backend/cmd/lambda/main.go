@@ -1,4 +1,4 @@
-// Package main implements the Lambda entry point for the API server.
+// Package main implements the Lambda main entry point for the API server.
 package main
 
 import (
@@ -11,6 +11,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/server"
 )
 
@@ -24,5 +25,6 @@ func main() {
 	}
 
 	router := server.NewRouter(cfg)
+	logging.SetupLogging(cfg)
 	algnhsa.ListenAndServe(router, nil)
 }

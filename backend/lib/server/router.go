@@ -23,8 +23,6 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 }
 
 func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
-	logging.SetupLogging(cfg)
-
 	r := chi.NewRouter()
 	srv := service.NewFromConfig(cfg)
 	proc := newProcessor(cfg, srv)

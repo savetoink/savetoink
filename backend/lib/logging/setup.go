@@ -60,5 +60,5 @@ func SetupLogging(cfg *config.Config) {
 	}.NewSentryHandler(context.Background())
 
 	multiHandler := slog.NewMultiHandler(sentryHandler, defaultHandler)
-	slog.SetDefault(slog.New(multiHandler))
+	slog.SetDefault(slog.New(multiHandler).With("version", *consts.Version()))
 }
