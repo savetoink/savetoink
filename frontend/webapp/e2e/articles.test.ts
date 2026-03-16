@@ -1,4 +1,4 @@
-import { test, expect, ArticlesPage } from './';
+import { test, ArticlesPage } from './';
 
 test.describe('Articles Page', () => {
 	let articlesPage: ArticlesPage;

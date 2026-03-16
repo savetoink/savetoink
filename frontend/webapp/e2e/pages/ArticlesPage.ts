@@ -11,8 +11,8 @@ export class ArticlesPage extends BasePage {
 	}
 
 	async selectArticle(index: number): Promise<void> {
-		const article = this.page.locator('ul > li').nth(index);
-		await article.click();
+		const _article = this.page.locator('ul > li').nth(index);
+		await _article.click();
 	}
 
 	async selectArticleById(id: string): Promise<void> {
@@ -21,8 +21,8 @@ export class ArticlesPage extends BasePage {
 	}
 
 	async openArticle(index: number): Promise<void> {
-		const article = this.page.locator('ul > li').nth(index);
-		await article.dblclick();
+		const _article = this.page.locator('ul > li').nth(index);
+		await _article.dblclick();
 	}
 
 	async expectNoArticles(): Promise<void> {
@@ -39,13 +39,13 @@ export class ArticlesPage extends BasePage {
 		return await article.textContent();
 	}
 
-	async clickFavorite(index: number): Promise<void> {
+	async clickFavorite(): Promise<void> {
 		await this.page.keyboard.press('k');
 		await this.page.keyboard.press('ArrowDown');
 		await this.page.keyboard.press('f');
 	}
 
-	async clickDelete(index: number): Promise<void> {
+	async clickDelete(): Promise<void> {
 		await this.page.keyboard.press('k');
 		await this.page.keyboard.press('ArrowDown');
 		await this.page.keyboard.press('d');

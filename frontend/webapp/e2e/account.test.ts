@@ -1,4 +1,4 @@
-import { test, expect, AccountPage } from './';
+import { test, AccountPage } from './';
 
 test.describe('Account Page', () => {
 	test.beforeEach(async ({ page }) => {
@@ -11,7 +11,7 @@ test.describe('Account Page', () => {
 		await accountPage.expectAccountSectionVisible();
 	});
 
-	test('should have navigation available', async ({ page, keyboardHelper }) => {
+	test('should have navigation available', async ({ keyboardHelper }) => {
 		await keyboardHelper.pressKey('h');
 	});
 });
