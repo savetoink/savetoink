@@ -907,3 +907,224 @@ func TestLoad_CLI_Mode_CustomPort(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 9000, cfg.Port)
 }
+
+func TestLoad_CLI_InvalidStorageBackend(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND": "invalid-backend",
+		"SAVETOINK_APP_URL":         "https://example.com",
+		"SAVETOINK_API_KEY":         "test-api-key",
+	})
+
+	cfg, err := Load(consts.ModeCLI, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.StorageBackend("invalid-backend"), cfg.StorageBackend)
+}
+
+func TestLoad_CLI_EmptyStorageBackend(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND": "",
+		"SAVETOINK_APP_URL":         "https://example.com",
+		"SAVETOINK_API_KEY":         "test-api-key",
+	})
+
+	cfg, err := Load(consts.ModeCLI, nil)
+	require.NoError(t, err)
+	assert.Empty(t, cfg.StorageBackend)
+}
+
+func TestLoad_Server_SQLite_WithoutPath(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
+		"SAVETOINK_APP_URL":            "https://example.com",
+		"SAVETOINK_API_KEY":            "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.StorageBackendSQLite, cfg.StorageBackend)
+	assert.Equal(t, consts.SQLitePathDefault, cfg.SQLitePath)
+}
+
+func TestLoad_Tasks_Config_InvalidJSON(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+		"SAVETOINK_TASKS":                   "invalid-json{",
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	assert.Nil(t, cfg.Tasks)
+}
+
+func TestLoad_ArticleTagsTable(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_ARTICLE_TAGS_TABLE_NAME": "article-tags-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "article-tags-table", cfg.ArticleTagsTable)
+}
+
+func TestLoad_BackupBucketName(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+		"SAVETOINK_BACKUP_BUCKET_NAME":      "backup-bucket",
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "backup-bucket", cfg.BackupBucketName)
+}
+
+func TestValidateSQLiteConfig_EmptyPath(t *testing.T) {
+	cfg := &Config{SQLitePath: ""}
+	var missing []string
+
+	err := cfg.validateSQLiteConfig(&missing)
+	require.NoError(t, err)
+	assert.Contains(t, missing, "SAVETOINK_SQLITE_PATH")
+}
+
+func TestValidateStorageBackendConfig_EmptyBackend(t *testing.T) {
+	cfg := &Config{StorageBackend: "", SQLitePath: "/path/to/db.db"}
+	var missing []string
+
+	err := cfg.validateStorageBackendConfig(&missing, nil)
+	require.NoError(t, err)
+	assert.Equal(t, consts.StorageBackendSQLite, cfg.StorageBackend)
+}
+
+func TestValidateEmailProviderConfigCli_Mailjet(t *testing.T) {
+	cfg := &Config{
+		EmailProvider: consts.EmailBackendMailjet,
+	}
+	var missing []string
+
+	cfg.ValidateEmailProviderConfigCli(&missing)
+	assert.Contains(t, missing, "SAVETOINK_MAILJET_API_KEY")
+	assert.Contains(t, missing, "SAVETOINK_MAILJET_API_SECRET")
+	assert.Contains(t, missing, "SAVETOINK_SENDER_EMAIL")
+}
+
+func TestValidateEmailProviderConfigCli_NonMailjet(t *testing.T) {
+	cfg := &Config{
+		EmailProvider: consts.EmailProvider("other-provider"),
+	}
+	var missing []string
+
+	cfg.ValidateEmailProviderConfigCli(&missing)
+	assert.Empty(t, missing)
+}
+
+func TestValidateServerConfig_SQLite(t *testing.T) {
+	cfg := &Config{
+		StorageBackend: consts.StorageBackendSQLite,
+		SQLitePath:     "/path/to/db.db",
+		AuthBackend:    consts.AuthBackendSharedAPIKey,
+		APIKeySecret:   "test-key",
+		AppURL:         "https://example.com",
+	}
+	var missing []string
+
+	err := cfg.validateServerConfig(&missing, nil)
+	require.NoError(t, err)
+}
+
+func TestValidateServerConfig_DynamoDB(t *testing.T) {
+	cfg := &Config{
+		StorageBackend:   consts.StorageBackendDynamoDB,
+		ArticlesTable:    "articles",
+		UserProfileTable: "profiles",
+		SendsTable:       "sends",
+		AuthBackend:      consts.AuthBackendSharedAPIKey,
+		APIKeySecret:     "test-key",
+		AppURL:           "https://example.com",
+	}
+	var missing []string
+
+	awsLoader := mockAWSLoader()
+
+	err := cfg.validateServerConfig(&missing, awsLoader)
+	require.NoError(t, err)
+}
+
+func TestLoad_Tasks_Config_InvalidTask(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+		"SAVETOINK_TASKS":                   `[{"task":"task1"}]`,
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	require.Len(t, cfg.Tasks, 1)
+	assert.Equal(t, "task1", cfg.Tasks[0].Task)
+	assert.Empty(t, cfg.Tasks[0].Schedule)
+}
+
+func TestLoad_Tasks_Config_WithBackup(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+		"SAVETOINK_TASKS":                   `[{"task":"backup","schedule":"0 * * * *"}]`,
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	require.Len(t, cfg.Tasks, 1)
+	assert.Equal(t, "backup", cfg.Tasks[0].Task)
+	assert.Equal(t, "0 * * * *", cfg.Tasks[0].Schedule)
+}
+
+func TestLoad_Tasks_Config_WithRestore(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_APP_URL":                 "https://example.com",
+		"SAVETOINK_TASKS":                   `[{"task":"restore","backup_name":"backup-123","overwrite":true}]`,
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	require.Len(t, cfg.Tasks, 1)
+	assert.Equal(t, "restore", cfg.Tasks[0].Task)
+	assert.Equal(t, "backup-123", cfg.Tasks[0].BackupName)
+	assert.True(t, cfg.Tasks[0].Overwrite)
+}
