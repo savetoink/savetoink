@@ -34,4 +34,19 @@ const (
 
 	// SQLitePathDefault is the default path to the SQLite database file.
 	SQLitePathDefault = "savetoink.db"
+
+	// BackupPathPrefix is the S3 path prefix for backup files.
+	BackupPathPrefix = "backups/"
+
+	// BackupFileExtension is the file extension for backup files.
+	BackupFileExtension = ".json.gz"
+
+	// BackupTimestampFormat is the timestamp format used in backup filenames.
+	BackupTimestampFormat = "20060102-150405Z"
+
+	// BackupFilenameTemplate is the template for generating backup filenames.
+	BackupFilenameTemplate = BackupPathPrefix + "%s-%s" + BackupFileExtension
+
+	// BackupNameRegex is the regex pattern for parsing backup filenames.
+	BackupNameRegex = `^(.+)-\d{8}-\d{6}Z` + BackupFileExtension + `$`
 )

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -19,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/shaftoe/savetoink/backend/lib/config"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -166,7 +168,7 @@ func (b *BackupRepository) uploadBackup(
 	tableName string,
 	items []map[string]types.AttributeValue,
 ) (string, error) {
-	key := fmt.Sprintf("backups/%s-%s.json", tableName, time.Now().UTC().Format("20060102-150405"))
+	key := generateBackupFilename(tableName)
 
 	descResp, err := b.ddbDescriber.DescribeTable(ctx, &dynamodb.DescribeTableInput{
 		TableName: aws.String(tableName),
@@ -198,10 +200,20 @@ func (b *BackupRepository) uploadBackup(
 		return "", fmt.Errorf("failed to marshal backup data for table %s: %w", tableName, err)
 	}
 
+	var buf bytes.Buffer
+	gzWriter := gzip.NewWriter(&buf)
+	if _, compressErr := gzWriter.Write(data); compressErr != nil {
+		return "", fmt.Errorf("failed to compress backup data for table %s: %w", tableName, compressErr)
+	}
+	if closeErr := gzWriter.Close(); closeErr != nil {
+		return "", fmt.Errorf("failed to close gzip writer for table %s: %w", tableName, closeErr)
+	}
+
 	_, err = b.s3Client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(b.bucket),
-		Key:    aws.String(key),
-		Body:   bytes.NewReader(data),
+		Bucket:          aws.String(b.bucket),
+		Key:             aws.String(key),
+		Body:            bytes.NewReader(buf.Bytes()),
+		ContentEncoding: aws.String("gzip"),
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to upload backup for table %s to S3: %w", tableName, err)
@@ -258,7 +270,7 @@ func (b *BackupRepository) RestoreTable(
 		return result
 	}
 
-	key := "backups/" + backupName
+	key := consts.BackupPathPrefix + backupName
 
 	tableName, extractErr := b.extractTableName(backupName)
 	if extractErr != nil {
@@ -324,19 +336,25 @@ func extractTableKeySchema(table *types.TableDescription) map[string]string {
 	return schema
 }
 
-func (b *BackupRepository) extractTableName(backupName string) (string, error) {
-	if !strings.HasSuffix(backupName, ".json") {
-		return "", errors.New("backup name must end with .json")
-	}
+func generateBackupFilename(tableName string) string {
+	timestamp := time.Now().UTC().Format(consts.BackupTimestampFormat)
+	return fmt.Sprintf(consts.BackupFilenameTemplate, tableName, timestamp)
+}
 
-	re := regexp.MustCompile(`^(.+)-\d{8}-\d{6}\.json$`)
+// ParseBackupFilename extracts the table name from a backup filename.
+func ParseBackupFilename(backupName string) (tableName string, err error) {
+	re := regexp.MustCompile(consts.BackupNameRegex)
 	matches := re.FindStringSubmatch(backupName)
 
 	if matches == nil {
-		return "", errors.New("backup name format should be: tablename-timestamp.json")
+		return "", errors.New("backup name format should be: tablename-timestamp.json.gz")
 	}
 
 	return matches[1], nil
+}
+
+func (b *BackupRepository) extractTableName(backupName string) (string, error) {
+	return ParseBackupFilename(backupName)
 }
 
 func (b *BackupRepository) downloadBackup(ctx context.Context, key string) (map[string]any, error) {
@@ -351,7 +369,15 @@ func (b *BackupRepository) downloadBackup(ctx context.Context, key string) (map[
 		_ = resp.Body.Close()
 	}()
 
-	data, readErr := io.ReadAll(resp.Body)
+	gzReader, decompressErr := gzip.NewReader(resp.Body)
+	if decompressErr != nil {
+		return nil, fmt.Errorf("failed to create gzip reader: %w", decompressErr)
+	}
+	defer func() {
+		_ = gzReader.Close()
+	}()
+
+	data, readErr := io.ReadAll(gzReader)
 	if readErr != nil {
 		return nil, fmt.Errorf("failed to read backup data: %w", readErr)
 	}

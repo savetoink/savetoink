@@ -2,6 +2,7 @@ package repository
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"errors"
 	"io"
@@ -583,7 +584,7 @@ func TestBackupRepository_KeyGeneration(t *testing.T) {
 
 	require.NoError(t, result.Error)
 	assert.Contains(t, result.Key, "backups/test-table-")
-	assert.Contains(t, result.Key, ".json")
+	assert.Contains(t, result.Key, ".json.gz")
 }
 
 func TestBackupRepository_TimestampValidation(t *testing.T) {
@@ -641,9 +642,12 @@ func TestBackupRepository_TimestampValidation(t *testing.T) {
 
 	require.NoError(t, result.Error)
 	require.Contains(t, result.Key, "backups/test-table-")
-	require.Contains(t, result.Key, ".json")
+	require.Contains(t, result.Key, ".json.gz")
 
-	parsedTime, err := time.Parse("20060102-150405", result.Key[len("backups/test-table-"):len(result.Key)-len(".json")])
+	timestampStart := len("backups/test-table-")
+	timestampEnd := len(result.Key) - len(".json.gz")
+	timestamp := result.Key[timestampStart:timestampEnd]
+	parsedTime, err := time.Parse("20060102-150405Z", timestamp)
 	require.NoError(t, err)
 	require.NotNil(t, parsedTime)
 }
@@ -698,8 +702,12 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 				_ *s3.GetObjectInput,
 				_ ...func(*s3.Options),
 			) (*s3.GetObjectOutput, error) {
+				var buf bytes.Buffer
+				gzWriter := gzip.NewWriter(&buf)
+				_, _ = gzWriter.Write([]byte(backupJSON))
+				_ = gzWriter.Close()
 				return &s3.GetObjectOutput{
-					Body: io.NopCloser(bytes.NewReader([]byte(backupJSON))),
+					Body: io.NopCloser(bytes.NewReader(buf.Bytes())),
 				}, nil
 			},
 		}
@@ -733,11 +741,11 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 			logger:       logger,
 		}
 
-		result := br.RestoreTable(context.Background(), "articles-20240315-131317.json", true)
+		result := br.RestoreTable(context.Background(), "articles-20240315-131317Z.json.gz", true)
 
 		require.NoError(t, result.Error)
 		assert.Equal(t, "articles", result.TableName)
-		assert.Equal(t, "articles-20240315-131317.json", result.BackupName)
+		assert.Equal(t, "articles-20240315-131317Z.json.gz", result.BackupName)
 		assert.Equal(t, 2, result.ItemsRestored)
 		assert.Equal(t, 1, result.ItemsDeleted)
 		assert.True(t, result.Overwrite)
@@ -770,8 +778,12 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 				_ *s3.GetObjectInput,
 				_ ...func(*s3.Options),
 			) (*s3.GetObjectOutput, error) {
+				var buf bytes.Buffer
+				gzWriter := gzip.NewWriter(&buf)
+				_, _ = gzWriter.Write([]byte(backupJSON))
+				_ = gzWriter.Close()
 				return &s3.GetObjectOutput{
-					Body: io.NopCloser(bytes.NewReader([]byte(backupJSON))),
+					Body: io.NopCloser(bytes.NewReader(buf.Bytes())),
 				}, nil
 			},
 		}
@@ -802,11 +814,11 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 			logger:       logger,
 		}
 
-		result := br.RestoreTable(context.Background(), "articles-20240315-131317.json", false)
+		result := br.RestoreTable(context.Background(), "articles-20240315-131317Z.json.gz", false)
 
 		require.NoError(t, result.Error)
 		assert.Equal(t, "articles", result.TableName)
-		assert.Equal(t, "articles-20240315-131317.json", result.BackupName)
+		assert.Equal(t, "articles-20240315-131317Z.json.gz", result.BackupName)
 		assert.Equal(t, 1, result.ItemsRestored)
 		assert.Equal(t, 1, result.ItemsSkipped)
 		assert.Equal(t, 0, result.ItemsDeleted)
@@ -828,7 +840,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 		result := br.RestoreTable(context.Background(), "invalid-name", false)
 
 		require.Error(t, result.Error)
-		assert.Contains(t, result.Error.Error(), "backup name must end with .json")
+		assert.Contains(t, result.Error.Error(), "backup name format should be")
 	})
 
 	t.Run("restore with S3 error", func(t *testing.T) {
@@ -852,7 +864,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 			logger:    logger,
 		}
 
-		result := br.RestoreTable(context.Background(), "articles-20240315-131317.json", false)
+		result := br.RestoreTable(context.Background(), "articles-20240315-131317Z.json.gz", false)
 
 		require.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "failed to download backup")
@@ -870,8 +882,12 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 				_ *s3.GetObjectInput,
 				_ ...func(*s3.Options),
 			) (*s3.GetObjectOutput, error) {
+				var buf bytes.Buffer
+				gzWriter := gzip.NewWriter(&buf)
+				_, _ = gzWriter.Write([]byte(backupJSON))
+				_ = gzWriter.Close()
 				return &s3.GetObjectOutput{
-					Body: io.NopCloser(bytes.NewReader([]byte(backupJSON))),
+					Body: io.NopCloser(bytes.NewReader(buf.Bytes())),
 				}, nil
 			},
 		}
@@ -886,7 +902,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 			logger:    logger,
 		}
 
-		result := br.RestoreTable(context.Background(), "articles-20240315-131317.json", false)
+		result := br.RestoreTable(context.Background(), "articles-20240315-131317Z.json.gz", false)
 
 		require.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "backup data missing 'items' field")
@@ -913,8 +929,12 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 				_ *s3.GetObjectInput,
 				_ ...func(*s3.Options),
 			) (*s3.GetObjectOutput, error) {
+				var buf bytes.Buffer
+				gzWriter := gzip.NewWriter(&buf)
+				_, _ = gzWriter.Write([]byte(backupJSON))
+				_ = gzWriter.Close()
 				return &s3.GetObjectOutput{
-					Body: io.NopCloser(bytes.NewReader([]byte(backupJSON))),
+					Body: io.NopCloser(bytes.NewReader(buf.Bytes())),
 				}, nil
 			},
 		}
@@ -938,7 +958,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 			logger:       logger,
 		}
 
-		result := br.RestoreTable(context.Background(), "articles-20240315-131317.json", false)
+		result := br.RestoreTable(context.Background(), "articles-20240315-131317Z.json.gz", false)
 
 		require.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "failed to restore items")
@@ -958,7 +978,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		tableName, err := br.extractTableName("articles-20240315-131317.json")
+		tableName, err := br.extractTableName("articles-20240315-131317Z.json.gz")
 		require.NoError(t, err)
 		assert.Equal(t, "articles", tableName)
 	})
@@ -975,7 +995,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		tableName, err := br.extractTableName("savetoink-articles-20240315-131317.json")
+		tableName, err := br.extractTableName("savetoink-articles-20240315-131317Z.json.gz")
 		require.NoError(t, err)
 		assert.Equal(t, "savetoink-articles", tableName)
 	})
@@ -992,12 +1012,12 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		tableName, err := br.extractTableName("savetoink-multi-prefix-20240315-131317.json")
+		tableName, err := br.extractTableName("savetoink-multi-prefix-20240315-131317Z.json.gz")
 		require.NoError(t, err)
 		assert.Equal(t, "savetoink-multi-prefix", tableName)
 	})
 
-	t.Run("missing .json extension", func(t *testing.T) {
+	t.Run("missing .json.gz extension", func(t *testing.T) {
 		mockS3Getter := &mockS3Getter{}
 		mockDDBWriter := &mockDynamoDBBatchWriter{}
 
@@ -1011,7 +1031,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 
 		_, err := br.extractTableName("articles-20240315-131317")
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "backup name must end with .json")
+		assert.Contains(t, err.Error(), "backup name format should be")
 	})
 
 	t.Run("invalid format", func(t *testing.T) {
@@ -1026,7 +1046,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		_, err := br.extractTableName("invalid.json")
+		_, err := br.extractTableName("invalid.json.gz")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backup name format should be")
 	})
@@ -1043,7 +1063,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		_, err := br.extractTableName("articles-2024-03-15-131317.json")
+		_, err := br.extractTableName("articles-2024-03-15-131317.json.gz")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backup name format should be")
 	})
@@ -1060,7 +1080,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		_, err := br.extractTableName("articles-20240315-13:13:17.json")
+		_, err := br.extractTableName("articles-20240315-13:13:17.json.gz")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backup name format should be")
 	})
@@ -1077,7 +1097,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		_, err := br.extractTableName("articles-20240315.json")
+		_, err := br.extractTableName("articles-20240315.json.gz")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backup name format should be")
 	})
@@ -1094,7 +1114,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		_, err := br.extractTableName("articles-131317.json")
+		_, err := br.extractTableName("articles-131317.json.gz")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backup name format should be")
 	})
@@ -1111,7 +1131,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		_, err := br.extractTableName("articles-202403151-131317.json")
+		_, err := br.extractTableName("articles-202403151-131317Z.json.gz")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backup name format should be")
 	})
@@ -1128,7 +1148,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		_, err := br.extractTableName("articles-20240315-1313.json")
+		_, err := br.extractTableName("articles-20240315-1313.json.gz")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backup name format should be")
 	})
@@ -1145,7 +1165,110 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 			logger:    logger,
 		}
 
-		_, err := br.extractTableName("articles-abcdefghijklmnop-qrstuv.json")
+		_, err := br.extractTableName("articles-abcdefghijklmnop-qrstuv.json.gz")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+}
+
+func TestGenerateBackupFilename(t *testing.T) {
+	t.Run("generates correct filename", func(t *testing.T) {
+		filename := generateBackupFilename("test-table")
+
+		assert.Contains(t, filename, "backups/test-table-")
+		assert.Contains(t, filename, ".json.gz")
+		assert.Contains(t, filename, "Z")
+	})
+
+	t.Run("handles table name with prefix", func(t *testing.T) {
+		filename := generateBackupFilename("savetoink-articles")
+
+		assert.Contains(t, filename, "backups/savetoink-articles-")
+		assert.Contains(t, filename, ".json.gz")
+	})
+}
+
+func TestParseBackupFilename(t *testing.T) {
+	t.Run("parses simple table name", func(t *testing.T) {
+		tableName, err := ParseBackupFilename("articles-20240315-131317Z.json.gz")
+
+		require.NoError(t, err)
+		assert.Equal(t, "articles", tableName)
+	})
+
+	t.Run("parses table name with prefix", func(t *testing.T) {
+		tableName, err := ParseBackupFilename("savetoink-articles-20240315-131317Z.json.gz")
+
+		require.NoError(t, err)
+		assert.Equal(t, "savetoink-articles", tableName)
+	})
+
+	t.Run("parses table name with multi prefix", func(t *testing.T) {
+		tableName, err := ParseBackupFilename("savetoink-multi-prefix-20240315-131317Z.json.gz")
+
+		require.NoError(t, err)
+		assert.Equal(t, "savetoink-multi-prefix", tableName)
+	})
+
+	t.Run("missing .json.gz extension", func(t *testing.T) {
+		_, err := ParseBackupFilename("articles-20240315-131317Z")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("invalid format", func(t *testing.T) {
+		_, err := ParseBackupFilename("invalid.json.gz")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("wrong date format with dashes", func(t *testing.T) {
+		_, err := ParseBackupFilename("articles-2024-03-15-131317Z.json.gz")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("wrong time format with colons", func(t *testing.T) {
+		_, err := ParseBackupFilename("articles-20240315-13:13:17Z.json.gz")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("missing time part", func(t *testing.T) {
+		_, err := ParseBackupFilename("articles-20240315Z.json.gz")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("missing date part", func(t *testing.T) {
+		_, err := ParseBackupFilename("articles-131317Z.json.gz")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("too many digits in date", func(t *testing.T) {
+		_, err := ParseBackupFilename("articles-202403151-131317Z.json.gz")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("too few digits in time", func(t *testing.T) {
+		_, err := ParseBackupFilename("articles-20240315-1313Z.json.gz")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("alpha characters in timestamp", func(t *testing.T) {
+		_, err := ParseBackupFilename("articles-abcdefghijklmnop-qrstuvZ.json.gz")
+
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backup name format should be")
 	})
