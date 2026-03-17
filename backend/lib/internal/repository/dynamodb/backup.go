@@ -32,6 +32,15 @@ type DynamoDBScanner interface {
 	Scan(ctx context.Context, params *dynamodb.ScanInput, optFns ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error)
 }
 
+// DynamoDBDescriber defines the interface for describing DynamoDB tables.
+type DynamoDBDescriber interface {
+	DescribeTable(
+		ctx context.Context,
+		params *dynamodb.DescribeTableInput,
+		optFns ...func(*dynamodb.Options),
+	) (*dynamodb.DescribeTableOutput, error)
+}
+
 // S3Putter defines the interface for putting objects to S3.
 type S3Putter interface {
 	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
@@ -64,6 +73,7 @@ type BackupResult struct {
 type RestoreResult struct {
 	TableName     string
 	BackupName    string
+	KeySchema     map[string]string
 	ItemsRestored int
 	ItemsSkipped  int
 	ItemsDeleted  int
@@ -75,6 +85,7 @@ type RestoreResult struct {
 // BackupRepository handles backup operations for DynamoDB tables.
 type BackupRepository struct {
 	dynamoClient DynamoDBScanner
+	ddbDescriber DynamoDBDescriber
 	s3Client     S3Putter
 	s3Getter     S3Getter
 	ddbWriter    DynamoDBBatchWriter
@@ -90,6 +101,7 @@ func NewBackupRepository(cfg *config.Config) *BackupRepository {
 
 	return &BackupRepository{
 		dynamoClient: ddbClient,
+		ddbDescriber: ddbClient,
 		s3Client:     s3Client,
 		s3Getter:     s3Client,
 		ddbWriter:    ddbClient,
@@ -156,6 +168,14 @@ func (b *BackupRepository) uploadBackup(
 ) (string, error) {
 	key := fmt.Sprintf("backups/%s-%s.json", tableName, time.Now().UTC().Format("20060102-150405"))
 
+	descResp, err := b.ddbDescriber.DescribeTable(ctx, &dynamodb.DescribeTableInput{
+		TableName: aws.String(tableName),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to describe table %s: %w", tableName, err)
+	}
+	keySchema := extractTableKeySchema(descResp.Table)
+
 	itemsArray := make([]json.RawMessage, 0, len(items))
 	for _, item := range items {
 		itemJSON, marshalErr := attributevalue.MarshalMapJSON(item)
@@ -168,6 +188,7 @@ func (b *BackupRepository) uploadBackup(
 	backupData := map[string]any{
 		"timestamp":  time.Now().UTC().Format(time.RFC3339),
 		"table_name": tableName,
+		"key_schema": keySchema,
 		"item_count": len(items),
 		"items":      itemsArray,
 	}
@@ -252,14 +273,15 @@ func (b *BackupRepository) RestoreTable(
 		return result
 	}
 
-	items, parseErr := b.parseBackupData(backupData)
+	items, keySchema, parseErr := b.parseBackupData(backupData)
 	if parseErr != nil {
 		result.setError(time.Since(start), fmt.Sprintf("failed to parse backup data: %v", parseErr))
 		return result
 	}
+	result.KeySchema = keySchema
 
 	if overwrite {
-		deleted, clearErr := b.clearTable(ctx, tableName)
+		deleted, clearErr := b.clearTable(ctx, tableName, keySchema)
 		if clearErr != nil {
 			result.setError(time.Since(start), fmt.Sprintf("failed to clear table %s: %v", tableName, clearErr))
 			return result
@@ -285,6 +307,21 @@ func (b *BackupRepository) RestoreTable(
 func (r *RestoreResult) setError(latency time.Duration, msg string) {
 	r.Error = errors.New(msg)
 	r.Latency = latency
+}
+
+func extractTableKeySchema(table *types.TableDescription) map[string]string {
+	schema := map[string]string{}
+
+	for _, key := range table.KeySchema {
+		if key.KeyType == types.KeyTypeHash {
+			schema["hash_key"] = *key.AttributeName
+		}
+		if key.KeyType == types.KeyTypeRange {
+			schema["range_key"] = *key.AttributeName
+		}
+	}
+
+	return schema
 }
 
 func (b *BackupRepository) extractTableName(backupName string) (string, error) {
@@ -327,28 +364,53 @@ func (b *BackupRepository) downloadBackup(ctx context.Context, key string) (map[
 	return backupData, nil
 }
 
-func (b *BackupRepository) parseBackupData(backupData map[string]any) ([]map[string]types.AttributeValue, error) {
+func (b *BackupRepository) parseBackupData(
+	backupData map[string]any,
+) (
+	items []map[string]types.AttributeValue,
+	keySchema map[string]string,
+	err error,
+) {
 	itemsRaw, hasItems := backupData["items"]
 	if !hasItems {
-		return nil, errors.New("backup data missing 'items' field")
+		return nil, nil, errors.New("backup data missing 'items' field")
 	}
 
-	items := make([]map[string]types.AttributeValue, 0)
+	keySchemaRaw, hasKeySchema := backupData["key_schema"]
+	if !hasKeySchema {
+		return nil, nil, errors.New("backup data missing 'key_schema' field")
+	}
+	keySchemaAny, isKeySchemaMap := keySchemaRaw.(map[string]any)
+	if !isKeySchemaMap {
+		return nil, nil, fmt.Errorf("invalid key_schema type in backup data: expected map[string]any, got %T", keySchemaRaw)
+	}
+	keySchema = make(map[string]string)
+	for k, v := range keySchemaAny {
+		if vStr, isString := v.(string); isString {
+			keySchema[k] = vStr
+		}
+	}
+
+	items = make([]map[string]types.AttributeValue, 0)
 	if itemsArray, isArray := itemsRaw.([]any); isArray {
 		for _, itemRaw := range itemsArray {
 			itemJSON, _ := json.Marshal(itemRaw)
-			itemMap, err := attributevalue.UnmarshalMapJSON(itemJSON)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal item: %w", err)
+			itemMap, unmarshalErr := attributevalue.UnmarshalMapJSON(itemJSON)
+			if unmarshalErr != nil {
+				return nil, nil, fmt.Errorf("failed to unmarshal item: %w", unmarshalErr)
 			}
 			items = append(items, itemMap)
 		}
 	}
 
-	return items, nil
+	return items, keySchema, nil
 }
 
-func (b *BackupRepository) clearTable(ctx context.Context, tableName string) (int, error) {
+func (b *BackupRepository) clearTable(
+	ctx context.Context,
+	tableName string,
+	keySchema map[string]string,
+) (int, error) {
 	items, err := b.scanTable(ctx, tableName)
 	if err != nil {
 		return 0, fmt.Errorf("failed to scan table: %w", err)
@@ -363,12 +425,13 @@ func (b *BackupRepository) clearTable(ctx context.Context, tableName string) (in
 
 	for i := 0; i < len(items); i += batchSize {
 		end := min(i+batchSize, len(items))
-
 		writeReqs := make([]types.WriteRequest, 0, end-i)
+
 		for j := i; j < end; j++ {
+			key := b.extractKeyFromItem(items[j], keySchema)
 			writeReqs = append(writeReqs, types.WriteRequest{
 				DeleteRequest: &types.DeleteRequest{
-					Key: items[j],
+					Key: key,
 				},
 			})
 		}
@@ -386,6 +449,27 @@ func (b *BackupRepository) clearTable(ctx context.Context, tableName string) (in
 	}
 
 	return deleted, nil
+}
+
+func (b *BackupRepository) extractKeyFromItem(
+	item map[string]types.AttributeValue,
+	keySchema map[string]string,
+) map[string]types.AttributeValue {
+	key := make(map[string]types.AttributeValue)
+
+	if hashKeyName, ok := keySchema["hash_key"]; ok {
+		if hashKeyVal, exists := item[hashKeyName]; exists {
+			key[hashKeyName] = hashKeyVal
+		}
+	}
+
+	if rangeKeyName, ok := keySchema["range_key"]; ok {
+		if rangeKeyVal, exists := item[rangeKeyName]; exists {
+			key[rangeKeyName] = rangeKeyVal
+		}
+	}
+
+	return key
 }
 
 func (b *BackupRepository) fetchExistingKeys(ctx context.Context, tableName string) map[string]struct{} {

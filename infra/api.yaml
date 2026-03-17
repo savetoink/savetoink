@@ -245,6 +245,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - dynamodb:BatchWriteItem
                   - dynamodb:DescribeTable
                   - dynamodb:Scan
                 Resource:

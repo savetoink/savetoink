@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -72,6 +73,22 @@ type mockDynamoDBBatchWriter struct {
 	) (*dynamodb.BatchWriteItemOutput, error)
 }
 
+type mockDynamoDBDescriber struct {
+	describeTableFunc func(
+		ctx context.Context,
+		params *dynamodb.DescribeTableInput,
+		optFns ...func(*dynamodb.Options),
+	) (*dynamodb.DescribeTableOutput, error)
+}
+
+func (m *mockDynamoDBDescriber) DescribeTable(
+	ctx context.Context,
+	params *dynamodb.DescribeTableInput,
+	optFns ...func(*dynamodb.Options),
+) (*dynamodb.DescribeTableOutput, error) {
+	return m.describeTableFunc(ctx, params, optFns...)
+}
+
 func (m *mockDynamoDBBatchWriter) BatchWriteItem(
 	ctx context.Context,
 	params *dynamodb.BatchWriteItemInput,
@@ -97,6 +114,23 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 			},
 		}
 
+		mockDescriber := &mockDynamoDBDescriber{
+			describeTableFunc: func(
+				_ context.Context,
+				_ *dynamodb.DescribeTableInput,
+				_ ...func(*dynamodb.Options),
+			) (*dynamodb.DescribeTableOutput, error) {
+				return &dynamodb.DescribeTableOutput{
+					Table: &types.TableDescription{
+						KeySchema: []types.KeySchemaElement{
+							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+						},
+					},
+				}, nil
+			},
+		}
+
 		mockS3 := &mockS3Putter{
 			putObjectFunc: func(
 				_ context.Context,
@@ -110,6 +144,7 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		br := &BackupRepository{
 			dynamoClient: mockDDB,
+			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
 			bucket:       "test-bucket",
 			logger:       logger,
@@ -181,6 +216,23 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 			},
 		}
 
+		mockDescriber := &mockDynamoDBDescriber{
+			describeTableFunc: func(
+				_ context.Context,
+				_ *dynamodb.DescribeTableInput,
+				_ ...func(*dynamodb.Options),
+			) (*dynamodb.DescribeTableOutput, error) {
+				return &dynamodb.DescribeTableOutput{
+					Table: &types.TableDescription{
+						KeySchema: []types.KeySchemaElement{
+							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+						},
+					},
+				}, nil
+			},
+		}
+
 		mockS3 := &mockS3Putter{
 			putObjectFunc: func(
 				_ context.Context,
@@ -194,6 +246,7 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		br := &BackupRepository{
 			dynamoClient: mockDDB,
+			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
 			bucket:       "test-bucket",
 			logger:       logger,
@@ -232,6 +285,23 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 			},
 		}
 
+		mockDescriber := &mockDynamoDBDescriber{
+			describeTableFunc: func(
+				_ context.Context,
+				_ *dynamodb.DescribeTableInput,
+				_ ...func(*dynamodb.Options),
+			) (*dynamodb.DescribeTableOutput, error) {
+				return &dynamodb.DescribeTableOutput{
+					Table: &types.TableDescription{
+						KeySchema: []types.KeySchemaElement{
+							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+						},
+					},
+				}, nil
+			},
+		}
+
 		mockS3 := &mockS3Putter{
 			putObjectFunc: func(
 				_ context.Context,
@@ -245,6 +315,7 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		br := &BackupRepository{
 			dynamoClient: mockDDB,
+			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
 			bucket:       "test-bucket",
 			logger:       logger,
@@ -274,6 +345,23 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 			},
 		}
 
+		mockDescriber := &mockDynamoDBDescriber{
+			describeTableFunc: func(
+				_ context.Context,
+				_ *dynamodb.DescribeTableInput,
+				_ ...func(*dynamodb.Options),
+			) (*dynamodb.DescribeTableOutput, error) {
+				return &dynamodb.DescribeTableOutput{
+					Table: &types.TableDescription{
+						KeySchema: []types.KeySchemaElement{
+							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+						},
+					},
+				}, nil
+			},
+		}
+
 		mockS3 := &mockS3Putter{
 			putObjectFunc: func(
 				_ context.Context,
@@ -287,6 +375,7 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		br := &BackupRepository{
 			dynamoClient: mockDDB,
+			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
 			bucket:       "test-bucket",
 			logger:       logger,
@@ -320,6 +409,23 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 			},
 		}
 
+		mockDescriber := &mockDynamoDBDescriber{
+			describeTableFunc: func(
+				_ context.Context,
+				_ *dynamodb.DescribeTableInput,
+				_ ...func(*dynamodb.Options),
+			) (*dynamodb.DescribeTableOutput, error) {
+				return &dynamodb.DescribeTableOutput{
+					Table: &types.TableDescription{
+						KeySchema: []types.KeySchemaElement{
+							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+						},
+					},
+				}, nil
+			},
+		}
+
 		mockS3 := &mockS3Putter{
 			putObjectFunc: func(
 				_ context.Context,
@@ -333,6 +439,7 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		br := &BackupRepository{
 			dynamoClient: mockDDB,
+			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
 			bucket:       "test-bucket",
 			logger:       logger,
@@ -436,6 +543,23 @@ func TestBackupRepository_KeyGeneration(t *testing.T) {
 		},
 	}
 
+	mockDescriber := &mockDynamoDBDescriber{
+		describeTableFunc: func(
+			_ context.Context,
+			_ *dynamodb.DescribeTableInput,
+			_ ...func(*dynamodb.Options),
+		) (*dynamodb.DescribeTableOutput, error) {
+			return &dynamodb.DescribeTableOutput{
+				Table: &types.TableDescription{
+					KeySchema: []types.KeySchemaElement{
+						{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
+						{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+					},
+				},
+			}, nil
+		},
+	}
+
 	mockS3 := &mockS3Putter{
 		putObjectFunc: func(
 			_ context.Context,
@@ -449,6 +573,7 @@ func TestBackupRepository_KeyGeneration(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	br := &BackupRepository{
 		dynamoClient: mockDDB,
+		ddbDescriber: mockDescriber,
 		s3Client:     mockS3,
 		bucket:       "test-bucket",
 		logger:       logger,
@@ -476,6 +601,23 @@ func TestBackupRepository_TimestampValidation(t *testing.T) {
 		},
 	}
 
+	mockDescriber := &mockDynamoDBDescriber{
+		describeTableFunc: func(
+			_ context.Context,
+			_ *dynamodb.DescribeTableInput,
+			_ ...func(*dynamodb.Options),
+		) (*dynamodb.DescribeTableOutput, error) {
+			return &dynamodb.DescribeTableOutput{
+				Table: &types.TableDescription{
+					KeySchema: []types.KeySchemaElement{
+						{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
+						{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+					},
+				},
+			}, nil
+		},
+	}
+
 	mockS3 := &mockS3Putter{
 		putObjectFunc: func(
 			_ context.Context,
@@ -489,6 +631,7 @@ func TestBackupRepository_TimestampValidation(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	br := &BackupRepository{
 		dynamoClient: mockDDB,
+		ddbDescriber: mockDescriber,
 		s3Client:     mockS3,
 		bucket:       "test-bucket",
 		logger:       logger,
@@ -509,6 +652,7 @@ const (
 	testBackupJSON = `{
 		"timestamp": "2024-03-15T13:13:17Z",
 		"table_name": "test-articles",
+		"key_schema": {"hash_key": "account", "range_key": "id"},
 		"item_count": 2,
 		"items": [
 			{"account": {"S": "account1"}, "id": {"S": "id1"}},
@@ -519,6 +663,7 @@ const (
 	testSingleItemBackupJSON = `{
 		"timestamp": "2024-03-15T13:13:17Z",
 		"table_name": "test-articles",
+		"key_schema": {"hash_key": "account", "range_key": "id"},
 		"item_count": 1,
 		"items": [
 			{"account": {"S": "account1"}, "id": {"S": "id1"}}

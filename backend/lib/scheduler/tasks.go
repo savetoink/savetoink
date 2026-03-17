@@ -19,9 +19,10 @@ func RegisterTasks(runner *task.TaskRunner, cfg *config.Config) {
 		Name: "backup",
 		Run: func(ctx context.Context, _ consts.TaskConfig) *task.RunResult {
 			tables := []string{
+				cfg.ArticleTagsTable,
 				cfg.ArticlesTable,
-				cfg.UserProfileTable,
 				cfg.SendsTable,
+				cfg.UserProfileTable,
 			}
 			results := runner.BkpRepo.BackupAllTables(ctx, tables)
 			out, err := formatBackupResults(results)
