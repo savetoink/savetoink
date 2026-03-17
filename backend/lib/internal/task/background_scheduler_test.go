@@ -20,14 +20,14 @@ func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 		Name: "task1",
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			task1Count++
-			return &RunResult{Output: []string{"task1 completed"}}
+			return &RunResult{Results: []string{"task1 completed"}}
 		},
 	})
 
 	runner.Register(Task{
 		Name: "task2",
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
-			return &RunResult{Output: []string{"task2 completed"}}
+			return &RunResult{Results: []string{"task2 completed"}}
 		},
 	})
 
@@ -65,7 +65,7 @@ func TestBackgroundScheduler_Start_ScheduledTasks(t *testing.T) {
 		Name: "task1",
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			taskExecuted = true
-			return &RunResult{Output: []string{"task1 completed"}}
+			return &RunResult{Results: []string{"task1 completed"}}
 		},
 	})
 
@@ -97,7 +97,7 @@ func TestBackgroundScheduler_Start_InvalidSchedule(t *testing.T) {
 	runner.Register(Task{
 		Name: "task1",
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
-			return &RunResult{Output: []string{"task1 completed"}}
+			return &RunResult{Results: []string{"task1 completed"}}
 		},
 	})
 
@@ -126,7 +126,7 @@ func TestBackgroundScheduler_Start_WithParams(t *testing.T) {
 			if cfg.BackupName == "test-backup" {
 				paramsExecuted = true
 			}
-			return &RunResult{Output: []string{"processed: " + cfg.BackupName}}
+			return &RunResult{Results: []string{"processed: " + cfg.BackupName}}
 		},
 	})
 
@@ -155,7 +155,7 @@ func TestBackgroundScheduler_Stop(t *testing.T) {
 	runner.Register(Task{
 		Name: "task1",
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
-			return &RunResult{Output: []string{"task1 completed"}}
+			return &RunResult{Results: []string{"task1 completed"}}
 		},
 	})
 

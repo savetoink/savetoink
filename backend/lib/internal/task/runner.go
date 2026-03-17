@@ -22,9 +22,9 @@ type Task struct {
 
 // RunResult contains the output and any error from task execution.
 type RunResult struct {
-	Output []string `json:"output,omitempty"`
-	Error  error    `json:"error,omitempty"`
-	ID     string   `json:"id,omitempty"`
+	Results []string `json:"results,omitempty"`
+	Errors  []string `json:"errors,omitempty"`
+	ID      string   `json:"id,omitempty"`
 }
 
 // TaskRunner manages and executes registered tasks.
@@ -71,8 +71,8 @@ func (r *TaskRunner) Run(ctx context.Context, event json.RawMessage) *RunResult 
 	if err := json.Unmarshal(event, &cfg); err != nil {
 		slog.With("run_id", runID).Error("failed to unmarshal event", "error", err)
 		return &RunResult{
-			Error: fmt.Errorf("invalid event format: %w", err),
-			ID:    runID,
+			Errors: []string{fmt.Errorf("invalid event format: %w", err).Error()},
+			ID:     runID,
 		}
 	}
 
@@ -80,8 +80,8 @@ func (r *TaskRunner) Run(ctx context.Context, event json.RawMessage) *RunResult 
 	if !ok {
 		slog.With("run_id", runID).Error("unknown task", "task", cfg.Task)
 		return &RunResult{
-			Error: fmt.Errorf("unknown task: %s", cfg.Task),
-			ID:    runID,
+			Errors: []string{fmt.Errorf("unknown task: %s", cfg.Task).Error()},
+			ID:     runID,
 		}
 	}
 
@@ -91,14 +91,14 @@ func (r *TaskRunner) Run(ctx context.Context, event json.RawMessage) *RunResult 
 		slog.With("run_id", runID).Error(err.Error(),
 			slog.String("schedule", cfg.Schedule))
 		return &RunResult{
-			Error: err,
-			ID:    runID,
+			Errors: []string{err.Error()},
+			ID:     runID,
 		}
 	}
 
 	start := time.Now()
 	result := t.Run(ctx, cfg)
 	result.ID = runID
-	logging.LogTaskExecution(ctx, t.Name, runID, start, result.Error, result.Output, scheduledNext)
+	logging.LogTaskExecution(ctx, t.Name, runID, start, result.Errors, result.Results, scheduledNext)
 	return result
 }

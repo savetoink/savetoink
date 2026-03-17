@@ -4,7 +4,6 @@ package lambda
 import (
 	"context"
 	"encoding/json"
-	"errors"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/shaftoe/savetoink/backend/lib/config"
@@ -25,7 +24,7 @@ func NewHandler(cfg *config.Config) func(context.Context, json.RawMessage) (*tas
 		runner := task.NewTaskRunner(cfg)
 		if runner == nil {
 			return &task.RunResult{
-				Error: errors.New("task runner not initialized: missing AWSConfig"),
+				Errors: []string{"task runner not initialized: missing AWSConfig"},
 			}, nil
 		}
 

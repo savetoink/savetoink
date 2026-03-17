@@ -25,10 +25,14 @@ func RegisterTasks(runner *task.TaskRunner, cfg *config.Config) {
 			}
 			results := runner.BkpRepo.BackupAllTables(ctx, tables)
 			out, err := formatBackupResults(results)
-
+			if err != nil {
+				return &task.RunResult{
+					Errors:  []string{err.Error()},
+					Results: out,
+				}
+			}
 			return &task.RunResult{
-				Error:  err,
-				Output: out,
+				Results: out,
 			}
 		},
 	})
@@ -37,7 +41,7 @@ func RegisterTasks(runner *task.TaskRunner, cfg *config.Config) {
 		Name: "restore",
 		Run: func(ctx context.Context, taskCfg consts.TaskConfig) *task.RunResult {
 			if taskCfg.BackupName == "" {
-				return &task.RunResult{Error: errors.New("required parameter 'backup_name' not found")}
+				return &task.RunResult{Errors: []string{"required parameter 'backup_name' not found"}}
 			}
 
 			result := runner.BkpRepo.RestoreTable(ctx, taskCfg.BackupName, taskCfg.Overwrite)
@@ -73,8 +77,7 @@ func formatRestoreResult(result *repo.RestoreResult) *task.RunResult {
 
 	if result.Error != nil {
 		return &task.RunResult{
-			Error:  result.Error,
-			Output: []string{fmt.Sprintf("restore failed: %v", result.Error)},
+			Errors: []string{fmt.Sprintf("restore failed: %v", result.Error)},
 		}
 	}
 
@@ -92,7 +95,7 @@ func formatRestoreResult(result *repo.RestoreResult) *task.RunResult {
 	fmt.Fprintf(&out, " latency: %v", result.Latency)
 
 	return &task.RunResult{
-		Output: strings.Split(strings.TrimSpace(out.String()), ", "),
+		Results: strings.Split(strings.TrimSpace(out.String()), ", "),
 	}
 }
 

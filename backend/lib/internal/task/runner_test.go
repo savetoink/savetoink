@@ -117,13 +117,13 @@ func TestRun_WithSchedule(t *testing.T) {
 		Name: "test_task",
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			taskExecuted = true
-			return &RunResult{Output: []string{"task completed"}}
+			return &RunResult{Results: []string{"task completed"}}
 		},
 	})
 
 	ctx := context.Background()
 	result := runner.Run(ctx, json.RawMessage(`{"task":"test_task","schedule":"0 0 * * * *"}`))
-	require.Nil(t, result.Error)
+	require.Empty(t, result.Errors)
 	assert.True(t, taskExecuted)
 }
 
@@ -133,15 +133,15 @@ func TestRun_WithInvalidSchedule(t *testing.T) {
 	runner.Register(Task{
 		Name: "test_task",
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
-			return &RunResult{Output: []string{"task completed"}}
+			return &RunResult{Results: []string{"task completed"}}
 		},
 	})
 
 	ctx := context.Background()
 
 	result := runner.Run(ctx, json.RawMessage(`{"task":"test_task","schedule":"invalid schedule"}`))
-	require.NotNil(t, result.Error)
-	assert.Contains(t, result.Error.Error(), "failed to calculate next run time")
+	require.Len(t, result.Errors, 1)
+	assert.Contains(t, result.Errors[0], "failed to calculate next run time")
 }
 
 func TestRun_WithEmptySchedule(t *testing.T) {
@@ -152,14 +152,14 @@ func TestRun_WithEmptySchedule(t *testing.T) {
 		Name: "test_task",
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			taskExecuted = true
-			return &RunResult{Output: []string{"task completed"}}
+			return &RunResult{Results: []string{"task completed"}}
 		},
 	})
 
 	ctx := context.Background()
 
 	result := runner.Run(ctx, json.RawMessage(`{"task":"test_task","schedule":""}`))
-	require.Nil(t, result.Error)
+	require.Empty(t, result.Errors)
 	assert.True(t, taskExecuted)
 }
 
@@ -168,6 +168,6 @@ func TestRun_UnknownTask(t *testing.T) {
 
 	ctx := context.Background()
 	result := runner.Run(ctx, json.RawMessage(`{"task":"unknown_task","schedule":"0 0 * * * *"}`))
-	require.NotNil(t, result.Error)
-	assert.Contains(t, result.Error.Error(), "unknown task")
+	require.Len(t, result.Errors, 1)
+	assert.Contains(t, result.Errors[0], "unknown task")
 }

@@ -52,6 +52,6 @@ restore-table backup_name:
     aws lambda invoke \
         --cli-binary-format raw-in-base64-out \
         --function-name "{{ project_name }}-scheduler" \
-        --payload '{"task": "restore", "backup_name": "{{ backup_name }}", "overwrite": "true"}' \
+        --payload '{"task": "restore", "overwrite": true}' \
         /dev/stdout \
         | jq .

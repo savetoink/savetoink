@@ -22,6 +22,7 @@ func getTestConfig() *config.Config {
 		ArticlesTable:    "test-articles",
 		UserProfileTable: "test-profiles",
 		SendsTable:       "test-sends",
+		BackupBucketName: "test-backup-bucket",
 		StorageBackend:   "dynamodb",
 		EmailProvider:    "mailjet",
 		MailjetAPIKey:    "test-key",
@@ -122,9 +123,9 @@ func TestFormatRestoreResult_Error(t *testing.T) {
 	runResult := formatRestoreResult(result)
 
 	require.NotNil(t, runResult)
-	require.NotNil(t, runResult.Error)
-	assert.Contains(t, runResult.Error.Error(), "restore failed")
-	assert.Contains(t, runResult.Output[0], "restore failed")
+	require.Len(t, runResult.Errors, 1)
+	assert.Contains(t, runResult.Errors[0], "restore failed")
+	assert.Empty(t, runResult.Results)
 }
 
 func TestFormatRestoreResult_Success_NoOverwrite(t *testing.T) {
@@ -140,12 +141,12 @@ func TestFormatRestoreResult_Success_NoOverwrite(t *testing.T) {
 	runResult := formatRestoreResult(result)
 
 	require.NotNil(t, runResult)
-	assert.Nil(t, runResult.Error)
-	require.Len(t, runResult.Output, 2)
-	assert.Contains(t, runResult.Output[0], "restore completed for table test-table from backup test-backup")
-	assert.Contains(t, runResult.Output[0], "overwrite: false")
-	assert.Contains(t, runResult.Output[0], "100 items restored")
-	assert.Contains(t, runResult.Output[1], "50 items skipped")
+	assert.Empty(t, runResult.Errors)
+	require.Len(t, runResult.Results, 2)
+	assert.Contains(t, runResult.Results[0], "restore completed for table test-table from backup test-backup")
+	assert.Contains(t, runResult.Results[0], "overwrite: false")
+	assert.Contains(t, runResult.Results[0], "100 items restored")
+	assert.Contains(t, runResult.Results[1], "50 items skipped")
 }
 
 func TestFormatRestoreResult_Success_Overwrite(t *testing.T) {
@@ -161,12 +162,12 @@ func TestFormatRestoreResult_Success_Overwrite(t *testing.T) {
 	runResult := formatRestoreResult(result)
 
 	require.NotNil(t, runResult)
-	assert.Nil(t, runResult.Error)
-	require.Len(t, runResult.Output, 2)
-	assert.Contains(t, runResult.Output[0], "restore completed for table test-table from backup test-backup")
-	assert.Contains(t, runResult.Output[0], "overwrite: true")
-	assert.Contains(t, runResult.Output[0], "100 items restored")
-	assert.Contains(t, runResult.Output[1], "20 items deleted")
+	assert.Empty(t, runResult.Errors)
+	require.Len(t, runResult.Results, 2)
+	assert.Contains(t, runResult.Results[0], "restore completed for table test-table from backup test-backup")
+	assert.Contains(t, runResult.Results[0], "overwrite: true")
+	assert.Contains(t, runResult.Results[0], "100 items restored")
+	assert.Contains(t, runResult.Results[1], "20 items deleted")
 }
 
 func TestRegisterTasks(t *testing.T) {
@@ -192,7 +193,7 @@ func TestRegisterTasks_BackupTaskExecutes(t *testing.T) {
 	result := runner.Run(context.Background(), json.RawMessage(`{"task":"backup","schedule":""}`))
 
 	require.NotNil(t, result)
-	assert.NotNil(t, result.Output)
+	assert.NotNil(t, result.Results)
 }
 
 func TestRegisterTasks_RestoreTaskExecutes_Success(t *testing.T) {
@@ -201,12 +202,12 @@ func TestRegisterTasks_RestoreTaskExecutes_Success(t *testing.T) {
 
 	RegisterTasks(runner, getTestConfig())
 
-	restoreJSON := `{"task":"restore","schedule":"","backup_name":"test-backup","overwrite":false}`
+	restoreJSON := `{"task":"restore","schedule":"","backup_name":"test-backup.json","overwrite":false}`
 	restoreEvent := json.RawMessage(restoreJSON)
 	result := runner.Run(context.Background(), restoreEvent)
 
 	require.NotNil(t, result)
-	assert.NotNil(t, result.Output)
+	require.NotEmpty(t, result.Errors)
 }
 
 func TestRegisterTasks_RestoreTaskExecutes_MissingRequiredParam(t *testing.T) {
@@ -219,8 +220,8 @@ func TestRegisterTasks_RestoreTaskExecutes_MissingRequiredParam(t *testing.T) {
 	result := runner.Run(context.Background(), restoreEvent)
 
 	require.NotNil(t, result)
-	require.NotNil(t, result.Error)
-	assert.Contains(t, result.Error.Error(), "required parameter 'backup_name' not found")
+	require.Len(t, result.Errors, 1)
+	assert.Contains(t, result.Errors[0], "required parameter 'backup_name' not found")
 }
 
 func TestNewBackgroundScheduler_NoTasks(t *testing.T) {

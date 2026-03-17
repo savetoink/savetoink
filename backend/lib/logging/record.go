@@ -106,7 +106,7 @@ func LogTaskExecution(
 	ctx context.Context,
 	taskName, runID string,
 	start time.Time,
-	err error,
+	errs []string,
 	output []string,
 	scheduledNext *time.Time,
 ) {
@@ -118,8 +118,8 @@ func LogTaskExecution(
 		Duration("latency", time.Since(start)),
 	)
 
-	if err != nil {
-		record.AddAttrs(Any("error", err))
+	if len(errs) != 0 {
+		record.AddAttrs(String("errors", strings.Join(errs, ", ")))
 		record.Level = slog.LevelError
 	}
 

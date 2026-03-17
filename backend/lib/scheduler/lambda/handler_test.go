@@ -46,7 +46,7 @@ func TestHandler_WithValidContext(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	assert.NotNil(t, result.Output)
+	assert.NotNil(t, result.Results)
 }
 
 func TestHandler_WithNilAWSConfig(t *testing.T) {
@@ -62,8 +62,8 @@ func TestHandler_WithNilAWSConfig(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	require.NotNil(t, result.Error)
-	assert.Contains(t, result.Error.Error(), "task runner not initialized")
+	require.NotEmpty(t, result.Errors)
+	assert.Contains(t, result.Errors[0], "task runner not initialized")
 }
 
 func TestHandler_WithInvalidTask(t *testing.T) {
@@ -77,8 +77,8 @@ func TestHandler_WithInvalidTask(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	require.NotNil(t, result.Error)
-	assert.Contains(t, result.Error.Error(), "unknown task")
+	require.NotEmpty(t, result.Errors)
+	assert.Contains(t, result.Errors[0], "unknown task")
 }
 
 func TestHandler_WithTaskParams(t *testing.T) {
@@ -92,7 +92,7 @@ func TestHandler_WithTaskParams(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	assert.NotNil(t, result.Output)
+	require.NotEmpty(t, result.Errors)
 }
 
 func TestHandler_WithMissingRequiredParam(t *testing.T) {
@@ -106,8 +106,8 @@ func TestHandler_WithMissingRequiredParam(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	require.NotNil(t, result.Error)
-	assert.Contains(t, result.Error.Error(), "required parameter")
+	require.Len(t, result.Errors, 1)
+	assert.Contains(t, result.Errors[0], "required parameter")
 }
 
 func TestHandler_WithEmptyParams(t *testing.T) {
@@ -121,7 +121,7 @@ func TestHandler_WithEmptyParams(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	assert.NotNil(t, result.Output)
+	assert.NotNil(t, result.Results)
 }
 
 func TestHandler_Integration_BackupTask(t *testing.T) {
@@ -139,5 +139,5 @@ func TestHandler_Integration_BackupTask(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	assert.NotNil(t, result.Output)
+	assert.NotNil(t, result.Results)
 }
