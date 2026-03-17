@@ -16,6 +16,45 @@ func TestNewPublisher(t *testing.T) {
 	}
 }
 
+func TestNewPublisher_WithMemoryStorage(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	if pub == nil {
+		t.Fatal("NewPublisher returned nil")
+	}
+	if !pub.useMemoryStorage {
+		t.Error("NewPublisher WithMemoryStorage option did not set useMemoryStorage flag")
+	}
+}
+
+func TestGenerate_WithMemoryStorage(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	article := &model.Article{
+		Title:   "Test Article",
+		Content: "<p>This is test content</p>",
+		Author:  "Test Author",
+	}
+
+	epubReader, err := pub.GenerateEPUB(article)
+
+	if err != nil {
+		t.Fatalf("Generate() with memory storage unexpected error = %v", err)
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	if epubReader == nil {
+		t.Fatal("Generate() expected data, got nil")
+	}
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
+	}
+
+	if len(data) == 0 {
+		t.Error("Generate() expected non-empty data")
+	}
+}
+
 func TestGenerate_Success(t *testing.T) {
 	pub := NewPublisher()
 	article := &model.Article{

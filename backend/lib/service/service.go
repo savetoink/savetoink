@@ -193,7 +193,7 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 			Fetcher:         content.NewFetcher(cfg.BrowserlessKey),
 			Extractor:       content.NewDOMExtractor(),
 			Cleaner:         content.NewTrafilaturaCleaner(),
-			Publisher:       epub.NewPublisher(),
+			Publisher:       epub.NewPublisher(epub.WithMemoryStorage()),
 			Sender:          sender,
 			ArticlesRepo:    articlesRepo,
 			UserProfileRepo: userProfileRepo,

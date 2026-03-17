@@ -19,15 +19,32 @@ const (
 		"padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;\">\n</div>\n"
 )
 
+// PublisherOption configures a Publisher.
+type PublisherOption func(*Publisher)
+
+// WithMemoryStorage configures the publisher to use in-memory storage
+// instead of the filesystem, avoiding the need for /tmp.
+func WithMemoryStorage() PublisherOption {
+	return func(p *Publisher) {
+		p.useMemoryStorage = true
+	}
+}
+
 //go:embed metadata.tpl
 var metadataTemplate string
 
 // Publisher handles EPUB file generation from article content.
-type Publisher struct{}
+type Publisher struct {
+	useMemoryStorage bool
+}
 
 // NewPublisher creates a new EPUB publisher instance.
-func NewPublisher() *Publisher {
-	return &Publisher{}
+func NewPublisher(opts ...PublisherOption) *Publisher {
+	p := &Publisher{}
+	for _, opt := range opts {
+		opt(p)
+	}
+	return p
 }
 
 func buildMetadataHeader(article *model.Article) string {
@@ -62,6 +79,12 @@ func buildMetadataHeader(article *model.Article) string {
 
 // GenerateEPUB creates an EPUB file from the given article and returns a ReadCloser.
 func (p *Publisher) GenerateEPUB(article *model.Article) (io.ReadCloser, error) {
+	if p.useMemoryStorage {
+		if err := epub.Use(epub.MemoryFS); err != nil {
+			return nil, fmt.Errorf("failed to set memory storage: %w", err)
+		}
+	}
+
 	e, err := epub.NewEpub(article.Title)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create EPUB: %w", err)
