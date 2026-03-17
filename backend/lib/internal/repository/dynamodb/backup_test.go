@@ -832,7 +832,24 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 
 		tableName, err := br.extractTableName("savetoink-articles-20240315-131317.json")
 		require.NoError(t, err)
-		assert.Equal(t, "articles", tableName)
+		assert.Equal(t, "savetoink-articles", tableName)
+	})
+
+	t.Run("table name with multi prefix", func(t *testing.T) {
+		mockS3Getter := &mockS3Getter{}
+		mockDDBWriter := &mockDynamoDBBatchWriter{}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		br := &BackupRepository{
+			s3Getter:  mockS3Getter,
+			ddbWriter: mockDDBWriter,
+			bucket:    "test-bucket",
+			logger:    logger,
+		}
+
+		tableName, err := br.extractTableName("savetoink-multi-prefix-20240315-131317.json")
+		require.NoError(t, err)
+		assert.Equal(t, "savetoink-multi-prefix", tableName)
 	})
 
 	t.Run("missing .json extension", func(t *testing.T) {
@@ -865,6 +882,125 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		}
 
 		_, err := br.extractTableName("invalid.json")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("wrong date format with dashes", func(t *testing.T) {
+		mockS3Getter := &mockS3Getter{}
+		mockDDBWriter := &mockDynamoDBBatchWriter{}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		br := &BackupRepository{
+			s3Getter:  mockS3Getter,
+			ddbWriter: mockDDBWriter,
+			bucket:    "test-bucket",
+			logger:    logger,
+		}
+
+		_, err := br.extractTableName("articles-2024-03-15-131317.json")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("wrong time format with colons", func(t *testing.T) {
+		mockS3Getter := &mockS3Getter{}
+		mockDDBWriter := &mockDynamoDBBatchWriter{}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		br := &BackupRepository{
+			s3Getter:  mockS3Getter,
+			ddbWriter: mockDDBWriter,
+			bucket:    "test-bucket",
+			logger:    logger,
+		}
+
+		_, err := br.extractTableName("articles-20240315-13:13:17.json")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("missing time part", func(t *testing.T) {
+		mockS3Getter := &mockS3Getter{}
+		mockDDBWriter := &mockDynamoDBBatchWriter{}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		br := &BackupRepository{
+			s3Getter:  mockS3Getter,
+			ddbWriter: mockDDBWriter,
+			bucket:    "test-bucket",
+			logger:    logger,
+		}
+
+		_, err := br.extractTableName("articles-20240315.json")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("missing date part", func(t *testing.T) {
+		mockS3Getter := &mockS3Getter{}
+		mockDDBWriter := &mockDynamoDBBatchWriter{}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		br := &BackupRepository{
+			s3Getter:  mockS3Getter,
+			ddbWriter: mockDDBWriter,
+			bucket:    "test-bucket",
+			logger:    logger,
+		}
+
+		_, err := br.extractTableName("articles-131317.json")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("too many digits in date", func(t *testing.T) {
+		mockS3Getter := &mockS3Getter{}
+		mockDDBWriter := &mockDynamoDBBatchWriter{}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		br := &BackupRepository{
+			s3Getter:  mockS3Getter,
+			ddbWriter: mockDDBWriter,
+			bucket:    "test-bucket",
+			logger:    logger,
+		}
+
+		_, err := br.extractTableName("articles-202403151-131317.json")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("too few digits in time", func(t *testing.T) {
+		mockS3Getter := &mockS3Getter{}
+		mockDDBWriter := &mockDynamoDBBatchWriter{}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		br := &BackupRepository{
+			s3Getter:  mockS3Getter,
+			ddbWriter: mockDDBWriter,
+			bucket:    "test-bucket",
+			logger:    logger,
+		}
+
+		_, err := br.extractTableName("articles-20240315-1313.json")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "backup name format should be")
+	})
+
+	t.Run("alpha characters in timestamp", func(t *testing.T) {
+		mockS3Getter := &mockS3Getter{}
+		mockDDBWriter := &mockDynamoDBBatchWriter{}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		br := &BackupRepository{
+			s3Getter:  mockS3Getter,
+			ddbWriter: mockDDBWriter,
+			bucket:    "test-bucket",
+			logger:    logger,
+		}
+
+		_, err := br.extractTableName("articles-abcdefghijklmnop-qrstuv.json")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backup name format should be")
 	})

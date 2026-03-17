@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"regexp"
 	"strings"
 	"time"
 
@@ -291,14 +292,14 @@ func (b *BackupRepository) extractTableName(backupName string) (string, error) {
 		return "", errors.New("backup name must end with .json")
 	}
 
-	parts := strings.Split(strings.TrimSuffix(backupName, ".json"), "-")
-	if len(parts) < minBackupNameParts {
+	re := regexp.MustCompile(`^(.+)-\d{8}-\d{6}\.json$`)
+	matches := re.FindStringSubmatch(backupName)
+
+	if matches == nil {
 		return "", errors.New("backup name format should be: tablename-timestamp.json")
 	}
 
-	tableNamePrefix := strings.Join(parts[:len(parts)-2], "-")
-	tableName := strings.TrimPrefix(tableNamePrefix, "savetoink-")
-	return tableName, nil
+	return matches[1], nil
 }
 
 func (b *BackupRepository) downloadBackup(ctx context.Context, key string) (map[string]any, error) {
