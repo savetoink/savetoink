@@ -45,5 +45,5 @@ dotenv ENV="local":
     @rm -f .env
     @ln -s .env.{{ ENV }} .env
 
-zai-remaining:
-    @bun run ./tools/zai_usage.ts
+usage:
+    @bun run ./tools/usage.ts
