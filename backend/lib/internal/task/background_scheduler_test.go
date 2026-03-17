@@ -18,7 +18,7 @@ func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 	task1Count := 0
 	runner.Register(Task{
 		Name: "task1",
-		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
+		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			task1Count++
 			return &RunResult{Output: []string{"task1 completed"}}
 		},
@@ -26,25 +26,22 @@ func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 
 	runner.Register(Task{
 		Name: "task2",
-		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
+		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			return &RunResult{Output: []string{"task2 completed"}}
 		},
 	})
 
 	configs := []consts.TaskConfig{
 		{
-			Name:     "task1",
-			Enabled:  true,
+			Task:     "task1",
 			Schedule: "0 0 * * * *",
 		},
 		{
-			Name:     "task1",
-			Enabled:  true,
+			Task:     "task1",
 			Schedule: "0 */5 * * * *",
 		},
 		{
-			Name:     "task2",
-			Enabled:  true,
+			Task:     "task2",
 			Schedule: "0 0 * * * *",
 		},
 	}
@@ -60,13 +57,13 @@ func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 	assert.Equal(t, 0, task1Count)
 }
 
-func TestBackgroundScheduler_Start_EnabledTasksOnly(t *testing.T) {
+func TestBackgroundScheduler_Start_ScheduledTasks(t *testing.T) {
 	runner := NewTaskRunner(getTestConfig(t))
 
 	taskExecuted := false
 	runner.Register(Task{
 		Name: "task1",
-		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
+		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			taskExecuted = true
 			return &RunResult{Output: []string{"task1 completed"}}
 		},
@@ -74,13 +71,11 @@ func TestBackgroundScheduler_Start_EnabledTasksOnly(t *testing.T) {
 
 	configs := []consts.TaskConfig{
 		{
-			Name:     "task1",
-			Enabled:  true,
+			Task:     "task1",
 			Schedule: "*/1 * * * * *",
 		},
 		{
-			Name:     "task2",
-			Enabled:  false,
+			Task:     "task2",
 			Schedule: "*/1 * * * * *",
 		},
 	}
@@ -101,15 +96,14 @@ func TestBackgroundScheduler_Start_InvalidSchedule(t *testing.T) {
 
 	runner.Register(Task{
 		Name: "task1",
-		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
+		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			return &RunResult{Output: []string{"task1 completed"}}
 		},
 	})
 
 	configs := []consts.TaskConfig{
 		{
-			Name:     "task1",
-			Enabled:  true,
+			Task:     "task1",
 			Schedule: "invalid schedule",
 		},
 	}
@@ -128,26 +122,19 @@ func TestBackgroundScheduler_Start_WithParams(t *testing.T) {
 	paramsExecuted := false
 	runner.Register(Task{
 		Name: "task1",
-		Run: func(_ context.Context, params map[string]ParamValue) *RunResult {
-			backupName, err := RequireString(params, "backup_name")
-			if err != nil {
-				return &RunResult{Error: err}
-			}
-			if backupName == "test-backup" {
+		Run: func(_ context.Context, cfg consts.TaskConfig) *RunResult {
+			if cfg.BackupName == "test-backup" {
 				paramsExecuted = true
 			}
-			return &RunResult{Output: []string{"processed: " + backupName}}
+			return &RunResult{Output: []string{"processed: " + cfg.BackupName}}
 		},
 	})
 
 	configs := []consts.TaskConfig{
 		{
-			Name:     "task1",
-			Enabled:  true,
-			Schedule: "*/1 * * * * *",
-			Params: map[string]string{
-				"backup_name": "test-backup",
-			},
+			Task:       "task1",
+			Schedule:   "*/1 * * * * *",
+			BackupName: "test-backup",
 		},
 	}
 
@@ -167,15 +154,14 @@ func TestBackgroundScheduler_Stop(t *testing.T) {
 
 	runner.Register(Task{
 		Name: "task1",
-		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
+		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			return &RunResult{Output: []string{"task1 completed"}}
 		},
 	})
 
 	configs := []consts.TaskConfig{
 		{
-			Name:     "task1",
-			Enabled:  true,
+			Task:     "task1",
 			Schedule: "0 0 * * * *",
 		},
 	}

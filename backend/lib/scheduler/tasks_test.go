@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -174,12 +175,11 @@ func TestRegisterTasks(t *testing.T) {
 
 	RegisterTasks(runner, getTestConfig())
 
-	result := runner.Run(context.Background(), "backup", "0 0 0 * * *", nil)
+	result := runner.Run(context.Background(), json.RawMessage(`{"task":"backup","schedule":"0 0 0 * * *"}`))
 	require.NotNil(t, result)
 
-	resultRestore := runner.Run(context.Background(), "restore", "0 0 0 * * *", map[string]task.ParamValue{
-		"backup_name": task.StringParam("test"),
-	})
+	restoreEvent := json.RawMessage(`{"task":"restore","schedule":"0 0 0 * * *","params":{"backup_name":"test"}}`)
+	resultRestore := runner.Run(context.Background(), restoreEvent)
 	require.NotNil(t, resultRestore)
 }
 
@@ -189,7 +189,7 @@ func TestRegisterTasks_BackupTaskExecutes(t *testing.T) {
 
 	RegisterTasks(runner, getTestConfig())
 
-	result := runner.Run(context.Background(), "backup", "", nil)
+	result := runner.Run(context.Background(), json.RawMessage(`{"task":"backup","schedule":""}`))
 
 	require.NotNil(t, result)
 	assert.NotNil(t, result.Output)
@@ -201,12 +201,9 @@ func TestRegisterTasks_RestoreTaskExecutes_Success(t *testing.T) {
 
 	RegisterTasks(runner, getTestConfig())
 
-	params := map[string]task.ParamValue{
-		"backup_name": task.StringParam("test-backup"),
-		"overwrite":   task.StringParam("false"),
-	}
-
-	result := runner.Run(context.Background(), "restore", "", params)
+	restoreJSON := `{"task":"restore","schedule":"","backup_name":"test-backup","overwrite":false}`
+	restoreEvent := json.RawMessage(restoreJSON)
+	result := runner.Run(context.Background(), restoreEvent)
 
 	require.NotNil(t, result)
 	assert.NotNil(t, result.Output)
@@ -218,11 +215,8 @@ func TestRegisterTasks_RestoreTaskExecutes_MissingRequiredParam(t *testing.T) {
 
 	RegisterTasks(runner, getTestConfig())
 
-	params := map[string]task.ParamValue{
-		"overwrite": task.StringParam("true"),
-	}
-
-	result := runner.Run(context.Background(), "restore", "", params)
+	restoreEvent := json.RawMessage(`{"task":"restore","schedule":"","overwrite":true}`)
+	result := runner.Run(context.Background(), restoreEvent)
 
 	require.NotNil(t, result)
 	require.NotNil(t, result.Error)
@@ -253,9 +247,8 @@ func TestNewBackgroundScheduler_WithTasks(t *testing.T) {
 	cfg := getTestConfig()
 	cfg.Tasks = []consts.TaskConfig{
 		{
-			Name:     "test-task",
+			Task:     "st-task",
 			Schedule: "0 0 0 * * *",
-			Enabled:  true,
 		},
 	}
 
@@ -269,9 +262,8 @@ func TestNewBackgroundScheduler_NilRunner(t *testing.T) {
 		AWSConfig: nil,
 		Tasks: []consts.TaskConfig{
 			{
-				Name:     "test-task",
+				Task:     "st-task",
 				Schedule: "0 0 0 * * *",
-				Enabled:  true,
 			},
 		},
 	}

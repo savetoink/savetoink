@@ -47,3 +47,11 @@ dotenv ENV="local":
 
 zai-remaining:
     @bun run ./tools/zai_usage.ts
+
+restore-table backup_name:
+    aws lambda invoke \
+        --cli-binary-format raw-in-base64-out \
+        --function-name "{{ project_name }}-scheduler" \
+        --payload '{"task": "restore", "backup_name": "{{ backup_name }}", "overwrite": "true"}' \
+        /dev/stdout \
+        | jq .

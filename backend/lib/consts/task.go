@@ -2,8 +2,12 @@ package consts
 
 // TaskConfig defines the configuration for a scheduled task.
 type TaskConfig struct {
-	Name     string            `json:"name"`
-	Schedule string            `json:"schedule"`
-	Enabled  bool              `json:"enabled"`
-	Params   map[string]string `json:"params,omitempty"`
+	Task string `json:"task"`
+
+	// Backup
+	Schedule string `json:"schedule"`
+
+	// Restore
+	BackupName string `json:"backup_name,omitempty"`
+	Overwrite  bool   `json:"overwrite,omitempty"`
 }

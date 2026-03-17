@@ -2,11 +2,13 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/shaftoe/savetoink/backend/lib/config"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -113,14 +115,14 @@ func TestRun_WithSchedule(t *testing.T) {
 
 	runner.Register(Task{
 		Name: "test_task",
-		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
+		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			taskExecuted = true
 			return &RunResult{Output: []string{"task completed"}}
 		},
 	})
 
 	ctx := context.Background()
-	result := runner.Run(ctx, "test_task", testCronScheduleHourly, nil)
+	result := runner.Run(ctx, json.RawMessage(`{"task":"test_task","schedule":"0 0 * * * *"}`))
 	require.Nil(t, result.Error)
 	assert.True(t, taskExecuted)
 }
@@ -130,15 +132,14 @@ func TestRun_WithInvalidSchedule(t *testing.T) {
 
 	runner.Register(Task{
 		Name: "test_task",
-		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
+		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			return &RunResult{Output: []string{"task completed"}}
 		},
 	})
 
 	ctx := context.Background()
-	schedule := "invalid schedule"
 
-	result := runner.Run(ctx, "test_task", schedule, nil)
+	result := runner.Run(ctx, json.RawMessage(`{"task":"test_task","schedule":"invalid schedule"}`))
 	require.NotNil(t, result.Error)
 	assert.Contains(t, result.Error.Error(), "failed to calculate next run time")
 }
@@ -149,16 +150,15 @@ func TestRun_WithEmptySchedule(t *testing.T) {
 
 	runner.Register(Task{
 		Name: "test_task",
-		Run: func(_ context.Context, _ map[string]ParamValue) *RunResult {
+		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			taskExecuted = true
 			return &RunResult{Output: []string{"task completed"}}
 		},
 	})
 
 	ctx := context.Background()
-	schedule := ""
 
-	result := runner.Run(ctx, "test_task", schedule, nil)
+	result := runner.Run(ctx, json.RawMessage(`{"task":"test_task","schedule":""}`))
 	require.Nil(t, result.Error)
 	assert.True(t, taskExecuted)
 }
@@ -167,7 +167,7 @@ func TestRun_UnknownTask(t *testing.T) {
 	runner := NewTaskRunner(getTestConfig(t))
 
 	ctx := context.Background()
-	result := runner.Run(ctx, "unknown_task", testCronScheduleHourly, nil)
+	result := runner.Run(ctx, json.RawMessage(`{"task":"unknown_task","schedule":"0 0 * * * *"}`))
 	require.NotNil(t, result.Error)
 	assert.Contains(t, result.Error.Error(), "unknown task")
 }

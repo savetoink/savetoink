@@ -804,13 +804,13 @@ func TestLoad_Tasks_Config(t *testing.T) {
 	}{
 		{
 			name:     "single task",
-			tasksEnv: `[{"name":"task1","schedule":"0 * * * *","enabled":true}]`,
+			tasksEnv: `[{"task":"task1","schedule":"0 * * * *"}]`,
 			expected: []string{"task1"},
 		},
 		{
 			name: "multiple tasks",
-			tasksEnv: `[{"name":"task1","schedule":"0 * * * *","enabled":true},` +
-				`{"name":"task2","schedule":"0 2 * * *","enabled":false}]`,
+			tasksEnv: `[{"task":"task1","schedule":"0 * * * *"},` +
+				`{"task":"task2","schedule":"0 2 * * *"}]`,
 			expected: []string{"task1", "task2"},
 		},
 		{
@@ -850,7 +850,7 @@ func TestLoad_Tasks_Config(t *testing.T) {
 			} else {
 				require.Len(t, cfg.Tasks, len(tt.expected))
 				for i, name := range tt.expected {
-					assert.Equal(t, name, cfg.Tasks[i].Name)
+					assert.Equal(t, name, cfg.Tasks[i].Task)
 				}
 			}
 		})

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/shaftoe/savetoink/backend/lib/config"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	repo "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/internal/task"
 )
@@ -16,7 +17,7 @@ import (
 func RegisterTasks(runner *task.TaskRunner, cfg *config.Config) {
 	runner.Register(task.Task{
 		Name: "backup",
-		Run: func(ctx context.Context, _ map[string]task.ParamValue) *task.RunResult {
+		Run: func(ctx context.Context, _ consts.TaskConfig) *task.RunResult {
 			tables := []string{
 				cfg.ArticlesTable,
 				cfg.UserProfileTable,
@@ -34,19 +35,12 @@ func RegisterTasks(runner *task.TaskRunner, cfg *config.Config) {
 
 	runner.Register(task.Task{
 		Name: "restore",
-		Run: func(ctx context.Context, params map[string]task.ParamValue) *task.RunResult {
-			backupName, err := task.RequireString(params, "backup_name")
-			if err != nil {
-				return &task.RunResult{Error: err}
+		Run: func(ctx context.Context, taskCfg consts.TaskConfig) *task.RunResult {
+			if taskCfg.BackupName == "" {
+				return &task.RunResult{Error: errors.New("required parameter 'backup_name' not found")}
 			}
 
-			overwriteStr, err := task.OptionalString(params, "overwrite", "false")
-			if err != nil {
-				return &task.RunResult{Error: err}
-			}
-			overwrite := strings.EqualFold(overwriteStr, "true")
-
-			result := runner.BkpRepo.RestoreTable(ctx, backupName, overwrite)
+			result := runner.BkpRepo.RestoreTable(ctx, taskCfg.BackupName, taskCfg.Overwrite)
 			return formatRestoreResult(result)
 		},
 	})

@@ -2,12 +2,14 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/robfig/cron/v3"
 	"github.com/shaftoe/savetoink/backend/lib/config"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	repository "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 )
@@ -15,7 +17,7 @@ import (
 // Task represents a scheduled task that can be executed.
 type Task struct {
 	Name string
-	Run  func(ctx context.Context, params map[string]ParamValue) *RunResult
+	Run  func(ctx context.Context, config consts.TaskConfig) *RunResult
 }
 
 // RunResult contains the output and any error from task execution.
@@ -61,23 +63,33 @@ func (r *TaskRunner) calculateNextRun(schedule string) (*time.Time, error) {
 	return &next, nil
 }
 
-// Run executes a task with the given name and schedule, logging the result.
-func (r *TaskRunner) Run(ctx context.Context, name, schedule string, params map[string]ParamValue) *RunResult {
+// Run executes a task by unmarshaling the JSON event and passing the config to the task.
+func (r *TaskRunner) Run(ctx context.Context, event json.RawMessage) *RunResult {
 	runID := logging.GenerateRunID()
-	t, ok := r.tasks[name]
-	if !ok {
-		slog.With("run_id", runID).Error("unknown task")
+
+	var cfg consts.TaskConfig
+	if err := json.Unmarshal(event, &cfg); err != nil {
+		slog.With("run_id", runID).Error("failed to unmarshal event", "error", err)
 		return &RunResult{
-			Error: fmt.Errorf("unknown task: %s", name),
+			Error: fmt.Errorf("invalid event format: %w", err),
 			ID:    runID,
 		}
 	}
 
-	scheduledNext, err := r.calculateNextRun(schedule)
+	t, ok := r.tasks[cfg.Task]
+	if !ok {
+		slog.With("run_id", runID).Error("unknown task", "task", cfg.Task)
+		return &RunResult{
+			Error: fmt.Errorf("unknown task: %s", cfg.Task),
+			ID:    runID,
+		}
+	}
+
+	scheduledNext, err := r.calculateNextRun(cfg.Schedule)
 	if err != nil {
 		err = fmt.Errorf("failed to calculate next run time: %w", err)
 		slog.With("run_id", runID).Error(err.Error(),
-			slog.String("schedule", schedule))
+			slog.String("schedule", cfg.Schedule))
 		return &RunResult{
 			Error: err,
 			ID:    runID,
@@ -85,7 +97,7 @@ func (r *TaskRunner) Run(ctx context.Context, name, schedule string, params map[
 	}
 
 	start := time.Now()
-	result := t.Run(ctx, params)
+	result := t.Run(ctx, cfg)
 	result.ID = runID
 	logging.LogTaskExecution(ctx, t.Name, runID, start, result.Error, result.Output, scheduledNext)
 	return result

@@ -3,6 +3,7 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -27,29 +28,26 @@ func NewBackgroundScheduler(runner *TaskRunner, configs []consts.TaskConfig) *Ba
 	}
 }
 
-// Start begins the background scheduler, registering all enabled tasks with their cron schedules.
+// Start begins the background scheduler, registering all scheduled tasks with their cron schedules.
 func (s *BackgroundScheduler) Start(ctx context.Context) error {
 	tasksEnabled := make(map[string]struct{})
 
 	for _, cfg := range s.configs {
-		if !cfg.Enabled {
-			continue
-		}
-		if _, ok := tasksEnabled[cfg.Name]; ok {
+		if _, ok := tasksEnabled[cfg.Task]; ok {
 			continue
 		}
 
-		params := make(map[string]ParamValue)
-		for k, v := range cfg.Params {
-			params[k] = StringParam(v)
+		eventDataJSON, err := json.Marshal(cfg)
+		if err != nil {
+			return fmt.Errorf("encoding event for task %q: %w", cfg.Task, err)
 		}
 
-		if _, err := s.cron.AddFunc(cfg.Schedule, func() {
-			_ = s.runner.Run(ctx, cfg.Name, cfg.Schedule, params)
-		}); err != nil {
-			return fmt.Errorf("scheduling task %q: %w", cfg.Name, err)
+		if _, cronErr := s.cron.AddFunc(cfg.Schedule, func() {
+			_ = s.runner.Run(ctx, eventDataJSON)
+		}); cronErr != nil {
+			return fmt.Errorf("scheduling task %q: %w", cfg.Task, cronErr)
 		}
-		tasksEnabled[cfg.Name] = struct{}{}
+		tasksEnabled[cfg.Task] = struct{}{}
 	}
 
 	if len(tasksEnabled) == 0 {

@@ -3,8 +3,8 @@ package lambda
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/shaftoe/savetoink/backend/lib/config"
@@ -13,15 +13,9 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/scheduler"
 )
 
-type event struct {
-	Task     string                    `json:"task"`
-	Schedule string                    `json:"schedule,omitempty"`
-	Params   map[string]map[string]any `json:"params,omitempty"`
-}
-
 // NewHandler creates and returns a Lambda handler function for task scheduling.
-func NewHandler(cfg *config.Config) func(context.Context, event) (*task.RunResult, error) {
-	return func(ctx context.Context, ev event) (*task.RunResult, error) {
+func NewHandler(cfg *config.Config) func(context.Context, json.RawMessage) (*task.RunResult, error) {
+	return func(ctx context.Context, event json.RawMessage) (*task.RunResult, error) {
 		logging.SetupLogging(cfg)
 
 		if lc, ok := lambdacontext.FromContext(ctx); ok {
@@ -37,35 +31,7 @@ func NewHandler(cfg *config.Config) func(context.Context, event) (*task.RunResul
 
 		scheduler.RegisterTasks(runner, cfg)
 
-		params, parseErr := parseTaskParams(ev.Params)
-		if parseErr != nil {
-			return &task.RunResult{Error: parseErr}, parseErr
-		}
-
-		result := runner.Run(ctx, ev.Task, ev.Schedule, params)
+		result := runner.Run(ctx, event)
 		return result, nil
 	}
-}
-
-func parseTaskParams(params map[string]map[string]any) (map[string]task.ParamValue, error) {
-	result := make(map[string]task.ParamValue)
-
-	if params == nil {
-		return result, nil
-	}
-
-	for k, v := range params {
-		if len(v) == 1 {
-			for _, val := range v {
-				switch val := val.(type) {
-				case string:
-					result[k] = task.StringParam(val)
-				default:
-					return nil, fmt.Errorf("unsupported parameter type for %s: %T", k, val)
-				}
-			}
-		}
-	}
-
-	return result, nil
 }
