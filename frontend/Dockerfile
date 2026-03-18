@@ -24,5 +24,7 @@ RUN bun run build
 FROM oven/bun:1-distroless AS runner
 ENV NODE_ENV=production
 COPY --from=builder /app/ /app/
+COPY --from=builder /etc/passwd /etc/passwd
 EXPOSE 3000
+USER nobody
 CMD ["node", "/app/frontend/webapp/build/index.js"]
