@@ -1,9 +1,5 @@
 <script lang="ts">
-	import {
-		PUBLIC_AUTH0_CLIENT_ID,
-		PUBLIC_AUTH0_DOMAIN,
-		PUBLIC_AUTH0_AUDIENCE
-	} from '$env/static/public';
+	import { env as publicEnv } from '$env/dynamic/public';
 	import { page } from '$app/state';
 	import type { PageData } from './$types';
 
@@ -12,12 +8,12 @@
 	const login = () => {
 		const origin = data?.publicAppUrl || page.url.origin;
 		const authUrl =
-			`https://${PUBLIC_AUTH0_DOMAIN}/authorize?` +
+			`https://${publicEnv.PUBLIC_AUTH0_DOMAIN}/authorize?` +
 			`response_type=code&` +
 			`prompt=login&` +
-			`client_id=${PUBLIC_AUTH0_CLIENT_ID}&` +
+			`client_id=${publicEnv.PUBLIC_AUTH0_CLIENT_ID}&` +
 			`redirect_uri=${encodeURIComponent(`${origin}/auth/callback`)}&` +
-			`audience=${PUBLIC_AUTH0_AUDIENCE}&` +
+			`audience=${publicEnv.PUBLIC_AUTH0_AUDIENCE}&` +
 			`scope=openid profile email`;
 		window.location.href = authUrl;
 	};

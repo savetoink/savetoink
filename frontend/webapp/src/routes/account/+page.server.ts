@@ -1,4 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { PUBLIC_AUTH_BACKEND } from '$env/static/public';
 import { env as publicEnv } from '$env/dynamic/public';
 import {
 	AUTH_KEY,
@@ -21,7 +22,7 @@ export const actions: Actions = {
 		deleteAuthCookie(cookies);
 		deleteUserCookie(cookies);
 
-		if (publicEnv.PUBLIC_AUTH_BACKEND === Auth0) {
+		if (PUBLIC_AUTH_BACKEND === Auth0) {
 			const auth0LogoutUrl = new URL(`https://${publicEnv.PUBLIC_AUTH0_DOMAIN}/logout`);
 			auth0LogoutUrl.searchParams.set('client_id', publicEnv.PUBLIC_AUTH0_CLIENT_ID);
 			auth0LogoutUrl.searchParams.set('returnTo', `${publicEnv.PUBLIC_APP_URL}/account`);
