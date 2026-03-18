@@ -7,13 +7,13 @@
 <nav>
 	<ul>
 		{#if loggedIn}
-			<NavItem link="/new" text="Add new" />
+			<NavItem link="/new" text="New" />
 
 			<NavItem link="/articles" text="Articles" />
 
 			<NavItem link="/articles?favorite=true" text="Favorites" />
 		{/if}
-		<NavItem link="/account" text="My account" />
+		<NavItem link="/account" text="Account" />
 	</ul>
 </nav>
 
