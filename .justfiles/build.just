@@ -7,7 +7,7 @@ build-http:
     CGO_ENABLED=0 go build -o bin/savetoink ./backend/cmd/http
 
 build-docker APP:
-    docker build . --build-arg APP={{ APP }} -f infra/Dockerfile -t ghcr.io/savetoink/savetoink-{{ APP }}:local
+    docker build . --build-arg APP={{ APP }} -f backend/Dockerfile -t ghcr.io/savetoink/savetoink-{{ APP }}:local
 
 # Build CLI Docker image
 build-cli-docker:
