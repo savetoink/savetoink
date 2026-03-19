@@ -1,4 +1,4 @@
-name: Deploy webapp - Prod
+name: Deploy Webapp - Prod
 
 on:
   workflow_dispatch:
@@ -14,3 +14,4 @@ jobs:
     uses: ./.github/workflows/webapp.yml
     with:
       environment: prod
+    secrets: inherit
