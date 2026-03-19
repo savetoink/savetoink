@@ -99,7 +99,7 @@ func (s *ArticleService) GetArticlesMetadata(
 	page, pageSize int,
 	favoriteFilter *bool,
 ) (*servicetypes.GetArticlesResult, error) {
-	articles, lastEvaluatedKey, total, err := s.articlesRepo.GetMetadataByAccount(
+	articles, _, total, err := s.articlesRepo.GetMetadataByAccount(
 		ctx, accountID, page, pageSize, favoriteFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get articles: %w", err)
@@ -114,7 +114,7 @@ func (s *ArticleService) GetArticlesMetadata(
 		Page:     page,
 		PageSize: pageSize,
 		Total:    total,
-		HasMore:  lastEvaluatedKey != nil,
+		HasMore:  (page * pageSize) < total,
 	}, nil
 }
 
@@ -141,19 +141,6 @@ func (s *ArticleService) DeleteArticle(
 	}
 
 	return &servicetypes.DeleteArticleResult{Deleted: 1}, nil
-}
-
-// DeleteAllArticles removes all articles for an account.
-func (s *ArticleService) DeleteAllArticles(
-	ctx context.Context,
-	accountID string,
-) (*servicetypes.DeleteArticleResult, error) {
-	deleted, err := s.articlesRepo.DeleteByAccount(ctx, accountID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to delete all articles: %w", err)
-	}
-
-	return &servicetypes.DeleteArticleResult{Deleted: deleted}, nil
 }
 
 // ToggleFavorite toggles the favorite status of an article.

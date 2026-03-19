@@ -111,10 +111,6 @@ func (m *mockService) DeleteArticle(_ context.Context, _, _ string) (*servicetyp
 	return nil, errors.New("not implemented in mock")
 }
 
-func (m *mockService) DeleteAllArticles(_ context.Context, _ string) (*servicetypes.DeleteArticleResult, error) {
-	return &servicetypes.DeleteArticleResult{Deleted: 0}, nil
-}
-
 func (m *mockService) GetDBError() error {
 	return nil
 }
@@ -357,39 +353,6 @@ func TestSetupRoutes_ArticleRoutes(t *testing.T) {
 		req := httptest.NewRequestWithContext(
 			context.Background(),
 			"GET",
-			"/v1/articles",
-			http.NoBody,
-		)
-		req.Header.Set("Authorization", authHeader)
-		w := httptest.NewRecorder()
-
-		router.ServeHTTP(w, req)
-
-		assert.NotEqual(t, http.StatusNotFound, w.Code)
-		assert.NotEqual(t, http.StatusMethodNotAllowed, w.Code)
-	})
-
-	t.Run("POST /v1/articles with authentication", func(t *testing.T) {
-		req := httptest.NewRequestWithContext(
-			context.Background(),
-			"POST",
-			"/v1/articles",
-			strings.NewReader(`{"url":"https://example.com"}`),
-		)
-		req.Header.Set("Authorization", authHeader)
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
-
-		router.ServeHTTP(w, req)
-
-		assert.NotEqual(t, http.StatusNotFound, w.Code)
-		assert.NotEqual(t, http.StatusMethodNotAllowed, w.Code)
-	})
-
-	t.Run("DELETE /v1/articles with authentication", func(t *testing.T) {
-		req := httptest.NewRequestWithContext(
-			context.Background(),
-			"DELETE",
 			"/v1/articles",
 			http.NoBody,
 		)

@@ -85,10 +85,6 @@ func (m *webhookMockService) DeleteArticle(_ context.Context, _, _ string) (*ser
 	return nil, errors.New("not implemented")
 }
 
-func (m *webhookMockService) DeleteAllArticles(_ context.Context, _ string) (*servicetypes.DeleteArticleResult, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (m *webhookMockService) GetDBError() error {
 	return nil
 }

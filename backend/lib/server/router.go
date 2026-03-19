@@ -67,7 +67,6 @@ func setupRoutes(r *chi.Mux, h *handlers.Handlers, cfg *config.Config, _ service
 			r.Use(auth.EnsureAutheticatedMiddleware)
 			r.With(processorInfoMiddleware(cfg)).Post("/", h.HandleCreateArticle)
 			r.Get("/", h.HandleGetArticles)
-			r.Delete("/", h.HandleDeleteAllArticles)
 			r.Get("/{id}", h.HandleGetArticle)
 			r.Delete("/{id}", h.HandleDeleteArticle)
 			r.Put("/{id}/favorite", h.HandleToggleFavorite)

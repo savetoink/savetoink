@@ -19,7 +19,6 @@ type ArticlesRepository interface {
 		favoriteFilter *bool,
 	) ([]*model.Article, any, int, error)
 	DeleteByAccountAndID(ctx context.Context, account, id string) error
-	DeleteByAccount(ctx context.Context, account string) (int, error)
 	UpdateFavorite(ctx context.Context, account, id string, favorite bool) error
 }
 

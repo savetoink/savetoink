@@ -279,23 +279,6 @@ func (s *SQLite) UpdateFavorite(ctx context.Context, account, id string, favorit
 	return nil
 }
 
-// DeleteByAccount implements ArticlesRepository.DeleteByAccount.
-func (s *SQLite) DeleteByAccount(ctx context.Context, account string) (int, error) {
-	query := `DELETE FROM articles WHERE account = ?`
-
-	result, err := s.db.ExecContext(ctx, query, account)
-	if err != nil {
-		return 0, fmt.Errorf("failed to delete articles: %w", err)
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("failed to check rows affected: %w", err)
-	}
-
-	return int(rowsAffected), nil
-}
-
 // GetMetadataByAccount implements ArticlesRepository.GetMetadataByAccount.
 // Note: SQLite implementation returns nil for lastEvaluatedKey as it uses LIMIT/OFFSET pagination.
 func (s *SQLite) GetMetadataByAccount(

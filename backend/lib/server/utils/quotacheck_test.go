@@ -89,13 +89,6 @@ func (m *quotaCheckMockService) DeleteArticle(
 	panic("not implemented")
 }
 
-func (m *quotaCheckMockService) DeleteAllArticles(
-	_ context.Context,
-	_ string,
-) (*servicetypes.DeleteArticleResult, error) {
-	panic("not implemented")
-}
-
 func (m *quotaCheckMockService) GetDBError() error {
 	panic("not implemented")
 }

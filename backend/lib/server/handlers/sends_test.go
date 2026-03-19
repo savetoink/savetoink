@@ -114,13 +114,6 @@ func (m *sendsMockService) DeleteArticle(
 	return &servicetypes.DeleteArticleResult{Deleted: 0}, errors.New("not implemented")
 }
 
-func (m *sendsMockService) DeleteAllArticles(
-	_ context.Context,
-	_ string,
-) (*servicetypes.DeleteArticleResult, error) {
-	return &servicetypes.DeleteArticleResult{Deleted: 0}, errors.New("not implemented")
-}
-
 func (m *sendsMockService) GetDBError() error {
 	return nil
 }

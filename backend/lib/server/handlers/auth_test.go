@@ -97,10 +97,6 @@ func (m *MockService) DeleteArticle(_ context.Context, _, _ string) (*servicetyp
 	return nil, errors.New("not implemented")
 }
 
-func (m *MockService) DeleteAllArticles(_ context.Context, _ string) (*servicetypes.DeleteArticleResult, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (m *MockService) GetDBError() error {
 	return errors.New("not implemented")
 }

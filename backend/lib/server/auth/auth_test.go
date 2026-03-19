@@ -88,10 +88,6 @@ func (m *MockService) DeleteArticle(_ context.Context, _, _ string) (*servicetyp
 	panic("not implemented")
 }
 
-func (m *MockService) DeleteAllArticles(_ context.Context, _ string) (*servicetypes.DeleteArticleResult, error) {
-	panic("not implemented")
-}
-
 func (m *MockService) GetDBError() error {
 	panic("not implemented")
 }

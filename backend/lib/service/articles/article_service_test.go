@@ -460,50 +460,6 @@ func TestDeleteArticle_NotFound(t *testing.T) {
 	}
 }
 
-func TestDeleteAllArticles_Success(t *testing.T) {
-	mockRepo := &MockRepository{
-		articles: []*model.Article{
-			{Account: "account-123", ID: "article-1", CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-2", CreatedAt: time.Now()},
-			{Account: "account-456", ID: "article-3", CreatedAt: time.Now()},
-		},
-	}
-	svc := New(mockRepo, epub.NewPublisher(), nil)
-
-	ctx := context.Background()
-
-	result, err := svc.DeleteAllArticles(ctx, "account-123")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Deleted != 2 {
-		t.Errorf("expected deleted count 2, got %d", result.Deleted)
-	}
-
-	if len(mockRepo.articles) != 1 {
-		t.Errorf("expected 1 article remaining (from different account), got %d", len(mockRepo.articles))
-	}
-}
-
-func TestDeleteAllArticles_Empty(t *testing.T) {
-	mockRepo := &MockRepository{
-		articles: []*model.Article{},
-	}
-	svc := New(mockRepo, epub.NewPublisher(), nil)
-
-	ctx := context.Background()
-
-	result, err := svc.DeleteAllArticles(ctx, "account-123")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Deleted != 0 {
-		t.Errorf("expected deleted count 0, got %d", result.Deleted)
-	}
-}
-
 func TestToggleFavorite_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
@@ -561,23 +517,6 @@ func TestToggleFavorite_UpdateError(t *testing.T) {
 	_, err := svc.ToggleFavorite(ctx, "account-123", "article-456")
 	if err == nil {
 		t.Error("expected update error")
-	}
-}
-
-func TestDeleteAllArticles_DeleteError(t *testing.T) {
-	mockRepo := &MockRepository{
-		articles: []*model.Article{
-			{Account: "account-123", ID: "article-1", CreatedAt: time.Now()},
-		},
-		deleteErr: errors.New("delete error"),
-	}
-	svc := New(mockRepo, epub.NewPublisher(), nil)
-
-	ctx := context.Background()
-
-	_, err := svc.DeleteAllArticles(ctx, "account-123")
-	if err == nil {
-		t.Error("expected delete error")
 	}
 }
 
@@ -667,5 +606,206 @@ func TestUpdateArticle_RepoError(t *testing.T) {
 	err := svc.UpdateArticle(ctx, article)
 	if err == nil {
 		t.Error("expected store error")
+	}
+}
+
+func TestGetArticlesMetadata_HasMore_FirstPageWithMore(t *testing.T) { //nolint:dupl // intentional duplicate
+	articles := make([]*model.Article, 22)
+	for i := range 22 {
+		articles[i] = &model.Article{
+			Account:   "account-123",
+			ID:        "article-" + string(rune(i)),
+			Title:     "Article " + string(rune(i)),
+			CreatedAt: time.Now(),
+		}
+	}
+	mockRepo := &MockRepository{
+		articles: articles,
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 20, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Total != 22 {
+		t.Errorf("expected total 22, got %d", result.Total)
+	}
+
+	if result.Page != 1 {
+		t.Errorf("expected page 1, got %d", result.Page)
+	}
+
+	if result.PageSize != 20 {
+		t.Errorf("expected page size 20, got %d", result.PageSize)
+	}
+
+	if !result.HasMore {
+		t.Error("expected has_more to be true for page 1 with 22 total items and page size 20")
+	}
+}
+
+func TestGetArticlesMetadata_HasMore_SecondPageWithMore(t *testing.T) { //nolint:dupl // intentional duplicate
+	articles := make([]*model.Article, 22)
+	for i := range 22 {
+		articles[i] = &model.Article{
+			Account:   "account-123",
+			ID:        "article-" + string(rune(i)),
+			Title:     "Article " + string(rune(i)),
+			CreatedAt: time.Now(),
+		}
+	}
+	mockRepo := &MockRepository{
+		articles: articles,
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	result, err := svc.GetArticlesMetadata(ctx, "account-123", 2, 10, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Total != 22 {
+		t.Errorf("expected total 22, got %d", result.Total)
+	}
+
+	if result.Page != 2 {
+		t.Errorf("expected page 2, got %d", result.Page)
+	}
+
+	if result.PageSize != 10 {
+		t.Errorf("expected page size 10, got %d", result.PageSize)
+	}
+
+	if !result.HasMore {
+		t.Error("expected has_more to be true for page 2 with 22 total items and page size 10 (there are items on page 3)")
+	}
+}
+
+func TestGetArticlesMetadata_HasMore_LastPage(t *testing.T) {
+	articles := make([]*model.Article, 22)
+	for i := range 22 {
+		articles[i] = &model.Article{
+			Account:   "account-123",
+			ID:        "article-" + string(rune(i)),
+			Title:     "Article " + string(rune(i)),
+			CreatedAt: time.Now(),
+		}
+	}
+	mockRepo := &MockRepository{
+		articles: articles,
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	result, err := svc.GetArticlesMetadata(ctx, "account-123", 3, 10, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Total != 22 {
+		t.Errorf("expected total 22, got %d", result.Total)
+	}
+
+	if result.Page != 3 {
+		t.Errorf("expected page 3, got %d", result.Page)
+	}
+
+	if result.PageSize != 10 {
+		t.Errorf("expected page size 10, got %d", result.PageSize)
+	}
+
+	if result.HasMore {
+		t.Error("expected has_more to be false for page 3 with 22 total items and page size 10 (last page)")
+	}
+}
+
+func TestGetArticlesMetadata_HasMore_ExactPageBoundary(t *testing.T) {
+	articles := make([]*model.Article, 20)
+	for i := range 20 {
+		articles[i] = &model.Article{
+			Account:   "account-123",
+			ID:        "article-" + string(rune(i)),
+			Title:     "Article " + string(rune(i)),
+			CreatedAt: time.Now(),
+		}
+	}
+	mockRepo := &MockRepository{
+		articles: articles,
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 20, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Total != 20 {
+		t.Errorf("expected total 20, got %d", result.Total)
+	}
+
+	if result.HasMore {
+		t.Error("expected has_more to be false when page size equals total (exact boundary)")
+	}
+}
+
+func TestGetArticlesMetadata_HasMore_EmptyResults(t *testing.T) {
+	mockRepo := &MockRepository{
+		articles: []*model.Article{},
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.HasMore {
+		t.Error("expected has_more to be false for empty results")
+	}
+}
+
+func TestGetArticlesMetadata_HasMore_WithFavoriteFilter(t *testing.T) {
+	articles := make([]*model.Article, 25)
+	for i := range 25 {
+		articles[i] = &model.Article{
+			Account:   "account-123",
+			ID:        "article-" + string(rune(i)),
+			Title:     "Article " + string(rune(i)),
+			CreatedAt: time.Now(),
+		}
+	}
+	for i := range 15 {
+		articles[i].Favorite = true
+	}
+	mockRepo := &MockRepository{
+		articles: articles,
+	}
+	svc := New(mockRepo, epub.NewPublisher(), nil)
+
+	ctx := context.Background()
+
+	favorite := true
+	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, &favorite)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Total != 15 {
+		t.Errorf("expected total 15 (favorite articles only), got %d", result.Total)
+	}
+
+	if !result.HasMore {
+		t.Error("expected has_more to be true for page 1 with 15 favorite items and page size 10")
 	}
 }

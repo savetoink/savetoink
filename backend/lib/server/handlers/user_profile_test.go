@@ -126,13 +126,6 @@ func (m *userprofileMockService) DeleteArticle(
 	return &servicetypes.DeleteArticleResult{Deleted: 0}, errors.New("not implemented")
 }
 
-func (m *userprofileMockService) DeleteAllArticles(
-	_ context.Context,
-	_ string,
-) (*servicetypes.DeleteArticleResult, error) {
-	return &servicetypes.DeleteArticleResult{Deleted: 0}, errors.New("not implemented")
-}
-
 func (m *userprofileMockService) GetDBError() error {
 	return nil
 }

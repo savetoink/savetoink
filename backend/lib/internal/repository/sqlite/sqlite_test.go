@@ -218,29 +218,6 @@ func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite_NotFound() {
 	s.Equal(ErrNotFound, err)
 }
 
-func (s *SQLiteRepositoryTestSuite) TestDeleteByAccount() {
-	for i := range 3 {
-		article := &model.Article{
-			Account:   "test-account",
-			ID:        "article-" + string(rune('1'+i)),
-			URL:       "https://example.com/article",
-			CreatedAt: time.Now().UTC(),
-		}
-		err := s.repository.Store(s.ctx, article)
-		s.NoError(err)
-	}
-
-	count, err := s.repository.DeleteByAccount(s.ctx, "test-account")
-	s.NoError(err)
-	s.Equal(3, count)
-}
-
-func (s *SQLiteRepositoryTestSuite) TestDeleteByAccount_NotFound() {
-	count, err := s.repository.DeleteByAccount(s.ctx, "nonexistent")
-	s.NoError(err)
-	s.Equal(0, count)
-}
-
 func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount() {
 	now := time.Now().UTC()
 	for i := range 5 {
@@ -764,23 +741,6 @@ func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite_DatabaseError() {
 	s.NoError(err)
 
 	err = s.repository.UpdateFavorite(ctx, "test-account", "ctx-fav-article", true)
-	s.Error(err)
-}
-
-func (s *SQLiteRepositoryTestSuite) TestDeleteByAccount_DatabaseError() {
-	ctx, cancel := context.WithCancel(s.ctx)
-	cancel()
-
-	article := &model.Article{
-		Account:   "test-account",
-		ID:        "ctx-del-all-article",
-		URL:       "https://example.com/article",
-		CreatedAt: time.Now().UTC(),
-	}
-	err := s.repository.Store(s.ctx, article)
-	s.NoError(err)
-
-	_, err = s.repository.DeleteByAccount(ctx, "test-account")
 	s.Error(err)
 }
 

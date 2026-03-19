@@ -1762,55 +1762,6 @@ func TestDeleteArticle_Error(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestDeleteAllArticles_Success(t *testing.T) {
-	repo := &testArticlesRepo{
-		articles: []*model.Article{
-			{Account: "account-1", ID: "article-1", Title: "Test Article"},
-			{Account: "account-1", ID: "article-2", Title: "Test Article 2"},
-		},
-	}
-	profileRepo := &testUserProfileRepo{}
-	sendsRepo := &testSendsRepo{}
-
-	svc := New(&Dependencies{
-		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewDOMExtractor(),
-		Cleaner:         content.NewTrafilaturaCleaner(),
-		Publisher:       epub.NewPublisher(),
-		Sender:          &emailSenderMock{},
-		ArticlesRepo:    repo,
-		UserProfileRepo: profileRepo,
-		SendsRepo:       sendsRepo,
-	})
-
-	result, err := svc.DeleteAllArticles(context.Background(), "account-1")
-
-	require.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, 2, result.Deleted)
-}
-
-func TestDeleteAllArticles_Error(t *testing.T) {
-	repo := &testArticlesRepo{deleteErr: errors.New("delete error")}
-	profileRepo := &testUserProfileRepo{}
-	sendsRepo := &testSendsRepo{}
-
-	svc := New(&Dependencies{
-		Fetcher:         content.NewFetcher(""),
-		Extractor:       content.NewDOMExtractor(),
-		Cleaner:         content.NewTrafilaturaCleaner(),
-		Publisher:       epub.NewPublisher(),
-		Sender:          &emailSenderMock{},
-		ArticlesRepo:    repo,
-		UserProfileRepo: profileRepo,
-		SendsRepo:       sendsRepo,
-	})
-
-	_, err := svc.DeleteAllArticles(context.Background(), "account-1")
-
-	require.Error(t, err)
-}
-
 func TestSendArticleByID_EmailSendFailure(t *testing.T) {
 	repo := &testArticlesRepo{
 		articles: []*model.Article{

@@ -250,44 +250,6 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountPagination() {
 	assert.Len(t, articles3, 5)
 }
 
-func (s *DynamoDBRepositoryTestSuite) TestDeleteByAccount() {
-	ctx := context.Background()
-	t := s.T()
-
-	account := "test-account-delete"
-
-	for i := 1; i <= 3; i++ {
-		now := time.Now()
-		publishedAt := now
-
-		article := &model.Article{
-			Account:            account,
-			ID:                 "article-del-" + string(rune('0'+i)),
-			URL:                "https://example.com/del" + string(rune('0'+i)),
-			Title:              "Del Article " + string(rune('0'+i)),
-			Content:            "Del Content " + string(rune('0'+i)),
-			CreatedAt:          now,
-			Favorite:           false,
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
-			PublishedAt:        &publishedAt,
-			WordCount:          100,
-			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
-		}
-
-		err := s.repositories.Store(ctx, article)
-		require.NoError(t, err)
-	}
-
-	count, err := s.repositories.DeleteByAccount(ctx, account)
-	require.NoError(t, err)
-	assert.Equal(t, 3, count)
-}
-
 func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountEmpty() {
 	ctx := context.Background()
 	t := s.T()
@@ -354,13 +316,4 @@ func (s *DynamoDBRepositoryTestSuite) TestStoreArticleEmptyAccount() {
 	err := s.repositories.Store(ctx, article)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account field is required")
-}
-
-func (s *DynamoDBRepositoryTestSuite) TestDeleteByAccountNonExistent() {
-	ctx := context.Background()
-	t := s.T()
-
-	count, err := s.repositories.DeleteByAccount(ctx, "nonexistent-account")
-	require.NoError(t, err)
-	assert.Equal(t, 0, count)
 }

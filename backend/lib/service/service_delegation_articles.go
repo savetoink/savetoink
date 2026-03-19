@@ -61,18 +61,6 @@ func (s *Service) DeleteArticle(
 	return result, nil
 }
 
-// DeleteAllArticles delegates to ArticleService.
-func (s *Service) DeleteAllArticles(
-	ctx context.Context,
-	accountID string,
-) (*servicetypes.DeleteArticleResult, error) {
-	result, err := s.articles.DeleteAllArticles(ctx, accountID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to delete all articles: %w", err)
-	}
-	return result, nil
-}
-
 // ToggleFavorite delegates to ArticleService.
 func (s *Service) ToggleFavorite(ctx context.Context, accountID, articleID string) (bool, error) {
 	favorite, err := s.articles.ToggleFavorite(ctx, accountID, articleID)

@@ -65,10 +65,6 @@ type articleMockService struct {
 		ctx context.Context,
 		accountID, articleID string,
 	) (*servicetypes.DeleteArticleResult, error)
-	deleteAllArticlesFunc func(
-		ctx context.Context,
-		accountID string,
-	) (*servicetypes.DeleteArticleResult, error)
 	toggleFavoriteFunc func(
 		ctx context.Context,
 		accountID, articleID string,
@@ -202,14 +198,6 @@ func (m *articleMockService) DeleteArticle(
 		return m.deleteArticleFunc(ctx, accountID, articleID)
 	}
 	return &servicetypes.DeleteArticleResult{Deleted: 1}, nil
-}
-
-func (m *articleMockService) DeleteAllArticles(
-	ctx context.Context, accountID string) (*servicetypes.DeleteArticleResult, error) {
-	if m.deleteAllArticlesFunc != nil {
-		return m.deleteAllArticlesFunc(ctx, accountID)
-	}
-	return &servicetypes.DeleteArticleResult{Deleted: 5}, nil
 }
 
 func (m *articleMockService) GetDBError() error {
@@ -794,47 +782,6 @@ func TestHandleDeleteArticle_ServiceError(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
 	}
-}
-
-func TestHandleDeleteAllArticles_Success(t *testing.T) {
-	mockSvc := &articleMockService{
-		deleteAllArticlesFunc: func(_ context.Context, _ string) (*servicetypes.DeleteArticleResult, error) {
-			return &servicetypes.DeleteArticleResult{Deleted: 5}, nil
-		},
-	}
-
-	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
-
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(), "DELETE", "/v1/articles", nil)
-	w := httptest.NewRecorder()
-
-	h.HandleDeleteAllArticles(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	var resp types.DeleteArticleResponse
-	err := json.Unmarshal(w.Body.Bytes(), &resp)
-	require.NoError(t, err)
-	assert.Equal(t, 5, resp.Deleted)
-}
-
-func TestHandleDeleteAllArticles_ServiceError(t *testing.T) {
-	mockSvc := &articleMockService{
-		deleteAllArticlesFunc: func(_ context.Context, _ string) (*servicetypes.DeleteArticleResult, error) {
-			return nil, errors.New("some error")
-		},
-	}
-
-	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
-
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(), "DELETE", "/v1/articles", nil)
-	w := httptest.NewRecorder()
-
-	h.HandleDeleteAllArticles(w, req)
-
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
 func TestHandleToggleFavorite_Success(t *testing.T) {

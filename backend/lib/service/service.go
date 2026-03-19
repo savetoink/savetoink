@@ -65,9 +65,6 @@ type Interface interface {
 	// DeleteArticle deletes an existing article by account ID and article ID from the database.
 	DeleteArticle(ctx context.Context, accountID, articleID string) (*servicetypes.DeleteArticleResult, error)
 
-	// DeleteAllArticles deletes all existing articles by account ID from the database.
-	DeleteAllArticles(ctx context.Context, accountID string) (*servicetypes.DeleteArticleResult, error)
-
 	// ToggleFavorite toggles the favorite status of an article.
 	ToggleFavorite(ctx context.Context, accountID string, articleID string) (bool, error)
 

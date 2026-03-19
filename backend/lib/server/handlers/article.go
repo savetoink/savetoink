@@ -210,22 +210,6 @@ func (h *Handlers) HandleDeleteArticle(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(types.DeleteArticleResponse{Deleted: result.Deleted})
 }
 
-// HandleDeleteAllArticles handles the delete all articles endpoint.
-func (h *Handlers) HandleDeleteAllArticles(w http.ResponseWriter, r *http.Request) {
-	accountID := auth.GetAccountIDFromCtx(r.Context())
-
-	result, err := h.service.DeleteAllArticles(r.Context(), accountID)
-	if err != nil {
-		utils.HandleServiceError(w, r, err, "delete all articles")
-		return
-	}
-
-	logging.AddLogAttr(r.Context(), slog.Int("deleted", result.Deleted))
-
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(types.DeleteArticleResponse{Deleted: result.Deleted})
-}
-
 // HandleToggleFavorite handles the toggle favorite endpoint.
 func (h *Handlers) HandleToggleFavorite(w http.ResponseWriter, r *http.Request) {
 	accountID := auth.GetAccountIDFromCtx(r.Context())

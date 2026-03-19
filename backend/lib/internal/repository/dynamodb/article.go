@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -98,43 +97,4 @@ func (d *DynamoDB) UpdateFavorite(ctx context.Context, account, id string, favor
 	}
 
 	return nil
-}
-
-// DeleteByAccount implements Repository.DeleteByAccount.
-func (d *DynamoDB) DeleteByAccount(ctx context.Context, account string) (int, error) {
-	articles, _, _, err := d.GetMetadataByAccount(ctx, account, 1, consts.MaxPageSize, nil)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get articles for deletion: %w", err)
-	}
-
-	if len(articles) == 0 {
-		return 0, nil
-	}
-
-	for i := 0; i < len(articles); i += consts.DynamoDBBatchSize {
-		end := min(i+consts.DynamoDBBatchSize, len(articles))
-
-		var writeReqs []types.WriteRequest
-		for _, article := range articles[i:end] {
-			writeReqs = append(writeReqs, types.WriteRequest{
-				DeleteRequest: &types.DeleteRequest{
-					Key: map[string]types.AttributeValue{
-						attributeNameAccount: &types.AttributeValueMemberS{Value: article.Account},
-						attributeNameID:      &types.AttributeValueMemberS{Value: article.ID},
-					},
-				},
-			})
-		}
-
-		_, err = d.client.BatchWriteItem(ctx, &dynamodb.BatchWriteItemInput{
-			RequestItems: map[string][]types.WriteRequest{
-				d.articleTableName: writeReqs,
-			},
-		})
-		if err != nil {
-			return i, fmt.Errorf("failed to delete batch of articles: %w", err)
-		}
-	}
-
-	return len(articles), nil
 }
