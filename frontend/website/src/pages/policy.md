@@ -1,6 +1,6 @@
 ---
 title: Privacy Policy
-description: Privacy Policy for SaveToInk
+description: Privacy Policy for Save To Ink
 layout: ../layouts/MarkdownLayout.astro
 ---
 
@@ -16,9 +16,9 @@ Save To Ink ("we", "us", or "our") is an open-source tool that converts web arti
 
 ## 1. What we collect
 
-### Web App (app.saveto.ink) and Browser Extensions
+### Web App (app.saveto.ink), Mobile applications (iOS, Android) and Browser Extensions
 
-- **URLs you explicitly submit.** When you click the SaveToInk button, the URL of the current tab is sent to the SaveToInk API for processing. No other browsing data is collected.
+- **URLs you explicitly submit.** When you click the Save to In button, the URL of the current tab is sent to the Save to In API for processing. No other browsing data is collected.
 - **Authentication token.** Stored locally in browser storage to keep you signed in. Never shared with third parties.
 - **Account information.** Your email address, collected via Auth0 at sign-up.
 - **Delivery addresses.** E-reader email addresses (e.g. your Kindle address) you configure in account settings, used solely to deliver EPUBs.
@@ -26,11 +26,11 @@ Save To Ink ("we", "us", or "our") is an open-source tool that converts web arti
 
 ### CLI
 
-- **Nothing beyond what you configure.** The CLI reads a local config file and communicates only with the SaveToInk API (or your self-hosted instance). No telemetry is collected.
+- **Nothing.** The CLI reads a local config file and do not communicates with the Save to In API (or your self-hosted instance). No telemetry is collected.
 
 ### Self-hosted instances
 
-If you run SaveToInk on your own infrastructure, all data stays on your servers. We have no access to it.
+If you run Save to In on your own infrastructure, all data stays on your servers. We have no access to it.
 
 ---
 
@@ -98,7 +98,7 @@ All data in transit is encrypted via TLS. Data at rest is stored in AWS infrastr
 
 ## 8. Changes to this policy
 
-We may update this policy as the product evolves. We will update the "Last updated" date at the top. Continued use of SaveToInk after changes constitutes acceptance of the updated policy.
+We may update this policy as the product evolves. We will update the "Last updated" date at the top. Continued use of Save to In after changes constitutes acceptance of the updated policy.
 
 ---
 
