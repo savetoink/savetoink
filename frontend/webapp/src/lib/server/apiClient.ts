@@ -4,9 +4,9 @@ import { createApiClient as createBaseApiClient, ApiError } from '@savetoink/sha
 import type { ApiClientOptions } from '@savetoink/shared';
 import type { RequestEvent } from '@sveltejs/kit';
 
-function withSvelteKitError<T>(fn: () => Promise<T>): Promise<T> {
+async function withSvelteKitError<T>(fn: () => Promise<T>): Promise<T> {
 	try {
-		return fn();
+		return await fn();
 	} catch (e) {
 		if (e instanceof ApiError) {
 			error(e.status, e.message);

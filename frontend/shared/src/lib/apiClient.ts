@@ -98,11 +98,19 @@ export function createApiClient({
       headers["CF-Ray"] = cloudFlareRay;
     }
 
-    const res = await fetchFn(`${baseUrl}${path}`, {
-      method,
-      headers,
-      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    });
+    let res: Response;
+    try {
+      res = await fetchFn(`${baseUrl}${path}`, {
+        method,
+        headers,
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      });
+    } catch (e) {
+      throw new ApiError(
+        503,
+        e instanceof Error ? e.message : "Network error: Failed to connect to the server",
+      );
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
