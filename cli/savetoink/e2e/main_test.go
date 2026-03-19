@@ -15,6 +15,8 @@ import (
 	"testing"
 )
 
+const epubCloseWarnFormat = "warning: failed to close epub entry %s: %v"
+
 // binaryPath holds the path to the compiled CLI binary, set once in TestMain.
 var binaryPath string
 
@@ -87,27 +89,35 @@ func runCLI(t *testing.T, args ...string) (stdout, stderr string, err error) {
 // -----------------------------------------------------------------
 // Helpers for EPUB inspection.
 // -----------------------------------------------------------------.
-func compareEpubs(t *testing.T, path1, path2 string) bool {
-	t.Helper()
-	r1, openErr1 := zip.OpenReader(path1)
-	if openErr1 != nil {
-		t.Fatalf("open epub %s: %v", path1, openErr1)
-	}
-	defer func() {
-		if closeErr1 := r1.Close(); closeErr1 != nil {
-			t.Logf("warning: failed to close epub %s: %v", path1, closeErr1)
-		}
-	}()
-	r2, openErr2 := zip.OpenReader(path2)
-	if openErr2 != nil {
-		t.Fatalf("open epub %s: %v", path2, openErr2)
-	}
-	defer func() {
-		if closeErr2 := r2.Close(); closeErr2 != nil {
-			t.Logf("warning: failed to close epub %s: %v", path2, closeErr2)
-		}
-	}()
 
+// openZipReaders opens two zip files and returns their readers with cleanup function.
+func openZipReaders(t *testing.T, path1, path2 string) (r1, r2 *zip.ReadCloser) {
+	t.Helper()
+	r1, err1 := zip.OpenReader(path1)
+	if err1 != nil {
+		t.Fatalf("open epub %s: %v", path1, err1)
+	}
+	r2, err2 := zip.OpenReader(path2)
+	if err2 != nil {
+		_ = r1.Close()
+		t.Fatalf("open epub %s: %v", path2, err2)
+	}
+	return r1, r2
+}
+
+// closeZipReaders safely closes both zip readers with warning logging.
+func closeZipReaders(t *testing.T, path1, path2 string, r1, r2 *zip.ReadCloser) {
+	t.Helper()
+	if closeErr1 := r1.Close(); closeErr1 != nil {
+		t.Logf("warning: failed to close epub %s: %v", path1, closeErr1)
+	}
+	if closeErr2 := r2.Close(); closeErr2 != nil {
+		t.Logf(epubCloseWarnFormat, path2, closeErr2)
+	}
+}
+
+// compareZipMetadata checks if two zip files have the same file structure.
+func compareZipMetadata(r1, r2 *zip.ReadCloser) bool {
 	if len(r1.File) != len(r2.File) {
 		return false
 	}
@@ -115,35 +125,56 @@ func compareEpubs(t *testing.T, path1, path2 string) bool {
 		if r1.File[i].Name != r2.File[i].Name {
 			return false
 		}
-		rc1, errOpen1 := r1.File[i].Open()
-		if errOpen1 != nil {
-			t.Fatalf("read epub entry %s: %v", r1.File[i].Name, errOpen1)
+	}
+	return true
+}
+
+// compareFileContent compares the content of a single file entry between two zips.
+func compareFileContent(t *testing.T, f1, f2 *zip.File) bool {
+	t.Helper()
+	rc1, err1 := f1.Open()
+	if err1 != nil {
+		t.Fatalf("read epub entry %s: %v", f1.Name, err1)
+	}
+	defer func() {
+		if closeErr := rc1.Close(); closeErr != nil {
+			t.Logf(epubCloseWarnFormat, f1.Name, closeErr)
 		}
-		rc2, errOpen2 := r2.File[i].Open()
-		if errOpen2 != nil {
-			if closeErr1 := rc1.Close(); closeErr1 != nil {
-				t.Logf("warning: failed to close epub entry %s: %v", r1.File[i].Name, closeErr1)
-			}
-			t.Fatalf("read epub entry %s: %v", r2.File[i].Name, errOpen2)
+	}()
+
+	rc2, err2 := f2.Open()
+	if err2 != nil {
+		t.Fatalf("read epub entry %s: %v", f2.Name, err2)
+	}
+	defer func() {
+		if closeErr := rc2.Close(); closeErr != nil {
+			t.Logf(epubCloseWarnFormat, f2.Name, closeErr)
 		}
-		var buf1, buf2 bytes.Buffer
-		if _, readErr1 := buf1.ReadFrom(rc1); readErr1 != nil {
-			_ = rc1.Close()
-			_ = rc2.Close()
-			t.Fatalf("read epub entry content %s: %v", r1.File[i].Name, readErr1)
-		}
-		if _, readErr2 := buf2.ReadFrom(rc2); readErr2 != nil {
-			_ = rc1.Close()
-			_ = rc2.Close()
-			t.Fatalf("read epub entry content %s: %v", r2.File[i].Name, readErr2)
-		}
-		if closeErr1 := rc1.Close(); closeErr1 != nil {
-			t.Logf("warning: failed to close epub entry %s: %v", r1.File[i].Name, closeErr1)
-		}
-		if closeErr2 := rc2.Close(); closeErr2 != nil {
-			t.Logf("warning: failed to close epub entry %s: %v", r2.File[i].Name, closeErr2)
-		}
-		if !bytes.Equal(buf1.Bytes(), buf2.Bytes()) {
+	}()
+
+	var buf1, buf2 bytes.Buffer
+	if _, readErr1 := buf1.ReadFrom(rc1); readErr1 != nil {
+		t.Fatalf("read epub entry content %s: %v", f1.Name, readErr1)
+	}
+	if _, readErr2 := buf2.ReadFrom(rc2); readErr2 != nil {
+		t.Fatalf("read epub entry content %s: %v", f2.Name, readErr2)
+	}
+
+	return bytes.Equal(buf1.Bytes(), buf2.Bytes())
+}
+
+// compareEpubs compares two EPUB files for equality.
+func compareEpubs(t *testing.T, path1, path2 string) bool {
+	t.Helper()
+	r1, r2 := openZipReaders(t, path1, path2)
+	defer closeZipReaders(t, path1, path2, r1, r2)
+
+	if !compareZipMetadata(r1, r2) {
+		return false
+	}
+
+	for i := range r1.File {
+		if !compareFileContent(t, r1.File[i], r2.File[i]) {
 			return false
 		}
 	}

@@ -14,7 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testFunctionName = "test-function"
+const (
+	testFunctionName = "test-function"
+	testRequestID    = "req-123"
+	testURL          = "https://example.com/article"
+	testArticleID    = "article-456"
+	testAccountID    = "account-789"
+)
 
 type mockLambdaInvoker struct {
 	invoked      bool
@@ -58,10 +64,10 @@ func TestStartProcessing_Success(t *testing.T) {
 
 	ctx := context.Background()
 	event := &content.ProcessArticleEvent{
-		RequestID:      "req-123",
-		URL:            "https://example.com/article",
-		ArticleID:      "article-456",
-		AccountID:      "account-789",
+		RequestID:      testRequestID,
+		URL:            testURL,
+		ArticleID:      testArticleID,
+		AccountID:      testAccountID,
 		SendOnComplete: true,
 	}
 
@@ -87,10 +93,10 @@ func TestStartProcessing_MarshalError(t *testing.T) {
 	ctx := context.Background()
 
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-456",
-		AccountID: "account-789",
+		RequestID: testRequestID,
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 		InheritedAttrs: []map[string]any{
 			{"key": make(chan int)},
 		},
@@ -110,10 +116,10 @@ func TestStartProcessing_InvokeError(t *testing.T) {
 
 	ctx := context.Background()
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-456",
-		AccountID: "account-789",
+		RequestID: testRequestID,
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	proc.StartProcessing(ctx, event)
@@ -141,10 +147,10 @@ func TestStartProcessing_WithInheritedAttrs(t *testing.T) {
 
 	ctx := context.Background()
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-456",
-		AccountID: "account-789",
+		RequestID: testRequestID,
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 		InheritedAttrs: []map[string]any{
 			{"user_id": "user-123"},
 			{"source": "api"},
@@ -172,10 +178,10 @@ func TestStartProcessing_ContextCancellation(t *testing.T) {
 	cancel()
 
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-456",
-		AccountID: "account-789",
+		RequestID: testRequestID,
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	proc.StartProcessing(ctx, event)

@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testMessage   = "test message"
+	debugMessage  = "debug message"
+	testSentryDSN = "https://test@sentry.io/123"
+)
+
 func TestSetupLogging_TextOnly(t *testing.T) {
 	defaultLogger := slog.Default()
 	defer slog.SetDefault(defaultLogger)
@@ -28,8 +34,8 @@ func TestSetupLogging_TextOnly(t *testing.T) {
 	assert.NotNil(t, testLogger)
 
 	assert.NotPanics(t, func() {
-		testLogger.Info("test message")
-		testLogger.Debug("debug message")
+		testLogger.Info(testMessage)
+		testLogger.Debug(debugMessage)
 	})
 }
 
@@ -51,7 +57,7 @@ func TestSetupLogging_DebugMode(t *testing.T) {
 	assert.NotNil(t, testLogger)
 
 	assert.NotPanics(t, func() {
-		testLogger.Debug("debug message")
+		testLogger.Info(testMessage)
 	})
 }
 
@@ -62,7 +68,7 @@ func TestSetupLogging_SentryIntegration(t *testing.T) {
 	cfg := &config.Config{
 		Debug:             false,
 		LoggingProvider:   consts.LoggingBackendSentry,
-		SentryDSN:         "https://test@sentry.io/123",
+		SentryDSN:         testSentryDSN,
 		SentryEnvironment: "test",
 		SentrySampleRate:  1.0,
 	}
@@ -86,7 +92,7 @@ func TestSetupLogging_SentryWithDebug(t *testing.T) {
 	cfg := &config.Config{
 		Debug:             true,
 		LoggingProvider:   consts.LoggingBackendSentry,
-		SentryDSN:         "https://test@sentry.io/123",
+		SentryDSN:         testSentryDSN,
 		SentryEnvironment: "test",
 		SentrySampleRate:  1.0,
 	}
@@ -97,7 +103,7 @@ func TestSetupLogging_SentryWithDebug(t *testing.T) {
 	assert.NotNil(t, testLogger)
 
 	assert.NotPanics(t, func() {
-		testLogger.Debug("debug message")
+		testLogger.Debug(debugMessage)
 		testLogger.Info("info message")
 	})
 }
@@ -120,7 +126,7 @@ func TestSetupLogging_SentryFallback(t *testing.T) {
 	assert.NotNil(t, testLogger)
 
 	assert.NotPanics(t, func() {
-		testLogger.Info("test message")
+		testLogger.Info(testMessage)
 	})
 }
 
@@ -131,7 +137,7 @@ func TestSetupLogging_CustomSampleRate(t *testing.T) {
 	cfg := &config.Config{
 		Debug:             false,
 		LoggingProvider:   consts.LoggingBackendSentry,
-		SentryDSN:         "https://test@sentry.io/123",
+		SentryDSN:         testSentryDSN,
 		SentryEnvironment: "test",
 		SentrySampleRate:  0.5,
 	}
@@ -142,7 +148,7 @@ func TestSetupLogging_CustomSampleRate(t *testing.T) {
 	assert.NotNil(t, testLogger)
 
 	assert.NotPanics(t, func() {
-		testLogger.Info("test message")
+		testLogger.Info(testMessage)
 	})
 }
 
@@ -164,7 +170,7 @@ func TestSetupLogging_RespectsOutput(t *testing.T) {
 
 	SetupLogging(cfg)
 
-	slog.Info("test message")
+	slog.Info(testMessage)
 
 	if err := w.Close(); err != nil {
 		t.Fatalf("failed to close pipe: %v", err)
@@ -174,5 +180,5 @@ func TestSetupLogging_RespectsOutput(t *testing.T) {
 	buf := make([]byte, 1024)
 	n, _ := r.Read(buf)
 	assert.Greater(t, n, 0)
-	assert.Contains(t, string(buf[:n]), "test message")
+	assert.Contains(t, string(buf[:n]), testMessage)
 }

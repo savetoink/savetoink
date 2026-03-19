@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+const mozillaPrefix = "Mozilla/5.0"
+
 func TestGetRandomUserAgent(t *testing.T) {
 	tests := []struct {
 		name string
@@ -21,7 +23,7 @@ func TestGetRandomUserAgent(t *testing.T) {
 				t.Error("GetRandomUserAgent() returned empty string")
 			}
 
-			if !strings.HasPrefix(ua, "Mozilla/5.0") {
+			if !strings.HasPrefix(ua, mozillaPrefix) {
 				t.Errorf("GetRandomUserAgent() returned invalid user agent: %s", ua)
 			}
 		})
@@ -45,7 +47,7 @@ func TestGetRandomUserAgentVariations(t *testing.T) {
 		if ua == "" {
 			t.Error("Found empty user agent in results")
 		}
-		if !strings.HasPrefix(ua, "Mozilla/5.0") {
+		if !strings.HasPrefix(ua, mozillaPrefix) {
 			t.Errorf("Found invalid user agent in results: %s", ua)
 		}
 	}
@@ -56,7 +58,7 @@ func TestUserAgents(t *testing.T) {
 		if ua == "" {
 			t.Error("user agent is empty")
 		}
-		if !strings.HasPrefix(ua, "Mozilla/5.0") {
+		if !strings.HasPrefix(ua, mozillaPrefix) {
 			t.Errorf("user agent does not start with Mozilla/5.0: %s", ua)
 		}
 	}

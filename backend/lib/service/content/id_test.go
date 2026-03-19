@@ -8,6 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	baseArticleURL              = "https://example.com/article/123"
+	articleURLWithQuery         = "https://example.com/article/123?source=twitter&utm=test"
+	articleURLWithSource        = "https://example.com/article/123?source=twitter"
+	articleURLWithTrailingSlash = "https://example.com/article/123/"
+	httpArticleURL              = "http://example.com/article"
+	baseURL                     = "https://example.com/"
+	schemeError                 = "must use http or https scheme"
+)
+
 func TestArticleIDFromURL(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -17,12 +27,12 @@ func TestArticleIDFromURL(t *testing.T) {
 	}{
 		{
 			name:    "valid URL",
-			url:     "https://example.com/article/123",
+			url:     baseArticleURL,
 			wantErr: false,
 		},
 		{
 			name:    "valid URL with query params",
-			url:     "https://example.com/article/123?source=twitter&utm=test",
+			url:     articleURLWithQuery,
 			wantErr: false,
 		},
 		{
@@ -49,13 +59,13 @@ func TestArticleIDFromURL(t *testing.T) {
 			name:        "invalid URL",
 			url:         "not-a-url",
 			wantErr:     true,
-			errContains: "must use http or https scheme",
+			errContains: schemeError,
 		},
 		{
 			name:        "URL without scheme",
 			url:         "example.com/article",
 			wantErr:     true,
-			errContains: "must use http or https scheme",
+			errContains: schemeError,
 		},
 		{
 			name:        "empty URL",
@@ -92,7 +102,7 @@ func TestArticleIDFromURL(t *testing.T) {
 }
 
 func TestArticleIDFromURL_Deterministic(t *testing.T) {
-	url1, _ := url.Parse("https://example.com/article/123?source=twitter")
+	url1, _ := url.Parse(articleURLWithSource)
 	url2, _ := url.Parse("https://example.com/article/123?utm_source=newsletter#intro")
 	url3, _ := url.Parse("https://example.com/article/123/")
 
@@ -132,7 +142,7 @@ func TestArticleIDFromURL_DifferentURLs(t *testing.T) {
 }
 
 func TestArticleIDFromURL_HttpVsHttps(t *testing.T) {
-	urlHTTP, _ := url.Parse("http://example.com/article")
+	urlHTTP, _ := url.Parse(httpArticleURL)
 	urlHTTPS, _ := url.Parse("https://example.com/article")
 
 	idHTTP, err1 := ArticleIDFromURL(urlHTTP)
@@ -153,14 +163,14 @@ func TestCleanURL(t *testing.T) {
 	}{
 		{
 			name:        "preserves query parameters",
-			inputURL:    "https://example.com/article/123?source=twitter&utm=test",
-			expectedURL: "https://example.com/article/123?source=twitter&utm=test",
+			inputURL:    articleURLWithQuery,
+			expectedURL: articleURLWithQuery,
 			wantErr:     false,
 		},
 		{
 			name:        "strips fragment",
-			inputURL:    "https://example.com/article/123#section-1",
-			expectedURL: "https://example.com/article/123",
+			inputURL:    baseArticleURL + "#section-1",
+			expectedURL: baseArticleURL,
 			wantErr:     false,
 		},
 		{
@@ -171,32 +181,32 @@ func TestCleanURL(t *testing.T) {
 		},
 		{
 			name:        "preserves clean URL",
-			inputURL:    "https://example.com/article/123",
-			expectedURL: "https://example.com/article/123",
+			inputURL:    baseArticleURL,
+			expectedURL: baseArticleURL,
 			wantErr:     false,
 		},
 		{
 			name:        "removes trailing slash",
-			inputURL:    "https://example.com/article/123/",
-			expectedURL: "https://example.com/article/123",
+			inputURL:    articleURLWithTrailingSlash,
+			expectedURL: baseArticleURL,
 			wantErr:     false,
 		},
 		{
 			name:        "handles root path",
-			inputURL:    "https://example.com/",
-			expectedURL: "https://example.com/",
+			inputURL:    baseURL,
+			expectedURL: baseURL,
 			wantErr:     false,
 		},
 		{
 			name:        "handles no path",
 			inputURL:    "https://example.com",
-			expectedURL: "https://example.com/",
+			expectedURL: baseURL,
 			wantErr:     false,
 		},
 		{
 			name:        "handles HTTP",
-			inputURL:    "http://example.com/article",
-			expectedURL: "http://example.com/article",
+			inputURL:    httpArticleURL,
+			expectedURL: httpArticleURL,
 			wantErr:     false,
 		},
 		{
@@ -210,14 +220,14 @@ func TestCleanURL(t *testing.T) {
 			inputURL:    "not-a-url",
 			expectedURL: "",
 			wantErr:     true,
-			errContains: "must use http or https scheme",
+			errContains: schemeError,
 		},
 		{
 			name:        "URL without scheme",
 			inputURL:    "example.com/article",
 			expectedURL: "",
 			wantErr:     true,
-			errContains: "must use http or https scheme",
+			errContains: schemeError,
 		},
 		{
 			name:        "empty URL",
@@ -257,20 +267,20 @@ func TestCleanURL_Deterministic(t *testing.T) {
 		expectedCleanURL string
 	}{
 		{
-			inputURL:         "https://example.com/article/123?source=twitter",
-			expectedCleanURL: "https://example.com/article/123?source=twitter",
+			inputURL:         articleURLWithSource,
+			expectedCleanURL: articleURLWithSource,
 		},
 		{
 			inputURL:         "https://example.com/article/123?utm_source=newsletter#intro",
 			expectedCleanURL: "https://example.com/article/123?utm_source=newsletter",
 		},
 		{
-			inputURL:         "https://example.com/article/123/",
-			expectedCleanURL: "https://example.com/article/123",
+			inputURL:         articleURLWithTrailingSlash,
+			expectedCleanURL: baseArticleURL,
 		},
 		{
-			inputURL:         "https://example.com/article/123",
-			expectedCleanURL: "https://example.com/article/123",
+			inputURL:         baseArticleURL,
+			expectedCleanURL: baseArticleURL,
 		},
 	}
 
