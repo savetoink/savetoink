@@ -7,14 +7,42 @@
 		user,
 		favoriteSubmitting = false,
 		sendSubmitting = false,
-		deleteSubmitting = false
+		deleteSubmitting = false,
+		favoriteEnhance,
+		sendEnhance,
+		deleteEnhance,
+		bind: controls
 	}: {
 		article: Article;
 		user?: UserProfile;
 		favoriteSubmitting?: boolean;
 		sendSubmitting?: boolean;
 		deleteSubmitting?: boolean;
+		favoriteEnhance?: ReturnType<typeof enhance>;
+		sendEnhance?: ReturnType<typeof enhance>;
+		deleteEnhance?: ReturnType<typeof enhance>;
+		bind?: {
+			favoriteForm: HTMLFormElement;
+			sendForm: HTMLFormElement;
+			deleteForm: HTMLFormElement;
+		};
 	} = $props();
+
+	let favoriteForm: HTMLFormElement;
+	let sendForm: HTMLFormElement;
+	let deleteForm: HTMLFormElement;
+
+	$effect(() => {
+		if (controls && favoriteForm) {
+			controls.favoriteForm = favoriteForm;
+		}
+		if (controls && sendForm) {
+			controls.sendForm = sendForm;
+		}
+		if (controls && deleteForm) {
+			controls.deleteForm = deleteForm;
+		}
+	});
 
 	const canSendToDevice = $derived(!!user?.device_email);
 
@@ -23,22 +51,24 @@
 			cancel();
 		}
 	}
+
+	const deleteEnhanceFn = $derived(deleteEnhance || handleDeleteEnhance);
 </script>
 
 <div>
-	<form method="POST" action="/articles/{article.id}?/favorite" use:enhance>
+	<form bind:this={favoriteForm} method="POST" action="/articles/{article.id}?/favorite" use:enhance={favoriteEnhance}>
 		<button type="submit" aria-busy={favoriteSubmitting}
 			>{article.favorite ? 'Unfavorite' : 'Favorite'}</button
 		>
 	</form>
 
 	{#if canSendToDevice}
-		<form method="POST" action="/articles/{article.id}?/send" use:enhance>
+		<form bind:this={sendForm} method="POST" action="/articles/{article.id}?/send" use:enhance={sendEnhance}>
 			<button type="submit" aria-busy={sendSubmitting}>Send</button>
 		</form>
 	{/if}
 
-	<form method="POST" action="/articles/{article.id}?/delete" use:enhance={handleDeleteEnhance}>
+	<form bind:this={deleteForm} method="POST" action="/articles/{article.id}?/delete" use:enhance={deleteEnhanceFn}>
 		<button type="submit" aria-busy={deleteSubmitting}>Delete</button>
 	</form>
 </div>

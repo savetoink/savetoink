@@ -26,16 +26,22 @@
 	let sendSubmitting = $state(false);
 	let deleteSubmitting = $state(false);
 
-	const keyboardCallbacks = {
-		f: () => toggleFavoriteAction(favoriteForm),
-		d: () => deleteArticleAction(deleteForm),
-		s: () => sendArticleAction(sendForm),
+	let controls: {
+		favoriteForm: HTMLFormElement;
+		sendForm: HTMLFormElement;
+		deleteForm: HTMLFormElement;
+	};
+
+	const keyboardCallbacks = $derived({
+		f: () => toggleFavoriteAction(controls?.favoriteForm),
+		d: () => deleteArticleAction(controls?.deleteForm),
+		s: () => sendArticleAction(controls?.sendForm),
 		ArrowLeft: () => goto(resolve('/articles')),
 		Escape: () => goto(resolve('/articles')),
 		h: () => goto(resolve('/articles')),
 		n: () => goto(resolve('/new')),
 		a: () => goto(resolve('/account'))
-	};
+	});
 
 	const enabledKeys = $derived(
 		Object.keys(DETAIL_BINDINGS).filter((key) => key !== 's' || data.user?.device_email)
@@ -66,6 +72,11 @@
 	}
 
 	async function handleDeleteEnhance() {
+		if (!window.confirm('Are you sure you want to delete this article?')) {
+			return async ({ cancel }: { cancel: () => void }) => {
+				cancel();
+			};
+		}
 		deleteSubmitting = true;
 		return async ({
 			update
@@ -106,11 +117,15 @@
 
 		<ArticleMetaAccordion article={data} />
 		<ArticleControls
+			bind:controls
 			article={data}
 			user={data.user}
 			{favoriteSubmitting}
 			{sendSubmitting}
 			{deleteSubmitting}
+			favoriteEnhance={handleFavoriteEnhance()}
+			sendEnhance={handleSendEnhance()}
+			deleteEnhance={handleDeleteEnhance()}
 		/>
 	</header>
 	<section>
@@ -118,25 +133,6 @@
 		{@html data.content}
 	</section>
 </article>
-
-<form
-	bind:this={favoriteForm}
-	method="POST"
-	action="/articles/{data.id}?/favorite"
-	use:enhance={handleFavoriteEnhance}
-></form>
-<form
-	bind:this={sendForm}
-	method="POST"
-	action="/articles/{data.id}?/send"
-	use:enhance={handleSendEnhance}
-></form>
-<form
-	bind:this={deleteForm}
-	method="POST"
-	action="/articles/{data.id}?/delete"
-	use:enhance={handleDeleteEnhance}
-></form>
 
 <style>
 	img {
