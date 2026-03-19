@@ -47,3 +47,6 @@ dotenv ENV="local":
 
 usage:
     @bun run ./tools/usage.ts
+
+sonarcloud-report pr_number="":
+    @bun run ./tools/sonarcloud.ts {{ pr_number }}
