@@ -5,4 +5,11 @@ import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = sequence(sentryHandle(), rootHandle);
 
-export const handleError = handleErrorWithSentry();
+const sentryHandleError = handleErrorWithSentry();
+
+export const handleError = (input: { event: unknown; error: unknown; status: number }) => {
+	const message = input.error instanceof Error ? input.error.message : String(input.error);
+	// @ts-expect-error - Sentry's handleErrorWithSentry has complex types that don't match our simplified input
+	sentryHandleError(input);
+	return { message };
+};
