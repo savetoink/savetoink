@@ -1,0 +1,16 @@
+name: Deploy webapp - Dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - frontend/**
+      - VERSION
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/webapp.yml
+    with:
+      environment: dev

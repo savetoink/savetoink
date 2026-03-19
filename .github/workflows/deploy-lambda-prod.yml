@@ -24,6 +24,4 @@ jobs:
     uses: ./.github/workflows/deploy-lambda.yml
     needs: tests
     with:
-      bucket: ${{ vars.SAVETOINK_BUCKET }}
-      aws_role_arn: ${{ vars.AWS_ROLE_ARN }}
-      aws_region: ${{ vars.AWS_REGION }}
+      environment: prod

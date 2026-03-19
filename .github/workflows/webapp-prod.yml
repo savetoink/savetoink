@@ -1,0 +1,16 @@
+name: Deploy webapp - Prod
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - frontend/**
+      - VERSION
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/webapp.yml
+    with:
+      environment: prod

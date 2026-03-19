@@ -3,15 +3,9 @@ name: Deploy Lambda
 on:
   workflow_call:
     inputs:
-      bucket:
-        required: true
+      environment:
         type: string
-      aws_role_arn:
         required: true
-        type: string
-      aws_region:
-        required: true
-        type: string
 
 permissions:
   id-token: write
@@ -20,6 +14,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -35,20 +30,14 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs.aws_role_arn }}
-          aws-region: ${{ inputs.aws_region }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Deploy API Lambda (hide output to avoid leaking secrets)
-        run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda-api > /dev/null
-        env:
-          SAVETOINK_BUCKET: ${{ inputs.bucket }}
+        run: SAVETOINK_BUCKET=${{ vars.SAVETOINK_BUCKET }} just deploy-lambda-api > /dev/null
 
       - name: Deploy Processor Lambda (hide output to avoid leaking secrets)
-        run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda-processor > /dev/null
-        env:
-          SAVETOINK_BUCKET: ${{ inputs.bucket }}
+        run: SAVETOINK_BUCKET=${{ vars.SAVETOINK_BUCKET }} just deploy-lambda-processor > /dev/null
 
       - name: Deploy Scheduler Lambda (hide output to avoid leaking secrets)
-        run: SAVETOINK_BUCKET=${SAVETOINK_BUCKET} just deploy-lambda-scheduler > /dev/null
-        env:
-          SAVETOINK_BUCKET: ${{ inputs.bucket }}
+        run: SAVETOINK_BUCKET=${{ vars.SAVETOINK_BUCKET }} just deploy-lambda-scheduler > /dev/null

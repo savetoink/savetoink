@@ -20,6 +20,4 @@ jobs:
   deploy:
     uses: ./.github/workflows/deploy-lambda.yml
     with:
-      bucket: ${{ vars.SAVETOINK_BUCKET_DEV }}
-      aws_role_arn: ${{ vars.AWS_ROLE_ARN_DEV }}
-      aws_region: ${{ vars.AWS_REGION_DEV }}
+      environment: dev
