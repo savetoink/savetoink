@@ -8,7 +8,7 @@ export default defineConfig({
 	outDir: 'dist',
 	modules: ['@wxt-dev/module-svelte'],
 	manifest: {
-		permissions: ['storage', 'tabs', 'contextMenus', 'identity']
+		permissions: ['storage', 'activeTab', 'contextMenus', 'identity', 'notifications']
 	},
 	vite() {
 		const { version } = getBuildConfig();

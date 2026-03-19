@@ -2,23 +2,16 @@ import { createArticle } from '../lib/api';
 import { getAPIKey, getUserProfile } from '../lib/storage';
 
 export default defineBackground(() => {
-	async function showToast(
-		title: string,
-		message: string,
-		variant: 'success' | 'error' = 'success'
-	) {
+	async function showNotification(title: string, message: string) {
 		try {
-			const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-			if (tab && tab.id) {
-				await browser.tabs.sendMessage(tab.id, {
-					type: 'show-toast',
-					title,
-					message,
-					variant
-				});
-			}
+			await browser.notifications.create({
+				type: 'basic',
+				iconUrl: browser.runtime.getURL('/icon/48.png'),
+				title,
+				message
+			});
 		} catch (error) {
-			console.warn('failed to show toast:', error);
+			console.warn('failed to show notification:', error);
 		}
 	}
 
@@ -37,17 +30,16 @@ export default defineBackground(() => {
 
 		const url = info.linkUrl;
 		if (!url) {
-			await showToast('Error', 'No link URL found', 'error');
+			await showNotification('Error', 'No link URL found');
 			return;
 		}
 
 		try {
 			const apiKey = await getAPIKey();
 			if (!apiKey) {
-				await showToast(
+				await showNotification(
 					'Authentication Required',
-					'Please login to your Save to Ink account',
-					'error'
+					'Please login to your Save to Ink account'
 				);
 				return;
 			}
@@ -56,13 +48,13 @@ export default defineBackground(() => {
 
 			await createArticle(url, profile?.auto_send || false, apiKey);
 			if (profile?.auto_send) {
-				await showToast('Success', 'Article saved and sent to device', 'success');
+				await showNotification('Success', 'Article saved and sent to device');
 			} else {
-				await showToast('Success', 'Article saved to your reading list', 'success');
+				await showNotification('Success', 'Article saved to your reading list');
 			}
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'failed to save article';
-			await showToast('Error', errorMessage, 'error');
+			await showNotification('Error', errorMessage);
 		}
 	});
 });
