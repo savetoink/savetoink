@@ -18,18 +18,18 @@
 	let { data }: { data: ArticlePageData } = $props();
 	const title = $derived(data.title || data.url);
 
-	let favoriteForm: HTMLFormElement;
-	let sendForm: HTMLFormElement;
-	let deleteForm: HTMLFormElement;
+	let favoriteForm = $state<HTMLFormElement>();
+	let sendForm = $state<HTMLFormElement>();
+	let deleteForm = $state<HTMLFormElement>();
 
 	let favoriteSubmitting = $state(false);
 	let sendSubmitting = $state(false);
 	let deleteSubmitting = $state(false);
 
 	const keyboardCallbacks = {
-		f: () => toggleFavoriteAction(favoriteForm),
-		d: () => deleteArticleAction(deleteForm),
-		s: () => sendArticleAction(sendForm),
+		f: () => favoriteForm && toggleFavoriteAction(favoriteForm),
+		d: () => deleteForm && deleteArticleAction(deleteForm),
+		s: () => sendForm && sendArticleAction(sendForm),
 		ArrowLeft: () => goto(resolve('/articles')),
 		Escape: () => goto(resolve('/articles')),
 		h: () => goto(resolve('/articles')),
@@ -108,6 +108,9 @@
 		<ArticleControls
 			article={data}
 			user={data.user}
+			{favoriteForm}
+			{sendForm}
+			{deleteForm}
 			{favoriteSubmitting}
 			{sendSubmitting}
 			{deleteSubmitting}

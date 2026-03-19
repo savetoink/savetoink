@@ -1,16 +1,21 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import type { Article, UserProfile } from '@savetoink/shared';
 
 	let {
 		article,
 		user,
+		favoriteForm,
+		sendForm,
+		deleteForm,
 		favoriteSubmitting = false,
 		sendSubmitting = false,
 		deleteSubmitting = false
 	}: {
 		article: Article;
 		user?: UserProfile;
+		favoriteForm?: HTMLFormElement;
+		sendForm?: HTMLFormElement;
+		deleteForm?: HTMLFormElement;
 		favoriteSubmitting?: boolean;
 		sendSubmitting?: boolean;
 		deleteSubmitting?: boolean;
@@ -18,29 +23,32 @@
 
 	const canSendToDevice = $derived(!!user?.device_email);
 
-	async function handleDeleteEnhance({ cancel }: { cancel: () => void }) {
+	async function handleFavoriteClick() {
+		favoriteForm?.requestSubmit();
+	}
+
+	async function handleSendClick() {
+		sendForm?.requestSubmit();
+	}
+
+	async function handleDeleteClick() {
 		if (!window.confirm('Are you sure you want to delete this article?')) {
-			cancel();
+			return;
 		}
+		deleteForm?.requestSubmit();
 	}
 </script>
 
 <div>
-	<form method="POST" action="/articles/{article.id}?/favorite" use:enhance>
-		<button type="submit" aria-busy={favoriteSubmitting}
-			>{article.favorite ? 'Unfavorite' : 'Favorite'}</button
-		>
-	</form>
+	<button type="button" aria-busy={favoriteSubmitting} onclick={handleFavoriteClick}
+		>{article.favorite ? 'Unfavorite' : 'Favorite'}</button
+	>
 
 	{#if canSendToDevice}
-		<form method="POST" action="/articles/{article.id}?/send" use:enhance>
-			<button type="submit" aria-busy={sendSubmitting}>Send</button>
-		</form>
+		<button type="button" aria-busy={sendSubmitting} onclick={handleSendClick}>Send</button>
 	{/if}
 
-	<form method="POST" action="/articles/{article.id}?/delete" use:enhance={handleDeleteEnhance}>
-		<button type="submit" aria-busy={deleteSubmitting}>Delete</button>
-	</form>
+	<button type="button" aria-busy={deleteSubmitting} onclick={handleDeleteClick}>Delete</button>
 </div>
 
 <style>
