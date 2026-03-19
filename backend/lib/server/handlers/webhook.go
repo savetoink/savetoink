@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
@@ -83,6 +84,16 @@ func (h *Handlers) verifyMailjetSecret(r *http.Request) error {
 }
 
 func (h *Handlers) processBounceEvents(r *http.Request, events []mailjetEvent) error {
+	processor := bounceEventProcessor{handlers: h, ctx: r.Context()}
+	return processor.Process(events)
+}
+
+type bounceEventProcessor struct {
+	handlers *Handlers
+	ctx      context.Context
+}
+
+func (p *bounceEventProcessor) Process(events []mailjetEvent) error {
 	var processedCount int
 	var failedCount int
 	var err error
@@ -90,51 +101,61 @@ func (h *Handlers) processBounceEvents(r *http.Request, events []mailjetEvent) e
 	for i := range events {
 		event := &events[i]
 
-		if event.Event != mailjetEventBounce {
+		eventErr := p.processEvent(event)
+		if eventErr != nil {
 			failedCount++
-			err = errors.Join(err, errors.New("unexpected event: "+event.Event))
-			continue
-		}
-
-		if event.Email == "" {
-			failedCount++
-			err = errors.Join(err, errors.New("empty email"))
-			continue
-		}
-
-		errorMessage := h.extractErrorMessage(event)
-		if handleErr := h.service.HandleBounce(r.Context(), event.Email, errorMessage); handleErr != nil {
-			failedCount++
-			err = errors.Join(err, fmt.Errorf("handleErr: %w (email: %s)", handleErr, event.Email))
+			err = errors.Join(err, eventErr)
 			continue
 		}
 
 		processedCount++
-		logging.AddLogAttr(r.Context(), slog.String("bounced_email", event.Email))
-
-		accountID, accountErr := h.service.GetAccountIDByDeviceEmail(r.Context(), event.Email)
-		if accountErr == nil && accountID != "" {
-			logging.AddLogAttr(r.Context(), slog.String("account_id", accountID))
-		}
-
-		if errorMessage != "" {
-			logging.AddLogAttr(r.Context(), slog.String("bounce_error", errorMessage))
-		}
-
-		if event.HardBounce {
-			logging.AddLogAttr(r.Context(), slog.Bool("hard_bounce", true))
-		}
-
-		if event.Time > 0 {
-			bounceTime := time.Unix(event.Time, 0).UTC()
-			logging.AddLogAttr(r.Context(), slog.Time("bounce_timestamp", bounceTime))
-		}
+		p.logEventDetails(event)
 	}
 
-	logging.AddLogAttr(r.Context(), slog.Int("processed_count", processedCount))
-	logging.AddLogAttr(r.Context(), slog.Int("failed_count", failedCount))
+	logging.AddLogAttr(p.ctx, slog.Int("processed_count", processedCount))
+	logging.AddLogAttr(p.ctx, slog.Int("failed_count", failedCount))
 
 	return err
+}
+
+func (p *bounceEventProcessor) processEvent(event *mailjetEvent) error {
+	if event.Event != mailjetEventBounce {
+		return errors.New("unexpected event: " + event.Event)
+	}
+
+	if event.Email == "" {
+		return errors.New("empty email")
+	}
+
+	errorMessage := p.handlers.extractErrorMessage(event)
+	if handleErr := p.handlers.service.HandleBounce(p.ctx, event.Email, errorMessage); handleErr != nil {
+		return fmt.Errorf("handleErr: %w (email: %s)", handleErr, event.Email)
+	}
+
+	return nil
+}
+
+func (p *bounceEventProcessor) logEventDetails(event *mailjetEvent) {
+	logging.AddLogAttr(p.ctx, slog.String("bounced_email", event.Email))
+
+	accountID, accountErr := p.handlers.service.GetAccountIDByDeviceEmail(p.ctx, event.Email)
+	if accountErr == nil && accountID != "" {
+		logging.AddLogAttr(p.ctx, slog.String("account_id", accountID))
+	}
+
+	errorMessage := p.handlers.extractErrorMessage(event)
+	if errorMessage != "" {
+		logging.AddLogAttr(p.ctx, slog.String("bounce_error", errorMessage))
+	}
+
+	if event.HardBounce {
+		logging.AddLogAttr(p.ctx, slog.Bool("hard_bounce", true))
+	}
+
+	if event.Time > 0 {
+		bounceTime := time.Unix(event.Time, 0).UTC()
+		logging.AddLogAttr(p.ctx, slog.Time("bounce_timestamp", bounceTime))
+	}
 }
 
 func (h *Handlers) extractErrorMessage(event *mailjetEvent) string {

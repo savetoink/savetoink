@@ -16,6 +16,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testCORSOrigin             = "https://example.com"
+	testMyAppOrigin            = "https://myapp.com"
+	testCORSHeader             = "Access-Control-Allow-Origin"
+	testXRequestIDHeader       = "X-Request-ID"
+	testLambdaRequestID        = "lambda-request-123"
+	testHeaderRequestID        = "header-request-id"
+	testXAmznRequestID         = "x-amzn-request-id"
+	testAmznRequestID          = "amzn-request-id"
+	testAmznID                 = "amzn-id"
+	testCustomID               = "custom-id"
+	testLambdaID               = "lambda-id"
+	testArticleProcessorLambda = "article-processor-lambda"
+	testNextHandlerCalled      = "next handler should be called"
+	testLogMessage             = "test message"
+)
+
 func TestCorsMiddleware(t *testing.T) {
 	t.Run("OPTIONS request returns 204 with CORS headers", func(t *testing.T) {
 		nextCalled := false
@@ -23,7 +40,7 @@ func TestCorsMiddleware(t *testing.T) {
 			nextCalled = true
 		})
 
-		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
+		cfg := &config.Config{CorsAllowOrigin: testCORSOrigin}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodOptions, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
@@ -31,7 +48,7 @@ func TestCorsMiddleware(t *testing.T) {
 
 		assert.False(t, nextCalled, "next handler should not be called for OPTIONS")
 		assert.Equal(t, http.StatusNoContent, w.Code)
-		assert.Equal(t, "https://example.com", w.Header().Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, testCORSOrigin, w.Header().Get(testCORSHeader))
 		assert.Equal(t, "Content-Type, Authorization", w.Header().Get("Access-Control-Allow-Headers"))
 		assert.Equal(t, "POST, GET, OPTIONS", w.Header().Get("Access-Control-Allow-Methods"))
 		assert.Equal(t, "true", w.Header().Get("Access-Control-Allow-Credentials"))
@@ -44,7 +61,7 @@ func TestCorsMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		})
 
-		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
+		cfg := &config.Config{CorsAllowOrigin: testCORSOrigin}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
@@ -52,7 +69,7 @@ func TestCorsMiddleware(t *testing.T) {
 
 		assert.True(t, nextCalled, "next handler should be called for GET")
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, "https://example.com", w.Header().Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, testCORSOrigin, w.Header().Get(testCORSHeader))
 	})
 
 	t.Run("POST request passes through to next handler", func(t *testing.T) {
@@ -62,7 +79,7 @@ func TestCorsMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusCreated)
 		})
 
-		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
+		cfg := &config.Config{CorsAllowOrigin: testCORSOrigin}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
@@ -70,7 +87,7 @@ func TestCorsMiddleware(t *testing.T) {
 
 		assert.True(t, nextCalled, "next handler should be called for POST")
 		assert.Equal(t, http.StatusCreated, w.Code)
-		assert.Equal(t, "https://example.com", w.Header().Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, testCORSOrigin, w.Header().Get(testCORSHeader))
 	})
 
 	t.Run("uses origin from config", func(t *testing.T) {
@@ -84,7 +101,7 @@ func TestCorsMiddleware(t *testing.T) {
 
 		newCorsMiddleware(cfg)(next).ServeHTTP(w, req)
 
-		assert.Equal(t, "https://myapp.com", w.Header().Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, testMyAppOrigin, w.Header().Get(testCORSHeader))
 	})
 
 	t.Run("no CORS headers when origin is empty", func(t *testing.T) {
@@ -106,7 +123,7 @@ func TestCorsMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		})
 
-		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
+		cfg := &config.Config{CorsAllowOrigin: testCORSOrigin}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
@@ -125,7 +142,7 @@ func TestCorsMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusNoContent)
 		})
 
-		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
+		cfg := &config.Config{CorsAllowOrigin: testCORSOrigin}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
@@ -142,7 +159,7 @@ func TestCorsMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		})
 
-		cfg := &config.Config{CorsAllowOrigin: "https://example.com"}
+		cfg := &config.Config{CorsAllowOrigin: testCORSOrigin}
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodPut, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
@@ -157,24 +174,24 @@ func TestRequestIDMiddleware(t *testing.T) {
 	t.Run("uses lambda context AWS request ID as highest priority", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestID := logging.GetRequestID(r.Context())
-			assert.Equal(t, "lambda-request-123", requestID)
+			assert.Equal(t, testLambdaRequestID, requestID)
 			w.WriteHeader(http.StatusOK)
 		})
 
 		lc := &lambdacontext.LambdaContext{
-			AwsRequestID: "lambda-request-123",
+			AwsRequestID: testLambdaRequestID,
 		}
 		ctx := lambdacontext.NewContext(context.Background(), lc)
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 		req = req.WithContext(ctx)
-		req.Header.Set("X-Request-ID", "header-request-id")
-		req.Header.Set("x-amzn-request-id", "amzn-request-id")
+		req.Header.Set(testXRequestIDHeader, testHeaderRequestID)
+		req.Header.Set(testXAmznRequestID, testAmznRequestID)
 		w := httptest.NewRecorder()
 
 		requestIDMiddleware(next).ServeHTTP(w, req)
 
-		assert.Equal(t, "lambda-request-123", w.Header().Get("X-Request-ID"))
+		assert.Equal(t, testLambdaRequestID, w.Header().Get(testXRequestIDHeader))
 	})
 
 	t.Run("uses X-Request-ID header when no lambda context", func(t *testing.T) {
@@ -185,7 +202,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 		})
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
-		req.Header.Set("X-Request-ID", "header-request-id")
+		req.Header.Set(testXRequestIDHeader, testHeaderRequestID)
 		w := httptest.NewRecorder()
 
 		requestIDMiddleware(next).ServeHTTP(w, req)
@@ -201,12 +218,12 @@ func TestRequestIDMiddleware(t *testing.T) {
 		})
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
-		req.Header.Set("x-amzn-request-id", "amzn-request-id")
+		req.Header.Set(testXAmznRequestID, testAmznRequestID)
 		w := httptest.NewRecorder()
 
 		requestIDMiddleware(next).ServeHTTP(w, req)
 
-		assert.Equal(t, "amzn-request-id", w.Header().Get("X-Request-ID"))
+		assert.Equal(t, testAmznRequestID, w.Header().Get(testXRequestIDHeader))
 	})
 
 	t.Run("generates request ID when no sources available", func(t *testing.T) {
@@ -259,40 +276,40 @@ func TestRequestIDMiddleware(t *testing.T) {
 	t.Run("lambda context takes precedence over x-amzn-request-id", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestID := logging.GetRequestID(r.Context())
-			assert.Equal(t, "lambda-id", requestID)
+			assert.Equal(t, testLambdaID, requestID)
 			w.WriteHeader(http.StatusOK)
 		})
 
 		lc := &lambdacontext.LambdaContext{
-			AwsRequestID: "lambda-id",
+			AwsRequestID: testLambdaID,
 		}
 		ctx := lambdacontext.NewContext(context.Background(), lc)
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 		req = req.WithContext(ctx)
-		req.Header.Set("x-amzn-request-id", "amzn-id")
+		req.Header.Set(testXAmznRequestID, testAmznID)
 		w := httptest.NewRecorder()
 
 		requestIDMiddleware(next).ServeHTTP(w, req)
 
-		assert.Equal(t, "lambda-id", w.Header().Get("X-Request-ID"))
+		assert.Equal(t, testLambdaID, w.Header().Get(testXRequestIDHeader))
 	})
 
 	t.Run("X-Request-ID takes precedence over x-amzn-request-id", func(t *testing.T) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestID := logging.GetRequestID(r.Context())
-			assert.Equal(t, "custom-id", requestID)
+			assert.Equal(t, testCustomID, requestID)
 			w.WriteHeader(http.StatusOK)
 		})
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
-		req.Header.Set("X-Request-ID", "custom-id")
-		req.Header.Set("x-amzn-request-id", "amzn-id")
+		req.Header.Set(testXRequestIDHeader, testCustomID)
+		req.Header.Set(testXAmznRequestID, testAmznID)
 		w := httptest.NewRecorder()
 
 		requestIDMiddleware(next).ServeHTTP(w, req)
 
-		assert.Equal(t, "custom-id", w.Header().Get("X-Request-ID"))
+		assert.Equal(t, testCustomID, w.Header().Get(testXRequestIDHeader))
 	})
 
 	t.Run("handles lambda context with empty AwsRequestID", func(t *testing.T) {
@@ -419,7 +436,7 @@ func TestJsonContentTypeMiddleware(t *testing.T) {
 
 		jsonContentTypeMiddleware(next).ServeHTTP(w, req)
 
-		assert.True(t, nextCalled, "next handler should be called")
+		assert.True(t, nextCalled, testNextHandlerCalled)
 	})
 
 	t.Run("next handler response is not modified", func(t *testing.T) {
@@ -460,10 +477,10 @@ func TestJsonContentTypeMiddleware(t *testing.T) {
 func TestProcessorInfoMiddleware(t *testing.T) {
 	t.Run("adds processed_by attribute when ProcessArticleLambda is set", func(t *testing.T) {
 		cfg := &config.Config{
-			ProcessArticleLambda: "article-processor-lambda",
+			ProcessArticleLambda: testArticleProcessorLambda,
 		}
 
-		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+		record := slog.NewRecord(time.Now(), slog.LevelInfo, testLogMessage, 0)
 		logRecord := &logging.LogRecord{Record: &record}
 		ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
@@ -478,7 +495,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 		processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
 
-		assert.True(t, nextCalled, "next handler should be called")
+		assert.True(t, nextCalled, testNextHandlerCalled)
 
 		var attrs []slog.Attr
 		record.Attrs(func(a slog.Attr) bool {
@@ -488,7 +505,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 		require.Len(t, attrs, 1)
 		assert.Equal(t, "processed_by", attrs[0].Key)
-		assert.Equal(t, "article-processor-lambda", attrs[0].Value.String())
+		assert.Equal(t, testArticleProcessorLambda, attrs[0].Value.String())
 	})
 
 	t.Run("does not add processed_by attribute when ProcessArticleLambda is empty", func(t *testing.T) {
@@ -496,7 +513,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 			ProcessArticleLambda: "",
 		}
 
-		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+		record := slog.NewRecord(time.Now(), slog.LevelInfo, testLogMessage, 0)
 		logRecord := &logging.LogRecord{Record: &record}
 		ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
@@ -511,7 +528,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 		processorInfoMiddleware(cfg)(next).ServeHTTP(w, req)
 
-		assert.True(t, nextCalled, "next handler should be called")
+		assert.True(t, nextCalled, testNextHandlerCalled)
 
 		var attrs []slog.Attr
 		record.Attrs(func(a slog.Attr) bool {
@@ -529,7 +546,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 		}{
 			{
 				name:                 "with lambda configured",
-				processArticleLambda: "article-processor-lambda",
+				processArticleLambda: testArticleProcessorLambda,
 			},
 			{
 				name:                 "without lambda configured",
@@ -561,14 +578,14 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 	t.Run("works with different HTTP methods", func(t *testing.T) {
 		cfg := &config.Config{
-			ProcessArticleLambda: "article-processor-lambda",
+			ProcessArticleLambda: testArticleProcessorLambda,
 		}
 
 		methods := []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
 
 		for _, method := range methods {
 			t.Run(method, func(t *testing.T) {
-				record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+				record := slog.NewRecord(time.Now(), slog.LevelInfo, testLogMessage, 0)
 				logRecord := &logging.LogRecord{Record: &record}
 				ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
@@ -589,14 +606,14 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 				require.Len(t, attrs, 1)
 				assert.Equal(t, "processed_by", attrs[0].Key)
-				assert.Equal(t, "article-processor-lambda", attrs[0].Value.String())
+				assert.Equal(t, testArticleProcessorLambda, attrs[0].Value.String())
 			})
 		}
 	})
 
 	t.Run("gracefully handles request without LogRecord in context", func(t *testing.T) {
 		cfg := &config.Config{
-			ProcessArticleLambda: "article-processor-lambda",
+			ProcessArticleLambda: testArticleProcessorLambda,
 		}
 
 		nextCalled := false
@@ -618,10 +635,10 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 	t.Run("preserves existing attributes in LogRecord", func(t *testing.T) {
 		cfg := &config.Config{
-			ProcessArticleLambda: "article-processor-lambda",
+			ProcessArticleLambda: testArticleProcessorLambda,
 		}
 
-		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+		record := slog.NewRecord(time.Now(), slog.LevelInfo, testLogMessage, 0)
 		logRecord := &logging.LogRecord{Record: &record}
 		ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
@@ -650,7 +667,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 		}
 
 		assert.Equal(t, "existing_value", attrMap["existing_key"])
-		assert.Equal(t, "article-processor-lambda", attrMap["processed_by"])
+		assert.Equal(t, testArticleProcessorLambda, attrMap["processed_by"])
 	})
 
 	t.Run("uses correct lambda function name from config", func(t *testing.T) {
@@ -660,7 +677,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 		}{
 			{
 				name:       "standard lambda name",
-				lambdaName: "article-processor-lambda",
+				lambdaName: testArticleProcessorLambda,
 			},
 			{
 				name:       "lambda name with version",
@@ -678,7 +695,7 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 					ProcessArticleLambda: tc.lambdaName,
 				}
 
-				record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+				record := slog.NewRecord(time.Now(), slog.LevelInfo, testLogMessage, 0)
 				logRecord := &logging.LogRecord{Record: &record}
 				ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 
@@ -705,10 +722,10 @@ func TestProcessorInfoMiddleware(t *testing.T) {
 
 	t.Run("preserves request context and response", func(t *testing.T) {
 		cfg := &config.Config{
-			ProcessArticleLambda: "article-processor-lambda",
+			ProcessArticleLambda: testArticleProcessorLambda,
 		}
 
-		record := slog.NewRecord(time.Now(), slog.LevelInfo, "test message", 0)
+		record := slog.NewRecord(time.Now(), slog.LevelInfo, testLogMessage, 0)
 		logRecord := &logging.LogRecord{Record: &record}
 		ctx := logging.WithLogRecordValue(context.Background(), logRecord)
 

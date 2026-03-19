@@ -25,6 +25,15 @@ import (
 	"golang.org/x/net/html"
 )
 
+const (
+	testUserEmail           = "user@example.com"
+	testAccountID           = "account-123"
+	testDevicesEndpoint     = "/v1/devices"
+	testUserProfileEndpoint = "/v1/user/profile"
+	genericErrorMessage     = "generic error"
+	someErrorMessage        = "some error"
+)
+
 type userprofileMockService struct {
 	getUserDeviceEmailFunc    func(ctx context.Context, accountID string) (deviceEmail string, autoSend bool, err error)
 	getUserProfileFunc        func(ctx context.Context, accountID string) (*model.UserProfile, error)
@@ -164,7 +173,7 @@ func (m *userprofileMockService) GetUserProfile(ctx context.Context, accountID s
 		return m.getUserProfileFunc(ctx, accountID)
 	}
 	return &model.UserProfile{
-		Email: "user@example.com",
+		Email: testUserEmail,
 	}, nil
 }
 
@@ -202,7 +211,7 @@ func (m *userprofileMockService) GetAccountIDByDeviceEmail(_ context.Context, _ 
 
 func newUserprofileTestContext() context.Context {
 	ctx := context.Background()
-	ctx = auth.AddAccountIDToCtx(ctx, "account-123")
+	ctx = auth.AddAccountIDToCtx(ctx, testAccountID)
 	return ctx
 }
 
@@ -213,7 +222,7 @@ func TestHandleGetUserProfile_Success(t *testing.T) {
 		},
 		getUserProfileFunc: func(_ context.Context, _ string) (*model.UserProfile, error) {
 			return &model.UserProfile{
-				Email: "user@example.com",
+				Email: testUserEmail,
 			}, nil
 		},
 	}
@@ -221,7 +230,7 @@ func TestHandleGetUserProfile_Success(t *testing.T) {
 	cfg := &config.Config{}
 	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", "/v1/user/profile", nil)
+	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", testUserProfileEndpoint, nil)
 	w := httptest.NewRecorder()
 
 	h.HandleGetUserProfile(w, req)
@@ -231,8 +240,8 @@ func TestHandleGetUserProfile_Success(t *testing.T) {
 	var resp types.UserProfileResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Equal(t, "account-123", resp.Account)
-	assert.Equal(t, "user@example.com", resp.Email)
+	assert.Equal(t, testAccountID, resp.Account)
+	assert.Equal(t, testUserEmail, resp.Email)
 	assert.Equal(t, testArticleDeviceEmail, resp.DeviceEmail)
 	assert.True(t, resp.AutoSend)
 }
@@ -250,7 +259,7 @@ func TestHandleGetUserProfile_NilProfile(t *testing.T) {
 	cfg := &config.Config{}
 	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", "/v1/user/profile", nil)
+	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", testUserProfileEndpoint, nil)
 	w := httptest.NewRecorder()
 
 	h.HandleGetUserProfile(w, req)
@@ -260,7 +269,7 @@ func TestHandleGetUserProfile_NilProfile(t *testing.T) {
 	var resp types.UserProfileResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Equal(t, "account-123", resp.Account)
+	assert.Equal(t, testAccountID, resp.Account)
 	assert.Equal(t, "", resp.Email)
 	assert.Equal(t, testArticleDeviceEmail, resp.DeviceEmail)
 	assert.False(t, resp.AutoSend)
@@ -278,8 +287,8 @@ func TestHandleGetUserProfile_GetUserDeviceEmailError(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "generic error",
-			serviceErr:     errors.New("some error"),
+			name:           genericErrorMessage,
+			serviceErr:     errors.New(someErrorMessage),
 			expectedStatus: http.StatusInternalServerError,
 		},
 	}
@@ -295,7 +304,7 @@ func TestHandleGetUserProfile_GetUserDeviceEmailError(t *testing.T) {
 			cfg := &config.Config{}
 			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
-			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", "/v1/user/profile", nil)
+			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", testUserProfileEndpoint, nil)
 			w := httptest.NewRecorder()
 
 			h.HandleGetUserProfile(w, req)
@@ -317,8 +326,8 @@ func TestHandleGetUserProfile_GetUserProfileError(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "generic error",
-			serviceErr:     errors.New("some error"),
+			name:           genericErrorMessage,
+			serviceErr:     errors.New(someErrorMessage),
 			expectedStatus: http.StatusInternalServerError,
 		},
 	}
@@ -337,7 +346,7 @@ func TestHandleGetUserProfile_GetUserProfileError(t *testing.T) {
 			cfg := &config.Config{}
 			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
-			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", "/v1/user/profile", nil)
+			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", testUserProfileEndpoint, nil)
 			w := httptest.NewRecorder()
 
 			h.HandleGetUserProfile(w, req)
@@ -362,8 +371,13 @@ func TestHandleSetDevice_Success(t *testing.T) {
 		AutoSend:    true,
 	}
 	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "PUT", "/v1/devices", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req := httptest.NewRequestWithContext(
+		newUserprofileTestContext(),
+		"PUT",
+		testDevicesEndpoint,
+		bytes.NewReader(bodyBytes),
+	)
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleSetDevice(w, req)
@@ -385,9 +399,9 @@ func TestHandleSetDevice_InvalidJSON(t *testing.T) {
 
 	req := httptest.NewRequestWithContext(newUserprofileTestContext(),
 		"PUT",
-		"/v1/devices",
+		testDevicesEndpoint,
 		bytes.NewReader([]byte("invalid json")))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleSetDevice(w, req)
@@ -407,8 +421,8 @@ func TestHandleSetDevice_ServiceError(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "generic error",
-			serviceErr:     errors.New("some error"),
+			name:           genericErrorMessage,
+			serviceErr:     errors.New(someErrorMessage),
 			expectedStatus: http.StatusInternalServerError,
 		},
 	}
@@ -429,8 +443,13 @@ func TestHandleSetDevice_ServiceError(t *testing.T) {
 				AutoSend:    true,
 			}
 			bodyBytes, _ := json.Marshal(body)
-			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "PUT", "/v1/devices", bytes.NewReader(bodyBytes))
-			req.Header.Set("Content-Type", "application/json")
+			req := httptest.NewRequestWithContext(
+				newUserprofileTestContext(),
+				"PUT",
+				testDevicesEndpoint,
+				bytes.NewReader(bodyBytes),
+			)
+			req.Header.Set(contentTypeHeader, contentTypeJSON)
 			w := httptest.NewRecorder()
 
 			h.HandleSetDevice(w, req)
@@ -450,7 +469,7 @@ func TestHandleDeleteDevice_Success(t *testing.T) {
 	cfg := &config.Config{}
 	h := New(cfg, mockSvc, http.DefaultClient, nil)
 
-	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "DELETE", "/v1/devices", nil)
+	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "DELETE", testDevicesEndpoint, nil)
 	w := httptest.NewRecorder()
 
 	h.HandleDeleteDevice(w, req)
@@ -476,8 +495,8 @@ func TestHandleDeleteDevice_ServiceError(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "generic error",
-			serviceErr:     errors.New("some error"),
+			name:           genericErrorMessage,
+			serviceErr:     errors.New(someErrorMessage),
 			expectedStatus: http.StatusInternalServerError,
 		},
 	}
@@ -493,7 +512,7 @@ func TestHandleDeleteDevice_ServiceError(t *testing.T) {
 			cfg := &config.Config{}
 			h := New(cfg, mockSvc, http.DefaultClient, nil)
 
-			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "DELETE", "/v1/devices", nil)
+			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "DELETE", testDevicesEndpoint, nil)
 			w := httptest.NewRecorder()
 
 			h.HandleDeleteDevice(w, req)

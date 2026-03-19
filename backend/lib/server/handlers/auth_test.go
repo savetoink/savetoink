@@ -32,6 +32,13 @@ const (
 	testIDTokenPayload      = `{"email":"test@example.com","sub":"auth0|test123"}`
 	testAccessTokenPayload  = `{"sub":"auth0|test123"}`
 	testInvalidIDTokenParts = "invalid-token-too-many-parts"
+	testClientSecret        = "test-client-secret"
+	contentTypeHeader       = "Content-Type"
+	contentTypeJSON         = "application/json"
+	testCode                = "test-code"
+	expectedStatusFormat    = "expected status %d, got %d"
+	httpsScheme             = "https://"
+	testAuth0TokenURL       = "https://test.auth0.com/oauth/token"
 )
 
 type MockService struct {
@@ -154,7 +161,7 @@ func TestAuthTokenExchange_MissingCode(t *testing.T) {
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       "test.auth0.com",
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, nil, http.DefaultClient, nil)
@@ -164,13 +171,13 @@ func TestAuthTokenExchange_MissingCode(t *testing.T) {
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusBadRequest, w.Code)
 	}
 }
 
@@ -179,23 +186,23 @@ func TestAuthTokenExchange_MissingRedirectURI(t *testing.T) {
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       "test.auth0.com",
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, nil, http.DefaultClient, nil)
 
 	body := types.AuthTokenExchangeRequest{
-		Code: "test-code",
+		Code: testCode,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusBadRequest, w.Code)
 	}
 }
 
@@ -204,7 +211,7 @@ func TestAuthTokenExchange_InvalidJSON(t *testing.T) {
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       "test.auth0.com",
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, nil, http.DefaultClient, nil)
@@ -215,13 +222,13 @@ func TestAuthTokenExchange_InvalidJSON(t *testing.T) {
 		"/v1/auth/token",
 		bytes.NewReader([]byte("invalid json")),
 	)
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusBadRequest, w.Code)
 	}
 }
 
@@ -233,7 +240,7 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 		if r.URL.Path != OauthTokenPath {
 			t.Errorf("Expected path /oauth/token, got %s", r.URL.Path)
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
 			AccessToken: "test-access-token",
@@ -251,27 +258,27 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, nil, client, nil)
 
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
+		Code:        testCode,
 		RedirectURI: "http://localhost/callback",
 		GrantType:   "authorization_code",
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusOK, w.Code)
 	}
 }
 
@@ -549,7 +556,7 @@ func TestStoreUserEmail(t *testing.T) {
 
 func TestAuthTokenExchange_Auth0Error(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error":             "invalid_grant",
@@ -566,26 +573,26 @@ func TestAuthTokenExchange_Auth0Error(t *testing.T) {
 
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, nil, client, nil)
 
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
+		Code:        testCode,
 		RedirectURI: "http://localhost/callback",
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusUnauthorized {
-		t.Errorf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusUnauthorized, w.Code)
 	}
 
 	var resp struct {
@@ -611,7 +618,7 @@ func TestAuthTokenExchange_WithIDToken(t *testing.T) {
 	}
 
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
 			AccessToken: "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
@@ -630,26 +637,26 @@ func TestAuthTokenExchange_WithIDToken(t *testing.T) {
 
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, mockService, client, nil)
 
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
+		Code:        testCode,
 		RedirectURI: "http://localhost/callback",
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusOK, w.Code)
 	}
 
 	var resp types.AuthTokenExchangeResponse
@@ -674,7 +681,7 @@ func TestAuthTokenExchange_InvalidIDToken(t *testing.T) {
 	mockService := &MockService{}
 
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
 			AccessToken: "test-access-token",
@@ -693,26 +700,26 @@ func TestAuthTokenExchange_InvalidIDToken(t *testing.T) {
 
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, mockService, client, nil)
 
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
+		Code:        testCode,
 		RedirectURI: "http://localhost/callback",
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusOK, w.Code)
 	}
 
 	var resp types.AuthTokenExchangeResponse
@@ -731,7 +738,7 @@ func TestAuthTokenExchange_ServiceError(t *testing.T) {
 	}
 
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
 			AccessToken: "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
@@ -750,26 +757,26 @@ func TestAuthTokenExchange_ServiceError(t *testing.T) {
 
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, mockService, client, nil)
 
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
+		Code:        testCode,
 		RedirectURI: "http://localhost/callback",
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusOK, w.Code)
 	}
 
 	var resp types.AuthTokenExchangeResponse
@@ -784,7 +791,7 @@ func TestAuthTokenExchange_ServiceError(t *testing.T) {
 
 func TestAuthTokenExchange_Auth0InvalidJSON(t *testing.T) { //nolint:dupl // tests Auth0 400 error with invalid JSON
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("invalid json"))
 	}))
@@ -798,32 +805,32 @@ func TestAuthTokenExchange_Auth0InvalidJSON(t *testing.T) { //nolint:dupl // tes
 
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, nil, client, nil)
 
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
+		Code:        testCode,
 		RedirectURI: "http://localhost/callback",
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusUnauthorized {
-		t.Errorf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusUnauthorized, w.Code)
 	}
 }
 
 func TestAuthTokenExchange_Auth0SuccessInvalidJSON(t *testing.T) { //nolint:dupl // tests Auth0 200 with invalid JSON
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("invalid json"))
 	}))
@@ -837,26 +844,26 @@ func TestAuthTokenExchange_Auth0SuccessInvalidJSON(t *testing.T) { //nolint:dupl
 
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
 	h := New(cfg, nil, client, nil)
 
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
+		Code:        testCode,
 		RedirectURI: "http://localhost/callback",
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(contentTypeHeader, contentTypeJSON)
 	w := httptest.NewRecorder()
 
 	h.HandleAuthTokenExchange(w, req)
 
 	if w.Code != http.StatusInternalServerError {
-		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
+		t.Errorf(expectedStatusFormat, http.StatusInternalServerError, w.Code)
 	}
 }
 
@@ -864,14 +871,14 @@ func TestBuildTokenRequest(t *testing.T) {
 	cfg := &config.Config{
 		Auth0Domain:       "test.auth0.com",
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 	}
 	h := &Handlers{
 		cfg: cfg,
 	}
 
 	req := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
+		Code:        testCode,
 		RedirectURI: "http://localhost/callback",
 		GrantType:   "authorization_code",
 	}
@@ -882,8 +889,8 @@ func TestBuildTokenRequest(t *testing.T) {
 		t.Errorf("expected method POST, got %s", httpReq.Method)
 	}
 
-	if httpReq.URL.String() != "https://test.auth0.com/oauth/token" {
-		t.Errorf("expected URL 'https://test.auth0.com/oauth/token', got '%s'", httpReq.URL.String())
+	if httpReq.URL.String() != testAuth0TokenURL {
+		t.Errorf("expected URL '%s', got '%s'", testAuth0TokenURL, httpReq.URL.String())
 	}
 
 	if httpReq.Header.Get("Content-Type") != "application/x-www-form-urlencoded" {
@@ -914,14 +921,14 @@ func TestBuildTokenRequest_DefaultGrantType(t *testing.T) {
 	cfg := &config.Config{
 		Auth0Domain:       "test.auth0.com",
 		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
+		Auth0ClientSecret: testClientSecret,
 	}
 	h := &Handlers{
 		cfg: cfg,
 	}
 
 	req := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
+		Code:        testCode,
 		RedirectURI: "http://localhost/callback",
 		GrantType:   "",
 	}
