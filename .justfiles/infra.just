@@ -35,6 +35,7 @@ deploy-api: lint-cfn
             Debug="${SAVETOINK_DEBUG}" \
             DestEmail="$SAVETOINK_DEST_EMAIL" \
             DomainName="$SAVETOINK_DOMAIN" \
+            GitHubEnvironmentName="${SAVETOINK_GITHUB_ENVIRONMENT_NAME}" \
             LoggingProvider=${SAVETOINK_LOGGING_PROVIDER} \
             MailBackend=${SAVETOINK_EMAIL_BACKEND} \
             MailjetAPIKey="$SAVETOINK_MAILJET_API_KEY" \

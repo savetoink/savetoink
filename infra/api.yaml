@@ -145,6 +145,11 @@ Parameters:
     Description: "GitHub repository for OIDC authentication (format: owner/repo)"
     Default: "savetoink/savetoink"
 
+  GitHubEnvironmentName:
+    Type: String
+    Description: "GitHub environment name for OIDC authentication"
+    Default: ""
+
 Conditions:
   UseCustomDomain: !Not [!Equals [!Ref DomainName, ""]]
 
@@ -733,7 +738,7 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepository}:ref:refs/heads/*"
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepository}:environment:${GitHubEnvironmentName}"
 
   GitHubActionsPolicy:
     Type: AWS::IAM::Policy
