@@ -82,11 +82,7 @@ export interface paths {
          * @description Save a new article from a URL. If send_on_complete is true, checks quota and device email status before creating.
          */
         post: operations["createArticle"];
-        /**
-         * Delete all articles
-         * @description Delete all articles for the authenticated user
-         */
-        delete: operations["deleteAllArticles"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -621,44 +617,6 @@ export interface operations {
             };
             /** @description Too Many Requests (free tier quota exceeded) */
             429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    deleteAllArticles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Articles deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteArticleResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
                 headers: {
                     [name: string]: unknown;
                 };
