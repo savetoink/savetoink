@@ -292,7 +292,10 @@ class RootViewController: CAPBridgeViewController, WKNavigationDelegate, WKUIDel
     }
 
     @objc private func retryTapped() {
-        hideError()
-        self.bridge?.webView?.reload()
+        // Navigate to app URL directly instead of reloading
+        // Error view stays visible until navigation succeeds (didFinish hides it)
+        if let appUrl = URL(string: Self.appUrl) {
+            self.bridge?.webView?.load(URLRequest(url: appUrl))
+        }
     }
 }
