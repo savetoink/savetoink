@@ -47,10 +47,11 @@ jobs:
             "PUBLIC_AUTH0_DOMAIN": "${{ vars.PUBLIC_AUTH0_DOMAIN }}",
             "PUBLIC_IS_DEV_WORKER": "${{ vars.PUBLIC_IS_DEV_WORKER }}",
             "PUBLIC_SENTRY_ENVIRONMENT": "${{ vars.PUBLIC_SENTRY_ENVIRONMENT }}"
-          }' | bunx wrangler secret bulk --env ${{ inputs.environment }}
+          }' | bunx wrangler secret bulk --env "$CLOUDFLARE_ENV"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ENV: ${{ inputs.environment }}
 
       - uses: cloudflare/wrangler-action@v3
         with:
