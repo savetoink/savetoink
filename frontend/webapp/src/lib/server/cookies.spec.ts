@@ -208,3 +208,65 @@ describe('deleteUserCookie', () => {
 		expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/', secure: false });
 	});
 });
+
+describe('Referrer cookie', () => {
+	it('should set referrer cookie', async () => {
+		const { setReferrerCookie } = await import('./cookies');
+		const referrer = '/articles/123';
+
+		setReferrerCookie(mockCookies, referrer);
+
+		expect(mockSet).toHaveBeenCalledWith('referrer', referrer, {
+			path: '/',
+			httpOnly: false,
+			secure: false,
+			sameSite: 'lax',
+			maxAge: 60 * 10
+		});
+	});
+
+	it('should get referrer cookie', async () => {
+		const { getReferrerCookie } = await import('./cookies');
+		const referrer = '/articles/123';
+
+		mockGet.mockReturnValue(referrer);
+
+		const result = getReferrerCookie(mockCookies);
+
+		expect(result).toBe(referrer);
+	});
+
+	it('should return undefined for missing referrer cookie', async () => {
+		const { getReferrerCookie } = await import('./cookies');
+
+		mockGet.mockReturnValue(null);
+
+		const result = getReferrerCookie(mockCookies);
+
+		expect(result).toBeUndefined();
+	});
+
+	it('should delete referrer cookie', async () => {
+		const { deleteReferrerCookie } = await import('./cookies');
+
+		deleteReferrerCookie(mockCookies);
+
+		expect(mockDelete).toHaveBeenCalledWith('referrer', { path: '/', secure: false });
+	});
+
+	it('should preserve query string in referrer', async () => {
+		const { setReferrerCookie, getReferrerCookie } = await import('./cookies');
+		const referrer = '/new?url=https://example.com';
+
+		mockGet.mockReturnValue(null);
+
+		setReferrerCookie(mockCookies, referrer);
+
+		const cookieValue = mockSet.mock.calls[0][1];
+		mockGet.mockReturnValue(cookieValue);
+
+		const result = getReferrerCookie(mockCookies);
+
+		expect(result).toBe(referrer);
+	});
+});

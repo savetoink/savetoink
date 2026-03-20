@@ -6,7 +6,9 @@ import {
 	setAuthCookie,
 	deleteAuthCookie,
 	setUserCookie,
-	deleteUserCookie
+	deleteUserCookie,
+	getReferrerCookie,
+	deleteReferrerCookie
 } from '$lib/server/cookies';
 import { getProfile, updateDevice, deleteDevice } from '$lib/server/apiClient';
 import { ApiError, DeviceDomains, Auth0 } from '@savetoink/shared';
@@ -62,7 +64,9 @@ export const actions: Actions = {
 			auto_send: profile.auto_send
 		});
 
-		redirect(303, '/');
+		const referrer = getReferrerCookie(cookies);
+		deleteReferrerCookie(cookies);
+		redirect(303, referrer || '/');
 	},
 	updateAutoSend: async ({ locals, request, fetch, cookies, getClientAddress }) => {
 		const data = await request.formData();
