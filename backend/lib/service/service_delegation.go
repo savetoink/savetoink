@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"golang.org/x/net/html"
 )
 

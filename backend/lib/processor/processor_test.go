@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"

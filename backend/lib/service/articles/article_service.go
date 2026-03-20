@@ -10,11 +10,11 @@ import (
 
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	apperrors "github.com/shaftoe/savetoink/backend/lib/internal/apperrors"
+	"github.com/shaftoe/savetoink/backend/lib/internal/content"
+	"github.com/shaftoe/savetoink/backend/lib/internal/epub"
 	"github.com/shaftoe/savetoink/backend/lib/internal/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
-	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
 	"github.com/shaftoe/savetoink/backend/lib/service/profile"
 	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
 )

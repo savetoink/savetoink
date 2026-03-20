@@ -8,8 +8,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

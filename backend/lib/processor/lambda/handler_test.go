@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/html"

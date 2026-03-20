@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/internal/epub"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/service/content/epub"
 	"github.com/stretchr/testify/assert"
 )
 

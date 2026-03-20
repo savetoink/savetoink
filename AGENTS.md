@@ -24,6 +24,7 @@ This repository contains the code for the savetoink application, composed of:
 - prefer keeping constant values in the dedicated `consts` package
 - wrap errors with `fmt.Errorf` when passing them to functions that expect an error, prefer custom error types over `errors.New` when possible
 - HTTP handlers should use, when available, utils helpers to return errors and such
+- **Use the service layer as the single entry point**: All external consumers (CLI, HTTP server, Lambda) should interact with backend functionality through the `service` package
 
 ## API Documentation
 

@@ -7,9 +7,9 @@ import (
 	lambdacontext "github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
 )
 
 // NewHandler returns the entry point for processing a single article event via AWS Lambda.
