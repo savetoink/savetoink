@@ -17,9 +17,11 @@
 
 <style>
 	ul {
+		margin-top: 2rem;
+		margin-bottom: 1rem;
 		display: flex;
 		flex-grow: 1;
-		gap: 1rem;
+		gap: 1.2rem;
 		justify-content: center;
 	}
 </style>
