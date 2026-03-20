@@ -15,8 +15,8 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/service/profile"
-	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/internal/service/profile"
+	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
 )
 
 // ArticleService handles article CRUD operations.

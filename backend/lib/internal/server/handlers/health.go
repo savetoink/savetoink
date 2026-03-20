@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/shaftoe/savetoink/backend/lib/server/types"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 )
 
 // HandleHealth handles the health check endpoint.

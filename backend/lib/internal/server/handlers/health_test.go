@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/shaftoe/savetoink/backend/lib/config"
-	"github.com/shaftoe/savetoink/backend/lib/server/types"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

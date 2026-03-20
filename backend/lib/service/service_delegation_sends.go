@@ -10,7 +10,7 @@ import (
 	apperrors "github.com/shaftoe/savetoink/backend/lib/internal/apperrors"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
 )
 
 // SendArticle sends an EPUB document via email.

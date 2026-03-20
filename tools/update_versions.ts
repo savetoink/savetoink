@@ -268,6 +268,7 @@ async function main(): Promise<void> {
     repoRoot,
     "backend",
     "lib",
+    "internal",
     "server",
     "handlers",
     "openapi.yaml",
@@ -280,7 +281,9 @@ async function main(): Promise<void> {
     );
     if (yamlContent !== newYamlContent) {
       await fs.writeFile(openapiPath, newYamlContent);
-      console.log(`✅ ${path.relative(repoRoot, openapiPath)} (version updated)`);
+      console.log(
+        `✅ ${path.relative(repoRoot, openapiPath)} (version updated)`,
+      );
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

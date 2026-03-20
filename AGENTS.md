@@ -26,6 +26,40 @@ This repository contains the code for the savetoink application, composed of:
 - HTTP handlers should use, when available, utils helpers to return errors and such
 - **Use the service layer as the single entry point**: All external consumers (CLI, HTTP server, Lambda) should interact with backend functionality through the `service` package
 
+### Package Organization
+
+**Public API** (can be imported from anywhere):
+- `backend/lib/config` - Configuration management
+- `backend/lib/consts` - Constants
+- `backend/lib/logging` - Logging setup
+- `backend/lib/model` - Shared data models
+- `backend/lib/service` - Main facade (single entry point)
+- `backend/lib/server` - HTTP server setup
+- `backend/lib/processor` - Article processing orchestration
+- `backend/lib/scheduler` - Background task scheduling
+
+**Internal** (only for use within `backend/lib/`):
+- `backend/lib/internal/` - All internal packages
+  - `backend/lib/internal/content` - Article content extraction
+  - `backend/lib/internal/epub` - EPUB generation
+  - `backend/lib/internal/service/` - Service implementation details
+    - `backend/lib/internal/service/articles` - Article CRUD
+    - `backend/lib/internal/service/profile` - User profile management
+    - `backend/lib/internal/service/servicetypes` - Service result types
+  - `backend/lib/internal/server/` - Server implementation details
+    - `backend/lib/internal/server/auth` - HTTP authentication middleware
+    - `backend/lib/internal/server/handlers` - HTTP request handlers
+    - `backend/lib/internal/server/types` - HTTP request/response types
+    - `backend/lib/internal/server/utils` - HTTP utility functions
+  - `backend/lib/internal/email/` - Email sending
+  - `backend/lib/internal/repository/` - Database operations
+  - `backend/lib/internal/auth/` - Authentication context helpers
+  - `backend/lib/internal/validation` - Input validation
+  - `backend/lib/internal/task/` - Background task runner
+  - `backend/lib/internal/apperrors` - Application error types
+
+**Important**: Packages in `backend/lib/internal/` cannot be imported from outside `backend/lib/` (Go's internal directory rule). The service layer provides all necessary functionality.
+
 ## API Documentation
 
 - The OpenAPI specification is maintained in [backend/lib/server/openapi.yaml](backend/lib/server/openapi.yaml)

@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
-	"github.com/shaftoe/savetoink/backend/lib/server/types"
-	"github.com/shaftoe/savetoink/backend/lib/server/utils"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
 )
 
 // HandleGetUserProfile handles the get user profile endpoint.

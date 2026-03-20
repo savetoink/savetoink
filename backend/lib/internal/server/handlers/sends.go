@@ -7,8 +7,8 @@ import (
 
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
-	"github.com/shaftoe/savetoink/backend/lib/server/types"
-	"github.com/shaftoe/savetoink/backend/lib/server/utils"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
 )
 
 // HandleGetSends handles the get sends quota status endpoint.

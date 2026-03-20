@@ -10,8 +10,8 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
-	"github.com/shaftoe/savetoink/backend/lib/server/auth"
-	"github.com/shaftoe/savetoink/backend/lib/server/handlers"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/auth"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/handlers"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
 

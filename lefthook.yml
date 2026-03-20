@@ -2,5 +2,4 @@ pre-commit:
   jobs:
     - name: Generate API types from OpenAPI spec
       run: just gen-api-types
-      glob: "backend/lib/server/openapi.yaml"
       stage_fixed: true

@@ -10,7 +10,10 @@ const syncOpenApiSpec = {
 	hooks: {
 		'astro:config:setup': ({ logger }) => {
 			mkdirSync('public', { recursive: true });
-			copyFileSync('../../backend/lib/server/handlers/openapi.yaml', 'public/openapi.yaml');
+			copyFileSync(
+				'../../backend/lib/internal/server/handlers/openapi.yaml',
+				'public/openapi.yaml'
+			);
 			logger.info('OpenAPI spec synced to public/');
 		}
 	}
