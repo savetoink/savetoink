@@ -65,107 +65,43 @@ describe('/new route', () => {
 			const result = await load(mockRequestEvent as any);
 
 			expect(result).toEqual({
-				user: mockLocals.user
+				user: mockLocals.user,
+				incomingUrl: null
 			});
 			expect(mockCreateArticle).not.toHaveBeenCalled();
 			expect(redirect).not.toHaveBeenCalled();
 		});
 
-		it('should create article and redirect when url parameter is provided', async () => {
+		it('should return incomingUrl when url parameter is provided', async () => {
 			const { load } = await import('./+page.server');
 
 			const urlWithParam = new URL('http://localhost/new?url=https://example.com/article');
 			const eventWithUrl = { ...mockRequestEvent, url: urlWithParam };
 
-			await load(eventWithUrl as any);
+			const result = await load(eventWithUrl as any);
 
-			expect(mockCreateArticle).toHaveBeenCalledWith(
-				{
-					request: { headers: expect.any(Headers) },
-					fetch: mockFetch,
-					getClientAddress: expect.any(Function),
-					locals: { auth: mockLocals.auth }
-				},
-				'https://example.com/article',
-				true
-			);
-			expect(redirect).toHaveBeenCalledWith(303, '/articles');
+			expect(result).toEqual({
+				user: mockLocals.user,
+				incomingUrl: 'https://example.com/article'
+			});
+			expect(mockCreateArticle).not.toHaveBeenCalled();
+			expect(redirect).not.toHaveBeenCalled();
 		});
 
-		it('should create article with text parameter', async () => {
+		it('should return incomingUrl when text parameter is provided', async () => {
 			const { load } = await import('./+page.server');
 
 			const urlWithParam = new URL('http://localhost/new?text=https://example.com/article');
 			const eventWithUrl = { ...mockRequestEvent, url: urlWithParam };
 
-			await load(eventWithUrl as any);
+			const result = await load(eventWithUrl as any);
 
-			expect(mockCreateArticle).toHaveBeenCalledWith(
-				{
-					request: { headers: expect.any(Headers) },
-					fetch: mockFetch,
-					getClientAddress: expect.any(Function),
-					locals: { auth: mockLocals.auth }
-				},
-				'https://example.com/article',
-				true
-			);
-			expect(redirect).toHaveBeenCalledWith(303, '/articles');
-		});
-
-		it('should respect auto_send preference when auto-creating article', async () => {
-			const { load } = await import('./+page.server');
-
-			const mockLocalsNoAutoSend = {
-				auth: 'test-auth-token',
-				user: {
-					account: 'test-account',
-					email: 'test@example.com',
-					device_email: 'test@kindle.com',
-					auto_send: false
-				}
-			};
-
-			const urlWithParam = new URL('http://localhost/new?url=https://example.com/article');
-			const eventWithUrl = { ...mockRequestEvent, url: urlWithParam, locals: mockLocalsNoAutoSend };
-
-			await load(eventWithUrl as any);
-
-			expect(mockCreateArticle).toHaveBeenCalledWith(
-				{
-					request: { headers: expect.any(Headers) },
-					fetch: mockFetch,
-					getClientAddress: expect.any(Function),
-					locals: { auth: mockLocalsNoAutoSend.auth }
-				},
-				'https://example.com/article',
-				false
-			);
-		});
-
-		it('should default sendToDevice to false when user is undefined', async () => {
-			const { load } = await import('./+page.server');
-
-			const mockLocalsNoUser = {
-				auth: 'test-auth-token',
-				user: undefined
-			};
-
-			const urlWithParam = new URL('http://localhost/new?url=https://example.com/article');
-			const eventWithUrl = { ...mockRequestEvent, url: urlWithParam, locals: mockLocalsNoUser };
-
-			await load(eventWithUrl as any);
-
-			expect(mockCreateArticle).toHaveBeenCalledWith(
-				{
-					request: { headers: expect.any(Headers) },
-					fetch: mockFetch,
-					getClientAddress: expect.any(Function),
-					locals: { auth: mockLocalsNoUser.auth }
-				},
-				'https://example.com/article',
-				false
-			);
+			expect(result).toEqual({
+				user: mockLocals.user,
+				incomingUrl: 'https://example.com/article'
+			});
+			expect(mockCreateArticle).not.toHaveBeenCalled();
+			expect(redirect).not.toHaveBeenCalled();
 		});
 
 		it('should prefer url parameter over text parameter', async () => {
@@ -176,23 +112,26 @@ describe('/new route', () => {
 			);
 			const eventWithUrl = { ...mockRequestEvent, url: urlWithParams };
 
-			await load(eventWithUrl as any);
+			const result = await load(eventWithUrl as any);
 
-			expect(mockCreateArticle).toHaveBeenCalledWith(
-				{
-					request: { headers: expect.any(Headers) },
-					fetch: mockFetch,
-					getClientAddress: expect.any(Function),
-					locals: { auth: mockLocals.auth }
-				},
-				'https://first.com',
-				true
-			);
+			expect(result).toEqual({
+				user: mockLocals.user,
+				incomingUrl: 'https://first.com'
+			});
+			expect(mockCreateArticle).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('new action', () => {
-		it('should create article and redirect when form is submitted', async () => {
+		beforeEach(() => {
+			mockCreateArticle.mockResolvedValue({
+				id: 'test-article-id',
+				title: 'Test Article Title',
+				url: 'https://example.com/article'
+			});
+		});
+
+		it('should create article and return success data when form is submitted', async () => {
 			const { actions } = await import('./+page.server');
 
 			const formData = new FormData();
@@ -209,7 +148,7 @@ describe('/new route', () => {
 				request: mockRequest
 			};
 
-			await actions.new(eventWithForm as any);
+			const result = await actions.new(eventWithForm as any);
 
 			expect(mockCreateArticle).toHaveBeenCalledWith(
 				{
@@ -221,7 +160,15 @@ describe('/new route', () => {
 				'https://example.com/article',
 				true
 			);
-			expect(redirect).toHaveBeenCalledWith(303, '/articles');
+			expect(result).toEqual({
+				success: true,
+				article: {
+					id: 'test-article-id',
+					title: 'Test Article Title',
+					url: 'https://example.com/article'
+				}
+			});
+			expect(redirect).not.toHaveBeenCalled();
 		});
 
 		it('should create article without sending to device when checkbox not checked', async () => {
@@ -240,7 +187,7 @@ describe('/new route', () => {
 				request: mockRequest
 			};
 
-			await actions.new(eventWithForm as any);
+			const result = await actions.new(eventWithForm as any);
 
 			expect(mockCreateArticle).toHaveBeenCalledWith(
 				{
@@ -252,6 +199,91 @@ describe('/new route', () => {
 				'https://example.com/article',
 				false
 			);
+			expect(result).toEqual({
+				success: true,
+				article: {
+					id: 'test-article-id',
+					title: 'Test Article Title',
+					url: 'https://example.com/article'
+				}
+			});
+		});
+
+		it('should return error when URL is missing', async () => {
+			const { actions } = await import('./+page.server');
+
+			const formData = new FormData();
+			formData.append('url', '');
+
+			const mockRequest = new Request('http://localhost/new', {
+				method: 'POST',
+				body: formData
+			});
+
+			const eventWithForm = {
+				...mockRequestEvent,
+				request: mockRequest
+			};
+
+			const result = await actions.new(eventWithForm as any);
+
+			expect((result as { status: number }).status).toBe(400);
+			expect((result as { data: { error: string } }).data).toEqual({ error: 'URL is required' });
+			expect(mockCreateArticle).not.toHaveBeenCalled();
+		});
+
+		it('should return error when createArticle fails', async () => {
+			const { actions } = await import('./+page.server');
+
+			mockCreateArticle.mockRejectedValue(new Error('Failed to fetch article'));
+
+			const formData = new FormData();
+			formData.append('url', 'https://example.com/article');
+
+			const mockRequest = new Request('http://localhost/new', {
+				method: 'POST',
+				body: formData
+			});
+
+			const eventWithForm = {
+				...mockRequestEvent,
+				request: mockRequest
+			};
+
+			const result = await actions.new(eventWithForm as any);
+
+			expect((result as { status: number }).status).toBe(500);
+			expect((result as { data: { error: string } }).data).toEqual({
+				error: 'Failed to create article: Failed to fetch article'
+			});
+		});
+
+		it('should return error with correct status when createArticle throws HTTP error', async () => {
+			const { actions } = await import('./+page.server');
+
+			const httpError = new Error('Invalid URL');
+			Object.assign(httpError, { status: 400 });
+			mockCreateArticle.mockRejectedValue(httpError);
+
+			const formData = new FormData();
+			formData.append('url', 'https://example.com/article');
+
+			const mockRequest = new Request('http://localhost/new', {
+				method: 'POST',
+				body: formData
+			});
+
+			const eventWithForm = {
+				...mockRequestEvent,
+				request: mockRequest
+			};
+
+			const result = await actions.new(eventWithForm as any);
+
+			expect((result as { status: number }).status).toBe(400);
+			expect((result as { data: { error: string } }).data).toEqual({
+				error: 'Failed to create article: Invalid URL'
+			});
 		});
 	});
 });

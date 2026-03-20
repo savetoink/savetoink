@@ -1,34 +1,14 @@
-import { error, redirect } from '@sveltejs/kit';
+import { fail, isHttpError } from '@sveltejs/kit';
 import { createArticle } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 import type { UserProfile } from '@savetoink/shared';
 
-export const load: PageServerLoad = async ({ url, locals, fetch, getClientAddress }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
 	const incomingUrl = url.searchParams.get('url') ?? url.searchParams.get('text') ?? null;
 
-	if (incomingUrl) {
-		const user = locals.user as UserProfile | undefined;
-		const sendToDevice = user?.auto_send ?? false;
-
-		const clientAddress = getClientAddress();
-		const auth = locals.auth ?? '';
-
-		await createArticle(
-			{
-				request: { headers: new Headers() } as Request,
-				fetch,
-				getClientAddress: () => clientAddress,
-				locals: { auth }
-			} as RequestEvent,
-			incomingUrl,
-			sendToDevice
-		);
-
-		redirect(303, '/articles');
-	}
-
 	return {
-		user: locals.user as UserProfile | undefined
+		user: locals.user as UserProfile | undefined,
+		incomingUrl
 	};
 };
 
@@ -39,15 +19,38 @@ export const actions: Actions = {
 		const sendToDevice = data.get('sendToDevice');
 
 		if (!txt || typeof txt !== 'string') {
-			error(400, 'URL is required');
+			return fail(400, { error: 'URL is required' });
 		}
 
-		await createArticle(
-			{ locals, request, fetch, getClientAddress } as RequestEvent,
-			txt,
-			sendToDevice === 'on'
-		);
+		try {
+			const article = await createArticle(
+				{ locals, request, fetch, getClientAddress } as RequestEvent,
+				txt,
+				sendToDevice === 'on'
+			);
 
-		redirect(303, '/articles');
+			return { success: true, article };
+		} catch (e) {
+			let status = 500;
+			let message = '';
+
+			if (isHttpError(e)) {
+				status = e.status;
+				message = e.body.message;
+			} else if (e && typeof e === 'object' && 'status' in e && typeof e.status === 'number') {
+				status = e.status;
+				if ('message' in e && typeof e.message === 'string') {
+					message = e.message;
+				} else if (e instanceof Error) {
+					message = e.message;
+				}
+			} else if (e instanceof Error) {
+				message = e.message;
+			} else {
+				message = String(e);
+			}
+
+			return fail(status, { error: 'Failed to create article: ' + message });
+		}
 	}
 } satisfies Actions;
