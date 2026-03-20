@@ -17,6 +17,9 @@
 
 <style>
 	ul {
+		display: flex;
+		flex-grow: 1;
 		gap: 1rem;
+		justify-content: center;
 	}
 </style>

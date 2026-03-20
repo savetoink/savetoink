@@ -1,4 +1,4 @@
-pre-commit:
+pre-push:
   jobs:
     - name: Generate API types from OpenAPI spec
       run: just gen-api-types

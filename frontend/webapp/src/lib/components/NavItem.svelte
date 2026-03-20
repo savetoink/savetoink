@@ -14,6 +14,12 @@
 		href={resolve(link)}
 		aria-current={page.url.pathname === linkUrl.pathname && page.url.search === linkUrl.search
 			? 'page'
-			: undefined}>{text}</a
+			: undefined}><button>{text}</button></a
 	>
 </li>
+
+<style>
+	button {
+		font-size: 1.5rem;
+	}
+</style>
