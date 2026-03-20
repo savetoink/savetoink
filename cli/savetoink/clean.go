@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/shaftoe/savetoink/backend/lib/service/content"
+	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/spf13/cobra"
 )
 
@@ -22,26 +22,14 @@ func runClean(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
 	defer cancel()
 
-	fetcher := content.NewFetcher("")
-	extractor := content.NewDOMExtractor()
-	cleaner := content.NewTrafilaturaCleaner()
+	svc := service.NewFromConfig(cfg)
 
-	fetched, err := fetcher.Fetch(ctx, u)
+	doc, err := svc.ParseHTMLFromSource(ctx, u)
 	if err != nil {
-		return fmt.Errorf("failed to fetch URL: %w", err)
-	}
-	defer func() {
-		if closeErr := fetched.HTML.Close(); closeErr != nil {
-			slog.Warn("failed to close response", slog.Any("error", closeErr))
-		}
-	}()
-
-	doc, err := extractor.Extract(ctx, fetched.HTML)
-	if err != nil {
-		return fmt.Errorf("failed to parse HTML: %w", err)
+		return fmt.Errorf("failed to parse html: %w", err)
 	}
 
-	article, err := cleaner.Clean(ctx, doc, u)
+	article, err := svc.Clean(ctx, doc, u)
 	if err != nil {
 		return fmt.Errorf("failed to clean content: %w", err)
 	}
