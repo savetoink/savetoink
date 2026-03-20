@@ -7,6 +7,7 @@
 
 	const login = () => {
 		const origin = data?.publicAppUrl || page.url.origin;
+		const referrer = page.url.searchParams.get('referrer') || '/';
 		const authUrl =
 			`https://${publicEnv.PUBLIC_AUTH0_DOMAIN}/authorize?` +
 			`response_type=code&` +
@@ -14,7 +15,8 @@
 			`client_id=${publicEnv.PUBLIC_AUTH0_CLIENT_ID}&` +
 			`redirect_uri=${encodeURIComponent(`${origin}/auth/callback`)}&` +
 			`audience=${publicEnv.PUBLIC_AUTH0_AUDIENCE}&` +
-			`scope=openid profile email`;
+			`scope=openid profile email&` +
+			`state=${encodeURIComponent(referrer)}`;
 		window.location.href = authUrl;
 	};
 </script>

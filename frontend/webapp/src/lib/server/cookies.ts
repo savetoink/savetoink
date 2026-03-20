@@ -4,7 +4,6 @@ import type { UserProfile } from '@savetoink/shared';
 
 const AUTH_KEY = 'auth';
 const USER_COOKIE_KEY = 'profile';
-const REFERRER_COOKIE_KEY = 'referrer';
 
 function getCookieSecret(): string {
 	if (privateEnv.COOKIE_SECRET) {
@@ -133,22 +132,4 @@ export async function setUserCookie(cookies: Cookies, userData: UserProfile) {
 
 export function deleteUserCookie(cookies: Cookies) {
 	cookies.delete(USER_COOKIE_KEY, { path: '/', secure: getSecure() });
-}
-
-export function setReferrerCookie(cookies: Cookies, referrer: string) {
-	cookies.set(REFERRER_COOKIE_KEY, referrer, {
-		path: '/',
-		httpOnly: false,
-		secure: getSecure(),
-		sameSite: 'lax',
-		maxAge: 60 * 10
-	});
-}
-
-export function getReferrerCookie(cookies: Cookies): string | undefined {
-	return cookies.get(REFERRER_COOKIE_KEY);
-}
-
-export function deleteReferrerCookie(cookies: Cookies) {
-	cookies.delete(REFERRER_COOKIE_KEY, { path: '/', secure: getSecure() });
 }

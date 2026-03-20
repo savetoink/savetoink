@@ -1,15 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { PUBLIC_AUTH_BACKEND } from '$env/static/public';
 import { env as publicEnv } from '$env/dynamic/public';
-import {
-	AUTH_KEY,
-	setAuthCookie,
-	deleteAuthCookie,
-	setUserCookie,
-	deleteUserCookie,
-	getReferrerCookie,
-	deleteReferrerCookie
-} from '$lib/server/cookies';
+import { AUTH_KEY, setAuthCookie, deleteAuthCookie, setUserCookie, deleteUserCookie } from '$lib/server/cookies';
 import { getProfile, updateDevice, deleteDevice } from '$lib/server/apiClient';
 import { ApiError, DeviceDomains, Auth0 } from '@savetoink/shared';
 import type { UserProfile } from '@savetoink/shared';
@@ -33,7 +25,7 @@ export const actions: Actions = {
 
 		redirect(303, '/account');
 	},
-	save: async ({ cookies, request, fetch, getClientAddress }) => {
+	save: async ({ cookies, request, fetch, getClientAddress, url }) => {
 		const data = await request.formData();
 		const token = data.get(AUTH_KEY);
 
@@ -64,8 +56,7 @@ export const actions: Actions = {
 			auto_send: profile.auto_send
 		});
 
-		const referrer = getReferrerCookie(cookies);
-		deleteReferrerCookie(cookies);
+		const referrer = url.searchParams.get('referrer');
 		redirect(303, referrer || '/');
 	},
 	updateAutoSend: async ({ locals, request, fetch, cookies, getClientAddress }) => {

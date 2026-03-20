@@ -1,7 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import { env as publicEnv } from '$env/dynamic/public';
 import { exchangeCodeForToken, getProfile } from '$lib/server/apiClient';
-import { setAuthCookie, setUserCookie, getReferrerCookie, deleteReferrerCookie } from '$lib/server/cookies';
+import { setAuthCookie, setUserCookie } from '$lib/server/cookies';
 import type { RequestHandler, RequestEvent } from './$types';
 
 export const GET: RequestHandler = async ({ fetch, url, cookies, request, getClientAddress }) => {
@@ -38,7 +38,6 @@ export const GET: RequestHandler = async ({ fetch, url, cookies, request, getCli
 		auto_send: profile.auto_send
 	});
 
-	const referrer = getReferrerCookie(cookies);
-	deleteReferrerCookie(cookies);
-	redirect(303, referrer || '/');
+	const referrer = url.searchParams.get('state') || '/';
+	redirect(303, referrer);
 };
