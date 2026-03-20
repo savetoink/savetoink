@@ -1,7 +1,7 @@
 {
 	"name": "savetoink-website",
 	"type": "module",
-	"version": "0.33.9-dev+19031917.e51e491",
+	"version": "0.33.9-dev+19032230.b7e98cd",
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro build",
