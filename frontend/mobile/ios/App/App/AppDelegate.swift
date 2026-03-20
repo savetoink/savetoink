@@ -37,6 +37,7 @@ class RootViewController: CAPBridgeViewController, WKNavigationDelegate, WKUIDel
     private var retryButton: UIButton?
 
     private static var allowedDomains: [String] = []
+    private static let capacitorLocalhost = "capacitor://localhost"
     static var appUrl: String = ""
 
     override func viewDidLoad() {
@@ -101,7 +102,7 @@ class RootViewController: CAPBridgeViewController, WKNavigationDelegate, WKUIDel
 
     func webView(
         _ webView: WKWebView,
-        didReceiveServerRedirectForProvisionalNavigation _navigation: WKNavigation!
+        didReceiveServerRedirectForProvisionalNavigation _: WKNavigation!
     ) {
         if let url = webView.url {
             print("🔄 Server redirect to: \(url.absoluteString)")
@@ -109,8 +110,8 @@ class RootViewController: CAPBridgeViewController, WKNavigationDelegate, WKUIDel
     }
 
     func webView(
-        _ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
-        for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures
+        _ webView: WKWebView, createWebViewWith _: WKWebViewConfiguration,
+        for navigationAction: WKNavigationAction, windowFeatures _: WKWindowFeatures
     ) -> WKWebView? {
         guard let url = navigationAction.request.url else { return nil }
 
@@ -133,12 +134,12 @@ class RootViewController: CAPBridgeViewController, WKNavigationDelegate, WKUIDel
         return nil
     }
 
-    func webViewDidClose(_ webView: WKWebView) {
+    func webViewDidClose(_: WKWebView) {
         print("🪟 Webview closed")
     }
 
     func webView(
-        _ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
+        _: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
         decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
     ) {
         guard let url = navigationAction.request.url else {
@@ -155,7 +156,7 @@ class RootViewController: CAPBridgeViewController, WKNavigationDelegate, WKUIDel
         let isFileURL = url.scheme == "file"
         let isAboutBlank = urlString.contains("about:blank")
         let isCapacitorJS = urlString.contains("capacitor.js")
-        let isCapacitorLocalhost = urlString.contains("capacitor://localhost")
+        let isCapacitorLocalhost = urlString.contains(Self.capacitorLocalhost)
         let isHTTP = url.scheme == "http" || url.scheme == "https"
 
         if isHostAllowed(host) || isFileURL || isAboutBlank || isCapacitorJS
@@ -176,7 +177,7 @@ class RootViewController: CAPBridgeViewController, WKNavigationDelegate, WKUIDel
     }
 
     func webView(
-        _ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse,
+        _: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse,
         decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
     ) {
         if let url = navigationResponse.response.url {
@@ -186,8 +187,8 @@ class RootViewController: CAPBridgeViewController, WKNavigationDelegate, WKUIDel
     }
 
     func webView(
-        _ webView: WKWebView,
-        didFailProvisionalNavigation navigation: WKNavigation!,
+        _: WKWebView,
+        didFailProvisionalNavigation _: WKNavigation!,
         withError error: Error
     ) {
         let nsError = error as NSError
@@ -195,13 +196,13 @@ class RootViewController: CAPBridgeViewController, WKNavigationDelegate, WKUIDel
         showErrorIfNetworkError(nsError)
     }
 
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+    func webView(_: WKWebView, didFail _: WKNavigation!, withError error: Error) {
         let nsError = error as NSError
         print("❌ Navigation failed with error: \(nsError.localizedDescription)")
         showErrorIfNetworkError(nsError)
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    func webView(_: WKWebView, didFinish _: WKNavigation!) {
         hideError()
     }
 
