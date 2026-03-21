@@ -4,7 +4,9 @@
 
 	let { sends }: { sends: SendsResponse | SendsResponseNoLimits | undefined } = $props();
 
-	const hasQuotaInfo = $derived(sends && 'current_sends' in sends && 'max_sends_per_period' in sends);
+	const hasQuotaInfo = $derived(
+		sends && 'current_sends' in sends && 'max_sends_per_period' in sends
+	);
 	const totalSends = $derived(sends?.total_sends ?? 0);
 
 	function formatDate(dateStr: string): string {
