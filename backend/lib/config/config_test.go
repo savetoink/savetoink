@@ -16,7 +16,6 @@ func TestMain(m *testing.M) {
 	_ = os.Unsetenv("SAVETOINK_ARTICLE_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_USER_PROFILE_TABLE_NAME")
 	_ = os.Unsetenv("SAVETOINK_SENDS_TABLE_NAME")
-	_ = os.Unsetenv("SAVETOINK_APP_URL")
 	_ = os.Unsetenv("SAVETOINK_CORS_ALLOW_ORIGIN")
 	_ = os.Unsetenv("SAVETOINK_EMAIL_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_MAILJET_API_KEY")
@@ -72,7 +71,6 @@ func TestLoad_Server_Mode_Success(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_EMAIL_BACKEND":           "mailjet",
 		"SAVETOINK_MAILJET_API_KEY":         "mailjet-key",
 		"SAVETOINK_MAILJET_API_SECRET":      "mailjet-secret",
@@ -90,7 +88,6 @@ func TestLoad_Server_Mode_Success(t *testing.T) {
 	assert.Equal(t, "articles-table", cfg.ArticlesTable)
 	assert.Equal(t, "profiles-table", cfg.UserProfileTable)
 	assert.Equal(t, "sends-table", cfg.SendsTable)
-	assert.Equal(t, "https://example.com", cfg.AppURL)
 	assert.Equal(t, consts.EmailBackendMailjet, cfg.EmailProvider)
 }
 
@@ -101,7 +98,6 @@ func TestLoad_Default_Auth_Backend(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -122,7 +118,6 @@ func TestLoad_Auth0_Backend_Success(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -141,7 +136,6 @@ func TestLoad_Invalid_Auth_Backend(t *testing.T) {
 		"SAVETOINK_AUTH_BACKEND":    "invalid-backend",
 		"SAVETOINK_STORAGE_BACKEND": "sqlite",
 		"SAVETOINK_SQLITE_PATH":     "/path/to/database.db",
-		"SAVETOINK_APP_URL":         "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -165,7 +159,6 @@ func TestLoad_Missing_API_Key_For_Shared_API_Key(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_STORAGE_BACKEND": "sqlite",
 		"SAVETOINK_SQLITE_PATH":     "/path/to/database.db",
-		"SAVETOINK_APP_URL":         "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -180,7 +173,6 @@ func TestLoad_Missing_Multiple_Auth0_Env(t *testing.T) {
 		"SAVETOINK_AUTH_BACKEND":    "auth0",
 		"SAVETOINK_STORAGE_BACKEND": "sqlite",
 		"SAVETOINK_SQLITE_PATH":     "/path/to/database.db",
-		"SAVETOINK_APP_URL":         "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -200,7 +192,6 @@ func TestLoad_Missing_ArticlesTable(t *testing.T) {
 		"SAVETOINK_API_KEY":                 "test-api-key",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -216,7 +207,6 @@ func TestLoad_Missing_UserProfileTable(t *testing.T) {
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
-		"SAVETOINK_APP_URL":            "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -232,7 +222,6 @@ func TestLoad_Missing_SendsTable(t *testing.T) {
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
-		"SAVETOINK_APP_URL":            "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -240,23 +229,6 @@ func TestLoad_Missing_SendsTable(t *testing.T) {
 	_, err := Load(consts.ModeServer, awsLoader)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "SAVETOINK_SENDS_TABLE_NAME")
-}
-
-func TestLoad_Missing_AppURL(t *testing.T) {
-	setupEnvVars(t, map[string]string{
-		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
-		"SAVETOINK_SQLITE_PATH":        "/path/to/database.db",
-		"SAVETOINK_API_KEY":            "test-api-key",
-		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
-		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
-		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
-	})
-
-	awsLoader := mockAWSLoader()
-
-	_, err := Load(consts.ModeServer, awsLoader)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "SAVETOINK_APP_URL")
 }
 
 func TestLoad_Missing_Mailjet_API_Key(t *testing.T) {
@@ -267,7 +239,6 @@ func TestLoad_Missing_Mailjet_API_Key(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
-		"SAVETOINK_APP_URL":            "https://example.com",
 		"SAVETOINK_EMAIL_BACKEND":      "mailjet",
 	})
 
@@ -286,7 +257,6 @@ func TestLoad_Missing_Mailjet_API_Secret(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
-		"SAVETOINK_APP_URL":            "https://example.com",
 		"SAVETOINK_EMAIL_BACKEND":      "mailjet",
 		"SAVETOINK_MAILJET_API_KEY":    "mailjet-key",
 	})
@@ -306,7 +276,6 @@ func TestLoad_Missing_Mailjet_Webhook_Secret(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
-		"SAVETOINK_APP_URL":            "https://example.com",
 		"SAVETOINK_EMAIL_BACKEND":      "mailjet",
 		"SAVETOINK_MAILJET_API_KEY":    "mailjet-key",
 		"SAVETOINK_MAILJET_API_SECRET": "mailjet-secret",
@@ -327,7 +296,6 @@ func TestLoad_Missing_Sender_Email(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":  "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE":  "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":    "sends-table",
-		"SAVETOINK_APP_URL":             "https://example.com",
 		"SAVETOINK_EMAIL_BACKEND":       "mailjet",
 		"SAVETOINK_MAILJET_API_KEY":     "mailjet-key",
 		"SAVETOINK_MAILJET_API_SECRET":  "mailjet-secret",
@@ -349,7 +317,6 @@ func TestLoad_Sentry_Provider_Success(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_LOGGING_PROVIDER":        "sentry",
 		"SAVETOINK_SENTRY_DSN":              "sentry-dsn",
 		"SAVETOINK_SENTRY_ENVIRONMENT":      "production",
@@ -374,7 +341,6 @@ func TestLoad_Missing_Sentry_DSN(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
-		"SAVETOINK_APP_URL":            "https://example.com",
 		"SAVETOINK_LOGGING_PROVIDER":   "sentry",
 		"SAVETOINK_SENTRY_ENVIRONMENT": "production",
 		"SAVETOINK_SENTRY_SAMPLE_RATE": "1.0",
@@ -395,7 +361,6 @@ func TestLoad_Missing_Sentry_Environment(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
-		"SAVETOINK_APP_URL":            "https://example.com",
 		"SAVETOINK_LOGGING_PROVIDER":   "sentry",
 		"SAVETOINK_SENTRY_DSN":         "sentry-dsn",
 		"SAVETOINK_SENTRY_SAMPLE_RATE": "1.0",
@@ -416,7 +381,6 @@ func TestLoad_Missing_Sentry_Sample_Rate(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":   "sends-table",
-		"SAVETOINK_APP_URL":            "https://example.com",
 		"SAVETOINK_LOGGING_PROVIDER":   "sentry",
 		"SAVETOINK_SENTRY_DSN":         "sentry-dsn",
 		"SAVETOINK_SENTRY_ENVIRONMENT": "production",
@@ -437,7 +401,6 @@ func TestLoad_Non_Sentry_Logging_Does_Not_Validate_Sentry(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -468,7 +431,6 @@ func TestLoad_Multiple_Validation_Errors(t *testing.T) {
 	assert.Contains(t, errMsg, "SAVETOINK_ARTICLE_TABLE_NAME")
 	assert.Contains(t, errMsg, "SAVETOINK_USER_PROFILE_TABLE_NAME")
 	assert.Contains(t, errMsg, "SAVETOINK_SENDS_TABLE_NAME")
-	assert.Contains(t, errMsg, "SAVETOINK_APP_URL")
 }
 
 func TestLoad_Server_Mode_Without_AWS_Loader(t *testing.T) {
@@ -478,7 +440,6 @@ func TestLoad_Server_Mode_Without_AWS_Loader(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	_, err := Load(consts.ModeServer, nil)
@@ -493,7 +454,6 @@ func TestLoad_Server_Mode_AWS_Loader_Error(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	awsLoader := func(_ context.Context) (aws.Config, error) {
@@ -508,7 +468,6 @@ func TestLoad_Server_Mode_AWS_Loader_Error(t *testing.T) {
 func TestLoad_All_Env_Vars_Bound(t *testing.T) {
 	envVars := map[string]string{ //nolint:gosec // Test values, not real credentials
 		"SAVETOINK_API_KEY":                 "api-key-secret",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_AUTH0_AUDIENCE":          "auth0-audience",
 		"SAVETOINK_AUTH0_CLIENT_ID":         "auth0-client-id",
@@ -539,7 +498,6 @@ func TestLoad_All_Env_Vars_Bound(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "api-key-secret", cfg.APIKeySecret)
-	assert.Equal(t, "https://example.com", cfg.AppURL)
 	assert.Equal(t, "articles-table", cfg.ArticlesTable)
 	assert.Equal(t, "auth0-audience", cfg.Auth0Audience)
 	assert.Equal(t, "auth0-client-id", cfg.Auth0ClientID)
@@ -583,7 +541,6 @@ func TestLoad_CorsAllowOrigin(t *testing.T) {
 				"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 				"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 				"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-				"SAVETOINK_APP_URL":                 "https://example.com",
 				"SAVETOINK_CORS_ALLOW_ORIGIN":       tt.value,
 			})
 
@@ -600,7 +557,6 @@ func TestLoad_SQLite_Backend_Success(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_STORAGE_BACKEND": "sqlite",
 		"SAVETOINK_SQLITE_PATH":     "/path/to/database.db",
-		"SAVETOINK_APP_URL":         "https://example.com",
 		"SAVETOINK_API_KEY":         "test-api-key",
 	})
 
@@ -617,7 +573,6 @@ func TestLoad_DynamoDB_Backend_Success(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -632,7 +587,6 @@ func TestLoad_Default_Storage_Backend(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_API_KEY":     "test-api-key",
 		"SAVETOINK_SQLITE_PATH": "/path/to/database.db",
-		"SAVETOINK_APP_URL":     "https://example.com",
 	})
 
 	cfg, err := Load(consts.ModeServer, nil)
@@ -643,7 +597,6 @@ func TestLoad_Default_Storage_Backend(t *testing.T) {
 func TestLoad_SQLite_Path_Default(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_STORAGE_BACKEND": "sqlite",
-		"SAVETOINK_APP_URL":         "https://example.com",
 		"SAVETOINK_API_KEY":         "test-api-key",
 	})
 
@@ -657,7 +610,6 @@ func TestLoad_Missing_DynamoDB_Tables(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_STORAGE_BACKEND": "dynamodb",
 		"SAVETOINK_API_KEY":         "test-api-key",
-		"SAVETOINK_APP_URL":         "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -673,7 +625,6 @@ func TestLoad_Missing_DynamoDB_Tables(t *testing.T) {
 func TestLoad_Invalid_Storage_Backend(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_STORAGE_BACKEND": "invalid-backend",
-		"SAVETOINK_APP_URL":         "https://example.com",
 	})
 
 	awsLoader := mockAWSLoader()
@@ -691,7 +642,6 @@ func TestLoad_Browserless_Key(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_BROWSERLESS_KEY":         "browserless-key-123",
 	})
 
@@ -710,7 +660,6 @@ func TestLoad_Process_Article_Lambda(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_PROCESS_ARTICLE_LAMBDA":  "arn:aws:lambda:us-east-1:123456789012:function:ProcessArticle",
 	})
 
@@ -834,7 +783,6 @@ func TestLoad_Tasks_Config(t *testing.T) {
 				"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 				"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 				"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-				"SAVETOINK_APP_URL":                 "https://example.com",
 			}
 			if tt.tasksEnv != "" {
 				envVars["SAVETOINK_TASKS"] = tt.tasksEnv
@@ -865,7 +813,6 @@ func TestLoad_DefaultPort(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	cfg, err := Load(consts.ModeServer, nil)
@@ -881,7 +828,6 @@ func TestLoad_CustomPort(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_HTTP_PORT":               "3000",
 	})
 
@@ -911,7 +857,6 @@ func TestLoad_CLI_Mode_CustomPort(t *testing.T) {
 func TestLoad_CLI_InvalidStorageBackend(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_STORAGE_BACKEND": "invalid-backend",
-		"SAVETOINK_APP_URL":         "https://example.com",
 		"SAVETOINK_API_KEY":         "test-api-key",
 	})
 
@@ -923,7 +868,6 @@ func TestLoad_CLI_InvalidStorageBackend(t *testing.T) {
 func TestLoad_CLI_EmptyStorageBackend(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_STORAGE_BACKEND": "",
-		"SAVETOINK_APP_URL":         "https://example.com",
 		"SAVETOINK_API_KEY":         "test-api-key",
 	})
 
@@ -935,7 +879,6 @@ func TestLoad_CLI_EmptyStorageBackend(t *testing.T) {
 func TestLoad_Server_SQLite_WithoutPath(t *testing.T) {
 	setupEnvVars(t, map[string]string{
 		"SAVETOINK_STORAGE_BACKEND":    "sqlite",
-		"SAVETOINK_APP_URL":            "https://example.com",
 		"SAVETOINK_API_KEY":            "test-api-key",
 		"SAVETOINK_ARTICLE_TABLE_NAME": "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE": "profiles-table",
@@ -956,7 +899,6 @@ func TestLoad_Tasks_Config_InvalidJSON(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_TASKS":                   "invalid-json{",
 	})
 
@@ -974,7 +916,6 @@ func TestLoad_ArticleTagsTable(t *testing.T) {
 		"SAVETOINK_ARTICLE_TAGS_TABLE_NAME": "article-tags-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 	})
 
 	cfg, err := Load(consts.ModeServer, nil)
@@ -990,7 +931,6 @@ func TestLoad_BackupBucketName(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_BACKUP_BUCKET_NAME":      "backup-bucket",
 	})
 
@@ -1045,7 +985,6 @@ func TestValidateServerConfig_SQLite(t *testing.T) {
 		SQLitePath:     "/path/to/db.db",
 		AuthBackend:    consts.AuthBackendSharedAPIKey,
 		APIKeySecret:   "test-key",
-		AppURL:         "https://example.com",
 	}
 	var missing []string
 
@@ -1061,7 +1000,6 @@ func TestValidateServerConfig_DynamoDB(t *testing.T) {
 		SendsTable:       "sends",
 		AuthBackend:      consts.AuthBackendSharedAPIKey,
 		APIKeySecret:     "test-key",
-		AppURL:           "https://example.com",
 	}
 	var missing []string
 
@@ -1079,7 +1017,6 @@ func TestLoad_Tasks_Config_InvalidTask(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_TASKS":                   `[{"task":"task1"}]`,
 	})
 
@@ -1098,7 +1035,6 @@ func TestLoad_Tasks_Config_WithBackup(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_TASKS":                   `[{"task":"backup","schedule":"0 * * * *"}]`,
 	})
 
@@ -1117,7 +1053,6 @@ func TestLoad_Tasks_Config_WithRestore(t *testing.T) {
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
 		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
-		"SAVETOINK_APP_URL":                 "https://example.com",
 		"SAVETOINK_TASKS":                   `[{"task":"restore","backup_name":"backup-123","overwrite":true}]`,
 	})
 

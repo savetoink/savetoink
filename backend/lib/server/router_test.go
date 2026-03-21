@@ -202,7 +202,6 @@ func setupMinimalConfig(t *testing.T) *config.Config {
 		ArticlesTable:        "test-articles",
 		UserProfileTable:     "test-profiles",
 		SendsTable:           "test-sends",
-		AppURL:               "https://test.com",
 		CorsAllowOrigin:      "",
 		EmailProvider:        "",
 		LoggingProvider:      consts.LoggingBackendNone,

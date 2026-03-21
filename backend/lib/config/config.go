@@ -21,7 +21,6 @@ type Config struct {
 	UserProfileTable string
 	SendsTable       string
 	BackupBucketName string
-	AppURL           string
 	Mode             consts.RunMode
 	CorsAllowOrigin  string
 	Port             int
@@ -107,7 +106,6 @@ func bindEnvVars() error {
 		{"api-key-secret", "SAVETOINK_API_KEY"},
 		{"api-secret", "SAVETOINK_MAILJET_API_SECRET"},
 		{"api-webhook-secret", "SAVETOINK_MAILJET_WEBHOOK_SECRET"},
-		{"app-url", "SAVETOINK_APP_URL"},
 		{"article-tags-table", "SAVETOINK_ARTICLE_TAGS_TABLE_NAME"},
 		{"articles-table", "SAVETOINK_ARTICLE_TABLE_NAME"},
 		{"auth-backend", "SAVETOINK_AUTH_BACKEND"},
@@ -145,7 +143,6 @@ func bindEnvVars() error {
 func loadConfig(mode consts.RunMode) *Config {
 	cfg := &Config{
 		APIKeySecret:         viper.GetString("api-key-secret"),
-		AppURL:               viper.GetString("app-url"),
 		ArticleTagsTable:     viper.GetString("article-tags-table"),
 		ArticlesTable:        viper.GetString("articles-table"),
 		Auth0Audience:        viper.GetString("auth0-audience"),
@@ -222,10 +219,6 @@ func (c *Config) validateServerConfig(missing *[]string, awsLoader AWSConfigLoad
 	}
 
 	if err := c.validateLoggingProviderConfig(missing); err != nil {
-		return err
-	}
-
-	if err := c.validateAppURL(missing); err != nil {
 		return err
 	}
 
@@ -334,13 +327,6 @@ func (c *Config) validateLoggingProviderConfig(missing *[]string) error {
 		if c.SentrySampleRate == 0 {
 			*missing = append(*missing, "SAVETOINK_SENTRY_SAMPLE_RATE")
 		}
-	}
-	return nil
-}
-
-func (c *Config) validateAppURL(missing *[]string) error {
-	if c.AppURL == "" {
-		*missing = append(*missing, "SAVETOINK_APP_URL")
 	}
 	return nil
 }

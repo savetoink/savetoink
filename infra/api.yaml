@@ -26,10 +26,6 @@ Parameters:
     Type: String
     Description: Name of the S3 bucket for storing backups
 
-  AppURL:
-    Type: String
-    Description: URL of the Save to Ink app
-
   MailBackend:
     Type: String
     Description: The name of the email backend (e.g. mailjet)
@@ -290,7 +286,6 @@ Resources:
       Environment:
         Variables:
           SAVETOINK_API_KEY: !Ref APIKeySecret
-          SAVETOINK_APP_URL: !Ref AppURL
           SAVETOINK_ARTICLE_TABLE_NAME: !Ref ArticleTable
           SAVETOINK_ARTICLE_TAGS_TABLE_NAME: !Ref ArticleTagsTable
           SAVETOINK_AUTH0_AUDIENCE: !Ref Auth0Audience
@@ -365,7 +360,6 @@ Resources:
       Environment:
         Variables:
           SAVETOINK_API_KEY: !Ref APIKeySecret
-          SAVETOINK_APP_URL: !Ref AppURL
           SAVETOINK_ARTICLE_TABLE_NAME: !Ref ArticleTable
           SAVETOINK_BROWSERLESS_KEY: !Ref BrowserlessKey
           SAVETOINK_DEBUG: !Ref Debug
@@ -416,7 +410,6 @@ Resources:
       Environment:
         Variables:
           SAVETOINK_API_KEY: !Ref APIKeySecret
-          SAVETOINK_APP_URL: !Ref AppURL
           SAVETOINK_ARTICLE_TABLE_NAME: !Ref ArticleTable
           SAVETOINK_ARTICLE_TAGS_TABLE_NAME: !Ref ArticleTagsTable
           SAVETOINK_BACKUP_BUCKET_NAME: !Ref BackupS3Bucket

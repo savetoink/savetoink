@@ -22,7 +22,6 @@ func getTestConfig() *config.Config {
 		MailjetAPIKey:    "test-key",
 		MailjetAPISecret: "test-secret",
 		SenderEmail:      "test@example.com",
-		AppURL:           "https://test.com",
 	}
 }
 
