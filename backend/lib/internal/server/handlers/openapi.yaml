@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: Save to Ink API
   description: REST API for article management and delivery service
-  version: 0.33.11-dev+21031619.6aae60f
+  version: 0.33.12
 
 servers:
   - url: /v1
