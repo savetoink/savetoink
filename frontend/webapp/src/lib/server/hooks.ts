@@ -1,6 +1,11 @@
 import { redirect } from '@sveltejs/kit';
 import { validateEnv } from '$lib/server/validateEnv';
-import { getAuthCookie, getUserCookie, setUserCookie } from '$lib/server/cookies';
+import {
+	getAuthCookie,
+	getUserCookie,
+	setUserCookie,
+	setRedirectToCookie
+} from '$lib/server/cookies';
 import { isAuthenticatedPath } from '$lib/consts';
 import { getProfile } from '$lib/server/apiClient';
 import type { Handle } from '@sveltejs/kit';
@@ -41,6 +46,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	if (isAuthenticatedPath(event.url.pathname) && !event.locals.isLoggedIn) {
+		setRedirectToCookie(event.cookies, event.url.pathname + event.url.search);
 		return redirect(303, '/account');
 	}
 

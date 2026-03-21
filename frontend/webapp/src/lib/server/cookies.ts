@@ -4,6 +4,7 @@ import type { UserProfile } from '@savetoink/shared';
 
 const AUTH_KEY = 'auth';
 const USER_COOKIE_KEY = 'profile';
+const REDIRECT_TO_KEY = 'redirect_to';
 
 function getCookieSecret(): string {
 	if (privateEnv.COOKIE_SECRET) {
@@ -132,4 +133,77 @@ export async function setUserCookie(cookies: Cookies, userData: UserProfile) {
 
 export function deleteUserCookie(cookies: Cookies) {
 	cookies.delete(USER_COOKIE_KEY, { path: '/', secure: getSecure() });
+}
+
+export function setRedirectToCookie(cookies: Cookies, url: string) {
+	cookies.set(REDIRECT_TO_KEY, url, {
+		path: '/',
+		httpOnly: true,
+		secure: getSecure(),
+		sameSite: 'lax',
+		maxAge: 300 // 5 minutes
+	});
+}
+
+function getRedirectToCookie(cookies: Cookies): string | undefined {
+	const value = cookies.get(REDIRECT_TO_KEY);
+	if (!value) {
+		return undefined;
+	}
+	return value;
+}
+
+function deleteRedirectToCookie(cookies: Cookies) {
+	cookies.delete(REDIRECT_TO_KEY, { path: '/', secure: getSecure() });
+}
+
+export { REDIRECT_TO_KEY };
+
+/**
+ * Validates a redirect URL to prevent open redirect vulnerabilities.
+ * Only allows relative URLs starting with '/' to prevent external redirects.
+ */
+function isValidRedirectUrl(url: string | undefined): boolean {
+	if (!url) {
+		return false;
+	}
+
+	if (!url.startsWith('/')) {
+		return false;
+	}
+
+	if (url.startsWith('//')) {
+		return false;
+	}
+
+	try {
+		// Try to parse as URL - this should fail for relative paths
+		new URL(url);
+		return false;
+	} catch {
+		// Expected for relative URLs - valid
+	}
+
+	return true;
+}
+
+/**
+ * Gets the redirect URL from cookie, validates it, and deletes the cookie.
+ * Returns the valid redirect URL or undefined if no valid redirect exists.
+ * Deletes the cookie in both valid and invalid cases for security.
+ */
+export function getValidRedirectUrl(cookies: Cookies): string | undefined {
+	const redirectTo = getRedirectToCookie(cookies);
+	if (!redirectTo) {
+		return undefined;
+	}
+
+	if (isValidRedirectUrl(redirectTo)) {
+		deleteRedirectToCookie(cookies);
+		return redirectTo;
+	}
+
+	// Invalid URL - delete the cookie for security
+	deleteRedirectToCookie(cookies);
+	return undefined;
 }

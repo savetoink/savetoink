@@ -168,43 +168,182 @@ describe('cookies', () => {
 		});
 	});
 
-	it('should return undefined for missing cookie', async () => {
-		const { getUserCookie } = await import('./cookies');
-		mockGet.mockReturnValue(null);
+	describe('deleteUserCookie', () => {
+		it('should delete user cookie', async () => {
+			const { deleteUserCookie } = await import('./cookies');
 
-		const result = await getUserCookie(mockCookies);
+			await deleteUserCookie(mockCookies);
 
-		expect(result).toBeUndefined();
+			expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/', secure: false });
+		});
 	});
 
-	it('should return null for invalid signature', async () => {
-		const { getUserCookie, setUserCookie } = await import('./cookies');
-		const userData = {
-			account: 'test-account',
-			email: 'test@example.com',
-			device_email: 'test@kindle.com',
-			auto_send: true
-		};
+	describe('redirect_to cookie functions', () => {
+		describe('setRedirectToCookie', () => {
+			it('should set cookie with correct options', async () => {
+				const { setRedirectToCookie } = await import('./cookies');
+				const testUrl = '/articles?page=2';
 
-		mockGet.mockReturnValue(null);
-		await setUserCookie(mockCookies, userData);
+				setRedirectToCookie(mockCookies, testUrl);
 
-		const cookieValue = mockSet.mock.calls[0][1];
-		const tamperedValue = cookieValue.slice(0, -10) + '0000000000';
-		mockGet.mockReturnValue(tamperedValue);
+				expect(mockSet).toHaveBeenCalledWith('redirect_to', testUrl, {
+					path: '/',
+					httpOnly: true,
+					secure: false,
+					sameSite: 'lax',
+					maxAge: 300 // 5 minutes
+				});
+			});
 
-		const decoded = await getUserCookie(mockCookies);
+			it('should set cookie with URL including pathname and query params', async () => {
+				const { setRedirectToCookie } = await import('./cookies');
+				const testUrl = '/articles?page=2&filter=recent';
 
-		expect(decoded).toBeUndefined();
-	});
-});
+				setRedirectToCookie(mockCookies, testUrl);
 
-describe('deleteUserCookie', () => {
-	it('should delete user cookie', async () => {
-		const { deleteUserCookie } = await import('./cookies');
+				expect(mockSet).toHaveBeenCalledWith(
+					'redirect_to',
+					'/articles?page=2&filter=recent',
+					expect.any(Object)
+				);
+			});
 
-		await deleteUserCookie(mockCookies);
+			it('should set cookie with simple pathname', async () => {
+				const { setRedirectToCookie } = await import('./cookies');
+				const testUrl = '/articles';
 
-		expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/', secure: false });
+				setRedirectToCookie(mockCookies, testUrl);
+
+				expect(mockSet).toHaveBeenCalledWith('redirect_to', '/articles', expect.any(Object));
+			});
+		});
+
+		describe('REDIRECT_TO_KEY', () => {
+			it('should export REDIRECT_TO_KEY constant', async () => {
+				const { REDIRECT_TO_KEY } = await import('./cookies');
+
+				expect(REDIRECT_TO_KEY).toBe('redirect_to');
+			});
+		});
+
+		describe('getValidRedirectUrl', () => {
+			beforeEach(() => {
+				vi.clearAllMocks();
+			});
+
+			it('should return valid redirect URL and delete cookie', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+				const testUrl = '/articles?page=2';
+
+				mockGet.mockReturnValue(testUrl);
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBe(testUrl);
+				expect(mockDelete).toHaveBeenCalledWith('redirect_to', { path: '/', secure: false });
+			});
+
+			it('should return undefined when no cookie exists', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+
+				mockGet.mockReturnValue(null);
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBeUndefined();
+				expect(mockDelete).not.toHaveBeenCalled();
+			});
+
+			it('should return undefined and delete cookie for invalid URL', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+
+				mockGet.mockReturnValue('https://evil.com');
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBeUndefined();
+				expect(mockDelete).toHaveBeenCalledWith('redirect_to', { path: '/', secure: false });
+			});
+
+			it('should return undefined and delete cookie for protocol-relative URL', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+
+				mockGet.mockReturnValue('//evil.com');
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBeUndefined();
+				expect(mockDelete).toHaveBeenCalledWith('redirect_to', { path: '/', secure: false });
+			});
+
+			it('should return valid URL and delete cookie for simple path', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+				const testUrl = '/articles';
+
+				mockGet.mockReturnValue(testUrl);
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBe(testUrl);
+				expect(mockDelete).toHaveBeenCalledWith('redirect_to', { path: '/', secure: false });
+			});
+
+			it('should return valid URL for root path', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+				const testUrl = '/';
+
+				mockGet.mockReturnValue(testUrl);
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBe('/');
+				expect(mockDelete).toHaveBeenCalledWith('redirect_to', { path: '/', secure: false });
+			});
+
+			it('should return valid URL with multiple query parameters', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+				const testUrl = '/articles?page=2&filter=recent&sort=desc';
+
+				mockGet.mockReturnValue(testUrl);
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBe(testUrl);
+				expect(mockDelete).toHaveBeenCalledWith('redirect_to', { path: '/', secure: false });
+			});
+
+			it('should return undefined and delete cookie for URL without leading slash', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+
+				mockGet.mockReturnValue('articles');
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBeUndefined();
+				expect(mockDelete).toHaveBeenCalledWith('redirect_to', { path: '/', secure: false });
+			});
+
+			it('should return undefined and delete cookie for URL with javascript protocol', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+
+				mockGet.mockReturnValue('javascript:alert(1)');
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBeUndefined();
+				expect(mockDelete).toHaveBeenCalledWith('redirect_to', { path: '/', secure: false });
+			});
+
+			it('should return undefined and delete cookie for URL with data protocol', async () => {
+				const { getValidRedirectUrl } = await import('./cookies');
+
+				mockGet.mockReturnValue('data:text/html,<script>alert(1)</script>');
+
+				const result = getValidRedirectUrl(mockCookies);
+
+				expect(result).toBeUndefined();
+				expect(mockDelete).toHaveBeenCalledWith('redirect_to', { path: '/', secure: false });
+			});
+		});
 	});
 });
