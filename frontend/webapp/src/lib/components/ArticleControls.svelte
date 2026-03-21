@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Article, UserProfile } from '@savetoink/shared';
+	import { deleteArticle as deleteArticleAction } from '@savetoink/shared';
 
 	let {
 		article,
@@ -32,10 +33,8 @@
 	}
 
 	async function handleDeleteClick() {
-		if (!window.confirm('Are you sure you want to delete this article?')) {
-			return;
-		}
-		deleteForm?.requestSubmit();
+		if (!deleteForm) return;
+		deleteArticleAction(deleteForm);
 	}
 </script>
 
