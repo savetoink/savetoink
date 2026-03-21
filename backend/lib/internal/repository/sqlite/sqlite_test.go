@@ -10,6 +10,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	testArticleID = "article-1"
+)
+
 type SQLiteRepositoryTestSuite struct {
 	suite.Suite
 	ctx        context.Context
@@ -84,7 +88,7 @@ func (s *SQLiteRepositoryTestSuite) TestStoreArticle() {
 	publishedAt := time.Now().UTC()
 	article := &model.Article{
 		Account:            "test-account",
-		ID:                 "article-1",
+		ID:                 testArticleID,
 		URL:                "https://example.com/article",
 		CreatedAt:          time.Now().UTC(),
 		Title:              "Test Article",
@@ -105,10 +109,10 @@ func (s *SQLiteRepositoryTestSuite) TestStoreArticle() {
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", "article-1")
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", testArticleID)
 	s.NoError(err)
 	s.Equal("test-account", retrieved.Account)
-	s.Equal("article-1", retrieved.ID)
+	s.Equal(testArticleID, retrieved.ID)
 	s.Equal("https://example.com/article", retrieved.URL)
 	s.Equal("Test Article", retrieved.Title)
 	s.Equal("Test Content", retrieved.Content)
@@ -127,7 +131,7 @@ func (s *SQLiteRepositoryTestSuite) TestStoreArticle() {
 
 func (s *SQLiteRepositoryTestSuite) TestStoreArticle_WithoutAccount() {
 	article := &model.Article{
-		ID:        "article-1",
+		ID:        testArticleID,
 		URL:       "https://example.com/article",
 		CreatedAt: time.Now().UTC(),
 	}
@@ -141,7 +145,7 @@ func (s *SQLiteRepositoryTestSuite) TestStoreArticle_UpdateExisting() {
 	now := time.Now().UTC()
 	article := &model.Article{
 		Account:   "test-account",
-		ID:        "article-1",
+		ID:        testArticleID,
 		URL:       "https://example.com/article",
 		CreatedAt: now,
 		Title:     "Original Title",
@@ -155,7 +159,7 @@ func (s *SQLiteRepositoryTestSuite) TestStoreArticle_UpdateExisting() {
 	err = s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", "article-1")
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", testArticleID)
 	s.NoError(err)
 	s.Equal("Updated Title", retrieved.Title)
 	s.Equal("Updated Content", retrieved.Content)
@@ -170,7 +174,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetByAccountAndID_NotFound() {
 func (s *SQLiteRepositoryTestSuite) TestDeleteByAccountAndID() {
 	article := &model.Article{
 		Account:   "test-account",
-		ID:        "article-1",
+		ID:        testArticleID,
 		URL:       "https://example.com/article",
 		CreatedAt: time.Now().UTC(),
 	}
@@ -178,10 +182,10 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteByAccountAndID() {
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	err = s.repository.DeleteByAccountAndID(s.ctx, "test-account", "article-1")
+	err = s.repository.DeleteByAccountAndID(s.ctx, "test-account", testArticleID)
 	s.NoError(err)
 
-	_, err = s.repository.GetByAccountAndID(s.ctx, "test-account", "article-1")
+	_, err = s.repository.GetByAccountAndID(s.ctx, "test-account", testArticleID)
 	s.Error(err)
 	s.Equal(ErrNotFound, err)
 }
@@ -195,7 +199,7 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteByAccountAndID_NotFound() {
 func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite() {
 	article := &model.Article{
 		Account:   "test-account",
-		ID:        "article-1",
+		ID:        testArticleID,
 		URL:       "https://example.com/article",
 		CreatedAt: time.Now().UTC(),
 		Favorite:  false,
@@ -204,10 +208,10 @@ func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite() {
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	err = s.repository.UpdateFavorite(s.ctx, "test-account", "article-1", true)
+	err = s.repository.UpdateFavorite(s.ctx, "test-account", testArticleID, true)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", "article-1")
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", testArticleID)
 	s.NoError(err)
 	s.True(retrieved.Favorite)
 }

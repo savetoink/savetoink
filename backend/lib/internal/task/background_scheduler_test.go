@@ -10,6 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	scheduleHourly   = "0 0 * * * *"
+	scheduleEveryMin = "*/1 * * * * *"
+)
+
 func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 	runner := NewTaskRunner(getTestConfig(t))
 
@@ -34,7 +39,7 @@ func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 	configs := []consts.TaskConfig{
 		{
 			Task:     "task1",
-			Schedule: "0 0 * * * *",
+			Schedule: scheduleHourly,
 		},
 		{
 			Task:     "task1",
@@ -42,7 +47,7 @@ func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 		},
 		{
 			Task:     "task2",
-			Schedule: "0 0 * * * *",
+			Schedule: scheduleHourly,
 		},
 	}
 
@@ -72,11 +77,11 @@ func TestBackgroundScheduler_Start_ScheduledTasks(t *testing.T) {
 	configs := []consts.TaskConfig{
 		{
 			Task:     "task1",
-			Schedule: "*/1 * * * * *",
+			Schedule: scheduleEveryMin,
 		},
 		{
 			Task:     "task2",
-			Schedule: "*/1 * * * * *",
+			Schedule: scheduleEveryMin,
 		},
 	}
 
@@ -133,7 +138,7 @@ func TestBackgroundScheduler_Start_WithParams(t *testing.T) {
 	configs := []consts.TaskConfig{
 		{
 			Task:       "task1",
-			Schedule:   "*/1 * * * * *",
+			Schedule:   scheduleEveryMin,
 			BackupName: "test-backup",
 		},
 	}
@@ -162,7 +167,7 @@ func TestBackgroundScheduler_Stop(t *testing.T) {
 	configs := []consts.TaskConfig{
 		{
 			Task:     "task1",
-			Schedule: "0 0 * * * *",
+			Schedule: scheduleHourly,
 		},
 	}
 

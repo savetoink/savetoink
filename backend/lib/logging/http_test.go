@@ -14,12 +14,15 @@ import (
 )
 
 const (
-	testRequestID = "req-12345"
+	testRequestID    = "req-12345"
+	headerUserAgent  = "User-Agent"
+	headerXForwarded = "X-Forwarded-For"
+	testIPForwarded  = "203.0.113.1"
 )
 
 func TestCreateLogRecord_Basic(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test/path", http.NoBody)
-	req.Header.Set("User-Agent", "test-agent")
+	req.Header.Set(headerUserAgent, "test-agent")
 	req.RemoteAddr = "192.168.1.1:8080"
 
 	record := createLogRecord(req, "", nil)
@@ -89,7 +92,7 @@ func TestCreateLogRecord_WithAccountID(t *testing.T) {
 
 func TestCreateLogRecord_WithAllFields(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "DELETE", "/api/test", http.NoBody)
-	req.Header.Set("User-Agent", "Mozilla/5.0")
+	req.Header.Set(headerUserAgent, "Mozilla/5.0")
 	req.RemoteAddr = "10.0.0.1:9000"
 	accountID := "acct-789"
 	requestID := "req-abc"
@@ -214,29 +217,29 @@ func TestFinalizeLogRecord_WithJoinedErrors(t *testing.T) {
 
 func TestRemoteAddr_XForwardedForSingleIP(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-	req.Header.Set("X-Forwarded-For", "203.0.113.1")
+	req.Header.Set(headerXForwarded, testIPForwarded)
 
 	result := remoteAddr(req)
 
-	assert.Equal(t, "203.0.113.1", result)
+	assert.Equal(t, testIPForwarded, result)
 }
 
 func TestRemoteAddr_XForwardedForMultipleIPs(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-	req.Header.Set("X-Forwarded-For", "203.0.113.1, 198.51.100.1, 192.0.2.1")
+	req.Header.Set(headerXForwarded, testIPForwarded+", 198.51.100.1, 192.0.2.1")
 
 	result := remoteAddr(req)
 
-	assert.Equal(t, "203.0.113.1", result)
+	assert.Equal(t, testIPForwarded, result)
 }
 
 func TestRemoteAddr_XForwardedForNoComma(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-	req.Header.Set("X-Forwarded-For", "203.0.113.1")
+	req.Header.Set(headerXForwarded, testIPForwarded)
 
 	result := remoteAddr(req)
 
-	assert.Equal(t, "203.0.113.1", result)
+	assert.Equal(t, testIPForwarded, result)
 }
 
 func TestRemoteAddr_NoXForwardedFor(t *testing.T) {

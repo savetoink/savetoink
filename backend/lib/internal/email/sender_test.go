@@ -7,6 +7,13 @@ import (
 	"testing"
 )
 
+const (
+	testKindleEmail = "kindle@kindle.com"
+	testEmailBody   = "email body"
+	testSubject     = "Test Subject"
+	testArticleEpub = "Test Article.epub"
+)
+
 func TestBuildSubject(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -99,9 +106,9 @@ func TestValidateRequest(t *testing.T) {
 			name: "valid request",
 			req: &Request{
 				EPUBData:  io.NopCloser(strings.NewReader("test epub data")),
-				DestEmail: "kindle@kindle.com",
-				Body:      "email body",
-				Subject:   "Test Subject",
+				DestEmail: testKindleEmail,
+				Body:      testEmailBody,
+				Subject:   testSubject,
 			},
 			wantErr: false,
 		},
@@ -110,8 +117,8 @@ func TestValidateRequest(t *testing.T) {
 			req: &Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: "",
-				Body:      "email body",
-				Subject:   "Test Subject",
+				Body:      testEmailBody,
+				Subject:   testSubject,
 			},
 			wantErr: true,
 		},
@@ -119,9 +126,9 @@ func TestValidateRequest(t *testing.T) {
 			name: "missing epub data",
 			req: &Request{
 				EPUBData:  nil,
-				DestEmail: "kindle@kindle.com",
-				Body:      "email body",
-				Subject:   "Test Subject",
+				DestEmail: testKindleEmail,
+				Body:      testEmailBody,
+				Subject:   testSubject,
 			},
 			wantErr: true,
 		},
@@ -129,9 +136,9 @@ func TestValidateRequest(t *testing.T) {
 			name: "missing body",
 			req: &Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
-				DestEmail: "kindle@kindle.com",
+				DestEmail: testKindleEmail,
 				Body:      "",
-				Subject:   "Test Subject",
+				Subject:   testSubject,
 			},
 			wantErr: true,
 		},
@@ -139,9 +146,9 @@ func TestValidateRequest(t *testing.T) {
 			name: "empty epub data",
 			req: &Request{
 				EPUBData:  io.NopCloser(strings.NewReader("")),
-				DestEmail: "kindle@kindle.com",
-				Body:      "email body",
-				Subject:   "Test Subject",
+				DestEmail: testKindleEmail,
+				Body:      testEmailBody,
+				Subject:   testSubject,
 			},
 			wantErr: false,
 		},
@@ -167,42 +174,42 @@ func TestSanitizeFilename(t *testing.T) {
 		{
 			name:     "simple title",
 			title:    "Test Article",
-			expected: "Test Article.epub",
+			expected: testArticleEpub,
 		},
 		{
 			name:     "title with colon",
 			title:    "Test: Article",
-			expected: "Test Article.epub",
+			expected: testArticleEpub,
 		},
 		{
 			name:     "title with slash",
 			title:    "Test/Article",
-			expected: "Test Article.epub",
+			expected: testArticleEpub,
 		},
 		{
 			name:     "title with backslash",
 			title:    "Test\\Article",
-			expected: "Test Article.epub",
+			expected: testArticleEpub,
 		},
 		{
 			name:     "title with leading spaces",
 			title:    "   Test Article",
-			expected: "Test Article.epub",
+			expected: testArticleEpub,
 		},
 		{
 			name:     "title with trailing spaces",
 			title:    "Test Article   ",
-			expected: "Test Article.epub",
+			expected: testArticleEpub,
 		},
 		{
 			name:     "title with quotes",
 			title:    "\"Test Article\"",
-			expected: "Test Article.epub",
+			expected: testArticleEpub,
 		},
 		{
 			name:     "title with multiple dots",
 			title:    "Test...Article",
-			expected: "Test Article.epub",
+			expected: testArticleEpub,
 		},
 		{
 			name:     "title with unicode and emoji",

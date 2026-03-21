@@ -12,27 +12,31 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
+const (
+	attrNameAccount = "#account"
+)
+
 func (d *DynamoDB) getProjectionAttributeNames() map[string]string {
 	return map[string]string{
-		"#account": attributeNameAccount,
-		"#a":       "account",
-		"#i":       "id",
-		"#u":       "url",
-		"#c":       "createdAt",
-		"#t":       "title",
-		"#au":      "author",
-		"#sn":      "siteName",
-		"#sd":      "sourceDomain",
-		"#e":       "excerpt",
-		"#iurl":    "imageUrl",
-		"#l":       "language",
-		"#err":     "error",
-		"#wc":      "wordCount",
-		"#rt":      "readingTimeMinutes",
-		"#p":       "publishedAt",
-		"#tg":      "tags",
-		"#f":       attributeNameFavorite,
-		"#ds":      "deliveryStatus",
+		attrNameAccount: attributeNameAccount,
+		"#a":            "account",
+		"#i":            "id",
+		"#u":            "url",
+		"#c":            "createdAt",
+		"#t":            "title",
+		"#au":           "author",
+		"#sn":           "siteName",
+		"#sd":           "sourceDomain",
+		"#e":            "excerpt",
+		"#iurl":         "imageUrl",
+		"#l":            "language",
+		"#err":          "error",
+		"#wc":           "wordCount",
+		"#rt":           "readingTimeMinutes",
+		"#p":            "publishedAt",
+		"#tg":           "tags",
+		"#f":            attributeNameFavorite,
+		"#ds":           "deliveryStatus",
 	}
 }
 
@@ -50,7 +54,7 @@ func (d *DynamoDB) getProjectionExpression() string {
 
 func (d *DynamoDB) totalCountByAccount(ctx context.Context, account string, favoriteFilter *bool) (int, error) {
 	attrNames := map[string]string{
-		"#account": attributeNameAccount,
+		attrNameAccount: attributeNameAccount,
 	}
 	attrValues := map[string]types.AttributeValue{
 		":account": &types.AttributeValueMemberS{Value: account},
@@ -64,7 +68,7 @@ func (d *DynamoDB) totalCountByAccount(ctx context.Context, account string, favo
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 aws.String(d.articleTableName),
 		IndexName:                 aws.String(consts.DynamoDBGSIName),
-		KeyConditionExpression:    aws.String("#account = :account"),
+		KeyConditionExpression:    aws.String(attrNameAccount + " = :account"),
 		ExpressionAttributeNames:  attrNames,
 		ExpressionAttributeValues: attrValues,
 		Select:                    types.SelectCount,
@@ -154,7 +158,7 @@ func (d *DynamoDB) queryArticlesByAccount(
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 aws.String(d.articleTableName),
 		IndexName:                 aws.String(consts.DynamoDBGSIName),
-		KeyConditionExpression:    aws.String("#account = :account"),
+		KeyConditionExpression:    aws.String(attrNameAccount + " = :account"),
 		ProjectionExpression:      aws.String(d.getProjectionExpression()),
 		ExpressionAttributeNames:  attrNames,
 		ExpressionAttributeValues: attrValues,

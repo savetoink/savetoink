@@ -8,6 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testDifferentError = "different error"
+	testSomeOtherError = "some other error"
+	testCustomError    = "custom error"
+	testNilError       = "nil error"
+	wrappedErrorFmt    = "context: %w"
+)
+
 func TestError_Constants(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -42,22 +50,22 @@ func TestIsNotFound(t *testing.T) {
 		},
 		{
 			name:     "wrapped ErrNotFound",
-			err:      fmt.Errorf("context: %w", ErrNotFound),
+			err:      fmt.Errorf(wrappedErrorFmt, ErrNotFound),
 			expected: true,
 		},
 		{
-			name:     "different error",
+			name:     testDifferentError,
 			err:      ErrInvalid,
 			expected: false,
 		},
 		{
-			name:     "nil error",
+			name:     testNilError,
 			err:      nil,
 			expected: false,
 		},
 		{
-			name:     "custom error",
-			err:      errors.New("some other error"),
+			name:     testCustomError,
+			err:      errors.New(testSomeOtherError),
 			expected: false,
 		},
 	}
@@ -83,22 +91,22 @@ func TestIsInvalid(t *testing.T) {
 		},
 		{
 			name:     "wrapped ErrInvalid",
-			err:      fmt.Errorf("context: %w", ErrInvalid),
+			err:      fmt.Errorf(wrappedErrorFmt, ErrInvalid),
 			expected: true,
 		},
 		{
-			name:     "different error",
+			name:     testDifferentError,
 			err:      ErrNotFound,
 			expected: false,
 		},
 		{
-			name:     "nil error",
+			name:     testNilError,
 			err:      nil,
 			expected: false,
 		},
 		{
-			name:     "custom error",
-			err:      errors.New("some other error"),
+			name:     testCustomError,
+			err:      errors.New(testSomeOtherError),
 			expected: false,
 		},
 	}
@@ -124,22 +132,22 @@ func TestIsUnauthorized(t *testing.T) {
 		},
 		{
 			name:     "wrapped ErrUnauthorized",
-			err:      fmt.Errorf("context: %w", ErrUnauthorized),
+			err:      fmt.Errorf(wrappedErrorFmt, ErrUnauthorized),
 			expected: true,
 		},
 		{
-			name:     "different error",
+			name:     testDifferentError,
 			err:      ErrInvalid,
 			expected: false,
 		},
 		{
-			name:     "nil error",
+			name:     testNilError,
 			err:      nil,
 			expected: false,
 		},
 		{
-			name:     "custom error",
-			err:      errors.New("some other error"),
+			name:     testCustomError,
+			err:      errors.New(testSomeOtherError),
 			expected: false,
 		},
 	}
@@ -165,22 +173,22 @@ func TestIsConflict(t *testing.T) {
 		},
 		{
 			name:     "wrapped ErrConflict",
-			err:      fmt.Errorf("context: %w", ErrConflict),
+			err:      fmt.Errorf(wrappedErrorFmt, ErrConflict),
 			expected: true,
 		},
 		{
-			name:     "different error",
+			name:     testDifferentError,
 			err:      ErrUnauthorized,
 			expected: false,
 		},
 		{
-			name:     "nil error",
+			name:     testNilError,
 			err:      nil,
 			expected: false,
 		},
 		{
-			name:     "custom error",
-			err:      errors.New("some other error"),
+			name:     testCustomError,
+			err:      errors.New(testSomeOtherError),
 			expected: false,
 		},
 	}
@@ -206,22 +214,22 @@ func TestIsQuotaExceeded(t *testing.T) {
 		},
 		{
 			name:     "wrapped ErrQuotaExceeded",
-			err:      fmt.Errorf("context: %w", ErrQuotaExceeded),
+			err:      fmt.Errorf(wrappedErrorFmt, ErrQuotaExceeded),
 			expected: true,
 		},
 		{
-			name:     "different error",
+			name:     testDifferentError,
 			err:      ErrInvalid,
 			expected: false,
 		},
 		{
-			name:     "nil error",
+			name:     testNilError,
 			err:      nil,
 			expected: false,
 		},
 		{
-			name:     "custom error",
-			err:      errors.New("some other error"),
+			name:     testCustomError,
+			err:      errors.New(testSomeOtherError),
 			expected: false,
 		},
 	}
@@ -299,8 +307,8 @@ func TestIsFunctions_Table(t *testing.T) {
 			expectQuotaExceed: false,
 		},
 		{
-			name:              "custom error",
-			err:               errors.New("custom error"),
+			name:              testCustomError,
+			err:               errors.New(testCustomError),
 			expectNotFound:    false,
 			expectInvalid:     false,
 			expectUnauth:      false,
