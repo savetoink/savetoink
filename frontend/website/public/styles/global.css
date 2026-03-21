@@ -20,8 +20,16 @@
 	--card-radius: 0.75rem;
 }
 
+[data-theme="dark"] {
+	--ink: #e8e3dc;
+	--paper: #131211;
+	--border: rgba(255, 255, 255, 0.07);
+	--muted: #9ca3af;
+}
+
+/* System preference fallback (when no data-theme attribute set) */
 @media (prefers-color-scheme: dark) {
-	:root {
+	:root:not([data-theme]) {
 		--ink: #e8e3dc;
 		--paper: #131211;
 		--border: rgba(255, 255, 255, 0.07);
