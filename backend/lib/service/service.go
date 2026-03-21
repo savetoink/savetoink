@@ -23,10 +23,10 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
 	repoimplsqlite "github.com/shaftoe/savetoink/backend/lib/internal/repository/sqlite"
-	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/articles"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/profile"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/model"
 	"golang.org/x/net/html"
 )
 

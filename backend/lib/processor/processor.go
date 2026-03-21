@@ -53,6 +53,10 @@ func NewLocalProcessor(svc Service) *LocalProcessor {
 
 // StartProcessing starts article processing in a goroutine.
 func (p *LocalProcessor) StartProcessing(ctx context.Context, event *content.ProcessArticleEvent) {
+	event.InheritedAttrs = append(event.InheritedAttrs,
+		map[string]any{"article_id": event.ArticleID},
+		map[string]any{"url": event.URL},
+	)
 	go ProcessArticle(ctx, p.service, event)
 }
 

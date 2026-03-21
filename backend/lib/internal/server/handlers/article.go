@@ -15,12 +15,12 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
+	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
 	"github.com/shaftoe/savetoink/backend/lib/internal/validation"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
-	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
-	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
 

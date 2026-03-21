@@ -14,9 +14,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
+	"github.com/shaftoe/savetoink/backend/lib/logging"
 )
 
 const (

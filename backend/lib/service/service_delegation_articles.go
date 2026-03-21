@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
 // CreateArticle delegates to ArticleService.

@@ -8,10 +8,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
-	"github.com/shaftoe/savetoink/backend/lib/logging"
-	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/auth"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/handlers"
+	"github.com/shaftoe/savetoink/backend/lib/logging"
+	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
 

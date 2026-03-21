@@ -18,10 +18,10 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
-	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
-	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/shaftoe/savetoink/backend/lib/service"
 	"golang.org/x/net/html"
 )
 
