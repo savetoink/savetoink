@@ -35,6 +35,9 @@ const (
 	// SQLitePathDefault is the default path to the SQLite database file.
 	SQLitePathDefault = "savetoink.db"
 
+	// SQLiteDirPerms is the file permissions for SQLite database directory.
+	SQLiteDirPerms = 0o750
+
 	// BackupPathPrefix is the S3 path prefix for backup files.
 	BackupPathPrefix = "backups/"
 

@@ -593,9 +593,9 @@ func (s *SQLiteRepositoryTestSuite) TestToArticle_InvalidCreatedAt() {
 	)
 	s.NoError(err)
 
-	const selectQuery = `SELECT account, id, url, created_at, title, content, author, site_name, 
-		source_domain, excerpt, image_url, content_type, language, error, 
-		word_count, reading_time_minutes, published_at, favorite 
+	const selectQuery = `SELECT account, id, url, created_at, title, content, author, site_name,
+		source_domain, excerpt, image_url, content_type, language, error,
+		word_count, reading_time_minutes, published_at, favorite
 		FROM articles WHERE account = ? AND id = ?`
 	row := s.repository.db.QueryRowContext(s.ctx, selectQuery, "test-account", "error-article-1")
 
@@ -640,7 +640,7 @@ func (s *SQLiteRepositoryTestSuite) TestToUserProfile_InvalidBouncedEmailsJSON()
 	_, err := s.repository.db.ExecContext(s.ctx, query, "test-account", "invalid-json{")
 	s.NoError(err)
 
-	const selectQuery = `SELECT account, email, device_email, auto_send, bounced_emails 
+	const selectQuery = `SELECT account, email, device_email, auto_send, bounced_emails
 		FROM user_profiles WHERE account = ?`
 	row := s.repository.db.QueryRowContext(s.ctx, selectQuery, "test-account")
 
@@ -676,7 +676,7 @@ func (s *SQLiteRepositoryTestSuite) TestToSend_InvalidSentAt() {
 	)
 	s.NoError(err)
 
-	const selectQuery = `SELECT account, article_id, sent_at, title, dest_email, status, 
+	const selectQuery = `SELECT account, article_id, sent_at, title, dest_email, status,
 		sender_email, message_id, provider, error_response FROM sends WHERE article_id = ?`
 	rows, err := s.repository.db.QueryContext(s.ctx, selectQuery, "error-send-article")
 	s.NoError(err)
@@ -907,7 +907,7 @@ func (s *SQLiteRepositoryTestSuite) TestQueryArticlesByAccount_ScanError() {
 	)
 	s.NoError(err)
 
-	const updateQuery = `UPDATE articles SET created_at = 'invalid-timestamp' 
+	const updateQuery = `UPDATE articles SET created_at = 'invalid-timestamp'
 		WHERE account = ? AND id = ?`
 	_, err = s.repository.db.ExecContext(s.ctx, updateQuery, "test-account", "scan-error-article")
 	s.NoError(err)
@@ -948,7 +948,7 @@ func (s *SQLiteRepositoryTestSuite) TestNewSQLite_PingError() {
 
 	_, err := NewSQLite(ctx, ":memory:")
 	s.Error(err)
-	s.Contains(err.Error(), "failed to ping database")
+	s.Regexp("failed to ping .+ database", err.Error())
 }
 
 func (s *SQLiteRepositoryTestSuite) TestCreateTables_Error() {

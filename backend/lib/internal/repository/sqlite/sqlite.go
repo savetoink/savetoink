@@ -6,7 +6,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	_ "modernc.org/sqlite" //nolint:blankimports // required for SQLite driver
 )
 
@@ -25,16 +28,21 @@ func NewSQLite(ctx context.Context, dbPath string) (*SQLite, error) {
 		return nil, errors.New("database path is required")
 	}
 
+	dir := filepath.Dir(dbPath)
+	if err := os.MkdirAll(dir, consts.SQLiteDirPerms); err != nil {
+		return nil, fmt.Errorf("failed to create database directory: %w", err)
+	}
+
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
+		return nil, fmt.Errorf("failed to open %s database: %w", dbPath, err)
 	}
 
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
 
 	if errPing := db.PingContext(ctx); errPing != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", errPing)
+		return nil, fmt.Errorf("failed to ping %s database: %w", dbPath, errPing)
 	}
 
 	sqlite := &SQLite{db: db}

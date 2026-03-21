@@ -16,4 +16,6 @@ COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /app/bin/savetoink /app/bin/savetoink
 USER nobody
+WORKDIR /app/data
+VOLUME ["/app/data"]
 ENTRYPOINT ["/app/bin/savetoink"]

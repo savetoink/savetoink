@@ -33,11 +33,15 @@ Frontend and API server are also available as a Docker image:
 
 ```bash
 # HTTP server
-docker run --rm --env-file .env -p 8080:8080 ghcr.io/savetoink/savetoink-http:latest
+docker run --rm --env-file .env -p 8080:8080 -v $(pwd)/data:/app/data ghcr.io/savetoink/savetoink-http:latest
 
 # Web frontend
 docker run --rm --env-file .env -p 3000:3000 ghcr.io/savetoink/savetoink-webapp:latest
 ```
+
+**Note**: When using SQLite as storage backend, you must mount a volume at `/app/data` to persist the database between container restarts. The example above mounts a `data` directory from your current working directory.
+
+You can customize the database location using the `SAVETOINK_SQLITE_PATH` environment variable (default: `savetoink.db` in the container's working directory).
 
 ### Installation
 
@@ -45,6 +49,12 @@ You can build and install the CLI tool using Go:
 
 ```bash
 go install github.com/shaftoe/savetoink/cli/savetoink@latest
+```
+
+Or build locally using Just:
+
+```bash
+just build-cli
 ```
 
 ### Usage
