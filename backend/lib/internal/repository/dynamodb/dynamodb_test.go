@@ -126,10 +126,14 @@ func TestNewDynamoDB(t *testing.T) {
 	}
 }
 
+const (
+	dynamoDBTestAccount = "test-account"
+)
+
 func TestUnmarshalItem(t *testing.T) {
 	t.Run("successful unmarshal", func(t *testing.T) {
 		item := map[string]types.AttributeValue{
-			"account": &types.AttributeValueMemberS{Value: "test-account"},
+			"account": &types.AttributeValueMemberS{Value: dynamoDBTestAccount},
 			"id":      &types.AttributeValueMemberS{Value: "test-id"},
 		}
 
@@ -137,13 +141,13 @@ func TestUnmarshalItem(t *testing.T) {
 		err := unmarshalItem(item, &article, "article")
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test-account", article.Account)
+		assert.Equal(t, dynamoDBTestAccount, article.Account)
 		assert.Equal(t, "test-id", article.ID)
 	})
 
 	t.Run("unmarshal error - nil target", func(t *testing.T) {
 		item := map[string]types.AttributeValue{
-			"account": &types.AttributeValueMemberS{Value: "test-account"},
+			"account": &types.AttributeValueMemberS{Value: dynamoDBTestAccount},
 		}
 
 		err := unmarshalItem(item, nil, "article")

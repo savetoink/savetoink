@@ -11,6 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testAccount     = "test-account"
+	testDestEmail   = "dest@example.com"
+	testSenderEmail = "sender@example.com"
+	testMessageID   = "message-id-123"
+)
+
 func (s *DynamoDBRepositoryTestSuite) TestCreateAndGetSendRecord() {
 	ctx := context.Background()
 	t := s.T()
@@ -18,12 +25,12 @@ func (s *DynamoDBRepositoryTestSuite) TestCreateAndGetSendRecord() {
 	now := time.Now()
 
 	send := &model.Send{
-		Account:     "test-account",
+		Account:     testAccount,
 		ArticleID:   "article-1",
 		SentAt:      now,
 		Title:       "Test Article",
-		DestEmail:   "dest@example.com",
-		SenderEmail: "sender@example.com",
+		DestEmail:   testDestEmail,
+		SenderEmail: testSenderEmail,
 		Provider:    "mailjet",
 	}
 
@@ -48,8 +55,8 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecord() {
 	ctx := context.Background()
 	t := s.T()
 
-	s.updateSendRecordAndVerify(ctx, t, "test-account", "article-update", "Test Article Update",
-		"sent", "message-id-123", "")
+	s.updateSendRecordAndVerify(ctx, t, testAccount, "article-update", "Test Article Update",
+		"sent", testMessageID, "")
 }
 
 func (s *DynamoDBRepositoryTestSuite) updateSendRecordAndVerify(
@@ -65,8 +72,8 @@ func (s *DynamoDBRepositoryTestSuite) updateSendRecordAndVerify(
 		ArticleID:   articleID,
 		SentAt:      now,
 		Title:       title,
-		DestEmail:   "dest@example.com",
-		SenderEmail: "sender@example.com",
+		DestEmail:   testDestEmail,
+		SenderEmail: testSenderEmail,
 		Provider:    "mailjet",
 	}
 
@@ -107,10 +114,10 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordNotFound() {
 	t := s.T()
 
 	updateSend := &model.Send{
-		Account:       "test-account",
+		Account:       testAccount,
 		ArticleID:     "nonexistent-article",
 		Status:        "sent",
-		MessageID:     "message-id-123",
+		MessageID:     testMessageID,
 		ErrorResponse: "",
 	}
 
@@ -130,8 +137,8 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordAccountMismatch() {
 		ArticleID:   "article-mismatch",
 		SentAt:      now,
 		Title:       "Test Article",
-		DestEmail:   "dest@example.com",
-		SenderEmail: "sender@example.com",
+		DestEmail:   testDestEmail,
+		SenderEmail: testSenderEmail,
 		Provider:    "mailjet",
 	}
 
@@ -142,7 +149,7 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordAccountMismatch() {
 		Account:   "different-account",
 		ArticleID: "article-mismatch",
 		Status:    "sent",
-		MessageID: "message-id-123",
+		MessageID: testMessageID,
 	}
 
 	err = s.repositories.UpdateSendRecord(ctx, updateSend)
@@ -160,8 +167,8 @@ func (s *DynamoDBRepositoryTestSuite) TestCreateSendRecordWithTimestamp() {
 		ArticleID:   "article-timestamp",
 		SentAt:      now,
 		Title:       "Test Timestamp Article",
-		DestEmail:   "dest@example.com",
-		SenderEmail: "sender@example.com",
+		DestEmail:   testDestEmail,
+		SenderEmail: testSenderEmail,
 		Provider:    "mailjet",
 	}
 
@@ -190,8 +197,8 @@ func (s *DynamoDBRepositoryTestSuite) TestCreateSendRecordTimestampNotZero() {
 		ArticleID:   "article-notzero",
 		SentAt:      now,
 		Title:       "Test Not Zero Article",
-		DestEmail:   "dest@example.com",
-		SenderEmail: "sender@example.com",
+		DestEmail:   testDestEmail,
+		SenderEmail: testSenderEmail,
 		Provider:    "mailjet",
 	}
 
@@ -231,8 +238,8 @@ func (s *DynamoDBRepositoryTestSuite) TestGetSendsByAccountDateRangeRespectsTime
 			ArticleID:   "article-" + item.title,
 			SentAt:      now.Add(-time.Duration(item.daysAgo) * 24 * time.Hour),
 			Title:       item.title,
-			DestEmail:   "dest@example.com",
-			SenderEmail: "sender@example.com",
+			DestEmail:   testDestEmail,
+			SenderEmail: testSenderEmail,
 			Provider:    "mailjet",
 		}
 
@@ -273,7 +280,7 @@ func (s *DynamoDBRepositoryTestSuite) TestCountSendsByAccountDateRangeRespectsTi
 			SentAt:      now.Add(-time.Duration(i) * 24 * time.Hour),
 			Title:       fmt.Sprintf("Count TS Article %d", i),
 			DestEmail:   "countts@example.com",
-			SenderEmail: "sender@example.com",
+			SenderEmail: testSenderEmail,
 			Provider:    "mailjet",
 		}
 

@@ -5,6 +5,13 @@ import (
 	"testing"
 )
 
+const (
+	errCannotBeEmpty          = "cannot be empty"
+	errInvalidEmailFormat     = "invalid email format"
+	errPrivateInternalNetwork = "private/internal network"
+	errValidEmailEndingWith   = "must be a valid email ending with"
+)
+
 func TestValidateURL(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -26,7 +33,7 @@ func TestValidateURL(t *testing.T) {
 			name:    "empty URL",
 			url:     "",
 			wantErr: true,
-			errMsg:  "cannot be empty",
+			errMsg:  errCannotBeEmpty,
 		},
 		{
 			name:    "invalid scheme",
@@ -44,19 +51,19 @@ func TestValidateURL(t *testing.T) {
 			name:    "private IP",
 			url:     "http://192.168.1.1",
 			wantErr: true,
-			errMsg:  "private/internal network",
+			errMsg:  errPrivateInternalNetwork,
 		},
 		{
 			name:    "localhost",
 			url:     "http://localhost",
 			wantErr: true,
-			errMsg:  "private/internal network",
+			errMsg:  errPrivateInternalNetwork,
 		},
 		{
 			name:    "loopback IP",
 			url:     "http://127.0.0.1",
 			wantErr: true,
-			errMsg:  "private/internal network",
+			errMsg:  errPrivateInternalNetwork,
 		},
 		{
 			name:    "URL too long",
@@ -98,13 +105,13 @@ func TestValidateEmail(t *testing.T) {
 			name:    "empty email",
 			email:   "",
 			wantErr: true,
-			errMsg:  "cannot be empty",
+			errMsg:  errCannotBeEmpty,
 		},
 		{
 			name:    "invalid format",
 			email:   "not-an-email",
 			wantErr: true,
-			errMsg:  "invalid email format",
+			errMsg:  errInvalidEmailFormat,
 		},
 		{
 			name:    "email too long",
@@ -151,19 +158,19 @@ func TestValidateDeviceEmail(t *testing.T) {
 			name:    "invalid domain",
 			email:   "user@example.com",
 			wantErr: true,
-			errMsg:  "must be a valid email ending with",
+			errMsg:  errValidEmailEndingWith,
 		},
 		{
 			name:    "empty email",
 			email:   "",
 			wantErr: true,
-			errMsg:  "cannot be empty",
+			errMsg:  errCannotBeEmpty,
 		},
 		{
 			name:    "invalid format",
 			email:   "not-an-email",
 			wantErr: true,
-			errMsg:  "invalid email format",
+			errMsg:  errInvalidEmailFormat,
 		},
 	}
 
@@ -199,7 +206,7 @@ func TestValidateURL_AdditionalCases(t *testing.T) {
 			name:    "URL with IPv6 loopback",
 			url:     "http://[::1]/path",
 			wantErr: true,
-			errMsg:  "private/internal network",
+			errMsg:  errPrivateInternalNetwork,
 		},
 		{
 			name:    "URL with port",
@@ -258,13 +265,13 @@ func TestValidateEmail_AdditionalCases(t *testing.T) {
 			name:    "email with display name",
 			email:   "John Doe <john@example.com>",
 			wantErr: true,
-			errMsg:  "invalid email format",
+			errMsg:  errInvalidEmailFormat,
 		},
 		{
 			name:    "email with angle brackets only",
 			email:   "<user@example.com>",
 			wantErr: true,
-			errMsg:  "invalid email format",
+			errMsg:  errInvalidEmailFormat,
 		},
 		{
 			name:    "email with plus sign",
@@ -290,13 +297,13 @@ func TestValidateEmail_AdditionalCases(t *testing.T) {
 			name:    "email starting with dot",
 			email:   ".user@example.com",
 			wantErr: true,
-			errMsg:  "invalid email format",
+			errMsg:  errInvalidEmailFormat,
 		},
 		{
 			name:    "email ending with dot",
 			email:   "user.@example.com",
 			wantErr: true,
-			errMsg:  "invalid email format",
+			errMsg:  errInvalidEmailFormat,
 		},
 		{
 			name:    "email at minimum length",
@@ -337,13 +344,13 @@ func TestValidateDeviceEmail_AdditionalCases(t *testing.T) {
 			name:    "device email with subdomain",
 			email:   "user@sub.kindle.com",
 			wantErr: true,
-			errMsg:  "must be a valid email ending with",
+			errMsg:  errValidEmailEndingWith,
 		},
 		{
 			name:    "case insensitive domain match",
 			email:   "user@KINDLE.COM",
 			wantErr: true,
-			errMsg:  "must be a valid email ending with",
+			errMsg:  errValidEmailEndingWith,
 		},
 	}
 

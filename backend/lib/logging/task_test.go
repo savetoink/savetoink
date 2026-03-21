@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testRunID = "run-123"
+)
+
 func TestGenerateRunID(t *testing.T) {
 	id1 := GenerateRunID()
 	id2 := GenerateRunID()
@@ -30,7 +34,7 @@ func TestLogTaskExecution_Success(t *testing.T) {
 	ctx := context.Background()
 	start := time.Now()
 
-	LogTaskExecution(ctx, "test_task", "run-123", start, []string{}, []string{"task output completed"}, nil)
+	LogTaskExecution(ctx, "test_task", testRunID, start, []string{}, []string{"task output completed"}, nil)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -50,7 +54,7 @@ func TestLogTaskExecution_Success(t *testing.T) {
 	}
 
 	assert.Equal(t, "test_task", attrMap["task_name"])
-	assert.Equal(t, "run-123", attrMap["run_id"])
+	assert.Equal(t, testRunID, attrMap["run_id"])
 	assert.Contains(t, attrMap, "latency")
 	assert.Equal(t, "task output completed", attrMap["output"])
 	assert.NotContains(t, attrMap, "error")
@@ -68,7 +72,7 @@ func TestLogTaskExecution_WithScheduledNext(t *testing.T) {
 	start := time.Now()
 	nextRun := time.Now().Add(1 * time.Hour)
 
-	LogTaskExecution(ctx, "test_task", "run-123", start, []string{}, []string{"task output completed"}, &nextRun)
+	LogTaskExecution(ctx, "test_task", testRunID, start, []string{}, []string{"task output completed"}, &nextRun)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -85,7 +89,7 @@ func TestLogTaskExecution_WithScheduledNext(t *testing.T) {
 	}
 
 	assert.Equal(t, "test_task", attrMap["task_name"])
-	assert.Equal(t, "run-123", attrMap["run_id"])
+	assert.Equal(t, testRunID, attrMap["run_id"])
 	assert.Equal(t, "task output completed", attrMap["output"])
 	scheduledNext, ok := attrMap["scheduled_next"].(time.Time)
 	require.True(t, ok)
@@ -103,7 +107,7 @@ func TestLogTaskExecution_WithError(t *testing.T) {
 	start := time.Now()
 	testErr := "task failed"
 
-	LogTaskExecution(ctx, "test_task", "run-456", start, []string{testErr}, nil, nil)
+	LogTaskExecution(ctx, "test_task", testRunID, start, []string{testErr}, nil, nil)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -123,7 +127,7 @@ func TestLogTaskExecution_WithError(t *testing.T) {
 	}
 
 	assert.Equal(t, "test_task", attrMap["task_name"])
-	assert.Equal(t, "run-456", attrMap["run_id"])
+	assert.Equal(t, testRunID, attrMap["run_id"])
 	assert.Contains(t, attrMap, "latency")
 	assert.Equal(t, testErr, attrMap["errors"])
 	assert.NotContains(t, attrMap, "output")

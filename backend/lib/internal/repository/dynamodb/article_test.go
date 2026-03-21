@@ -9,6 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	articleTestAccount = "test-account"
+)
+
 func (s *DynamoDBRepositoryTestSuite) TestStoreAndGetArticle() {
 	ctx := context.Background()
 	t := s.T()
@@ -17,7 +21,7 @@ func (s *DynamoDBRepositoryTestSuite) TestStoreAndGetArticle() {
 	publishedAt := now
 
 	article := &model.Article{
-		Account:            "test-account",
+		Account:            articleTestAccount,
 		ID:                 "article-1",
 		URL:                "https://example.com/article",
 		Title:              "Test Article",
@@ -74,7 +78,7 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateFavorite() {
 	now := time.Now()
 
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   articleTestAccount,
 		ID:        "article-2",
 		URL:       "https://example.com/article2",
 		Title:     "Test Article 2",
@@ -100,7 +104,7 @@ func (s *DynamoDBRepositoryTestSuite) TestDeleteArticle() {
 	now := time.Now()
 
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   articleTestAccount,
 		ID:        "article-3",
 		URL:       "https://example.com/article3",
 		Title:     "Test Article 3",

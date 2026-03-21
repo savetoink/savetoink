@@ -9,13 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	profileTestEmail = "test@example.com"
+)
+
 func (s *DynamoDBRepositoryTestSuite) TestPutAndGetUserProfile() {
 	ctx := context.Background()
 	t := s.T()
 
 	profile := &model.UserProfile{
 		Account:     "test-account",
-		Email:       "test@example.com",
+		Email:       profileTestEmail,
 		DeviceEmail: "device@example.com",
 		AutoSend:    true,
 		BouncedEmails: map[string]model.BounceInfo{
@@ -55,7 +59,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetAccountIDByDeviceEmail() {
 
 	profile := &model.UserProfile{
 		Account:     "test-account-device",
-		Email:       "test@example.com",
+		Email:       profileTestEmail,
 		DeviceEmail: "unique-device@example.com",
 		AutoSend:    false,
 	}

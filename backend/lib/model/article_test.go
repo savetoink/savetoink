@@ -10,6 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testArticleURL = "https://example.com/article"
+)
+
 func TestArticle_JSONSerialization(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -21,7 +25,7 @@ func TestArticle_JSONSerialization(t *testing.T) {
 			article: Article{
 				Account:            "test-account",
 				ID:                 "test-id",
-				URL:                "https://example.com/article",
+				URL:                testArticleURL,
 				CreatedAt:          time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 				Title:              "Test Article",
 				Content:            "Test content",
@@ -50,7 +54,7 @@ func TestArticle_JSONSerialization(t *testing.T) {
 			article: Article{
 				Account:   "test-account",
 				ID:        "test-id",
-				URL:       "https://example.com/article",
+				URL:       testArticleURL,
 				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 			},
 			wantJSON: `{"account":"test-account","id":"test-id","url":"https://example.com/article",` +
@@ -61,7 +65,7 @@ func TestArticle_JSONSerialization(t *testing.T) {
 			article: Article{
 				Account:   "test-account",
 				ID:        "test-id",
-				URL:       "https://example.com/article",
+				URL:       testArticleURL,
 				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 				Title:     "Test",
 			},
@@ -97,7 +101,7 @@ func TestArticle_DynamoDBAttributeMapping(t *testing.T) {
 			article: Article{
 				Account:            "test-account",
 				ID:                 "test-id",
-				URL:                "https://example.com/article",
+				URL:                testArticleURL,
 				CreatedAt:          time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 				Title:              "Test Article",
 				Content:            "Test content",
@@ -120,7 +124,7 @@ func TestArticle_DynamoDBAttributeMapping(t *testing.T) {
 			article: Article{
 				Account:   "test-account",
 				ID:        "test-id",
-				URL:       "https://example.com/article",
+				URL:       testArticleURL,
 				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 			},
 		},
@@ -129,7 +133,7 @@ func TestArticle_DynamoDBAttributeMapping(t *testing.T) {
 			article: Article{
 				Account:   "test-account",
 				ID:        "test-id",
-				URL:       "https://example.com/article",
+				URL:       testArticleURL,
 				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 				Error:     "failed to fetch content",
 			},

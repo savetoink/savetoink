@@ -11,10 +11,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
+const (
+	errFailedCreateTable = "failed to create table: %w"
+)
+
 // SetupAllTables creates all required DynamoDB tables for testing.
 func SetupAllTables(ctx context.Context, client *dynamodb.Client) error {
 	if err := createArticleTable(ctx, client); err != nil {
-		return fmt.Errorf("failed to create article table: %w", err)
+		return fmt.Errorf(errFailedCreateTable, err)
 	}
 	if err := createArticleTagsTable(ctx, client); err != nil {
 		return fmt.Errorf("failed to create article tags table: %w", err)
@@ -73,7 +77,7 @@ func createArticleTable(ctx context.Context, client *dynamodb.Client) error {
 		BillingMode: types.BillingModePayPerRequest,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create table: %w", err)
+		return fmt.Errorf(errFailedCreateTable, err)
 	}
 
 	return waitForTableActive(ctx, client, "test-articles")
@@ -93,7 +97,7 @@ func createArticleTagsTable(ctx context.Context, client *dynamodb.Client) error 
 		BillingMode: types.BillingModePayPerRequest,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create table: %w", err)
+		return fmt.Errorf(errFailedCreateTable, err)
 	}
 
 	return waitForTableActive(ctx, client, "test-article-tags")
@@ -123,7 +127,7 @@ func createUserProfileTable(ctx context.Context, client *dynamodb.Client) error 
 		BillingMode: types.BillingModePayPerRequest,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create table: %w", err)
+		return fmt.Errorf(errFailedCreateTable, err)
 	}
 
 	return waitForTableActive(ctx, client, "test-user-profiles")
@@ -168,7 +172,7 @@ func createSendsTable(ctx context.Context, client *dynamodb.Client) error {
 		BillingMode: types.BillingModePayPerRequest,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create table: %w", err)
+		return fmt.Errorf(errFailedCreateTable, err)
 	}
 
 	return waitForTableActive(ctx, client, "test-sends")
