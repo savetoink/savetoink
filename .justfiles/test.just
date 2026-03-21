@@ -31,7 +31,6 @@ test-webapp:
     bun run format > /dev/null
     bun run lint
     bun run check
-
     bun run test
 
 [working-directory('frontend/extension')]
@@ -43,3 +42,9 @@ test-extension:
 test-website:
     bun run check
     bun run lint
+
+[working-directory('frontend/webapp')]
+test-webapp-e2e:
+    bun playwright install
+    bun run test:e2e
+    bun playwright show-report
