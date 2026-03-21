@@ -10,14 +10,22 @@ import TerminalDemo from "./TerminalDemo.astro";
       Self-hostable · Open source · ELv2
     </p>
 
-    <h1>Your articles.<br /><em>Your server.</em><br />Your e-reader.</h1>
+    <h1>Your <em>articles</em><br />to your <em>e-reader</em></h1>
 
     <p class="hero-sub">
-      Save To Ink converts any URL into a clean EPUB and sends it straight to your Kindle or Kobo.
-      Use the CLI for simple run offs, run the full application with Docker or on AWS, or create a free account on the cloud — your call.
+        <em>Save To Ink</em> converts any web link into an ads-free document and sends it straight to your Kindle or Kobo and to your web app.
     </p>
 
-    <TerminalDemo />
+    <picture>
+        <source srcset="/screenshot.png" type="image/png">
+        <img src="/screenshot.png" alt="">
+    </picture>
+
+    <p class="hero-sub">
+        It also comes as a standalone CLI command:
+        <TerminalDemo />
+    </p>
+
 
     <div class="hero-actions">
       <a href="https://github.com/savetoink/savetoink" target="_blank" rel="noopener" class="btn-primary">
@@ -86,6 +94,11 @@ import TerminalDemo from "./TerminalDemo.astro";
     max-width: 52ch;
     margin: 0 auto 2.5rem;
     line-height: 1.65;
+
+  }
+
+  .hero-sub:not(:first-child) {
+    padding-top: 2rem;
   }
 
   .hero-actions {

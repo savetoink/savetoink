@@ -32,35 +32,6 @@ const { title = "terminal" } = Astro.props;
   </div>
 </div>
 
-<p>or install the Go binary:</p>
-
-<div class="terminal-demo">
-  <div class="cli-bar">
-    <span class="cli-dot red"></span>
-    <span class="cli-dot yellow"></span>
-    <span class="cli-dot green"></span>
-    <span class="cli-label">{title}</span>
-  </div>
-  <div class="cli-body">
-    <div class="cli-line">
-      <span class="cli-prompt">$</span>
-      <span class="cli-cmd">go install \</span>
-    </div>
-    <div class="cli-line cli-continuation">
-      <span class="cli-cmd">github.com/shaftoe/savetoink/cli/savetoink@latest</span>
-    </div>
-    <div class="cli-line">
-      <span class="cli-prompt">$</span>
-      <span class="cli-cmd">savetoink send https://example.com/long-read</span>
-    </div>
-    <div class="cli-line cli-output">
-      <span class="cli-check">✓</span>&nbsp;Fetched &nbsp;
-      <span class="cli-check">✓</span>&nbsp;Converted &nbsp;
-      <span class="cli-check">✓</span>&nbsp;Sent to Kindle
-    </div>
-  </div>
-</div>
-
 <style>
   .terminal-demo {
     max-width: 42rem;

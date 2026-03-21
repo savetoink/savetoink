@@ -14,6 +14,7 @@
     "./lib/build-config": "./src/lib/build-config.js",
     "./lib/time-utils": "./src/lib/time-utils.ts",
     "./components": "./src/components/index.ts",
-    "./css": "./src/css.ts"
+    "./css": "./src/css.ts",
+    "./css-dev": "./src/css-dev.ts"
   }
 }

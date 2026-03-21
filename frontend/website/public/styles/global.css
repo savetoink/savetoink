@@ -10,8 +10,8 @@
 	/* Brand colours — ink on paper */
 	--ink: #1a1a1a;
 	--paper: #f5f0eb;
-	--accent: #2563eb; /* blue — Kindle-ish */
-	--accent-hover: #1d4ed8;
+	--accent: var(--pico-primary);
+	--accent-hover: var(--pico-primary-hover);
 	--muted: #6b7280;
 	--border: rgba(0, 0, 0, 0.08);
 
@@ -20,7 +20,7 @@
 	--card-radius: 0.75rem;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
 	--ink: #e8e3dc;
 	--paper: #131211;
 	--border: rgba(255, 255, 255, 0.07);
