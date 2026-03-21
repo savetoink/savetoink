@@ -6,6 +6,8 @@ import type {
   AuthTokenExchangeRequest,
   ArticleRequest,
   DeviceRequest,
+  SendsResponse,
+  SendsResponseNoLimits,
 } from "../types";
 
 export class ApiError extends Error {
@@ -53,6 +55,7 @@ export interface ApiClient {
     code: string,
     redirectUri: string,
   ): Promise<AuthTokenExchangeResponse>;
+  getSends(token: string): Promise<SendsResponse | SendsResponseNoLimits>;
 }
 
 export interface ApiClientOptions {
@@ -188,5 +191,8 @@ export function createApiClient({
         code,
         redirect_uri: redirectUri,
       } as AuthTokenExchangeRequest),
+
+    getSends: (token: string) =>
+      request<SendsResponse | SendsResponseNoLimits>("GET", "/v1/sends", token),
   };
 }

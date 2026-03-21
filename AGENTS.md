@@ -26,6 +26,10 @@ This repository contains the code for the savetoink application, composed of:
 - HTTP handlers should use, when available, utils helpers to return errors and such
 - **Use the service layer as the single entry point**: All external consumers (CLI, HTTP server, Lambda) should interact with backend functionality through the `service` package
 
+### Frontend
+
+- **NEVER use `new Date()` or the native JavaScript Date API**: Always use `Temporal` for all datetime management in the frontend. `Temporal` is exported from `@savetoink/shared` and should be imported as `import { Temporal } from '@savetoink/shared'`.
+
 ### Package Organization
 
 **Public API** (can be imported from anywhere):

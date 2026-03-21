@@ -119,4 +119,86 @@ describe('apiClient', () => {
 			})
 		);
 	});
+
+	it('should return SendsResponse with quota information for Auth0 users', async () => {
+		const { createApiClient } = await import('./apiClient.js');
+
+		mockFetch.mockResolvedValue({
+			ok: true,
+			text: async () =>
+				JSON.stringify({
+					total_sends: 100,
+					current_sends: 15,
+					max_sends_per_period: 50,
+					period_days: 30,
+					remaining_sends: 35,
+					period_reset_date: '2024-04-01T00:00:00Z'
+				})
+		});
+
+		const client = createApiClient({
+			baseUrl: 'https://api.example.com',
+			fetch: mockFetch
+		});
+
+		const result = await client.getSends('test-token');
+
+		expect(result).toEqual({
+			total_sends: 100,
+			current_sends: 15,
+			max_sends_per_period: 50,
+			period_days: 30,
+			remaining_sends: 35,
+			period_reset_date: '2024-04-01T00:00:00Z'
+		});
+		expect(mockFetch).toHaveBeenCalledWith(
+			'https://api.example.com/v1/sends',
+			expect.objectContaining({
+				method: 'GET',
+				headers: expect.objectContaining({
+					'Authorization': 'Bearer test-token'
+				})
+			})
+		);
+	});
+
+	it('should return SendsResponseNoLimits for shared API key users', async () => {
+		const { createApiClient } = await import('./apiClient.js');
+
+		mockFetch.mockResolvedValue({
+			ok: true,
+			text: async () => JSON.stringify({ total_sends: 42 })
+		});
+
+		const client = createApiClient({
+			baseUrl: 'https://api.example.com',
+			fetch: mockFetch
+		});
+
+		const result = await client.getSends('test-token');
+
+		expect(result).toEqual({ total_sends: 42 });
+	});
+
+	it('should throw ApiError when getSends fails with 401', async () => {
+		const { createApiClient, ApiError } = await import('./apiClient.js');
+
+		mockFetch.mockResolvedValue({
+			ok: false,
+			status: 401,
+			statusText: 'Unauthorized',
+			json: async () => ({ error: 'Invalid token' })
+		});
+
+		const client = createApiClient({
+			baseUrl: 'https://api.example.com',
+			fetch: mockFetch
+		});
+
+		await expect(client.getSends('test-token')).rejects.toThrow(ApiError);
+		await expect(client.getSends('test-token')).rejects.toMatchObject({
+			status: 401,
+			message: 'Invalid token'
+		});
+	});
 });

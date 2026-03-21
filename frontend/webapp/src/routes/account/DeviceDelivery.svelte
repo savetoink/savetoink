@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { DeviceDomains } from '@savetoink/shared';
-	import type { PageData } from './$types';
+	import type { UserProfile } from '@savetoink/shared';
 
-	let { data }: { data: PageData } = $props();
+	let { user }: { user: UserProfile | undefined } = $props();
 
-	const deviceEmail = $derived(data?.user?.device_email);
-	let autoSend = $derived(data?.user?.auto_send || false);
+	const deviceEmail = $derived(user?.device_email);
+	let autoSend = $derived(user?.auto_send || false);
 	let profileForm = $state<HTMLFormElement | undefined>();
 	let isSaving = $state(false);
 	let error = $state<string | null>(null);

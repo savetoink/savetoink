@@ -8,13 +8,21 @@ import {
 	setUserCookie,
 	deleteUserCookie
 } from '$lib/server/cookies';
-import { getProfile, updateDevice, deleteDevice } from '$lib/server/apiClient';
+import { getProfile, updateDevice, deleteDevice, getSends } from '$lib/server/apiClient';
 import { ApiError, DeviceDomains, Auth0 } from '@savetoink/shared';
 import type { UserProfile } from '@savetoink/shared';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	return { user: locals.user, publicAppUrl: publicEnv.PUBLIC_APP_URL };
+export const load: PageServerLoad = async ({ locals, fetch, request, getClientAddress }) => {
+	let sends = undefined;
+	if (locals.isLoggedIn) {
+		try {
+			sends = await getSends({ locals, fetch, request, getClientAddress } as RequestEvent);
+		} catch {
+			sends = undefined;
+		}
+	}
+	return { user: locals.user, publicAppUrl: publicEnv.PUBLIC_APP_URL, sends };
 };
 
 export const actions: Actions = {

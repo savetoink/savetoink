@@ -4,6 +4,7 @@
 	import Auth0Login from './Auth0Login.svelte';
 	import SharedKeyLogin from './SharedKeyLogin.svelte';
 	import DeviceDelivery from './DeviceDelivery.svelte';
+	import SendsInfo from './SendsInfo.svelte';
 
 	import type { PageProps } from './$types';
 
@@ -21,5 +22,6 @@
 </section>
 
 {#if data?.isLoggedIn}
-	<DeviceDelivery {data} />
+	<DeviceDelivery user={data.user} />
+	<SendsInfo sends={data.sends} />
 {/if}
