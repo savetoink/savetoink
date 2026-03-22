@@ -566,10 +566,9 @@ func TestSendsResponse_JSONSerialization(t *testing.T) {
 				MaxSendsPerPeriod: 10,
 				PeriodDays:        30,
 				RemainingSends:    7,
-				PeriodResetDate:   time.Date(2024, 4, 15, 0, 0, 0, 0, time.UTC),
 			},
 			wantJSON: `{"total_sends":5,"current_sends":3,"max_sends_per_period":10,` +
-				`"period_days":30,"remaining_sends":7,"period_reset_date":"2024-04-15T00:00:00Z"}`,
+				`"period_days":30,"remaining_sends":7}`,
 		},
 		{
 			name: "no sends",
@@ -579,10 +578,9 @@ func TestSendsResponse_JSONSerialization(t *testing.T) {
 				MaxSendsPerPeriod: 10,
 				PeriodDays:        30,
 				RemainingSends:    10,
-				PeriodResetDate:   time.Date(2024, 4, 15, 0, 0, 0, 0, time.UTC),
 			},
 			wantJSON: `{"total_sends":0,"current_sends":0,"max_sends_per_period":10,` +
-				`"period_days":30,"remaining_sends":10,"period_reset_date":"2024-04-15T00:00:00Z"}`,
+				`"period_days":30,"remaining_sends":10}`,
 		},
 	}
 
@@ -600,7 +598,6 @@ func TestSendsResponse_JSONSerialization(t *testing.T) {
 			assert.Equal(t, tt.resp.MaxSendsPerPeriod, unmarshaled.MaxSendsPerPeriod)
 			assert.Equal(t, tt.resp.PeriodDays, unmarshaled.PeriodDays)
 			assert.Equal(t, tt.resp.RemainingSends, unmarshaled.RemainingSends)
-			assert.True(t, tt.resp.PeriodResetDate.Equal(unmarshaled.PeriodResetDate))
 		})
 	}
 }

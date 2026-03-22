@@ -40,7 +40,6 @@ func (h *Handlers) HandleGetSends(w http.ResponseWriter, r *http.Request) {
 	remainingSends := max(0, consts.MaxFreeTierSendsPerPeriod-sendsCount)
 	maxSends := consts.MaxFreeTierSendsPerPeriod
 	periodDays := consts.FreeTierSendPeriodDays
-	periodResetDate := startDate.AddDate(0, 0, consts.FreeTierSendPeriodDays)
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(types.SendsResponse{
@@ -49,6 +48,5 @@ func (h *Handlers) HandleGetSends(w http.ResponseWriter, r *http.Request) {
 		MaxSendsPerPeriod: maxSends,
 		PeriodDays:        periodDays,
 		RemainingSends:    remainingSends,
-		PeriodResetDate:   periodResetDate,
 	})
 }
