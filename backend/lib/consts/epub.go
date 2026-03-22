@@ -31,4 +31,7 @@ const (
 
 	// MinTitleParts is the minimum number of parts needed for title parsing.
 	MinTitleParts = 2
+
+	// EPUBExtension is the file extension for EPUB files.
+	EPUBExtension = ".epub"
 )

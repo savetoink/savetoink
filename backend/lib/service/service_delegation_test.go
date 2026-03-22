@@ -1944,3 +1944,83 @@ type errorCleanerMock struct{}
 func (m *errorCleanerMock) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
 	return nil, errors.New("clean error")
 }
+
+func TestReadEPUB(t *testing.T) {
+	// Create a temporary test EPUB file
+	testDataPath := filepath.Join("..", "..", "..", "cli", "savetoink", "e2e", "testdata", "article.orig.epub")
+
+	// Check if the test file exists
+	if _, err := os.Stat(testDataPath); os.IsNotExist(err) {
+		t.Skip("test EPUB file not found")
+	}
+
+	cfg := &config.Config{
+		Mode: consts.ModeCLI,
+	}
+	svc := New(&Dependencies{
+		Fetcher:   content.NewFetcher(""),
+		Extractor: content.NewDOMExtractor(),
+		Cleaner:   content.NewTrafilaturaCleaner(),
+		Publisher: epub.NewPublisher(epub.WithMemoryStorage()),
+		Reader:    epub.NewReader(),
+		Config:    cfg,
+	})
+
+	ctx := context.Background()
+
+	t.Run("successfully reads EPUB from file:// URL", func(t *testing.T) {
+		absPath, err := filepath.Abs(testDataPath)
+		require.NoError(t, err)
+		u, err := url.Parse("file://" + absPath)
+		require.NoError(t, err)
+
+		epubReader, title, err := svc.ReadEPUB(ctx, u)
+		require.NoError(t, err)
+		require.NotEmpty(t, title, "title should not be empty")
+		require.NotNil(t, epubReader, "reader should not be nil")
+
+		// Verify that we can read from the reader
+		data, err := io.ReadAll(epubReader)
+		require.NoError(t, err)
+		require.Greater(t, len(data), 0, "EPUB data should not be empty")
+
+		err = epubReader.Close()
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error for non-existent file", func(t *testing.T) {
+		u, err := url.Parse("file:///nonexistent/file.epub")
+		require.NoError(t, err)
+
+		_, _, err = svc.ReadEPUB(ctx, u)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to stat file")
+	})
+
+	t.Run("returns error for non-EPUB file", func(t *testing.T) {
+		// Create a temporary non-EPUB file
+		tmpFile, err := os.CreateTemp("", "test-*.txt")
+		require.NoError(t, err)
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
+
+		_, err = tmpFile.WriteString("This is not an EPUB file")
+		require.NoError(t, err)
+		_ = tmpFile.Close()
+
+		u, err := url.Parse("file://" + tmpFile.Name())
+		require.NoError(t, err)
+
+		_, _, err = svc.ReadEPUB(ctx, u)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to open epub as zip")
+	})
+
+	t.Run("returns error for unsupported scheme", func(t *testing.T) {
+		u, err := url.Parse("ftp://example.com/file.epub")
+		require.NoError(t, err)
+
+		_, _, err = svc.ReadEPUB(ctx, u)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unsupported url scheme")
+	})
+}
