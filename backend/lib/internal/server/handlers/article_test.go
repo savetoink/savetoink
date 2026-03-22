@@ -121,6 +121,10 @@ func (m *articleMockService) GenerateEPUB(article *model.Article) (io.ReadCloser
 	return io.NopCloser(bytes.NewReader([]byte("epub content"))), nil
 }
 
+func (m *articleMockService) ReadEPUB(_ context.Context, _ string) (io.ReadCloser, string, error) {
+	return io.NopCloser(bytes.NewReader([]byte("epub content"))), "Test EPUB", nil
+}
+
 func (m *articleMockService) SendArticle(
 	ctx context.Context, destEmail string, epubData io.ReadCloser, title string) (*email.SendEmailResponse, error) {
 	if m.sendArticleFunc != nil {

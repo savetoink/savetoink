@@ -44,6 +44,9 @@ type Interface interface {
 	// GenerateEPUB generates an EPUB document from an article.
 	GenerateEPUB(article *model.Article) (io.ReadCloser, error)
 
+	// ReadEPUB reads an EPUB file from the given path and returns the file reader and title.
+	ReadEPUB(ctx context.Context, path string) (io.ReadCloser, string, error)
+
 	///////////
 	// Articles
 	///////////

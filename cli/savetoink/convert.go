@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/spf13/cobra"
 )
@@ -29,6 +30,23 @@ func processArticle(ctx context.Context, input string, svc *service.Service) (io
 
 	start := time.Now()
 
+	// Check if input is a local EPUB file
+	if !isWebURL(input) {
+		absPath, absErr := filepath.Abs(input)
+		if absErr == nil {
+			if strings.HasSuffix(strings.ToLower(absPath), consts.EPUBExtension) {
+				slog.Debug("detected epub file", slog.String("path", absPath))
+				epubReader, title, err := svc.ReadEPUB(ctx, absPath)
+				if err != nil {
+					return nil, nil, fmt.Errorf("failed to read epub file: %w", err)
+				}
+				slog.Debug("epub processed", slog.Any("duration", time.Since(start)))
+				return epubReader, &title, nil
+			}
+		}
+	}
+
+	// Process HTML content from URL or file
 	var u *netURL.URL
 	var err error
 

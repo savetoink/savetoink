@@ -1,6 +1,8 @@
 package service
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -1944,3 +1946,83 @@ type errorCleanerMock struct{}
 func (m *errorCleanerMock) Clean(_ context.Context, _ *html.Node, _ *url.URL) (*model.Article, error) {
 	return nil, errors.New("clean error")
 }
+
+func TestReadEPUB(t *testing.T) {
+	// Create a temporary test EPUB file
+	testDataPath := filepath.Join("..", "..", "..", "cli", "savetoink", "e2e", "testdata", "article.orig.epub")
+
+	// Check if the test file exists
+	if _, err := os.Stat(testDataPath); os.IsNotExist(err) {
+		t.Skip("test EPUB file not found")
+	}
+
+	cfg := &config.Config{
+		Mode: consts.ModeCLI,
+	}
+	svc := New(&Dependencies{
+		Fetcher:   content.NewFetcher(""),
+		Extractor: content.NewDOMExtractor(),
+		Cleaner:   content.NewTrafilaturaCleaner(),
+		Publisher: epub.NewPublisher(epub.WithMemoryStorage()),
+		Config:    cfg,
+	})
+
+	ctx := context.Background()
+
+	t.Run("successfully reads EPUB file", func(t *testing.T) {
+		epubReader, title, err := svc.ReadEPUB(ctx, testDataPath)
+		require.NoError(t, err)
+		require.NotEmpty(t, title, "title should not be empty")
+		require.NotNil(t, epubReader, "reader should not be nil")
+
+		// Verify that we can read from the reader
+		data, err := io.ReadAll(epubReader)
+		require.NoError(t, err)
+		require.Greater(t, len(data), 0, "EPUB data should not be empty")
+
+		err = epubReader.Close()
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error for non-existent file", func(t *testing.T) {
+		_, _, err := svc.ReadEPUB(ctx, "/nonexistent/file.epub")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to open epub file")
+	})
+
+	t.Run("returns error for non-EPUB file", func(t *testing.T) {
+		// Create a temporary non-EPUB file
+		tmpFile, err := os.CreateTemp("", "test-*.txt")
+		require.NoError(t, err)
+		defer os.Remove(tmpFile.Name())
+
+		_, err = tmpFile.WriteString("This is not an EPUB file")
+		require.NoError(t, err)
+		tmpFile.Close()
+
+		_, _, err = svc.ReadEPUB(ctx, tmpFile.Name())
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to open epub as zip")
+	})
+}
+
+func TestExtractEPUBTitle(t *testing.T) {
+	t.Run("extracts title from EPUB with container", func(t *testing.T) {
+		// This test uses the actual EPUB file structure
+		testDataPath := filepath.Join("..", "..", "..", "cli", "savetoink", "e2e", "testdata", "article.orig.epub")
+		if _, err := os.Stat(testDataPath); os.IsNotExist(err) {
+			t.Skip("test EPUB file not found")
+		}
+
+		data, err := os.ReadFile(testDataPath)
+		require.NoError(t, err)
+
+		// Open as ZIP
+		zipReader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+		require.NoError(t, err)
+
+		title := extractEPUBTitle(zipReader)
+		require.NotEmpty(t, title, "title should be extracted from EPUB")
+	})
+}
+

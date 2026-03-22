@@ -45,6 +45,10 @@ func (m *quotaCheckMockService) GenerateEPUB(_ *model.Article) (io.ReadCloser, e
 	panic("not implemented")
 }
 
+func (m *quotaCheckMockService) ReadEPUB(_ context.Context, _ string) (io.ReadCloser, string, error) {
+	panic("not implemented")
+}
+
 func (m *quotaCheckMockService) SendArticle(
 	_ context.Context,
 	_ string,
