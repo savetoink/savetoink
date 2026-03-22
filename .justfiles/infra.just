@@ -34,6 +34,7 @@ deploy-api: lint-cfn
             CORSAllowOrigin="${SAVETOINK_CORS_ALLOW_ORIGIN}" \
             Debug="${SAVETOINK_DEBUG}" \
             DestEmail="$SAVETOINK_DEST_EMAIL" \
+            DisableQuotaCheck="${SAVETOINK_DISABLE_QUOTA_CHECK}" \
             DomainName="$SAVETOINK_DOMAIN" \
             GitHubEnvironmentName="${SAVETOINK_GITHUB_ENVIRONMENT_NAME}" \
             LoggingProvider=${SAVETOINK_LOGGING_PROVIDER} \
