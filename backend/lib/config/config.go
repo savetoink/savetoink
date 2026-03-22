@@ -59,6 +59,9 @@ type Config struct {
 
 	// Tasks
 	Tasks []consts.TaskConfig
+
+	// Quota
+	DisableQuotaCheck bool
 }
 
 // AWSConfigLoader is a function type for loading AWS configuration.
@@ -117,6 +120,7 @@ func bindEnvVars() error {
 		{"browserless-key", "SAVETOINK_BROWSERLESS_KEY"},
 		{"cors-allow-origin", "SAVETOINK_CORS_ALLOW_ORIGIN"},
 		{"debug", "SAVETOINK_DEBUG"},
+		{"disable-quota-check", "SAVETOINK_DISABLE_QUOTA_CHECK"},
 		{"email-backend", "SAVETOINK_EMAIL_BACKEND"},
 		{"http-port", "SAVETOINK_HTTP_PORT"},
 		{"logging-provider", "SAVETOINK_LOGGING_PROVIDER"},
@@ -154,6 +158,7 @@ func loadConfig(mode consts.RunMode) *Config {
 		BrowserlessKey:       viper.GetString("browserless-key"),
 		CorsAllowOrigin:      viper.GetString("cors-allow-origin"),
 		Debug:                viper.GetBool("debug"),
+		DisableQuotaCheck:    viper.GetBool("disable-quota-check"),
 		EmailProvider:        consts.EmailProvider(viper.GetString("email-backend")),
 		LoggingProvider:      consts.LoggingProvider(viper.GetString("logging-provider")),
 		MailjetAPIKey:        viper.GetString("api-key"),

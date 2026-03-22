@@ -325,6 +325,56 @@ func TestHandleCreateArticle_Success(t *testing.T) {
 	assert.Equal(t, "account-123", mockProc.startProcessingEvent.AccountID)
 }
 
+func TestHandleCreateArticle_SendOnComplete(t *testing.T) {
+	mockSvc := &articleMockService{
+		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
+			return &model.Article{
+				ID:    "article-123",
+				URL:   "https://example.com/article",
+				Title: "Test Article",
+			}, nil
+		},
+		getUserDeviceEmailFunc: func(_ context.Context, _ string) (string, bool, error) {
+			return testArticleDeviceEmail, false, nil
+		},
+		countSendsFunc: func(_ context.Context, _ string, _, _ time.Time) (int, error) {
+			return 3, nil
+		},
+	}
+	mockProc := &mockProcessor{}
+
+	cfg := &config.Config{
+		EmailProvider: consts.EmailBackendMailjet,
+		AuthBackend:   consts.AuthBackendAuth0,
+	}
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+
+	body := types.ArticleRequest{URL: "https://example.com/article", SendOnComplete: true}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	h.HandleCreateArticle(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var resp types.ArticleResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Equal(t, "article-123", resp.ID)
+	assert.Equal(t, "Test Article", resp.Title)
+	assert.Equal(t, "https://example.com/article", resp.URL)
+
+	assert.True(t, mockProc.startProcessingCalled)
+	assert.NotNil(t, mockProc.startProcessingEvent)
+	assert.Equal(t, "https://example.com/article", mockProc.startProcessingEvent.URL)
+	assert.Equal(t, "article-123", mockProc.startProcessingEvent.ArticleID)
+	assert.Equal(t, "account-123", mockProc.startProcessingEvent.AccountID)
+	assert.True(t, mockProc.startProcessingEvent.SendOnComplete)
+}
+
 func TestHandleCreateArticle_MissingURL(t *testing.T) {
 	mockSvc := &articleMockService{}
 	mockProc := &mockProcessor{}
