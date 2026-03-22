@@ -1,0 +1,45 @@
+name: Pi AI Agent
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  pi-agent:
+    if: |
+      (github.actor == 'shaftoe') &&
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/pi'))
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: latest
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Pi Coding Agent
+        run: bun install --global @mariozechner/pi-coding-agent
+
+      - name: Run pi agent
+        uses: shaftoe/pi-coding-agent-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          provider: zai
+          model: glm-4.7
+          env_vars: |
+            ZAI_API_KEY=${{ secrets.ZAI_API_KEY }}
