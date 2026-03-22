@@ -208,7 +208,6 @@ components:
         - max_sends_per_period
         - period_days
         - remaining_sends
-        - period_reset_date
         - total_sends
       properties:
         total_sends:
@@ -226,10 +225,6 @@ components:
         remaining_sends:
           type: integer
           description: Number of sends remaining in the current period
-        period_reset_date:
-          type: string
-          format: date-time
-          description: When the current period resets
 
     SendsResponseNoLimits:
       type: object

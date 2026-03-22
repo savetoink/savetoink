@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Temporal } from '@savetoink/shared';
 	import type { SendsResponse, SendsResponseNoLimits } from '@savetoink/shared';
 
 	let { sends }: { sends: SendsResponse | SendsResponseNoLimits | undefined } = $props();
@@ -8,16 +7,6 @@
 		sends && 'current_sends' in sends && 'max_sends_per_period' in sends
 	);
 	const totalSends = $derived(sends?.total_sends ?? 0);
-
-	function formatDate(dateStr: string): string {
-		const instant = Temporal.Instant.from(dateStr);
-		const zonedDateTime = instant.toZonedDateTimeISO(Temporal.Now.timeZoneId());
-		return zonedDateTime.toLocaleString(undefined, {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric'
-		});
-	}
 </script>
 
 <section>
@@ -41,9 +30,6 @@
 
 					<dt>Period length</dt>
 					<dd>{quota.period_days} days</dd>
-
-					<dt>Period resets</dt>
-					<dd>{formatDate(quota.period_reset_date)}</dd>
 				</dl>
 			</article>
 		{/if}

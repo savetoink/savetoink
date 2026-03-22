@@ -355,11 +355,6 @@ export interface components {
             period_days: number;
             /** @description Number of sends remaining in the current period */
             remaining_sends: number;
-            /**
-             * Format: date-time
-             * @description When the current period resets
-             */
-            period_reset_date: string;
         };
         SendsResponseNoLimits: {
             /** @description Total number of sends (no quota limits) */
