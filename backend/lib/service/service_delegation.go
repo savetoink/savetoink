@@ -100,3 +100,12 @@ func (s *Service) GenerateEPUB(article *model.Article) (io.ReadCloser, error) {
 	}
 	return epubReader, nil
 }
+
+// ReadEPUB reads an EPUB file from a URL and returns the file reader and title.
+func (s *Service) ReadEPUB(ctx context.Context, u *url.URL) (io.ReadCloser, string, error) {
+	epubReader, title, err := s.reader.ReadFromURL(ctx, u)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read epub: %w", err)
+	}
+	return epubReader, title, nil
+}

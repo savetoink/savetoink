@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 	"github.com/spf13/cobra"
 )
@@ -29,6 +30,7 @@ func processArticle(ctx context.Context, input string, svc *service.Service) (io
 
 	start := time.Now()
 
+	// Check if input is a local EPUB file or web EPUB URL
 	var u *netURL.URL
 	var err error
 
@@ -39,15 +41,31 @@ func processArticle(ctx context.Context, input string, svc *service.Service) (io
 		if absErr != nil {
 			return nil, nil, fmt.Errorf("failed to get absolute path: %w", absErr)
 		}
+
 		u = &netURL.URL{
 			Scheme: "file",
 			Path:   absPath,
 		}
 	}
+
 	if err != nil {
 		return nil, nil, fmt.Errorf("invalid input: %w", err)
 	}
 
+	// If it's an EPUB file (detected by extension), read it directly
+	isEPUB := strings.HasSuffix(strings.ToLower(u.Path), consts.EPUBExtension)
+
+	if isEPUB {
+		slog.Debug("detected epub source", slog.String("source", u.String()))
+		epubReader, title, epubErr := svc.ReadEPUB(ctx, u)
+		if epubErr != nil {
+			return nil, nil, fmt.Errorf("failed to read epub: %w", epubErr)
+		}
+		slog.Debug("epub processed", slog.Any("duration", time.Since(start)))
+		return epubReader, &title, nil
+	}
+
+	// Process HTML content from URL or file
 	doc, err := svc.ParseHTMLFromSource(ctx, u)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse html: %w", err)

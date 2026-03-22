@@ -75,7 +75,9 @@ func fixtureServer(t *testing.T) *httptest.Server {
 
 // runCLI invokes the compiled binary with the given args and returns stdout,
 // stderr, and the exit error (nil on success).
-func runCLI(t *testing.T, args ...string) (stdout, stderr string, err error) {
+//
+//nolint:unparam // stdout is intentionally unused in callers
+func runCLI(t *testing.T, args ...string) (_, stderr string, err error) {
 	t.Helper()
 	//nolint:gosec // G204: binaryPath is a controlled test binary
 	cmd := exec.CommandContext(context.Background(), binaryPath, args...)
@@ -179,6 +181,32 @@ func compareEpubs(t *testing.T, path1, path2 string) bool {
 		}
 	}
 	return true
+}
+
+// TestEPUBFileConversion verifies that an EPUB file can be passed through
+// the convert command and output unchanged.
+func TestEPUBFileConversion(t *testing.T) {
+	outDir := t.TempDir()
+	outFile := filepath.Join(outDir, "output.epub")
+	testFile := filepath.Join("testdata", "article.orig.epub")
+
+	_, stderr, err := runCLI(t,
+		"convert", testFile,
+		"--output", outFile,
+	)
+	if err != nil {
+		t.Fatalf("CLI exited with error: %v\nstderr: %s", err, stderr)
+	}
+
+	_, err = os.Stat(outFile)
+	if os.IsNotExist(err) {
+		t.Fatalf("expected output file %s was not created", outFile)
+	}
+
+	// Verify the output is identical to the input
+	if !compareEpubs(t, outFile, testFile) {
+		t.Fatalf("output EPUB does not match input EPUB")
+	}
 }
 
 // -----------------------------------------------------------------

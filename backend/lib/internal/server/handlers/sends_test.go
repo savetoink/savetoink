@@ -55,6 +55,10 @@ func (m *sendsMockService) GenerateEPUB(_ *model.Article) (io.ReadCloser, error)
 	return nil, errors.New("not implemented")
 }
 
+func (m *sendsMockService) ReadEPUB(_ context.Context, _ *url.URL) (io.ReadCloser, string, error) {
+	return nil, "", errors.New("not implemented")
+}
+
 func (m *sendsMockService) SendArticle(
 	_ context.Context,
 	_ string,

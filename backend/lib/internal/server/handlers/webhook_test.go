@@ -51,6 +51,10 @@ func (m *webhookMockService) GenerateEPUB(_ *model.Article) (io.ReadCloser, erro
 	return nil, errors.New("not implemented")
 }
 
+func (m *webhookMockService) ReadEPUB(_ context.Context, _ *url.URL) (io.ReadCloser, string, error) {
+	return nil, "", errors.New("not implemented")
+}
+
 func (m *webhookMockService) SendArticle(
 	_ context.Context, _ string, _ io.ReadCloser, _ string,
 ) (*email.SendEmailResponse, error) {

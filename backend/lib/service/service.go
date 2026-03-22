@@ -44,6 +44,9 @@ type Interface interface {
 	// GenerateEPUB generates an EPUB document from an article.
 	GenerateEPUB(article *model.Article) (io.ReadCloser, error)
 
+	// ReadEPUB reads an EPUB file from a URL and returns the file reader and title.
+	ReadEPUB(ctx context.Context, u *url.URL) (io.ReadCloser, string, error)
+
 	///////////
 	// Articles
 	///////////
@@ -129,6 +132,7 @@ type Dependencies struct {
 	Extractor       content.Extractor
 	Cleaner         content.Cleaner
 	Publisher       *epub.Publisher
+	Reader          *epub.Reader
 	Sender          email.Sender
 	ArticlesRepo    repository.ArticlesRepository
 	UserProfileRepo repository.UserProfileRepository
@@ -142,6 +146,7 @@ type Service struct {
 	extractor content.Extractor
 	cleaner   content.Cleaner
 	publisher *epub.Publisher
+	reader    *epub.Reader
 	articles  *articles.ArticleService
 	profile   *profile.UserProfileService
 	sender    email.Sender
@@ -165,6 +170,7 @@ func New(deps *Dependencies) *Service {
 		extractor: deps.Extractor,
 		cleaner:   deps.Cleaner,
 		publisher: publisher,
+		reader:    deps.Reader,
 		articles:  articleSvc,
 		profile:   userProfile,
 		sender:    deps.Sender,
@@ -191,6 +197,7 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 			Extractor:       content.NewDOMExtractor(),
 			Cleaner:         content.NewTrafilaturaCleaner(),
 			Publisher:       epub.NewPublisher(epub.WithMemoryStorage()),
+			Reader:          epub.NewReader(),
 			Sender:          sender,
 			ArticlesRepo:    articlesRepo,
 			UserProfileRepo: userProfileRepo,
@@ -224,6 +231,7 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 		Extractor:       content.NewDOMExtractor(),
 		Cleaner:         content.NewTrafilaturaCleaner(),
 		Publisher:       epub.NewPublisher(),
+		Reader:          epub.NewReader(),
 		Sender:          sender,
 		ArticlesRepo:    articlesRepo,
 		UserProfileRepo: userProfileRepo,
