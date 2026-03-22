@@ -32,6 +32,7 @@ func TestMain(m *testing.M) {
 	_ = os.Unsetenv("SAVETOINK_SENTRY_ENVIRONMENT")
 	_ = os.Unsetenv("SAVETOINK_SENTRY_SAMPLE_RATE")
 	_ = os.Unsetenv("SAVETOINK_DEBUG")
+	_ = os.Unsetenv("SAVETOINK_DISABLE_QUOTA_CHECK")
 	_ = os.Unsetenv("SAVETOINK_STORAGE_BACKEND")
 	_ = os.Unsetenv("SAVETOINK_SQLITE_PATH")
 	_ = os.Unsetenv("SAVETOINK_BROWSERLESS_KEY")
@@ -62,6 +63,47 @@ func TestLoad_CLI_Mode_With_Debug(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, consts.ModeCLI, cfg.Mode)
 	assert.True(t, cfg.Debug)
+}
+
+func TestLoad_CLI_Mode_DisableQuotaCheck(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected bool
+	}{
+		{"quota check disabled", "true", true},
+		{"quota check enabled", "false", false},
+		{"quota check enabled with empty string", "", false},
+		{"quota check enabled with invalid value", "invalid", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setupEnvVars(t, map[string]string{
+				"SAVETOINK_DISABLE_QUOTA_CHECK": tt.value,
+			})
+
+			cfg, err := Load(consts.ModeCLI, nil)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, cfg.DisableQuotaCheck)
+		})
+	}
+}
+
+func TestLoad_Server_Mode_DisableQuotaCheck(t *testing.T) {
+	setupEnvVars(t, map[string]string{
+		"SAVETOINK_STORAGE_BACKEND":         "sqlite",
+		"SAVETOINK_SQLITE_PATH":             "/path/to/database.db",
+		"SAVETOINK_API_KEY":                 "test-api-key",
+		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
+		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
+		"SAVETOINK_SENDS_TABLE_NAME":        "sends-table",
+		"SAVETOINK_DISABLE_QUOTA_CHECK":      "true",
+	})
+
+	cfg, err := Load(consts.ModeServer, nil)
+	require.NoError(t, err)
+	assert.True(t, cfg.DisableQuotaCheck)
 }
 
 func TestLoad_Server_Mode_Success(t *testing.T) {

@@ -75,8 +75,9 @@ func CheckQuotaAndDeviceEmail(
 	svc service.Interface,
 	authBackend consts.AuthBackend,
 	accountID string,
+	disableQuotaCheck bool,
 ) (int, error) {
-	sendsCount, err := checkQuota(ctx, w, r, svc, authBackend, accountID)
+	sendsCount, err := checkQuota(ctx, w, r, svc, authBackend, accountID, disableQuotaCheck)
 	if err != nil {
 		return sendsCount, err
 	}
@@ -95,8 +96,14 @@ func checkQuota(
 	svc service.Interface,
 	authBackend consts.AuthBackend,
 	accountID string,
+	disableQuotaCheck bool,
 ) (int, error) {
 	if authBackend != consts.AuthBackendAuth0 {
+		return 0, nil
+	}
+
+	if disableQuotaCheck {
+		logging.AddLogAttr(r.Context(), slog.Bool("quota_check_disabled", true))
 		return 0, nil
 	}
 

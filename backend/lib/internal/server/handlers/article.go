@@ -72,7 +72,7 @@ func (h *Handlers) validateAndCheckQuota(
 			return 0, fmt.Errorf("email backend check failed: %w", err)
 		}
 
-		sendsError, err := utils.CheckQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID)
+		sendsError, err := utils.CheckQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID, h.cfg.DisableQuotaCheck)
 		if err != nil {
 			return 0, fmt.Errorf("quota and device email check failed: %w", err)
 		}
@@ -236,7 +236,7 @@ func (h *Handlers) HandleSendArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendsCount, err := utils.CheckQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID)
+	sendsCount, err := utils.CheckQuotaAndDeviceEmail(r.Context(), w, r, h.service, h.cfg.AuthBackend, accountID, h.cfg.DisableQuotaCheck)
 	if err != nil {
 		return
 	}

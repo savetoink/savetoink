@@ -99,6 +99,11 @@ Parameters:
     Description: Debug flag
     Default: "false"
 
+  DisableQuotaCheck:
+    Type: String
+    Description: Disable quota check for sends (useful until subscriptions are ready)
+    Default: "false"
+
   LoggingProvider:
     Type: String
     Description: Logging backend (sentry or empty to disable)
@@ -296,6 +301,7 @@ Resources:
           SAVETOINK_BROWSERLESS_KEY: !Ref BrowserlessKey
           SAVETOINK_CORS_ALLOW_ORIGIN: !Ref CORSAllowOrigin
           SAVETOINK_DEBUG: !Ref Debug
+          SAVETOINK_DISABLE_QUOTA_CHECK: !Ref DisableQuotaCheck
           SAVETOINK_EMAIL_BACKEND: !Ref MailBackend
           SAVETOINK_LOGGING_PROVIDER: !Ref LoggingProvider
           SAVETOINK_MAILJET_API_KEY: !Ref MailjetAPIKey
@@ -363,6 +369,7 @@ Resources:
           SAVETOINK_ARTICLE_TABLE_NAME: !Ref ArticleTable
           SAVETOINK_BROWSERLESS_KEY: !Ref BrowserlessKey
           SAVETOINK_DEBUG: !Ref Debug
+          SAVETOINK_DISABLE_QUOTA_CHECK: !Ref DisableQuotaCheck
           SAVETOINK_EMAIL_BACKEND: !Ref MailBackend
           SAVETOINK_LOGGING_PROVIDER: !Ref LoggingProvider
           SAVETOINK_MAILJET_API_KEY: !Ref MailjetAPIKey
@@ -414,6 +421,7 @@ Resources:
           SAVETOINK_ARTICLE_TAGS_TABLE_NAME: !Ref ArticleTagsTable
           SAVETOINK_BACKUP_BUCKET_NAME: !Ref BackupS3Bucket
           SAVETOINK_DEBUG: !Ref Debug
+          SAVETOINK_DISABLE_QUOTA_CHECK: !Ref DisableQuotaCheck
           SAVETOINK_LOGGING_PROVIDER: !Ref LoggingProvider
           SAVETOINK_SENDS_TABLE_NAME: !Ref SendsTable
           SAVETOINK_SENTRY_DSN: !Ref SentryDSN
