@@ -1,0 +1,52 @@
+name: 'Setup Go and Just'
+description: 'Set up Go toolchain and Just command runner'
+
+inputs:
+  go-version:
+    description: 'Go version to use. Default: "stable"'
+    required: false
+    default: 'stable'
+    type: string
+
+  go-version-file:
+    description: 'Path to go.mod file to use for Go version'
+    required: false
+    type: string
+
+  cache:
+    description: 'Whether to cache Go modules'
+    required: false
+    type: boolean
+
+  cache-dependency-path:
+    description: 'Path to dependency files for caching'
+    required: false
+    type: string
+
+  just-version:
+    description: 'Just version to install (latest if not specified)'
+    required: false
+    type: string
+
+  just-bin-dir:
+    description: 'Directory to install Just binary'
+    required: false
+    type: string
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: ${{ inputs.go-version }}
+        go-version-file: ${{ inputs.go-version-file }}
+        cache: ${{ inputs.cache }}
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+    - name: Set up Just
+      uses: taiki-e/install-action@v2
+      with:
+        tool: just
+        version: ${{ inputs.just-version }}
+        bin-dir: ${{ inputs.just-bin-dir }}

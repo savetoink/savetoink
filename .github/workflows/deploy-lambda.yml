@@ -19,13 +19,8 @@ jobs:
       - name: Checkout code
         uses: ./.github/actions/checkout
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: "stable"
-
-      - name: Set up Just
-        uses: taiki-e/install-action@v2
+      - name: Set up Go and Just
+        uses: ./.github/actions/setup-go-and-just
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
