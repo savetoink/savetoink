@@ -27,7 +27,15 @@ export default defineConfig({
 	webServer: {
 		command: 'bun run build && bun run preview',
 		port: 4173,
-		timeout: 120000
+		timeout: 120000,
+		env: {
+			PUBLIC_AUTH_BACKEND: 'sharedKey',
+			PUBLIC_API_URL: 'http://localhost:8080',
+			PUBLIC_APP_URL: 'http://localhost:4173',
+			PUBLIC_IS_DEV_WORKER: 'false',
+			PUBLIC_SENTRY_DSN: '',
+			PUBLIC_SENTRY_ENVIRONMENT: 'test'
+		}
 	},
 	expect: {
 		timeout: 10000
