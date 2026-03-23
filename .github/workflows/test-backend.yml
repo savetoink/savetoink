@@ -34,7 +34,7 @@ jobs:
           go-version: "stable"
 
       - name: Set up Just
-        uses: extractions/setup-just@v3
+        uses: taiki-e/install-action@v2
 
       - name: Run tests
         run: just test-go-coverage
