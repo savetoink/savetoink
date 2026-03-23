@@ -78,19 +78,35 @@ func (d *DynamoDB) DeleteByAccountAndID(ctx context.Context, account, id string)
 
 // UpdateFavorite updates the favorite status of an article.
 func (d *DynamoDB) UpdateFavorite(ctx context.Context, account, id string, favorite bool) error {
+	attrNames := map[string]string{
+		"#f": attributeNameFavorite,
+	}
+	attrValues := map[string]types.AttributeValue{
+		":favorite": &types.AttributeValueMemberBOOL{Value: favorite},
+	}
+
+	var updateExpr string
+
+	if favorite {
+		// When toggling on: SET #f = :favorite, #af = :accountFavorite
+		attrNames["#af"] = attributeNameAccountFavorite
+		attrValues[":accountFavorite"] = &types.AttributeValueMemberS{Value: account + "#favorite"}
+		updateExpr = "SET #f = :favorite, #af = :accountFavorite"
+	} else {
+		// When toggling off: SET #f = :favorite REMOVE #af
+		attrNames["#af"] = attributeNameAccountFavorite
+		updateExpr = "SET #f = :favorite REMOVE #af"
+	}
+
 	_, err := d.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String(d.articleTableName),
 		Key: map[string]types.AttributeValue{
 			attributeNameAccount: &types.AttributeValueMemberS{Value: account},
 			attributeNameID:      &types.AttributeValueMemberS{Value: id},
 		},
-		UpdateExpression: aws.String("SET #f = :favorite"),
-		ExpressionAttributeNames: map[string]string{
-			"#f": "favorite",
-		},
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":favorite": &types.AttributeValueMemberBOOL{Value: favorite},
-		},
+		UpdateExpression:          aws.String(updateExpr),
+		ExpressionAttributeNames:  attrNames,
+		ExpressionAttributeValues: attrValues,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update favorite: %w", err)

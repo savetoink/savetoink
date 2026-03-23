@@ -592,6 +592,8 @@ Resources:
           AttributeType: S
         - AttributeName: createdAt
           AttributeType: S
+        - AttributeName: accountFavorite
+          AttributeType: S
       KeySchema:
         - AttributeName: account
           KeyType: HASH
@@ -607,6 +609,32 @@ Resources:
           Projection:
             ProjectionType: INCLUDE
             NonKeyAttributes:
+              - author
+              - deliveryStatus
+              - error
+              - excerpt
+              - favorite
+              - id
+              - imageUrl
+              - language
+              - publishedAt
+              - readingTimeMinutes
+              - siteName
+              - sourceDomain
+              - tags
+              - title
+              - url
+              - wordCount
+        - IndexName: AccountFavoriteIndex
+          KeySchema:
+            - AttributeName: accountFavorite
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes:
+              - account
               - author
               - deliveryStatus
               - error

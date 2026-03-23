@@ -1017,3 +1017,101 @@ func (s *SQLiteRepositoryTestSuite) TestStore_DatabaseError() {
 	err := s.repository.Store(ctx, article)
 	s.Error(err)
 }
+
+func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite_ToggleOnThenOff() {
+	now := time.Now().UTC()
+
+	article := &model.Article{
+		Account:   "test-account",
+		ID:        "toggle-fav-article",
+		URL:       "https://example.com/article",
+		CreatedAt: now,
+		Favorite:  false,
+	}
+
+	err := s.repository.Store(s.ctx, article)
+	s.NoError(err)
+
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", "toggle-fav-article")
+	s.NoError(err)
+	s.False(retrieved.Favorite)
+
+	err = s.repository.UpdateFavorite(s.ctx, "test-account", "toggle-fav-article", true)
+	s.NoError(err)
+
+	retrieved, err = s.repository.GetByAccountAndID(s.ctx, "test-account", "toggle-fav-article")
+	s.NoError(err)
+	s.True(retrieved.Favorite)
+
+	err = s.repository.UpdateFavorite(s.ctx, "test-account", "toggle-fav-article", false)
+	s.NoError(err)
+
+	retrieved, err = s.repository.GetByAccountAndID(s.ctx, "test-account", "toggle-fav-article")
+	s.NoError(err)
+	s.False(retrieved.Favorite)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPagination() {
+	now := time.Now().UTC()
+	account := "test-account-fav-pag"
+
+	for i := range 25 {
+		article := &model.Article{
+			Account:   account,
+			ID:        "article-" + string(rune('a'+(i%26))),
+			URL:       "https://example.com/article",
+			CreatedAt: now.Add(-time.Duration(i) * time.Hour),
+			Favorite:  true,
+		}
+		err := s.repository.Store(s.ctx, article)
+		s.NoError(err)
+	}
+
+	favorite := true
+
+	articles, _, total, err := s.repository.GetMetadataByAccount(s.ctx, account, 1, 10, &favorite)
+	s.NoError(err)
+	s.Len(articles, 10)
+	s.Equal(25, total)
+
+	for _, article := range articles {
+		s.True(article.Favorite)
+	}
+
+	articles, _, total, err = s.repository.GetMetadataByAccount(s.ctx, account, 2, 10, &favorite)
+	s.NoError(err)
+	s.Len(articles, 10)
+	s.Equal(25, total)
+
+	articles, _, total, err = s.repository.GetMetadataByAccount(s.ctx, account, 3, 10, &favorite)
+	s.NoError(err)
+	s.Len(articles, 5)
+	s.Equal(25, total)
+}
+
+func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_NonFavoritesFilter() {
+	now := time.Now().UTC()
+	account := "test-account-non-fav"
+
+	for i := range 10 {
+		article := &model.Article{
+			Account:   account,
+			ID:        "article-" + string(rune('a'+i)),
+			URL:       "https://example.com/article",
+			CreatedAt: now.Add(-time.Duration(i) * time.Hour),
+			Favorite:  i%2 == 0,
+		}
+		err := s.repository.Store(s.ctx, article)
+		s.NoError(err)
+	}
+
+	favorite := false
+	articles, _, total, err := s.repository.GetMetadataByAccount(s.ctx, account, 1, 10, &favorite)
+	s.NoError(err)
+	s.Len(articles, 5)
+	s.Equal(5, total)
+
+	for _, article := range articles {
+		s.False(article.Favorite)
+	}
+}

@@ -20,6 +20,9 @@ const (
 	// DynamoDBGSIName is name of the Global Secondary Index for sorting articles by creation date.
 	DynamoDBGSIName = "AccountCreatedAtIndex"
 
+	// DynamoDBAccountFavoriteIndex is name of the Global Secondary Index for querying favorite articles by account.
+	DynamoDBAccountFavoriteIndex = "AccountFavoriteIndex"
+
 	// DynamoDBSendsArticleIDIndex is name of the Global Secondary Index for querying sends by article ID.
 	DynamoDBSendsArticleIDIndex = "ArticleIdIndex"
 

@@ -25,6 +25,7 @@ type Article struct {
 	ReadingTimeMinutes int        `json:"readingTimeMinutes,omitempty" dynamodbav:"readingTimeMinutes,omitempty"`
 	PublishedAt        *time.Time `json:"publishedAt,omitempty" dynamodbav:"publishedAt,omitempty"`
 	Favorite           bool       `json:"favorite,omitempty" dynamodbav:"favorite,omitempty"`
+	AccountFavorite    string     `json:"-" dynamodbav:"accountFavorite,omitempty"`
 }
 
 // ErrorResponse represents the unified error response.

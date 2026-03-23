@@ -11,6 +11,29 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
+var (
+	accountCreatedAtIndexProjection = []string{
+		"author",
+		"deliveryStatus",
+		"error",
+		"excerpt",
+		"favorite",
+		"id",
+		"imageUrl",
+		"language",
+		"publishedAt",
+		"readingTimeMinutes",
+		"siteName",
+		"sourceDomain",
+		"tags",
+		"title",
+		"url",
+		"wordCount",
+	}
+
+	accountFavoriteIndexProjection = append([]string{"account"}, accountCreatedAtIndexProjection...)
+)
+
 const (
 	errFailedCreateTable = "failed to create table: %w"
 )
@@ -39,6 +62,7 @@ func createArticleTable(ctx context.Context, client *dynamodb.Client) error {
 			{AttributeName: aws.String("account"), AttributeType: types.ScalarAttributeTypeS},
 			{AttributeName: aws.String("id"), AttributeType: types.ScalarAttributeTypeS},
 			{AttributeName: aws.String("createdAt"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("accountFavorite"), AttributeType: types.ScalarAttributeTypeS},
 		},
 		KeySchema: []types.KeySchemaElement{
 			{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
@@ -52,25 +76,19 @@ func createArticleTable(ctx context.Context, client *dynamodb.Client) error {
 					{AttributeName: aws.String("createdAt"), KeyType: types.KeyTypeRange},
 				},
 				Projection: &types.Projection{
-					ProjectionType: types.ProjectionTypeInclude,
-					NonKeyAttributes: []string{
-						"author",
-						"deliveryStatus",
-						"error",
-						"excerpt",
-						"favorite",
-						"id",
-						"imageUrl",
-						"language",
-						"publishedAt",
-						"readingTimeMinutes",
-						"siteName",
-						"sourceDomain",
-						"tags",
-						"title",
-						"url",
-						"wordCount",
-					},
+					ProjectionType:   types.ProjectionTypeInclude,
+					NonKeyAttributes: accountCreatedAtIndexProjection,
+				},
+			},
+			{
+				IndexName: aws.String("AccountFavoriteIndex"),
+				KeySchema: []types.KeySchemaElement{
+					{AttributeName: aws.String("accountFavorite"), KeyType: types.KeyTypeHash},
+					{AttributeName: aws.String("createdAt"), KeyType: types.KeyTypeRange},
+				},
+				Projection: &types.Projection{
+					ProjectionType:   types.ProjectionTypeInclude,
+					NonKeyAttributes: accountFavoriteIndexProjection,
 				},
 			},
 		},

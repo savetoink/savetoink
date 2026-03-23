@@ -13,68 +13,80 @@ import (
 )
 
 const (
-	attrNameAccount = "#account"
+	attrNameAccount         = "#account"
+	attrNameAccountFavorite = "#af = :accountFavorite"
 )
 
 func (d *DynamoDB) getProjectionAttributeNames() map[string]string {
 	return map[string]string{
-		attrNameAccount: attributeNameAccount,
-		"#a":            "account",
-		"#i":            "id",
-		"#u":            "url",
-		"#c":            "createdAt",
-		"#t":            "title",
-		"#au":           "author",
-		"#sn":           "siteName",
-		"#sd":           "sourceDomain",
-		"#e":            "excerpt",
-		"#iurl":         "imageUrl",
-		"#l":            "language",
-		"#err":          "error",
-		"#wc":           "wordCount",
-		"#rt":           "readingTimeMinutes",
-		"#p":            "publishedAt",
-		"#tg":           "tags",
-		"#f":            attributeNameFavorite,
-		"#ds":           "deliveryStatus",
+		"#a":    "account",
+		"#i":    "id",
+		"#u":    "url",
+		"#c":    "createdAt",
+		"#t":    "title",
+		"#au":   "author",
+		"#sn":   "siteName",
+		"#sd":   "sourceDomain",
+		"#e":    "excerpt",
+		"#iurl": "imageUrl",
+		"#l":    "language",
+		"#err":  "error",
+		"#wc":   "wordCount",
+		"#rt":   "readingTimeMinutes",
+		"#p":    "publishedAt",
+		"#tg":   "tags",
+		"#f":    attributeNameFavorite,
+		"#ds":   "deliveryStatus",
 	}
 }
 
-func (d *DynamoDB) getProjectionExpression() string {
-	attrNames := d.getProjectionAttributeNames()
-	delete(attrNames, "#account")
-
+func (d *DynamoDB) getProjectionExpression(attrNames map[string]string) string {
 	keys := make([]string, 0, len(attrNames))
 	for key := range attrNames {
-		keys = append(keys, key)
+		if key != "#account" {
+			keys = append(keys, key)
+		}
 	}
 
 	return strings.Join(keys, ", ")
 }
 
 func (d *DynamoDB) totalCountByAccount(ctx context.Context, account string, favoriteFilter *bool) (int, error) {
-	attrNames := map[string]string{
-		attrNameAccount: attributeNameAccount,
-	}
-	attrValues := map[string]types.AttributeValue{
-		":account": &types.AttributeValueMemberS{Value: account},
-	}
+	attrNames := map[string]string{}
+	attrValues := map[string]types.AttributeValue{}
 
-	if favoriteFilter != nil {
-		attrNames["#f"] = attributeNameFavorite
-		attrValues[":favorite"] = &types.AttributeValueMemberBOOL{Value: *favoriteFilter}
+	var indexName string
+	var keyConditionExpression string
+
+	if favoriteFilter != nil && *favoriteFilter {
+		// Use sparse GSI for favorites
+		attrNames["#af"] = attributeNameAccountFavorite
+		attrValues[":accountFavorite"] = &types.AttributeValueMemberS{Value: account + "#favorite"}
+		indexName = consts.DynamoDBAccountFavoriteIndex
+		keyConditionExpression = attrNameAccountFavorite
+	} else {
+		// Use regular GSI for all articles or non-favorites
+		attrNames[attrNameAccount] = attributeNameAccount
+		attrValues[":account"] = &types.AttributeValueMemberS{Value: account}
+		indexName = consts.DynamoDBGSIName
+		keyConditionExpression = attrNameAccount + " = :account"
+
+		if favoriteFilter != nil && !*favoriteFilter {
+			attrNames["#f"] = attributeNameFavorite
+			attrValues[":favorite"] = &types.AttributeValueMemberBOOL{Value: false}
+		}
 	}
 
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 aws.String(d.articleTableName),
-		IndexName:                 aws.String(consts.DynamoDBGSIName),
-		KeyConditionExpression:    aws.String(attrNameAccount + " = :account"),
+		IndexName:                 aws.String(indexName),
+		KeyConditionExpression:    aws.String(keyConditionExpression),
 		ExpressionAttributeNames:  attrNames,
 		ExpressionAttributeValues: attrValues,
 		Select:                    types.SelectCount,
 	}
 
-	if favoriteFilter != nil {
+	if favoriteFilter != nil && !*favoriteFilter {
 		queryInput.FilterExpression = aws.String("#f = :favorite")
 	}
 
@@ -147,26 +159,42 @@ func (d *DynamoDB) queryArticlesByAccount(
 	favoriteFilter *bool,
 ) (*dynamodb.QueryOutput, error) {
 	attrNames := d.getProjectionAttributeNames()
-	attrValues := map[string]types.AttributeValue{
-		":account": &types.AttributeValueMemberS{Value: account},
-	}
+	attrValues := map[string]types.AttributeValue{}
 
-	if favoriteFilter != nil {
-		attrValues[":favorite"] = &types.AttributeValueMemberBOOL{Value: *favoriteFilter}
+	var indexName string
+	var keyConditionExpression string
+
+	if favoriteFilter != nil && *favoriteFilter {
+		// Use sparse GSI for favorites
+		attrValues[":accountFavorite"] = &types.AttributeValueMemberS{Value: account + "#favorite"}
+		attrNames["#af"] = attributeNameAccountFavorite
+		indexName = consts.DynamoDBAccountFavoriteIndex
+		keyConditionExpression = attrNameAccountFavorite
+	} else {
+		// Use regular GSI for all articles or non-favorites
+		attrValues[":account"] = &types.AttributeValueMemberS{Value: account}
+		attrNames[attrNameAccount] = attributeNameAccount
+		attrNames["#f"] = attributeNameFavorite
+		indexName = consts.DynamoDBGSIName
+		keyConditionExpression = attrNameAccount + " = :account"
+
+		if favoriteFilter != nil && !*favoriteFilter {
+			attrValues[":favorite"] = &types.AttributeValueMemberBOOL{Value: false}
+		}
 	}
 
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 aws.String(d.articleTableName),
-		IndexName:                 aws.String(consts.DynamoDBGSIName),
-		KeyConditionExpression:    aws.String(attrNameAccount + " = :account"),
-		ProjectionExpression:      aws.String(d.getProjectionExpression()),
+		IndexName:                 aws.String(indexName),
+		KeyConditionExpression:    aws.String(keyConditionExpression),
+		ProjectionExpression:      aws.String(d.getProjectionExpression(attrNames)),
 		ExpressionAttributeNames:  attrNames,
 		ExpressionAttributeValues: attrValues,
 		ScanIndexForward:          aws.Bool(false),
 		Limit:                     aws.Int32(int32(pageSize)), //nolint:gosec // pageSize is validated to be <= 20
 	}
 
-	if favoriteFilter != nil {
+	if favoriteFilter != nil && !*favoriteFilter {
 		queryInput.FilterExpression = aws.String("#f = :favorite")
 	}
 

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	transport "github.com/aws/smithy-go/endpoints"
@@ -32,12 +32,9 @@ func CreateDynamoDBClient(ctx context.Context, container *tcdynamodb.DynamoDBCon
 		return nil, fmt.Errorf("failed to get endpoint: %w", err)
 	}
 
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithRegion("us-east-1"),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("DUMMYIDEXAMPLE", "DUMMYEXAMPLEKEY", "")),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config: %w", err)
+	cfg := aws.Config{
+		Region:      "us-east-1",
+		Credentials: credentials.NewStaticCredentialsProvider("DUMMYIDEXAMPLE", "DUMMYEXAMPLEKEY", ""),
 	}
 
 	return dynamodb.NewFromConfig(cfg, dynamodb.WithEndpointResolverV2(&dynamoDBResolver{HostPort: endpoint})), nil

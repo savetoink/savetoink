@@ -20,6 +20,7 @@ func TestDynamoDB_GSI_Names(t *testing.T) {
 		expected string
 	}{
 		{"DynamoDBGSIName", DynamoDBGSIName, "AccountCreatedAtIndex"},
+		{"DynamoDBAccountFavoriteIndex", DynamoDBAccountFavoriteIndex, "AccountFavoriteIndex"},
 		{"DynamoDBSendsArticleIDIndex", DynamoDBSendsArticleIDIndex, "ArticleIdIndex"},
 		{"DynamoDBSendsAccountSentAtIndex", DynamoDBSendsAccountSentAtIndex, "AccountSentAtIndex"},
 		{"DynamoDBDeviceEmailIndex", DynamoDBDeviceEmailIndex, "DeviceEmailIndex"},
@@ -39,6 +40,7 @@ func TestDynamoDB_GSI_NamingPattern(t *testing.T) {
 		gsi  string
 	}{
 		{"DynamoDBGSIName", DynamoDBGSIName},
+		{"DynamoDBAccountFavoriteIndex", DynamoDBAccountFavoriteIndex},
 		{"DynamoDBSendsArticleIDIndex", DynamoDBSendsArticleIDIndex},
 		{"DynamoDBSendsAccountSentAtIndex", DynamoDBSendsAccountSentAtIndex},
 		{"DynamoDBDeviceEmailIndex", DynamoDBDeviceEmailIndex},

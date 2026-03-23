@@ -10,6 +10,8 @@
 			<NavItem link="/new" text="New" />
 
 			<NavItem link="/articles" text="Articles" />
+
+			<NavItem link="/articles?favorites=true" text="Favorites" />
 		{/if}
 		<NavItem link="/account" text="Account" />
 	</ul>

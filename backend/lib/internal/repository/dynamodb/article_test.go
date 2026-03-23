@@ -178,7 +178,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithFavoriteFilter
 			Title:              "Fav Article " + string(rune('0'+i)),
 			Content:            "Fav Content " + string(rune('0'+i)),
 			CreatedAt:          now,
-			Favorite:           i%2 == 0,
+			Favorite:           false, // Start as non-favorite
 			Author:             "Author",
 			Excerpt:            "Excerpt",
 			ImageURL:           "https://example.com/image.jpg",
@@ -192,6 +192,12 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithFavoriteFilter
 
 		err := s.repositories.Store(ctx, article)
 		require.NoError(t, err)
+
+		// Toggle favorites
+		if i%2 == 0 {
+			err = s.repositories.UpdateFavorite(ctx, account, "article-fav-"+string(rune('0'+i)), true)
+			require.NoError(t, err)
+		}
 	}
 
 	favorite := true
@@ -320,4 +326,146 @@ func (s *DynamoDBRepositoryTestSuite) TestStoreArticleEmptyAccount() {
 	err := s.repositories.Store(ctx, article)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account field is required")
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestUpdateFavorite_SetsAccountFavorite() {
+	ctx := context.Background()
+	t := s.T()
+
+	now := time.Now()
+
+	article := &model.Article{
+		Account:   articleTestAccount,
+		ID:        "article-fav-on",
+		URL:       "https://example.com/article",
+		Title:     "Test Article",
+		Content:   "Content",
+		CreatedAt: now,
+		Favorite:  false,
+	}
+
+	err := s.repositories.Store(ctx, article)
+	require.NoError(t, err)
+
+	err = s.repositories.UpdateFavorite(ctx, article.Account, article.ID, true)
+	require.NoError(t, err)
+
+	retrieved, err := s.repositories.GetByAccountAndID(ctx, article.Account, article.ID)
+	require.NoError(t, err)
+	assert.True(t, retrieved.Favorite)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestUpdateFavorite_RemovesAccountFavorite() {
+	ctx := context.Background()
+	t := s.T()
+
+	now := time.Now()
+
+	article := &model.Article{
+		Account:   articleTestAccount,
+		ID:        "article-fav-off",
+		URL:       "https://example.com/article",
+		Title:     "Test Article",
+		Content:   "Content",
+		CreatedAt: now,
+		Favorite:  true,
+	}
+
+	err := s.repositories.Store(ctx, article)
+	require.NoError(t, err)
+
+	retrieved, err := s.repositories.GetByAccountAndID(ctx, article.Account, article.ID)
+	require.NoError(t, err)
+	assert.True(t, retrieved.Favorite)
+
+	err = s.repositories.UpdateFavorite(ctx, article.Account, article.ID, false)
+	require.NoError(t, err)
+
+	retrieved, err = s.repositories.GetByAccountAndID(ctx, article.Account, article.ID)
+	require.NoError(t, err)
+	assert.False(t, retrieved.Favorite)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPagination() {
+	ctx := context.Background()
+	t := s.T()
+
+	account := "test-account-fav-pag"
+
+	// Create 25 articles, all favorites
+	for i := range 25 {
+		article := &model.Article{
+			Account:   account,
+			ID:        "article-" + string(rune('a'+(i%26))),
+			URL:       "https://example.com/article",
+			Title:     "Test Article",
+			CreatedAt: time.Now().Add(-time.Duration(i) * time.Hour),
+			Favorite:  false, // Start as non-favorite
+		}
+		err := s.repositories.Store(ctx, article)
+		require.NoError(t, err)
+
+		// Mark as favorite
+		err = s.repositories.UpdateFavorite(ctx, account, article.ID, true)
+		require.NoError(t, err)
+	}
+
+	// First page
+	favorite := true
+	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, &favorite)
+	require.NoError(t, err)
+	assert.Equal(t, 25, total)
+	assert.Len(t, articles, 10)
+
+	for _, article := range articles {
+		assert.True(t, article.Favorite)
+	}
+
+	// Second page
+	articles, _, total, err = s.repositories.GetMetadataByAccount(ctx, account, 2, 10, &favorite)
+	require.NoError(t, err)
+	assert.Equal(t, 25, total)
+	assert.Len(t, articles, 10)
+
+	for _, article := range articles {
+		assert.True(t, article.Favorite)
+	}
+
+	// Third page
+	articles, _, total, err = s.repositories.GetMetadataByAccount(ctx, account, 3, 10, &favorite)
+	require.NoError(t, err)
+	assert.Equal(t, 25, total)
+	assert.Len(t, articles, 5)
+
+	for _, article := range articles {
+		assert.True(t, article.Favorite)
+	}
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesEmptyResult() {
+	ctx := context.Background()
+	t := s.T()
+
+	account := "test-account-fav-empty"
+
+	// Create 5 non-favorite articles
+	for i := range 5 {
+		article := &model.Article{
+			Account:   account,
+			ID:        "article-" + string(rune('a'+i)),
+			URL:       "https://example.com/article",
+			Title:     "Test Article",
+			CreatedAt: time.Now().Add(-time.Duration(i) * time.Hour),
+			Favorite:  false,
+		}
+		err := s.repositories.Store(ctx, article)
+		require.NoError(t, err)
+	}
+
+	// Query for favorites - should return empty
+	favorite := true
+	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, &favorite)
+	require.NoError(t, err)
+	assert.Equal(t, 0, total)
+	assert.Empty(t, articles)
 }
