@@ -1,0 +1,89 @@
+name: 'Checkout Repository'
+description: 'Checkout repository with actions/checkout (centralized version)'
+
+inputs:
+  fetch-depth:
+    description: 'Number of commits to fetch. 0 indicates all history. Default: 0'
+    required: false
+    default: '0'
+    type: string
+
+  ref:
+    description: 'The branch, tag or SHA to checkout'
+    required: false
+    type: string
+
+  sparse-checkout:
+    description: 'Do a sparse checkout'
+    required: false
+    type: string
+
+  sparse-checkout-cone-mode:
+    description: 'Whether to use cone-mode for sparse checkout'
+    required: false
+    type: boolean
+
+  token:
+    description: 'Personal access token (PAT) used to fetch the repository'
+    required: false
+    type: string
+
+  ssh-key:
+    description: 'SSH key used to fetch the repository'
+    required: false
+    type: string
+
+  ssh-known-hosts:
+    description: 'Known hosts in addition to the user and global host key database'
+    required: false
+    type: string
+
+  ssh-strict:
+    description: 'Whether to perform strict host key checking'
+    required: false
+    type: boolean
+
+  persist-credentials:
+    description: 'Whether to configure the token or SSH key with the local git config'
+    required: false
+    type: boolean
+
+  submodules:
+    description: 'Whether to include submodule content'
+    required: false
+    type: string
+
+  set-safe-directory:
+    description: 'Add repository path to git safe directory'
+    required: false
+    type: boolean
+
+  github-server-url:
+    description: 'The base URL for the GitHub instance'
+    required: false
+    type: string
+
+  repository:
+    description: 'Repository name with owner'
+    required: false
+    type: string
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        ref: ${{ inputs.ref }}
+        sparse-checkout: ${{ inputs.sparse-checkout }}
+        sparse-checkout-cone-mode: ${{ inputs.sparse-checkout-cone-mode }}
+        token: ${{ inputs.token }}
+        ssh-key: ${{ inputs.ssh-key }}
+        ssh-known-hosts: ${{ inputs.ssh-known-hosts }}
+        ssh-strict: ${{ inputs.ssh-strict }}
+        persist-credentials: ${{ inputs.persist-credentials }}
+        submodules: ${{ inputs.submodules }}
+        set-safe-directory: ${{ inputs.set-safe-directory }}
+        github-server-url: ${{ inputs.github-server-url }}
+        repository: ${{ inputs.repository }}

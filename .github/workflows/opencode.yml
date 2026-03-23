@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: ./.github/actions/checkout
         with:
           ref: dev
           fetch-depth: 1
