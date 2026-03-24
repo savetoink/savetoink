@@ -18,7 +18,7 @@ type ArticlesRepository interface {
 		account string,
 		page, pageSize int,
 		filter *types.ArticleFilter,
-	) ([]*model.Article, any, int, error)
+	) ([]*model.Article, int, error)
 	DeleteByAccountAndID(ctx context.Context, account, id string) error
 	UpdateFavorite(ctx context.Context, account, id string, favorite bool) error
 }
