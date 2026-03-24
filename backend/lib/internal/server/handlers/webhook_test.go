@@ -19,6 +19,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/stretchr/testify/assert"
@@ -80,7 +81,7 @@ func (m *webhookMockService) GetArticle(_ context.Context, _, _ string) (*model.
 }
 
 func (m *webhookMockService) GetArticlesMetadata(
-	_ context.Context, _ string, _, _ int, _ *bool,
+	_ context.Context, _ string, _, _ int, _ *internaltype.ArticleFilter,
 ) (*servicetypes.GetArticlesResult, error) {
 	return nil, errors.New("not implemented")
 }

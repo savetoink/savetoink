@@ -18,6 +18,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/epub"
 	"github.com/shaftoe/savetoink/backend/lib/internal/repository"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
+	"github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,10 +64,14 @@ func (r *testArticlesRepo) GetMetadataByAccount(
 	_ context.Context,
 	account string,
 	_, _ int,
-	favoriteFilter *bool,
+	filter *types.ArticleFilter,
 ) (articles []*model.Article, lastKey any, total int, err error) {
 	if r.metadataErr != nil {
 		return nil, nil, 0, r.metadataErr
+	}
+	var favoriteFilter *bool
+	if filter != nil {
+		favoriteFilter = filter.Favorite
 	}
 	var result []*model.Article
 	for _, a := range r.articles {

@@ -22,6 +22,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/stretchr/testify/assert"
@@ -59,7 +60,7 @@ type articleMockService struct {
 		ctx context.Context,
 		accountID string,
 		page, pageSize int,
-		favoriteFilter *bool,
+		filter *internaltype.ArticleFilter,
 	) (*servicetypes.GetArticlesResult, error)
 	deleteArticleFunc func(
 		ctx context.Context,
@@ -182,10 +183,10 @@ func (m *articleMockService) GetArticlesMetadata(
 	ctx context.Context,
 	accountID string,
 	page, pageSize int,
-	favoriteFilter *bool,
+	filter *internaltype.ArticleFilter,
 ) (*servicetypes.GetArticlesResult, error) {
 	if m.getArticlesMetadataFunc != nil {
-		return m.getArticlesMetadataFunc(ctx, accountID, page, pageSize, favoriteFilter)
+		return m.getArticlesMetadataFunc(ctx, accountID, page, pageSize, filter)
 	}
 	return &servicetypes.GetArticlesResult{
 		Articles: []*model.Article{},
@@ -522,7 +523,7 @@ func TestHandleGetArticles_Success(t *testing.T) {
 			_ string,
 			page,
 			pageSize int,
-			_ *bool,
+			_ *internaltype.ArticleFilter,
 		) (*servicetypes.GetArticlesResult, error) {
 			return &servicetypes.GetArticlesResult{
 				Articles: []*model.Article{
@@ -566,10 +567,10 @@ func TestHandleGetArticles_WithFavoriteFilter(t *testing.T) {
 			_ context.Context,
 			_ string,
 			_, _ int,
-			favoriteFilter *bool,
+			filter *internaltype.ArticleFilter,
 		) (*servicetypes.GetArticlesResult, error) {
-			assert.NotNil(t, favoriteFilter)
-			assert.True(t, *favoriteFilter)
+			assert.NotNil(t, filter)
+			assert.True(t, *filter.Favorite)
 			return &servicetypes.GetArticlesResult{
 				Articles: []*model.Article{},
 				Page:     1,
@@ -601,7 +602,7 @@ func TestHandleGetArticles_InvalidPage(t *testing.T) {
 			_ string,
 			page,
 			_ int,
-			_ *bool,
+			_ *internaltype.ArticleFilter,
 		) (*servicetypes.GetArticlesResult, error) {
 			assert.Equal(t, 1, page)
 			return &servicetypes.GetArticlesResult{
@@ -635,7 +636,7 @@ func TestHandleGetArticles_PageSizeCapped(t *testing.T) {
 			_ string,
 			_,
 			pageSize int,
-			_ *bool,
+			_ *internaltype.ArticleFilter,
 		) (*servicetypes.GetArticlesResult, error) {
 			assert.Equal(t, 20, pageSize)
 			return &servicetypes.GetArticlesResult{
@@ -687,7 +688,7 @@ func TestHandleGetArticles_ServiceError(t *testing.T) {
 					_ context.Context,
 					_ string,
 					_, _ int,
-					_ *bool,
+					_ *internaltype.ArticleFilter,
 				) (*servicetypes.GetArticlesResult, error) {
 					return nil, tt.serviceErr
 				},

@@ -5,6 +5,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -16,7 +17,7 @@ type ArticlesRepository interface {
 		ctx context.Context,
 		account string,
 		page, pageSize int,
-		favoriteFilter *bool,
+		filter *types.ArticleFilter,
 	) ([]*model.Article, any, int, error)
 	DeleteByAccountAndID(ctx context.Context, account, id string) error
 	UpdateFavorite(ctx context.Context, account, id string, favorite bool) error

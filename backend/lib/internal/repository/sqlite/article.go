@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	internaltypes "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -285,10 +286,15 @@ func (s *SQLite) GetMetadataByAccount(
 	ctx context.Context,
 	account string,
 	page, pageSize int,
-	favoriteFilter *bool,
+	filter *internaltypes.ArticleFilter,
 ) (articles []*model.Article, lastEvaluatedKey any, total int, err error) {
 	if page < 1 || pageSize < 1 || pageSize > 100 {
 		pageSize = 20
+	}
+
+	var favoriteFilter *bool
+	if filter != nil {
+		favoriteFilter = filter.Favorite
 	}
 
 	total, err = s.countArticlesByAccount(ctx, account, favoriteFilter)

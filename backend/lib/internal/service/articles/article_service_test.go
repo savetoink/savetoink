@@ -9,6 +9,7 @@ import (
 
 	"github.com/shaftoe/savetoink/backend/lib/internal/epub"
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
+	"github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -52,10 +53,14 @@ func (m *MockRepository) GetMetadataByAccount(
 	_ context.Context,
 	account string,
 	_page, _pageSize int, //nolint:revive // unused parameters required by interface
-	favoriteFilter *bool,
+	filter *types.ArticleFilter,
 ) (result []*model.Article, lastEvaluatedKey any, total int, err error) {
 	if m.metadataErr != nil {
 		return nil, nil, 0, m.metadataErr
+	}
+	var favoriteFilter *bool
+	if filter != nil {
+		favoriteFilter = filter.Favorite
 	}
 	for _, article := range m.articles {
 		if article.Account == account {
@@ -362,7 +367,7 @@ func TestGetArticlesMetadata_WithFavoriteFilter(t *testing.T) {
 	ctx := context.Background()
 
 	favorite := true
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, &favorite)
+	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, &types.ArticleFilter{Favorite: &favorite})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -796,7 +801,7 @@ func TestGetArticlesMetadata_HasMore_WithFavoriteFilter(t *testing.T) {
 	ctx := context.Background()
 
 	favorite := true
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, &favorite)
+	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, &types.ArticleFilter{Favorite: &favorite})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

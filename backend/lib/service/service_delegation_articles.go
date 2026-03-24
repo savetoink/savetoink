@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -40,9 +41,9 @@ func (s *Service) GetArticlesMetadata(
 	ctx context.Context,
 	accountID string,
 	page, pageSize int,
-	favoriteFilter *bool,
+	filter *types.ArticleFilter,
 ) (*servicetypes.GetArticlesResult, error) {
-	result, err := s.articles.GetArticlesMetadata(ctx, accountID, page, pageSize, favoriteFilter)
+	result, err := s.articles.GetArticlesMetadata(ctx, accountID, page, pageSize, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get articles metadata: %w", err)
 	}

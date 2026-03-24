@@ -15,6 +15,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/html"
@@ -81,7 +82,7 @@ func (m *quotaCheckMockService) GetArticlesMetadata(
 	_ context.Context,
 	_ string,
 	_, _ int,
-	_ *bool,
+	_ *types.ArticleFilter,
 ) (*servicetypes.GetArticlesResult, error) {
 	panic("not implemented")
 }

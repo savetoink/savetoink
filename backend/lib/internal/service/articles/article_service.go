@@ -16,6 +16,7 @@ import (
 	repoimpl "github.com/shaftoe/savetoink/backend/lib/internal/repository/dynamodb"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/profile"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -97,10 +98,10 @@ func (s *ArticleService) GetArticlesMetadata(
 	ctx context.Context,
 	accountID string,
 	page, pageSize int,
-	favoriteFilter *bool,
+	filter *types.ArticleFilter,
 ) (*servicetypes.GetArticlesResult, error) {
 	articles, _, total, err := s.articlesRepo.GetMetadataByAccount(
-		ctx, accountID, page, pageSize, favoriteFilter)
+		ctx, accountID, page, pageSize, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get articles: %w", err)
 	}
