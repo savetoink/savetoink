@@ -39,6 +39,14 @@ func TestArticleRequest_JSONSerialization(t *testing.T) {
 			},
 			wantJSON: `{"url":"https://example.com/article","send_on_complete":false}`,
 		},
+		{
+			name: "with tags",
+			req: ArticleRequest{
+				URL:  "https://example.com/article",
+				Tags: []string{"tech", "programming"},
+			},
+			wantJSON: `{"url":"https://example.com/article","send_on_complete":false,"tags":["tech","programming"]}`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -52,6 +60,7 @@ func TestArticleRequest_JSONSerialization(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.req.URL, unmarshaled.URL)
 			assert.Equal(t, tt.req.SendOnComplete, unmarshaled.SendOnComplete)
+			assert.Equal(t, tt.req.Tags, unmarshaled.Tags)
 		})
 	}
 }
@@ -65,18 +74,17 @@ func TestArticleResponse_JSONSerialization(t *testing.T) {
 		{
 			name: "full response",
 			resp: ArticleResponse{
-				ID:    "test-id",
-				Title: "Test Article",
-				URL:   "https://example.com/article",
+				ID:  "test-id",
+				URL: "https://example.com/article",
 			},
-			wantJSON: `{"id":"test-id","title":"Test Article","url":"https://example.com/article"}`,
+			wantJSON: `{"id":"test-id","url":"https://example.com/article"}`,
 		},
 		{
 			name: "minimal response",
 			resp: ArticleResponse{
 				ID: "test-id",
 			},
-			wantJSON: `{"id":"test-id","title":"","url":""}`,
+			wantJSON: `{"id":"test-id","url":""}`,
 		},
 	}
 
@@ -90,7 +98,6 @@ func TestArticleResponse_JSONSerialization(t *testing.T) {
 			err = json.Unmarshal(data, &unmarshaled)
 			require.NoError(t, err)
 			assert.Equal(t, tt.resp.ID, unmarshaled.ID)
-			assert.Equal(t, tt.resp.Title, unmarshaled.Title)
 			assert.Equal(t, tt.resp.URL, unmarshaled.URL)
 		})
 	}

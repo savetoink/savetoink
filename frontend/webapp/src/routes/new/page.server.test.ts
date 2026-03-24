@@ -158,7 +158,8 @@ describe('/new route', () => {
 					getClientAddress: mockGetClientAddress
 				},
 				'https://example.com/article',
-				true
+				true,
+				undefined
 			);
 			expect(result).toEqual({
 				success: true,
@@ -197,7 +198,8 @@ describe('/new route', () => {
 					getClientAddress: mockGetClientAddress
 				},
 				'https://example.com/article',
-				false
+				false,
+				undefined
 			);
 			expect(result).toEqual({
 				success: true,
@@ -284,6 +286,64 @@ describe('/new route', () => {
 			expect((result as { data: { error: string } }).data).toEqual({
 				error: 'Failed to create article: Invalid URL'
 			});
+		});
+
+		it('should parse and pass tags when provided', async () => {
+			const { actions } = await import('./+page.server');
+
+			const formData = new FormData();
+			formData.append('url', 'https://example.com/article');
+			formData.append('tags', 'reading, tech, tutorial');
+
+			const mockRequest = new Request('http://localhost/new', {
+				method: 'POST',
+				body: formData
+			});
+
+			const eventWithForm = {
+				...mockRequestEvent,
+				request: mockRequest
+			};
+
+			await actions.new(eventWithForm as any);
+
+			expect(mockCreateArticle).toHaveBeenCalledWith(
+				{
+					locals: mockLocals,
+					request: mockRequest,
+					fetch: mockFetch,
+					getClientAddress: mockGetClientAddress
+				},
+				'https://example.com/article',
+				false,
+				['reading', 'tech', 'tutorial']
+			);
+		});
+
+		it('should return error when too many tags are provided', async () => {
+			const { actions } = await import('./+page.server');
+
+			const formData = new FormData();
+			formData.append('url', 'https://example.com/article');
+			formData.append('tags', 'tag1,tag2,tag3,tag4,tag5,tag6,tag7,tag8,tag9,tag10,tag11');
+
+			const mockRequest = new Request('http://localhost/new', {
+				method: 'POST',
+				body: formData
+			});
+
+			const eventWithForm = {
+				...mockRequestEvent,
+				request: mockRequest
+			};
+
+			const result = await actions.new(eventWithForm as any);
+
+			expect((result as { status: number }).status).toBe(400);
+			expect((result as { data: { error: string } }).data).toEqual({
+				error: 'Maximum 10 tags allowed per article'
+			});
+			expect(mockCreateArticle).not.toHaveBeenCalled();
 		});
 	});
 });

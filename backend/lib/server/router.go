@@ -71,6 +71,10 @@ func setupRoutes(r *chi.Mux, h *handlers.Handlers, cfg *config.Config, _ service
 			r.Delete("/{id}", h.HandleDeleteArticle)
 			r.Put("/{id}/favorite", h.HandleToggleFavorite)
 			r.Post("/{id}/send", h.HandleSendArticle)
+			r.Post("/{id}/tags", h.HandleAddTags)
+			r.Put("/{id}/tags", h.HandleSetTags)
+			r.Get("/{id}/tags", h.HandleGetTags)
+			r.Delete("/{id}/tags", h.HandleRemoveTags)
 		})
 
 		r.Route("/user", func(r chi.Router) {
@@ -97,6 +101,11 @@ func setupRoutes(r *chi.Mux, h *handlers.Handlers, cfg *config.Config, _ service
 		r.Route("/sends", func(r chi.Router) {
 			r.Use(auth.EnsureAutheticatedMiddleware)
 			r.Get("/", h.HandleGetSends)
+		})
+
+		r.Route("/tags", func(r chi.Router) {
+			r.Use(auth.EnsureAutheticatedMiddleware)
+			r.Get("/", h.HandleGetAllTags)
 		})
 	})
 }

@@ -3,6 +3,9 @@ package validation
 import (
 	"strings"
 	"testing"
+
+	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -510,6 +513,11 @@ func TestErrors(t *testing.T) {
 			err:      ErrPrivateIPAddress,
 			expected: "URL points to private/internal network",
 		},
+		{
+			name:     "ErrInvalidTag",
+			err:      ErrInvalidTag,
+			expected: "invalid tag",
+		},
 	}
 
 	for _, tt := range tests {
@@ -519,4 +527,240 @@ func TestErrors(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestValidateTag(t *testing.T) {
+	tests := []struct {
+		name    string
+		tag     string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "valid single word tag",
+			tag:     "tech",
+			wantErr: false,
+		},
+		{
+			name:    "valid tag with hyphen",
+			tag:     "tech-news",
+			wantErr: false,
+		},
+		{
+			name:    "valid tag with underscore",
+			tag:     "tech_news",
+			wantErr: false,
+		},
+		{
+			name:    "valid tag with space",
+			tag:     "tech news",
+			wantErr: false,
+		},
+		{
+			name:    "valid tag with numbers",
+			tag:     "python3",
+			wantErr: false,
+		},
+		{
+			name:    "valid tag mixed case (gets lowercased)",
+			tag:     "TechNews",
+			wantErr: false,
+		},
+		{
+			name:    "valid tag with leading/trailing spaces",
+			tag:     "  tech  ",
+			wantErr: false,
+		},
+		{
+			name:    "empty tag after trim",
+			tag:     "   ",
+			wantErr: true,
+			errMsg:  "tag cannot be empty",
+		},
+		{
+			name:    "empty tag",
+			tag:     "",
+			wantErr: true,
+			errMsg:  "tag cannot be empty",
+		},
+		{
+			name:    "tag exceeds max length",
+			tag:     strings.Repeat("a", consts.MaxTagLength+1),
+			wantErr: true,
+			errMsg:  "exceeds maximum length",
+		},
+		{
+			name:    "tag at max length",
+			tag:     strings.Repeat("a", consts.MaxTagLength),
+			wantErr: false,
+		},
+		{
+			name:    "tag with special characters",
+			tag:     "tech@news",
+			wantErr: true,
+			errMsg:  "can only contain letters, numbers, spaces, hyphens, and underscores",
+		},
+		{
+			name:    "tag with parentheses",
+			tag:     "tech(news)",
+			wantErr: true,
+			errMsg:  "can only contain letters, numbers, spaces, hyphens, and underscores",
+		},
+		{
+			name:    "tag with slash",
+			tag:     "tech/news",
+			wantErr: true,
+			errMsg:  "can only contain letters, numbers, spaces, hyphens, and underscores",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ValidateTag(tt.tag)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateTag() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && tt.errMsg != "" && err != nil {
+				if !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("ValidateTag() error = %v, expected to contain %v", err, tt.errMsg)
+				}
+			}
+			if !tt.wantErr {
+				// Check that result is lowercased
+				if result != strings.ToLower(result) {
+					t.Errorf("ValidateTag() result = %v, expected to be lowercased", result)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateTags(t *testing.T) {
+	tests := []struct {
+		name    string
+		tags    []string
+		wantErr bool
+		errMsg  string
+		wantLen int
+	}{
+		{
+			name:    "valid single tag",
+			tags:    []string{"tech"},
+			wantErr: false,
+			wantLen: 1,
+		},
+		{
+			name:    "valid multiple tags",
+			tags:    []string{"tech", "programming", "golang"},
+			wantErr: false,
+			wantLen: 3,
+		},
+		{
+			name:    "empty slice is valid",
+			tags:    []string{},
+			wantErr: false,
+			wantLen: 0,
+		},
+		{
+			name:    "nil slice is valid",
+			tags:    nil,
+			wantErr: false,
+			wantLen: 0,
+		},
+		{
+			name:    "duplicate tags are removed",
+			tags:    []string{"tech", "tech", "programming"},
+			wantErr: false,
+			wantLen: 2,
+		},
+		{
+			name:    "case duplicates are removed",
+			tags:    []string{"Tech", "tech", "TECH"},
+			wantErr: false,
+			wantLen: 1,
+		},
+		{
+			name:    "tags are normalized (trimmed and lowercased)",
+			tags:    []string{"  Tech  ", "PROGRAMMING", "  GoLang  "},
+			wantErr: false,
+			wantLen: 3,
+		},
+		{
+			name:    "too many tags",
+			tags:    make([]string, consts.MaxTagsPerArticle+1),
+			wantErr: true,
+			errMsg:  "invalid tag: maximum 10 tags allowed per article",
+			wantLen: 0,
+		},
+		{
+			name:    "max allowed tags",
+			tags:    []string{"tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10"},
+			wantErr: false,
+			wantLen: consts.MaxTagsPerArticle,
+		},
+		{
+			name:    "one invalid tag in list",
+			tags:    []string{"tech", "invalid@tag", "programming"},
+			wantErr: true,
+			errMsg:  "can only contain letters, numbers, spaces, hyphens, and underscores",
+		},
+		{
+			name:    "empty tag in list",
+			tags:    []string{"tech", "", "programming"},
+			wantErr: true,
+			errMsg:  "tag cannot be empty",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ValidateTags(tt.tags)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateTags() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && tt.errMsg != "" && err != nil {
+				if !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("ValidateTags() error = %v, expected to contain %v", err, tt.errMsg)
+				}
+			}
+			if !tt.wantErr {
+				if len(result) != tt.wantLen {
+					t.Errorf("ValidateTags() result length = %v, want %v", len(result), tt.wantLen)
+				}
+				// Check that all tags are lowercased
+				for _, tag := range result {
+					if tag != strings.ToLower(tag) {
+						t.Errorf("ValidateTags() result contains non-lowercased tag: %v", tag)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestValidateTags_Deduplication(t *testing.T) {
+	tags := []string{"Tech", "tech", "TECH", "Programming", "programming", "Go"}
+	result, err := ValidateTags(tags)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+	assert.ElementsMatch(t, []string{"tech", "programming", "go"}, result)
+}
+
+func TestValidateTags_MaxTagLength(t *testing.T) {
+	// Create a tag that's exactly at max length
+	validTag := strings.Repeat("a", consts.MaxTagLength)
+	tags := []string{validTag}
+	result, err := ValidateTags(tags)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, validTag, result[0])
+
+	// Create a tag that's one character over max length
+	invalidTag := strings.Repeat("b", consts.MaxTagLength+1)
+	tags = []string{invalidTag}
+	_, err = ValidateTags(tags)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "exceeds maximum length")
 }

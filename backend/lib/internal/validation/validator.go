@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/mail"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/shaftoe/savetoink/backend/lib/consts"
@@ -18,6 +19,8 @@ var (
 	ErrInvalidEmail = errors.New("invalid email address")
 	// ErrPrivateIPAddress is returned when URL points to a private/internal network.
 	ErrPrivateIPAddress = errors.New("URL points to private/internal network")
+	// ErrInvalidTag is returned when tag validation fails.
+	ErrInvalidTag = errors.New("invalid tag")
 )
 
 const (
@@ -143,4 +146,71 @@ func ValidateDeviceEmail(email string) error {
 		ErrInvalidEmail,
 		consts.ValidDeviceEmailDomainsJoined(),
 	)
+}
+
+// ValidateTags validates and normalizes a list of tags.
+// Returns an empty slice if tags is nil or empty (used to clear all tags).
+// Tags are trimmed, validated for format, deduplicated, and converted to lowercase.
+func ValidateTags(tags []string) ([]string, error) {
+	// Empty slice or nil is allowed (used to clear all tags)
+	if len(tags) == 0 {
+		return []string{}, nil
+	}
+
+	if len(tags) > consts.MaxTagsPerArticle {
+		return nil, fmt.Errorf("%w: maximum %d tags allowed per article", ErrInvalidTag, consts.MaxTagsPerArticle)
+	}
+
+	seen := make(map[string]bool)
+	normalizedTags := make([]string, 0, len(tags))
+
+	for _, tag := range tags {
+		normalized, err := normalizeTag(tag)
+		if err != nil {
+			return nil, err
+		}
+
+		// Deduplicate tags
+		if !seen[normalized] {
+			seen[normalized] = true
+			normalizedTags = append(normalizedTags, normalized)
+		}
+	}
+
+	return normalizedTags, nil
+}
+
+// ValidateTag validates and normalizes a single tag.
+// Tags are trimmed, validated for format (alphanumeric, spaces, hyphens, underscores),
+// and converted to lowercase for consistency.
+func ValidateTag(tag string) (string, error) {
+	return normalizeTag(tag)
+}
+
+// normalizeTag validates and normalizes a single tag.
+func normalizeTag(tag string) (string, error) {
+	// Trim whitespace
+	normalized := strings.TrimSpace(tag)
+
+	// Check if empty
+	if normalized == "" {
+		return "", fmt.Errorf("%w: tag cannot be empty", ErrInvalidTag)
+	}
+
+	// Check length
+	if len(normalized) > consts.MaxTagLength {
+		return "", fmt.Errorf("%w: tag exceeds maximum length of %d characters", ErrInvalidTag, consts.MaxTagLength)
+	}
+
+	// Validate tag format (alphanumeric, spaces, hyphens, underscores)
+	matched, _ := regexp.MatchString(`^[a-zA-Z0-9\s\-_]+$`, normalized)
+	if !matched {
+		return "", fmt.Errorf(
+			"%w: tag can only contain letters, numbers, spaces, hyphens, and underscores",
+			ErrInvalidTag,
+		)
+	}
+
+	// Convert to lowercase for consistency
+	return strings.ToLower(normalized), nil
 }

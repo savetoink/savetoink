@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"sort"
 	"time"
 
 	"github.com/shaftoe/savetoink/backend/lib/consts"
@@ -17,26 +18,30 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/profile"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
 	"github.com/shaftoe/savetoink/backend/lib/internal/types"
+	"github.com/shaftoe/savetoink/backend/lib/internal/validation"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
 // ArticleService handles article CRUD operations.
 type ArticleService struct {
-	articlesRepo repository.ArticlesRepository
-	publisher    *epub.Publisher
-	userProfile  *profile.UserProfileService
+	articlesRepo    repository.ArticlesRepository
+	articleTagsRepo repository.ArticleTagsRepository
+	publisher       *epub.Publisher
+	userProfile     *profile.UserProfileService
 }
 
 // New creates a new ArticleService instance.
 func New(
 	articles repository.ArticlesRepository,
+	articleTags repository.ArticleTagsRepository,
 	publisher *epub.Publisher,
 	userProfile *profile.UserProfileService,
 ) *ArticleService {
 	return &ArticleService{
-		articlesRepo: articles,
-		publisher:    publisher,
-		userProfile:  userProfile,
+		articlesRepo:    articles,
+		articleTagsRepo: articleTags,
+		publisher:       publisher,
+		userProfile:     userProfile,
 	}
 }
 
@@ -90,6 +95,11 @@ func (s *ArticleService) GetArticle(ctx context.Context, accountID, articleID st
 		return nil, fmt.Errorf("failed to get article: %w", err)
 	}
 
+	// Populate tags for the article
+	if getTagsErr := s.populateTagsForArticles(ctx, accountID, []*model.Article{article}); getTagsErr != nil {
+		return nil, fmt.Errorf("failed to populate tags: %w", getTagsErr)
+	}
+
 	return article, nil
 }
 
@@ -108,6 +118,11 @@ func (s *ArticleService) GetArticlesMetadata(
 
 	if articles == nil {
 		articles = []*model.Article{}
+	}
+
+	// Populate tags for articles
+	if populateErr := s.populateTagsForArticles(ctx, accountID, articles); populateErr != nil {
+		return nil, fmt.Errorf("failed to populate tags: %w", populateErr)
 	}
 
 	return &servicetypes.GetArticlesResult{
@@ -141,6 +156,12 @@ func (s *ArticleService) DeleteArticle(
 		return nil, fmt.Errorf("failed to delete article: %w", err)
 	}
 
+	// Delete all tags for this article
+	deleteTagErr := s.articleTagsRepo.DeleteTagsForArticle(ctx, accountID, articleID)
+	if deleteTagErr != nil {
+		return nil, fmt.Errorf("failed to delete tags for article: %w", deleteTagErr)
+	}
+
 	return &servicetypes.DeleteArticleResult{Deleted: 1}, nil
 }
 
@@ -162,4 +183,209 @@ func (s *ArticleService) ToggleFavorite(ctx context.Context, accountID, articleI
 	}
 
 	return newFavoriteStatus, nil
+}
+
+// AddArticleTags adds tags to an article.
+func (s *ArticleService) AddArticleTags(ctx context.Context, accountID, articleID string, tags []string) error {
+	// Validate article exists
+	_, err := s.articlesRepo.GetByAccountAndID(ctx, accountID, articleID)
+	if err != nil {
+		if errors.Is(err, repoimpl.ErrNotFound) {
+			return apperrors.ErrNotFound
+		}
+		return fmt.Errorf("failed to get article: %w", err)
+	}
+
+	// Validate and normalize tags (AddArticleTags requires at least one tag)
+	if len(tags) == 0 {
+		return fmt.Errorf("%w: at least one tag is required", apperrors.ErrInvalid)
+	}
+
+	normalizedTags, validationErr := validation.ValidateTags(tags)
+	if validationErr != nil {
+		return fmt.Errorf("failed to validate tags: %w", validationErr)
+	}
+
+	if addErr := s.articleTagsRepo.AddTagsToArticle(ctx, accountID, articleID, normalizedTags, nil); addErr != nil {
+		return fmt.Errorf("failed to add tags to article: %w", addErr)
+	}
+
+	return nil
+}
+
+// RemoveArticleTags removes specific tags from an article.
+func (s *ArticleService) RemoveArticleTags(ctx context.Context, accountID, articleID string, tags []string) error {
+	// Validate article exists
+	_, err := s.articlesRepo.GetByAccountAndID(ctx, accountID, articleID)
+	if err != nil {
+		if errors.Is(err, repoimpl.ErrNotFound) {
+			return apperrors.ErrNotFound
+		}
+		return fmt.Errorf("failed to get article: %w", err)
+	}
+
+	// Validate and normalize tags
+	normalizedTags, validationErr := validation.ValidateTags(tags)
+	if validationErr != nil {
+		return fmt.Errorf("failed to validate tags: %w", validationErr)
+	}
+
+	if removeErr := s.articleTagsRepo.RemoveTagsFromArticle(ctx, accountID, articleID, normalizedTags); removeErr != nil {
+		return fmt.Errorf("failed to remove tags from article: %w", removeErr)
+	}
+
+	return nil
+}
+
+// SetArticleTags replaces all tags for an article with the provided tags.
+func (s *ArticleService) SetArticleTags(ctx context.Context, accountID, articleID string, tags []string) error {
+	// Validate article exists
+	_, err := s.articlesRepo.GetByAccountAndID(ctx, accountID, articleID)
+	if err != nil {
+		if errors.Is(err, repoimpl.ErrNotFound) {
+			return apperrors.ErrNotFound
+		}
+		return fmt.Errorf("failed to get article: %w", err)
+	}
+
+	// Validate and normalize tags (nil tags means remove all tags)
+	var normalizedTags []string
+	if len(tags) > 0 {
+		var validationErr error
+		normalizedTags, validationErr = validation.ValidateTags(tags)
+		if validationErr != nil {
+			return fmt.Errorf("failed to validate tags: %w", validationErr)
+		}
+	}
+
+	if setErr := s.articleTagsRepo.SetArticleTags(ctx, accountID, articleID, normalizedTags); setErr != nil {
+		return fmt.Errorf("failed to set article tags: %w", setErr)
+	}
+
+	return nil
+}
+
+// GetArticleTags retrieves all tags for a specific article.
+func (s *ArticleService) GetArticleTags(ctx context.Context, accountID, articleID string) ([]string, error) {
+	// Validate article exists
+	_, err := s.articlesRepo.GetByAccountAndID(ctx, accountID, articleID)
+	if err != nil {
+		if errors.Is(err, repoimpl.ErrNotFound) {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get article: %w", err)
+	}
+
+	tags, err := s.articleTagsRepo.GetArticleTags(ctx, accountID, articleID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get article tags: %w", err)
+	}
+
+	// Sort tags for consistency
+	return sortTags(tags), nil
+}
+
+// GetArticlesByTag retrieves articles with a specific tag for a given account.
+func (s *ArticleService) GetArticlesByTag(
+	ctx context.Context,
+	accountID, tag string,
+	page, pageSize int,
+) (*servicetypes.GetArticlesResult, error) {
+	// Validate tag
+	if tag == "" {
+		return nil, fmt.Errorf("%w: tag cannot be empty", apperrors.ErrInvalid)
+	}
+
+	normalizedTag, err := validation.ValidateTag(tag)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate tag: %w", err)
+	}
+
+	// Get article IDs by tag
+	articleIDs, total, err := s.articleTagsRepo.GetArticlesByTag(ctx, accountID, normalizedTag, page, pageSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get articles by tag: %w", err)
+	}
+
+	if len(articleIDs) == 0 {
+		return &servicetypes.GetArticlesResult{
+			Articles: []*model.Article{},
+			Page:     page,
+			PageSize: pageSize,
+			Total:    total,
+			HasMore:  (page * pageSize) < total,
+		}, nil
+	}
+
+	// Fetch article metadata for all IDs
+	articles := make([]*model.Article, 0, len(articleIDs))
+	for _, articleID := range articleIDs {
+		article, getErr := s.articlesRepo.GetByAccountAndID(ctx, accountID, articleID)
+		if getErr != nil {
+			// Log but don't fail if individual article lookup fails
+			if !errors.Is(getErr, repoimpl.ErrNotFound) {
+				return nil, fmt.Errorf("failed to get article %s: %w", articleID, getErr)
+			}
+			continue
+		}
+		articles = append(articles, article)
+	}
+
+	// Populate tags for articles
+	if populateErr := s.populateTagsForArticles(ctx, accountID, articles); populateErr != nil {
+		return nil, fmt.Errorf("failed to populate tags: %w", populateErr)
+	}
+
+	return &servicetypes.GetArticlesResult{
+		Articles: articles,
+		Page:     page,
+		PageSize: pageSize,
+		Total:    total,
+		HasMore:  (page * pageSize) < total,
+	}, nil
+}
+
+// GetAllTagsForAccount retrieves all unique tags for an account.
+func (s *ArticleService) GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error) {
+	tags, err := s.articleTagsRepo.GetAllTagsForAccount(ctx, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all tags for account: %w", err)
+	}
+
+	// Sort tags for consistency
+	return sortTags(tags), nil
+}
+
+// sortTags sorts tags alphabetically.
+func sortTags(tags []string) []string {
+	sorted := make([]string, len(tags))
+	copy(sorted, tags)
+	sort.Strings(sorted)
+	return sorted
+}
+
+// populateTagsForArticles populates the Tags field for all provided articles.
+// It fetches tags from the article tags repository for each article and assigns them.
+func (s *ArticleService) populateTagsForArticles(
+	ctx context.Context,
+	accountID string,
+	articles []*model.Article,
+) error {
+	if len(articles) == 0 || s.articleTagsRepo == nil {
+		return nil
+	}
+
+	// Fetch tags for each article individually
+	// This is O(n) repository calls. For optimization, consider adding
+	// a batch method to the repository interface that can fetch tags for
+	// multiple articles in a single call.
+	for _, article := range articles {
+		tags, err := s.articleTagsRepo.GetArticleTags(ctx, accountID, article.ID)
+		if err != nil {
+			return fmt.Errorf("failed to get tags for article %s: %w", article.ID, err)
+		}
+		article.Tags = sortTags(tags)
+	}
+
+	return nil
 }

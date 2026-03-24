@@ -9,13 +9,15 @@ type ArticleRequest struct {
 
 	// Whether to send the article after processing is complete.
 	SendOnComplete bool `json:"send_on_complete"`
+
+	// Optional tags to associate with the article.
+	Tags []string `json:"tags,omitempty"`
 }
 
 // ArticleResponse represents a response for article creation.
 type ArticleResponse struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	URL   string `json:"url"`
+	ID  string `json:"id"`
+	URL string `json:"url"`
 }
 
 // HealthResponse represents a health check response.
@@ -102,4 +104,14 @@ type SendsResponse struct {
 // SendsResponseNoLimits represents a sends response for shared API key users (no quota limits).
 type SendsResponseNoLimits struct {
 	TotalSends int `json:"total_sends"`
+}
+
+// TagsRequest represents a request to add/set/remove tags on an article.
+type TagsRequest struct {
+	Tags []string `json:"tags" validate:"required,min=1,max=10"`
+}
+
+// TagsResponse represents a response for article tag operations.
+type TagsResponse struct {
+	Tags []string `json:"tags"`
 }

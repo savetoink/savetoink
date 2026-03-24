@@ -161,6 +161,34 @@ func (m *sendsMockService) ToggleFavorite(_ context.Context, _, _ string) (bool,
 	return false, errors.New("not implemented")
 }
 
+func (m *sendsMockService) AddArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return errors.New("not implemented")
+}
+
+func (m *sendsMockService) RemoveArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return errors.New("not implemented")
+}
+
+func (m *sendsMockService) SetArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return errors.New("not implemented")
+}
+
+func (m *sendsMockService) GetArticleTags(_ context.Context, _, _ string) ([]string, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *sendsMockService) GetArticlesByTag(
+	_ context.Context,
+	_, _ string,
+	_, _ int,
+) (*servicetypes.GetArticlesResult, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *sendsMockService) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (m *sendsMockService) CountSendsByAccountDateRange(
 	_ context.Context,
 	_ string,

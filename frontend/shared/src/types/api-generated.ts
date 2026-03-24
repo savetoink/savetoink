@@ -152,6 +152,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/articles/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get article tags
+         * @description Get all tags for a specific article
+         */
+        get: operations["getTags"];
+        /**
+         * Set article tags
+         * @description Replace all tags for an article with the provided tags. Tags are normalized (lowercase, trimmed) and deduplicated. Set empty array to remove all tags.
+         */
+        put: operations["setTags"];
+        /**
+         * Add tags to article
+         * @description Add tags to an existing article. Tags are normalized (lowercase, trimmed) and deduplicated.
+         */
+        post: operations["addTags"];
+        /**
+         * Remove tags from article
+         * @description Remove specific tags from an article
+         */
+        delete: operations["removeTags"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get all tags
+         * @description Get all unique tags for the authenticated user's account
+         */
+        get: operations["getAllTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/user/profile": {
         parameters: {
             query?: never;
@@ -283,6 +335,8 @@ export interface components {
             publishedAt?: string;
             /** @description Whether article is favorited */
             favorite?: boolean;
+            /** @description Tags associated with the article */
+            tags?: string[];
         };
         ArticleRequest: {
             /**
@@ -295,14 +349,22 @@ export interface components {
              * @default false
              */
             send_on_complete: boolean;
+            /** @description Tags to associate with the article (max 10 tags, max 50 characters each) */
+            tags?: string[];
         };
         ArticleResponse: {
             /** @description Article ID */
             id: string;
-            /** @description Article title */
-            title: string;
             /** @description Article URL */
             url: string;
+        };
+        TagsRequest: {
+            /** @description Tags to manage (1-10 tags, max 50 characters each) */
+            tags: string[];
+        };
+        TagsResponse: {
+            /** @description List of tags */
+            tags: string[];
         };
         ListArticlesResponse: {
             /** @description List of articles */
@@ -516,6 +578,8 @@ export interface operations {
                 page_size?: number;
                 /** @description Filter by favorite status */
                 favorite?: boolean;
+                /** @description Filter by tag */
+                tag?: string;
             };
             header?: never;
             path?: never;
@@ -821,6 +885,283 @@ export interface operations {
             };
             /** @description Too Many Requests (free tier quota exceeded) */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Article ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Article tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Article not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    setTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Article ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsRequest"];
+            };
+        };
+        responses: {
+            /** @description Tags set successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagsResponse"];
+                };
+            };
+            /** @description Bad request (invalid tags, too many tags, etc.) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Article not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    addTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Article ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsRequest"];
+            };
+        };
+        responses: {
+            /** @description Tags added successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagsResponse"];
+                };
+            };
+            /** @description Bad request (invalid tags, too many tags, etc.) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Article not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    removeTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Article ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsRequest"];
+            };
+        };
+        responses: {
+            /** @description Tags removed successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagsResponse"];
+                };
+            };
+            /** @description Bad request (invalid tags) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Article not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getAllTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

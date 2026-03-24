@@ -41,6 +41,7 @@ export interface ApiClient {
     url: string,
     sendToDevice: boolean,
     token: string,
+    tags?: string[],
   ): Promise<ArticleResponse>;
   sendArticle(id: string, token: string): Promise<void>;
   favoriteArticle(id: string, token: string): Promise<void>;
@@ -162,10 +163,16 @@ export function createApiClient({
     getArticle: (id: string, token: string) =>
       request<Article>("GET", `/v1/articles/${id}`, token),
 
-    createArticle: (url: string, sendToDevice: boolean, token: string) =>
+    createArticle: (
+      url: string,
+      sendToDevice: boolean,
+      token: string,
+      tags?: string[],
+    ) =>
       request<ArticleResponse>("POST", "/v1/articles", token, {
         url,
         send_on_complete: sendToDevice,
+        ...(tags && tags.length > 0 ? { tags } : {}),
       } as ArticleRequest),
 
     sendArticle: (id: string, token: string) =>

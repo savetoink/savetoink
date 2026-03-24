@@ -72,6 +72,28 @@ type Interface interface {
 	// ToggleFavorite toggles the favorite status of an article.
 	ToggleFavorite(ctx context.Context, accountID string, articleID string) (bool, error)
 
+	// AddArticleTags adds tags to an article.
+	AddArticleTags(ctx context.Context, accountID, articleID string, tags []string) error
+
+	// RemoveArticleTags removes specific tags from an article.
+	RemoveArticleTags(ctx context.Context, accountID, articleID string, tags []string) error
+
+	// SetArticleTags replaces all tags for an article with the provided tags.
+	SetArticleTags(ctx context.Context, accountID, articleID string, tags []string) error
+
+	// GetArticleTags retrieves all tags for a specific article.
+	GetArticleTags(ctx context.Context, accountID, articleID string) ([]string, error)
+
+	// GetArticlesByTag retrieves articles with a specific tag for a given account.
+	GetArticlesByTag(
+		ctx context.Context,
+		accountID, tag string,
+		page, pageSize int,
+	) (*servicetypes.GetArticlesResult, error)
+
+	// GetAllTagsForAccount retrieves all unique tags for an account.
+	GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error)
+
 	// SendArticle sends an EPUB document as attachment to a given email address.
 	SendArticle(
 		ctx context.Context,
@@ -138,6 +160,7 @@ type Dependencies struct {
 	ArticlesRepo    repository.ArticlesRepository
 	UserProfileRepo repository.UserProfileRepository
 	SendsRepo       repository.SendsRepository
+	ArticleTagsRepo repository.ArticleTagsRepository
 	Config          *config.Config
 }
 
@@ -162,6 +185,7 @@ func New(deps *Dependencies) *Service {
 	userProfile := profile.New(deps.UserProfileRepo)
 	articleSvc := articles.New(
 		deps.ArticlesRepo,
+		deps.ArticleTagsRepo,
 		publisher,
 		userProfile,
 	)
@@ -190,30 +214,27 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 	var articlesRepo repository.ArticlesRepository
 	var userProfileRepo repository.UserProfileRepository
 	var sendsRepo repository.SendsRepository
+	var articleTagsRepo repository.ArticleTagsRepository
 
 	// disable repositories in CLI mode
 	if cfg.Mode == consts.ModeCLI {
-		return Dependencies{
-			Fetcher:         content.NewFetcher(cfg.BrowserlessKey),
-			Extractor:       content.NewDOMExtractor(),
-			Cleaner:         content.NewTrafilaturaCleaner(),
-			Publisher:       epub.NewPublisher(epub.WithMemoryStorage()),
-			Reader:          epub.NewReader(),
-			Sender:          sender,
-			ArticlesRepo:    articlesRepo,
-			UserProfileRepo: userProfileRepo,
-			SendsRepo:       sendsRepo,
-			Config:          cfg,
-		}
+		return newCliDeps(cfg, sender, articlesRepo, userProfileRepo, sendsRepo, articleTagsRepo)
 	}
 
 	switch cfg.StorageBackend {
 	case consts.StorageBackendDynamoDB, "":
 		if cfg.AWSConfig != nil {
-			dynamoDB := repoimpl.NewDynamoDB(cfg.AWSConfig, cfg.ArticlesTable, cfg.UserProfileTable, cfg.SendsTable)
+			dynamoDB := repoimpl.NewDynamoDB(
+				cfg.AWSConfig,
+				cfg.ArticlesTable,
+				cfg.UserProfileTable,
+				cfg.SendsTable,
+				cfg.ArticleTagsTable,
+			)
 			articlesRepo = dynamoDB
 			userProfileRepo = dynamoDB
 			sendsRepo = dynamoDB
+			articleTagsRepo = dynamoDB
 		}
 	case consts.StorageBackendSQLite:
 		ctx, cancel := context.WithTimeout(context.Background(), consts.SqliteInitTimeout)
@@ -225,6 +246,7 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 		articlesRepo = sqlite
 		userProfileRepo = sqlite
 		sendsRepo = sqlite
+		articleTagsRepo = sqlite
 	}
 
 	return Dependencies{
@@ -237,6 +259,29 @@ func NewDependenciesFromConfig(cfg *config.Config) Dependencies {
 		ArticlesRepo:    articlesRepo,
 		UserProfileRepo: userProfileRepo,
 		SendsRepo:       sendsRepo,
+		ArticleTagsRepo: articleTagsRepo,
+		Config:          cfg,
+	}
+}
+
+func newCliDeps(cfg *config.Config,
+	sender email.Sender,
+	articlesRepo repository.ArticlesRepository,
+	userProfileRepo repository.UserProfileRepository,
+	sendsRepo repository.SendsRepository,
+	articleTagsRepo repository.ArticleTagsRepository,
+) Dependencies {
+	return Dependencies{
+		Fetcher:         content.NewFetcher(cfg.BrowserlessKey),
+		Extractor:       content.NewDOMExtractor(),
+		Cleaner:         content.NewTrafilaturaCleaner(),
+		Publisher:       epub.NewPublisher(epub.WithMemoryStorage()),
+		Reader:          epub.NewReader(),
+		Sender:          sender,
+		ArticlesRepo:    articlesRepo,
+		UserProfileRepo: userProfileRepo,
+		SendsRepo:       sendsRepo,
+		ArticleTagsRepo: articleTagsRepo,
 		Config:          cfg,
 	}
 }

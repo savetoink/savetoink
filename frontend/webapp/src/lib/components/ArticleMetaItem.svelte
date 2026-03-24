@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import Tags from './Tags.svelte';
+
 	import type { Article } from '@savetoink/shared';
 
 	let {
@@ -41,6 +43,7 @@
 			{#if article.excerpt}
 				<p>{article.excerpt}</p>
 			{/if}
+			<Tags tags={article.tags} />
 		</header>
 	</article>
 </li>

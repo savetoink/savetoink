@@ -147,3 +147,10 @@ func TestFreeTier_Constants(t *testing.T) {
 	assert.Equal(t, 10, MaxFreeTierSendsPerPeriod, "MaxFreeTierSendsPerPeriod should be 10")
 	assert.Equal(t, 10, FreeTierSendPeriodDays, "FreeTierSendPeriodDays should be 10")
 }
+
+func TestTag_Constants(t *testing.T) {
+	assert.Greater(t, MaxTagsPerArticle, 0, "MaxTagsPerArticle should be positive")
+	assert.Greater(t, MaxTagLength, 0, "MaxTagLength should be positive")
+	assert.Equal(t, 10, MaxTagsPerArticle, "MaxTagsPerArticle should be 10")
+	assert.Equal(t, 50, MaxTagLength, "MaxTagLength should be 50")
+}

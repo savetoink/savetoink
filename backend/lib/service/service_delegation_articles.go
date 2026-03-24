@@ -70,3 +70,58 @@ func (s *Service) ToggleFavorite(ctx context.Context, accountID, articleID strin
 	}
 	return favorite, nil
 }
+
+// AddArticleTags delegates to ArticleService.
+func (s *Service) AddArticleTags(ctx context.Context, accountID, articleID string, tags []string) error {
+	if err := s.articles.AddArticleTags(ctx, accountID, articleID, tags); err != nil {
+		return fmt.Errorf("failed to add tags to article: %w", err)
+	}
+	return nil
+}
+
+// RemoveArticleTags delegates to ArticleService.
+func (s *Service) RemoveArticleTags(ctx context.Context, accountID, articleID string, tags []string) error {
+	if err := s.articles.RemoveArticleTags(ctx, accountID, articleID, tags); err != nil {
+		return fmt.Errorf("failed to remove tags from article: %w", err)
+	}
+	return nil
+}
+
+// SetArticleTags delegates to ArticleService.
+func (s *Service) SetArticleTags(ctx context.Context, accountID, articleID string, tags []string) error {
+	if err := s.articles.SetArticleTags(ctx, accountID, articleID, tags); err != nil {
+		return fmt.Errorf("failed to set article tags: %w", err)
+	}
+	return nil
+}
+
+// GetArticleTags delegates to ArticleService.
+func (s *Service) GetArticleTags(ctx context.Context, accountID, articleID string) ([]string, error) {
+	tags, err := s.articles.GetArticleTags(ctx, accountID, articleID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get article tags: %w", err)
+	}
+	return tags, nil
+}
+
+// GetArticlesByTag delegates to ArticleService.
+func (s *Service) GetArticlesByTag(
+	ctx context.Context,
+	accountID, tag string,
+	page, pageSize int,
+) (*servicetypes.GetArticlesResult, error) {
+	result, err := s.articles.GetArticlesByTag(ctx, accountID, tag, page, pageSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get articles by tag: %w", err)
+	}
+	return result, nil
+}
+
+// GetAllTagsForAccount delegates to ArticleService.
+func (s *Service) GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error) {
+	tags, err := s.articles.GetAllTagsForAccount(ctx, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all tags for account: %w", err)
+	}
+	return tags, nil
+}
