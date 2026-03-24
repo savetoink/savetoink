@@ -35,8 +35,8 @@ func (d *DynamoDB) getProjectionAttributeNames() map[string]string {
 		"#rt":   "readingTimeMinutes",
 		"#p":    "publishedAt",
 		"#tg":   "tags",
-		"#f":    attributeNameFavorite,
 		"#ds":   "deliveryStatus",
+		"#af":   "accountFavorite",
 	}
 }
 
@@ -65,16 +65,11 @@ func (d *DynamoDB) totalCountByAccount(ctx context.Context, account string, favo
 		indexName = consts.DynamoDBAccountFavoriteIndex
 		keyConditionExpression = attrNameAccountFavorite
 	} else {
-		// Use regular GSI for all articles or non-favorites
+		// Use regular GSI for all articles
 		attrNames[attrNameAccount] = attributeNameAccount
 		attrValues[":account"] = &types.AttributeValueMemberS{Value: account}
 		indexName = consts.DynamoDBGSIName
 		keyConditionExpression = attrNameAccount + " = :account"
-
-		if favoriteFilter != nil && !*favoriteFilter {
-			attrNames["#f"] = attributeNameFavorite
-			attrValues[":favorite"] = &types.AttributeValueMemberBOOL{Value: false}
-		}
 	}
 
 	queryInput := &dynamodb.QueryInput{
@@ -84,10 +79,6 @@ func (d *DynamoDB) totalCountByAccount(ctx context.Context, account string, favo
 		ExpressionAttributeNames:  attrNames,
 		ExpressionAttributeValues: attrValues,
 		Select:                    types.SelectCount,
-	}
-
-	if favoriteFilter != nil && !*favoriteFilter {
-		queryInput.FilterExpression = aws.String("#f = :favorite")
 	}
 
 	resp, err := d.client.Query(ctx, queryInput)
@@ -171,16 +162,11 @@ func (d *DynamoDB) queryArticlesByAccount(
 		indexName = consts.DynamoDBAccountFavoriteIndex
 		keyConditionExpression = attrNameAccountFavorite
 	} else {
-		// Use regular GSI for all articles or non-favorites
+		// Use regular GSI for all articles
 		attrValues[":account"] = &types.AttributeValueMemberS{Value: account}
 		attrNames[attrNameAccount] = attributeNameAccount
-		attrNames["#f"] = attributeNameFavorite
 		indexName = consts.DynamoDBGSIName
 		keyConditionExpression = attrNameAccount + " = :account"
-
-		if favoriteFilter != nil && !*favoriteFilter {
-			attrValues[":favorite"] = &types.AttributeValueMemberBOOL{Value: false}
-		}
 	}
 
 	queryInput := &dynamodb.QueryInput{
@@ -192,10 +178,6 @@ func (d *DynamoDB) queryArticlesByAccount(
 		ExpressionAttributeValues: attrValues,
 		ScanIndexForward:          aws.Bool(false),
 		Limit:                     aws.Int32(int32(pageSize)), //nolint:gosec // pageSize is validated to be <= 20
-	}
-
-	if favoriteFilter != nil && !*favoriteFilter {
-		queryInput.FilterExpression = aws.String("#f = :favorite")
 	}
 
 	if exclusiveStartKey != nil {
@@ -216,6 +198,8 @@ func (d *DynamoDB) unmarshalArticles(items []map[string]types.AttributeValue) ([
 		if err := unmarshalItem(item, &article, "article"); err != nil {
 			return nil, err
 		}
+
+		article.Favorite = isFavorite(item)
 		articles = append(articles, &article)
 	}
 	return articles, nil

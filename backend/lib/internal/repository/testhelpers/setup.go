@@ -13,11 +13,11 @@ import (
 
 var (
 	accountCreatedAtIndexProjection = []string{
+		"accountFavorite",
 		"author",
 		"deliveryStatus",
 		"error",
 		"excerpt",
-		"favorite",
 		"id",
 		"imageUrl",
 		"language",

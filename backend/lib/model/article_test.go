@@ -165,7 +165,8 @@ func TestArticle_DynamoDBAttributeMapping(t *testing.T) {
 			assert.Equal(t, tt.article.Error, unmarshaled.Error)
 			assert.Equal(t, tt.article.WordCount, unmarshaled.WordCount)
 			assert.Equal(t, tt.article.ReadingTimeMinutes, unmarshaled.ReadingTimeMinutes)
-			assert.Equal(t, tt.article.Favorite, unmarshaled.Favorite)
+			// Favorite field is not persisted to DynamoDB; it's derived from the presence of accountFavorite
+			assert.False(t, unmarshaled.Favorite)
 
 			if tt.article.PublishedAt != nil {
 				require.NotNil(t, unmarshaled.PublishedAt)

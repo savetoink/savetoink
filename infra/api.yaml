@@ -609,11 +609,11 @@ Resources:
           Projection:
             ProjectionType: INCLUDE
             NonKeyAttributes:
+              - accountFavorite
               - author
               - deliveryStatus
               - error
               - excerpt
-              - favorite
               - id
               - imageUrl
               - language
@@ -639,7 +639,6 @@ Resources:
               - deliveryStatus
               - error
               - excerpt
-              - favorite
               - id
               - imageUrl
               - language
