@@ -30,7 +30,7 @@
 </script>
 
 <nav>
-	<ul class="tab-strip">
+	<ul>
 		{#each links as { href, label } (href)}
 			<li>
 				<a href={resolve(href)} aria-current={isActive(href) ? 'page' : undefined}>
@@ -43,38 +43,16 @@
 
 <style>
 	nav {
-		display: flex;
 		justify-content: center;
-		padding: 1.5rem 0;
-	}
-
-	.tab-strip {
-		max-height: 2rem;
-		display: flex;
-		gap: 4px;
-		background: rgba(255, 255, 255, 0.06);
-		padding: 4px;
-		border-radius: 10px;
+		padding: 1rem 0;
 	}
 
 	a {
-		padding: 7px 18px;
-		border-radius: 7px;
-		font-size: 14px;
-		font-weight: 500;
-		color: rgba(255, 255, 255, 0.45);
+		background: var(--pico-switch-background-color);
 		text-decoration: none;
-		transition:
-			background 0.15s,
-			color 0.15s;
 	}
 
-	a:hover:not([aria-current='page']) {
-		color: rgba(255, 255, 255, 0.75);
-	}
-
-	a[aria-current='page'] {
-		background: rgba(255, 255, 255, 0.1);
+	a:not([aria-current='page']) {
 		color: white;
 	}
 </style>
