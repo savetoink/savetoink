@@ -40,3 +40,14 @@ type SendsRepository interface {
 	GetSendsByAccountDateRange(ctx context.Context, account string, startDate, endDate time.Time) ([]*model.Send, error)
 	CountSendsByAccountDateRange(ctx context.Context, account string, startDate, endDate time.Time) (int, error)
 }
+
+// ArticleTagsRepository defines the interface for article-tag relationship persistence.
+type ArticleTagsRepository interface {
+	AddTagsToArticle(ctx context.Context, accountID, articleID string, tags []string, createdAt *time.Time) error
+	RemoveTagsFromArticle(ctx context.Context, accountID, articleID string, tags []string) error
+	SetArticleTags(ctx context.Context, accountID, articleID string, tags []string) error
+	GetArticleTags(ctx context.Context, accountID, articleID string) ([]string, error)
+	GetArticlesByTag(ctx context.Context, accountID, tag string, page, pageSize int) ([]string, int, error)
+	GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error)
+	DeleteTagsForArticle(ctx context.Context, accountID, articleID string) error
+}

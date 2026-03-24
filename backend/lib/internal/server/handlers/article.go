@@ -17,6 +17,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
+	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
 	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/validation"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
@@ -55,6 +56,15 @@ func (h *Handlers) HandleCreateArticle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.HandleServiceError(w, r, err, "create article")
 		return
+	}
+
+	// Set tags if provided
+	if len(req.Tags) > 0 {
+		if setTagsErr := h.service.SetArticleTags(r.Context(), accountID, article.ID, req.Tags); setTagsErr != nil {
+			utils.HandleServiceError(w, r, setTagsErr, "set article tags")
+			return
+		}
+		logging.AddLogAttr(r.Context(), slog.Any("tags", req.Tags))
 	}
 
 	h.writeArticleResponse(w, article)
@@ -106,9 +116,8 @@ func (h *Handlers) validateURL(w http.ResponseWriter, r *http.Request, req types
 func (h *Handlers) writeArticleResponse(w http.ResponseWriter, article *model.Article) {
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(types.ArticleResponse{
-		ID:    article.ID,
-		Title: article.Title,
-		URL:   article.URL,
+		ID:  article.ID,
+		URL: article.URL,
 	})
 }
 
@@ -158,10 +167,23 @@ func (h *Handlers) HandleGetArticles(w http.ResponseWriter, r *http.Request) {
 
 	accountID := auth.GetAccountIDFromCtx(r.Context())
 
-	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, filter)
-	if err != nil {
-		utils.HandleServiceError(w, r, err, "get articles metadata")
-		return
+	var result *servicetypes.GetArticlesResult
+	var err error
+
+	// Check if filtering by tag
+	if tag := r.URL.Query().Get("tag"); tag != "" {
+		result, err = h.service.GetArticlesByTag(r.Context(), accountID, tag, page, pageSize)
+		if err != nil {
+			utils.HandleServiceError(w, r, err, "get articles by tag")
+			return
+		}
+		logging.AddLogAttr(r.Context(), slog.String("tag", tag))
+	} else {
+		result, err = h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, filter)
+		if err != nil {
+			utils.HandleServiceError(w, r, err, "get articles metadata")
+			return
+		}
 	}
 
 	logging.AddLogAttr(r.Context(), slog.Int("page", page))
@@ -271,4 +293,119 @@ func (h *Handlers) HandleSendArticle(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(types.SendArticleResponse{
 		Status: "sent",
 	})
+}
+
+// HandleAddTags handles adding tags to an article.
+func (h *Handlers) HandleAddTags(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountIDFromCtx(r.Context())
+	articleID := utils.GetArticleID(r)
+
+	var req types.TagsRequest
+	if err := utils.DecodeAndValidateRequest(w, r, &req); err != nil {
+		return
+	}
+
+	// Add the specified tags to the existing tags
+	if err := h.service.AddArticleTags(r.Context(), accountID, articleID, req.Tags); err != nil {
+		utils.HandleServiceError(w, r, err, "add tags to article")
+		return
+	}
+
+	tags, err := h.service.GetArticleTags(r.Context(), accountID, articleID)
+	if err != nil {
+		utils.HandleServiceError(w, r, err, "get article tags")
+		return
+	}
+
+	logging.AddLogAttr(r.Context(), slog.Any("tags", req.Tags))
+	logging.AddLogAttr(r.Context(), slog.Int("added_count", len(req.Tags)))
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(types.TagsResponse{Tags: tags})
+}
+
+// HandleSetTags handles setting all tags for an article (replaces existing tags).
+func (h *Handlers) HandleSetTags(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountIDFromCtx(r.Context())
+	articleID := utils.GetArticleID(r)
+
+	var req types.TagsRequest
+	if err := utils.DecodeAndValidateRequest(w, r, &req); err != nil {
+		return
+	}
+
+	// Replace all existing tags with the new set
+	if err := h.service.SetArticleTags(r.Context(), accountID, articleID, req.Tags); err != nil {
+		utils.HandleServiceError(w, r, err, "set article tags")
+		return
+	}
+
+	tags, err := h.service.GetArticleTags(r.Context(), accountID, articleID)
+	if err != nil {
+		utils.HandleServiceError(w, r, err, "get article tags")
+		return
+	}
+
+	logging.AddLogAttr(r.Context(), slog.Any("tags", req.Tags))
+	logging.AddLogAttr(r.Context(), slog.Int("total_tags", len(tags)))
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(types.TagsResponse{Tags: tags})
+}
+
+// HandleGetTags handles getting tags for an article.
+func (h *Handlers) HandleGetTags(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountIDFromCtx(r.Context())
+	articleID := utils.GetArticleID(r)
+
+	tags, err := h.service.GetArticleTags(r.Context(), accountID, articleID)
+	if err != nil {
+		utils.HandleServiceError(w, r, err, "get article tags")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(types.TagsResponse{Tags: tags})
+}
+
+// HandleRemoveTags handles removing specific tags from an article.
+func (h *Handlers) HandleRemoveTags(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountIDFromCtx(r.Context())
+	articleID := utils.GetArticleID(r)
+
+	var req types.TagsRequest
+	if err := utils.DecodeAndValidateRequest(w, r, &req); err != nil {
+		return
+	}
+
+	// Remove the specified tags
+	if err := h.service.RemoveArticleTags(r.Context(), accountID, articleID, req.Tags); err != nil {
+		utils.HandleServiceError(w, r, err, "remove tags from article")
+		return
+	}
+
+	tags, err := h.service.GetArticleTags(r.Context(), accountID, articleID)
+	if err != nil {
+		utils.HandleServiceError(w, r, err, "get article tags")
+		return
+	}
+
+	logging.AddLogAttr(r.Context(), slog.Int("tags_removed", len(req.Tags)))
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(types.TagsResponse{Tags: tags})
+}
+
+// HandleGetAllTags handles getting all tags for the authenticated user's account.
+func (h *Handlers) HandleGetAllTags(w http.ResponseWriter, r *http.Request) {
+	accountID := auth.GetAccountIDFromCtx(r.Context())
+
+	tags, err := h.service.GetAllTagsForAccount(r.Context(), accountID)
+	if err != nil {
+		utils.HandleServiceError(w, r, err, "get all tags for account")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(types.TagsResponse{Tags: tags})
 }

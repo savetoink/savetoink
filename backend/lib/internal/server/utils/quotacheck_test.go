@@ -135,6 +135,34 @@ func (m *quotaCheckMockService) ToggleFavorite(_ context.Context, _, _ string) (
 	panic("not implemented")
 }
 
+func (m *quotaCheckMockService) AddArticleTags(_ context.Context, _, _ string, _ []string) error {
+	panic("not implemented")
+}
+
+func (m *quotaCheckMockService) RemoveArticleTags(_ context.Context, _, _ string, _ []string) error {
+	panic("not implemented")
+}
+
+func (m *quotaCheckMockService) SetArticleTags(_ context.Context, _, _ string, _ []string) error {
+	panic("not implemented")
+}
+
+func (m *quotaCheckMockService) GetArticleTags(_ context.Context, _, _ string) ([]string, error) {
+	panic("not implemented")
+}
+
+func (m *quotaCheckMockService) GetArticlesByTag(
+	_ context.Context,
+	_, _ string,
+	_, _ int,
+) (*servicetypes.GetArticlesResult, error) {
+	panic("not implemented")
+}
+
+func (m *quotaCheckMockService) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
+	panic("not implemented")
+}
+
 func (m *quotaCheckMockService) CountSendsByAccountDateRange(
 	ctx context.Context,
 	accountID string,

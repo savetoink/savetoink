@@ -248,6 +248,34 @@ func (m *articleMockService) ToggleFavorite(ctx context.Context, accountID, arti
 	return true, nil
 }
 
+func (m *articleMockService) AddArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return errors.New("not implemented")
+}
+
+func (m *articleMockService) RemoveArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return errors.New("not implemented")
+}
+
+func (m *articleMockService) SetArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return errors.New("not implemented")
+}
+
+func (m *articleMockService) GetArticleTags(_ context.Context, _, _ string) ([]string, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *articleMockService) GetArticlesByTag(
+	_ context.Context,
+	_, _ string,
+	_, _ int,
+) (*servicetypes.GetArticlesResult, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *articleMockService) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (m *articleMockService) CountSendsByAccountDateRange(
 	ctx context.Context,
 	accountID string,
@@ -316,7 +344,6 @@ func TestHandleCreateArticle_Success(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "article-123", resp.ID)
-	assert.Equal(t, "Test Article", resp.Title)
 	assert.Equal(t, "https://example.com/article", resp.URL)
 
 	assert.True(t, mockProc.startProcessingCalled)
@@ -365,7 +392,6 @@ func TestHandleCreateArticle_SendOnComplete(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "article-123", resp.ID)
-	assert.Equal(t, "Test Article", resp.Title)
 	assert.Equal(t, "https://example.com/article", resp.URL)
 
 	assert.True(t, mockProc.startProcessingCalled)

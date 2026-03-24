@@ -283,6 +283,8 @@ export interface components {
             publishedAt?: string;
             /** @description Whether article is favorited */
             favorite?: boolean;
+            /** @description Tags associated with the article */
+            tags?: string[];
         };
         ArticleRequest: {
             /**
@@ -295,14 +297,22 @@ export interface components {
              * @default false
              */
             send_on_complete: boolean;
+            /** @description Tags to associate with the article (max 10 tags, max 50 characters each) */
+            tags?: string[];
         };
         ArticleResponse: {
             /** @description Article ID */
             id: string;
-            /** @description Article title */
-            title: string;
             /** @description Article URL */
             url: string;
+        };
+        TagsRequest: {
+            /** @description Tags to manage (1-10 tags, max 50 characters each) */
+            tags: string[];
+        };
+        TagsResponse: {
+            /** @description List of tags */
+            tags: string[];
         };
         ListArticlesResponse: {
             /** @description List of articles */
@@ -516,6 +526,8 @@ export interface operations {
                 page_size?: number;
                 /** @description Filter by favorite status */
                 favorite?: boolean;
+                /** @description Filter by tag */
+                tag?: string;
             };
             header?: never;
             path?: never;

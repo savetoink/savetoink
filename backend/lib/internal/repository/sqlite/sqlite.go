@@ -72,6 +72,9 @@ func (s *SQLite) CreateTables(ctx context.Context) error {
 	if err := s.createSendsTable(ctx); err != nil {
 		return fmt.Errorf("failed to create sends table: %w", err)
 	}
+	if err := s.createArticleTagsTable(ctx); err != nil {
+		return fmt.Errorf("failed to create article tags table: %w", err)
+	}
 	return nil
 }
 
@@ -147,6 +150,28 @@ func (s *SQLite) createSendsTable(ctx context.Context) error {
 	_, err := s.db.ExecContext(ctx, query)
 	if err != nil {
 		return fmt.Errorf("failed to create sends table: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLite) createArticleTagsTable(ctx context.Context) error {
+	query := `
+		CREATE TABLE IF NOT EXISTS article_tags (
+			account TEXT NOT NULL,
+			tag TEXT NOT NULL,
+			account_tag TEXT NOT NULL,
+			article_id TEXT NOT NULL,
+			created_at INTEGER NOT NULL,
+			created_at_article_id TEXT NOT NULL,
+			PRIMARY KEY (account_tag, created_at_article_id)
+		);
+		CREATE INDEX IF NOT EXISTS idx_article_tags_account ON article_tags(account);
+		CREATE INDEX IF NOT EXISTS idx_article_tags_article_id ON article_tags(article_id);
+		CREATE INDEX IF NOT EXISTS idx_article_tags_account_tag ON article_tags(account_tag);
+	`
+	_, err := s.db.ExecContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf("failed to create article tags table: %w", err)
 	}
 	return nil
 }

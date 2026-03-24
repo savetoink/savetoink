@@ -661,11 +661,41 @@ Resources:
           AttributeType: S
         - AttributeName: createdAtArticleId
           AttributeType: S
+        - AttributeName: account
+          AttributeType: S
+        - AttributeName: articleId
+          AttributeType: S
+        - AttributeName: tag
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
       KeySchema:
         - AttributeName: accountTag
           KeyType: HASH
         - AttributeName: createdAtArticleId
           KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: ArticleIdCreatedAtIndex
+          KeySchema:
+            - AttributeName: articleId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes:
+              - tag
+        - IndexName: AccountTagIndex
+          KeySchema:
+            - AttributeName: account
+              KeyType: HASH
+            - AttributeName: tag
+              KeyType: RANGE
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes:
+              - articleId
+              - createdAt
       BillingMode: PAY_PER_REQUEST
 
   UserProfileTable:

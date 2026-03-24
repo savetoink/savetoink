@@ -100,7 +100,7 @@
 			<header>
 				<strong>Article Added!</strong>
 			</header>
-			<p>{article?.title || 'Your article has been saved'}</p>
+			<p>Your article has been saved</p>
 			<footer>
 				<progress aria-busy="true"></progress>
 				<small>Redirecting to articles...</small>
