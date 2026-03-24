@@ -11,8 +11,7 @@
 	}
 	const title = getAppTitle(isDev);
 
-	let { children, data } = $props();
-	const loggedIn = $derived(data.isLoggedIn);
+	let { children } = $props();
 </script>
 
 <svelte:head>
@@ -29,7 +28,7 @@
 </svelte:head>
 
 <header class="container">
-	<Nav {loggedIn} />
+	<Nav />
 </header>
 
 <main class="container">
