@@ -24,6 +24,11 @@ func (d *DynamoDB) Store(ctx context.Context, article *model.Article) error {
 		return fmt.Errorf("failed to marshal article: %w", err)
 	}
 
+	// If the article is a favorite, set the accountFavorite attribute for the sparse index
+	if article.Favorite {
+		item[attributeNameAccountFavorite] = &types.AttributeValueMemberS{Value: article.Account + "#favorite"}
+	}
+
 	_, err = d.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(d.articleTableName),
 		Item:      item,
@@ -57,7 +62,14 @@ func (d *DynamoDB) GetByAccountAndID(ctx context.Context, account, id string) (*
 		return nil, unmarshalErr
 	}
 
+	article.Favorite = isFavorite(resp.Item)
+
 	return &article, nil
+}
+
+func isFavorite(item map[string]types.AttributeValue) bool {
+	// set favorite based on presence of accountFavorite attribute
+	return item[attributeNameAccountFavorite] != nil
 }
 
 // DeleteByAccountAndID implements Repository.DeleteByAccountAndID.
@@ -79,23 +91,21 @@ func (d *DynamoDB) DeleteByAccountAndID(ctx context.Context, account, id string)
 // UpdateFavorite updates the favorite status of an article.
 func (d *DynamoDB) UpdateFavorite(ctx context.Context, account, id string, favorite bool) error {
 	attrNames := map[string]string{
-		"#f": attributeNameFavorite,
-	}
-	attrValues := map[string]types.AttributeValue{
-		":favorite": &types.AttributeValueMemberBOOL{Value: favorite},
+		"#af": attributeNameAccountFavorite,
 	}
 
 	var updateExpr string
+	var attrValues map[string]types.AttributeValue
 
 	if favorite {
-		// When toggling on: SET #f = :favorite, #af = :accountFavorite
-		attrNames["#af"] = attributeNameAccountFavorite
-		attrValues[":accountFavorite"] = &types.AttributeValueMemberS{Value: account + "#favorite"}
-		updateExpr = "SET #f = :favorite, #af = :accountFavorite"
+		// When toggling on: SET #af = :accountFavorite
+		attrValues = map[string]types.AttributeValue{
+			":accountFavorite": &types.AttributeValueMemberS{Value: account + "#favorite"},
+		}
+		updateExpr = "SET #af = :accountFavorite"
 	} else {
-		// When toggling off: SET #f = :favorite REMOVE #af
-		attrNames["#af"] = attributeNameAccountFavorite
-		updateExpr = "SET #f = :favorite REMOVE #af"
+		// When toggling off: REMOVE #af
+		updateExpr = "REMOVE #af"
 	}
 
 	_, err := d.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
