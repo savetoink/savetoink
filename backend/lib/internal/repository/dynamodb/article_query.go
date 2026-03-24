@@ -96,7 +96,7 @@ func (d *DynamoDB) GetMetadataByAccount(
 	account string,
 	page, pageSize int,
 	filter *internaltypes.ArticleFilter,
-) (articles []*model.Article, lastEvaluatedKey any, total int, err error) {
+) (articles []*model.Article, total int, err error) {
 	if page < consts.MinPage || pageSize < consts.MinPageSize || pageSize > consts.MaxPageSize {
 		pageSize = consts.DefaultPageSize
 	}
@@ -108,16 +108,16 @@ func (d *DynamoDB) GetMetadataByAccount(
 
 	total, err = d.totalCountByAccount(ctx, account, favoriteFilter)
 	if err != nil {
-		return nil, nil, 0, fmt.Errorf("failed to get count: %w", err)
+		return nil, 0, fmt.Errorf("failed to get count: %w", err)
 	}
 
 	if total == 0 {
-		return []*model.Article{}, nil, 0, nil
+		return []*model.Article{}, 0, nil
 	}
 
 	offset := (page - 1) * pageSize
 	if offset >= total {
-		return []*model.Article{}, nil, total, nil
+		return []*model.Article{}, total, nil
 	}
 
 	var exclusiveStartKey map[string]types.AttributeValue
@@ -127,7 +127,7 @@ func (d *DynamoDB) GetMetadataByAccount(
 		skipSize := min(pageSize, offset-i)
 		resp, err = d.queryArticlesByAccount(ctx, account, skipSize, exclusiveStartKey, favoriteFilter)
 		if err != nil {
-			return nil, nil, 0, fmt.Errorf("failed to query articles: %w", err)
+			return nil, 0, fmt.Errorf("failed to query articles: %w", err)
 		}
 		exclusiveStartKey = resp.LastEvaluatedKey
 		if exclusiveStartKey == nil {
@@ -137,15 +137,15 @@ func (d *DynamoDB) GetMetadataByAccount(
 
 	resp, err = d.queryArticlesByAccount(ctx, account, pageSize, exclusiveStartKey, favoriteFilter)
 	if err != nil {
-		return nil, nil, 0, fmt.Errorf("failed to query articles: %w", err)
+		return nil, 0, fmt.Errorf("failed to query articles: %w", err)
 	}
 
 	articles, err = d.unmarshalArticles(resp.Items)
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, 0, err
 	}
 
-	return articles, resp.LastEvaluatedKey, total, nil
+	return articles, total, nil
 }
 
 func (d *DynamoDB) queryArticlesByAccount(

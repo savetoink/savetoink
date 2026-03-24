@@ -281,13 +281,12 @@ func (s *SQLite) UpdateFavorite(ctx context.Context, account, id string, favorit
 }
 
 // GetMetadataByAccount implements ArticlesRepository.GetMetadataByAccount.
-// Note: SQLite implementation returns nil for lastEvaluatedKey as it uses LIMIT/OFFSET pagination.
 func (s *SQLite) GetMetadataByAccount(
 	ctx context.Context,
 	account string,
 	page, pageSize int,
 	filter *internaltypes.ArticleFilter,
-) (articles []*model.Article, lastEvaluatedKey any, total int, err error) {
+) (articles []*model.Article, total int, err error) {
 	if page < 1 || pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
@@ -299,24 +298,24 @@ func (s *SQLite) GetMetadataByAccount(
 
 	total, err = s.countArticlesByAccount(ctx, account, favoriteFilter)
 	if err != nil {
-		return nil, nil, 0, fmt.Errorf("failed to count articles: %w", err)
+		return nil, 0, fmt.Errorf("failed to count articles: %w", err)
 	}
 
 	if total == 0 {
-		return []*model.Article{}, nil, 0, nil
+		return []*model.Article{}, 0, nil
 	}
 
 	offset := (page - 1) * pageSize
 	if offset >= total {
-		return []*model.Article{}, nil, total, nil
+		return []*model.Article{}, total, nil
 	}
 
 	articles, err = s.queryArticlesByAccount(ctx, account, pageSize, offset, favoriteFilter)
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, 0, err
 	}
 
-	return articles, nil, total, nil
+	return articles, total, nil
 }
 
 func (s *SQLite) countArticlesByAccount(ctx context.Context, account string, favoriteFilter *bool) (int, error) {

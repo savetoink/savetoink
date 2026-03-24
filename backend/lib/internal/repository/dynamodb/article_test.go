@@ -156,7 +156,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount() {
 		require.NoError(t, err)
 	}
 
-	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, nil)
+	articles, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 5, total)
 	assert.Len(t, articles, 5)
@@ -202,7 +202,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithFavoriteFilter
 	}
 
 	favorite := true
-	articles, _, total, err := s.repositories.GetMetadataByAccount(
+	articles, total, err := s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
@@ -246,17 +246,17 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountPagination() {
 		require.NoError(t, err)
 	}
 
-	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, nil)
+	articles, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 25, total)
 	assert.Len(t, articles, 10)
 
-	articles2, _, total2, err := s.repositories.GetMetadataByAccount(ctx, account, 2, 10, nil)
+	articles2, total2, err := s.repositories.GetMetadataByAccount(ctx, account, 2, 10, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 25, total2)
 	assert.Len(t, articles2, 10)
 
-	articles3, _, total3, err := s.repositories.GetMetadataByAccount(ctx, account, 3, 10, nil)
+	articles3, total3, err := s.repositories.GetMetadataByAccount(ctx, account, 3, 10, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 25, total3)
 	assert.Len(t, articles3, 5)
@@ -268,7 +268,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountEmpty() {
 
 	account := "test-account-empty"
 
-	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, nil)
+	articles, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, nil)
 	require.NoError(t, err)
 	assert.Empty(t, articles)
 	assert.Equal(t, 0, total)
@@ -305,7 +305,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountOffsetOutOfBounds(
 	err := s.repositories.Store(ctx, article)
 	require.NoError(t, err)
 
-	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 100, 10, nil)
+	articles, total, err := s.repositories.GetMetadataByAccount(ctx, account, 100, 10, nil)
 	require.NoError(t, err)
 	assert.Empty(t, articles)
 	assert.Equal(t, 1, total)
@@ -414,7 +414,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPaginati
 
 	// First page
 	favorite := true
-	articles, _, total, err := s.repositories.GetMetadataByAccount(
+	articles, total, err := s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 25, total)
@@ -425,7 +425,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPaginati
 	}
 
 	// Second page
-	articles, _, total, err = s.repositories.GetMetadataByAccount(
+	articles, total, err = s.repositories.GetMetadataByAccount(
 		ctx, account, 2, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 25, total)
@@ -436,7 +436,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPaginati
 	}
 
 	// Third page
-	articles, _, total, err = s.repositories.GetMetadataByAccount(
+	articles, total, err = s.repositories.GetMetadataByAccount(
 		ctx, account, 3, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 25, total)
@@ -469,7 +469,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesEmptyRes
 
 	// Query for favorites - should return empty
 	favorite := true
-	articles, _, total, err := s.repositories.GetMetadataByAccount(
+	articles, total, err := s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 0, total)

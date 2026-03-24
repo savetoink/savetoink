@@ -65,9 +65,9 @@ func (r *testArticlesRepo) GetMetadataByAccount(
 	account string,
 	_, _ int,
 	filter *types.ArticleFilter,
-) (articles []*model.Article, lastKey any, total int, err error) {
+) (articles []*model.Article, total int, err error) {
 	if r.metadataErr != nil {
-		return nil, nil, 0, r.metadataErr
+		return nil, 0, r.metadataErr
 	}
 	var favoriteFilter *bool
 	if filter != nil {
@@ -88,7 +88,7 @@ func (r *testArticlesRepo) GetMetadataByAccount(
 			})
 		}
 	}
-	return result, nil, len(result), nil
+	return result, len(result), nil
 }
 
 func (r *testArticlesRepo) DeleteByAccountAndID(_ context.Context, account, id string) error {

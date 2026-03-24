@@ -54,9 +54,9 @@ func (m *MockRepository) GetMetadataByAccount(
 	account string,
 	_page, _pageSize int, //nolint:revive // unused parameters required by interface
 	filter *types.ArticleFilter,
-) (result []*model.Article, lastEvaluatedKey any, total int, err error) {
+) (result []*model.Article, total int, err error) {
 	if m.metadataErr != nil {
-		return nil, nil, 0, m.metadataErr
+		return nil, 0, m.metadataErr
 	}
 	var favoriteFilter *bool
 	if filter != nil {
@@ -70,7 +70,7 @@ func (m *MockRepository) GetMetadataByAccount(
 			result = append(result, article)
 		}
 	}
-	return result, nil, len(result), nil
+	return result, len(result), nil
 }
 
 func (m *MockRepository) DeleteByAccountAndID(_ context.Context, account, id string) error {

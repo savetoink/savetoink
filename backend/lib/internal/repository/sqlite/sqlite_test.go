@@ -237,10 +237,9 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount() {
 		s.NoError(err)
 	}
 
-	articles, lastKey, total, err := s.repository.GetMetadataByAccount(s.ctx, "test-account", 1, 2, nil)
+	articles, total, err := s.repository.GetMetadataByAccount(s.ctx, "test-account", 1, 2, nil)
 	s.NoError(err)
 	s.Len(articles, 2)
-	s.Nil(lastKey)
 	s.Equal(5, total)
 }
 
@@ -259,7 +258,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithFavoriteFilter(
 	}
 
 	favorite := true
-	articles, _, total, err := s.repository.GetMetadataByAccount(
+	articles, total, err := s.repository.GetMetadataByAccount(
 		s.ctx, "test-account", 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 3)
@@ -267,7 +266,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithFavoriteFilter(
 }
 
 func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_EmptyResult() {
-	articles, _, total, err := s.repository.GetMetadataByAccount(s.ctx, "nonexistent", 1, 10, nil)
+	articles, total, err := s.repository.GetMetadataByAccount(s.ctx, "nonexistent", 1, 10, nil)
 	s.NoError(err)
 	s.Empty(articles)
 	s.Equal(0, total)
@@ -284,14 +283,14 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_PageOutOfBounds() {
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	articles, _, total, err := s.repository.GetMetadataByAccount(s.ctx, "pageout-account", 100, 10, nil)
+	articles, total, err := s.repository.GetMetadataByAccount(s.ctx, "pageout-account", 100, 10, nil)
 	s.NoError(err)
 	s.Empty(articles)
 	s.Equal(1, total)
 }
 
 func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_InvalidPageSize() {
-	_, _, total, err := s.repository.GetMetadataByAccount(s.ctx, "invalidpagesize-account", 1, 150, nil)
+	_, total, err := s.repository.GetMetadataByAccount(s.ctx, "invalidpagesize-account", 1, 150, nil)
 	s.NoError(err)
 	s.Equal(0, total)
 }
@@ -763,9 +762,8 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_DatabaseError() {
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	articles, lastKey, total, err := s.repository.GetMetadataByAccount(ctx, "test-account", 1, 10, nil)
+	articles, total, err := s.repository.GetMetadataByAccount(ctx, "test-account", 1, 10, nil)
 	_ = articles
-	_ = lastKey
 	_ = total
 	s.Error(err)
 }
@@ -917,9 +915,8 @@ func (s *SQLiteRepositoryTestSuite) TestQueryArticlesByAccount_ScanError() {
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	articles, lastKey, total, err := s.repository.GetMetadataByAccount(ctx, "test-account", 1, 10, nil)
+	articles, total, err := s.repository.GetMetadataByAccount(ctx, "test-account", 1, 10, nil)
 	_ = articles
-	_ = lastKey
 	_ = total
 	s.Error(err)
 }
@@ -1071,7 +1068,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPagination
 
 	favorite := true
 
-	articles, _, total, err := s.repository.GetMetadataByAccount(
+	articles, total, err := s.repository.GetMetadataByAccount(
 		s.ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 10)
@@ -1081,13 +1078,13 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPagination
 		s.True(article.Favorite)
 	}
 
-	articles, _, total, err = s.repository.GetMetadataByAccount(
+	articles, total, err = s.repository.GetMetadataByAccount(
 		s.ctx, account, 2, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 10)
 	s.Equal(25, total)
 
-	articles, _, total, err = s.repository.GetMetadataByAccount(
+	articles, total, err = s.repository.GetMetadataByAccount(
 		s.ctx, account, 3, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 5)
@@ -1111,7 +1108,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_NonFavoritesFilter(
 	}
 
 	favorite := false
-	articles, _, total, err := s.repository.GetMetadataByAccount(
+	articles, total, err := s.repository.GetMetadataByAccount(
 		s.ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 5)
