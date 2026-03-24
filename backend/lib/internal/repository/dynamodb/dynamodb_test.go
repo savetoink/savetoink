@@ -5,6 +5,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	testhelpers "github.com/shaftoe/savetoink/backend/lib/internal/repository/testhelpers"
@@ -49,7 +50,7 @@ func (s *DynamoDBRepositoryTestSuite) SetupSuite() {
 	}
 
 	s.client = dynamoDBClient
-	s.repositories = NewDynamoDB(nil, "test-articles", "test-user-profiles", "test-sends")
+	s.repositories = NewDynamoDB(nil, "test-articles", "test-user-profiles", "test-sends", "test-article-tags")
 	s.repositories.client = dynamoDBClient
 }
 
@@ -59,12 +60,33 @@ func (s *DynamoDBRepositoryTestSuite) TearDownSuite() {
 	}
 }
 
+func (s *DynamoDBRepositoryTestSuite) SetupTest() {
+	// Clean up tables before each test to ensure test isolation
+	_, _ = s.client.DeleteTable(s.ctx, &dynamodb.DeleteTableInput{
+		TableName: aws.String("test-articles"),
+	})
+	_, _ = s.client.DeleteTable(s.ctx, &dynamodb.DeleteTableInput{
+		TableName: aws.String("test-article-tags"),
+	})
+	_, _ = s.client.DeleteTable(s.ctx, &dynamodb.DeleteTableInput{
+		TableName: aws.String("test-user-profiles"),
+	})
+	_, _ = s.client.DeleteTable(s.ctx, &dynamodb.DeleteTableInput{
+		TableName: aws.String("test-sends"),
+	})
+	err := testhelpers.SetupAllTables(s.ctx, s.client)
+	if err != nil {
+		log.Printf("failed to setup tables for test: %v", err)
+	}
+}
+
 func TestNewDynamoDB(t *testing.T) {
 	tests := []struct {
 		name              string
 		articlesTableName string
 		profileTableName  string
 		sendsTableName    string
+		articleTagsTable  string
 		shouldPanic       bool
 		expectedPanicMsg  string
 	}{
@@ -73,6 +95,7 @@ func TestNewDynamoDB(t *testing.T) {
 			articlesTableName: "articles",
 			profileTableName:  "profiles",
 			sendsTableName:    "sends",
+			articleTagsTable:  "article-tags",
 			shouldPanic:       false,
 		},
 		{
@@ -80,6 +103,7 @@ func TestNewDynamoDB(t *testing.T) {
 			articlesTableName: "",
 			profileTableName:  "profiles",
 			sendsTableName:    "sends",
+			articleTagsTable:  "article-tags",
 			shouldPanic:       true,
 			expectedPanicMsg:  "articles table name is required",
 		},
@@ -88,6 +112,7 @@ func TestNewDynamoDB(t *testing.T) {
 			articlesTableName: "articles",
 			profileTableName:  "",
 			sendsTableName:    "sends",
+			articleTagsTable:  "article-tags",
 			shouldPanic:       true,
 			expectedPanicMsg:  "user profile table name is required",
 		},
@@ -96,6 +121,7 @@ func TestNewDynamoDB(t *testing.T) {
 			articlesTableName: "articles",
 			profileTableName:  "profiles",
 			sendsTableName:    "",
+			articleTagsTable:  "article-tags",
 			shouldPanic:       true,
 			expectedPanicMsg:  "sends table name is required",
 		},
@@ -104,6 +130,7 @@ func TestNewDynamoDB(t *testing.T) {
 			articlesTableName: "",
 			profileTableName:  "",
 			sendsTableName:    "",
+			articleTagsTable:  "",
 			shouldPanic:       true,
 			expectedPanicMsg:  "articles table name is required",
 		},
@@ -113,14 +140,15 @@ func TestNewDynamoDB(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.shouldPanic {
 				assert.PanicsWithValue(t, tt.expectedPanicMsg, func() {
-					NewDynamoDB(nil, tt.articlesTableName, tt.profileTableName, tt.sendsTableName)
+					NewDynamoDB(nil, tt.articlesTableName, tt.profileTableName, tt.sendsTableName, tt.articleTagsTable)
 				})
 			} else {
-				db := NewDynamoDB(nil, tt.articlesTableName, tt.profileTableName, tt.sendsTableName)
+				db := NewDynamoDB(nil, tt.articlesTableName, tt.profileTableName, tt.sendsTableName, tt.articleTagsTable)
 				assert.NotNil(t, db)
 				assert.Equal(t, tt.articlesTableName, db.articleTableName)
 				assert.Equal(t, tt.profileTableName, db.profileTableName)
 				assert.Equal(t, tt.sendsTableName, db.sendsTableName)
+				assert.Equal(t, tt.articleTagsTable, db.articleTagsTableName)
 			}
 		})
 	}

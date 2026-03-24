@@ -4,7 +4,7 @@ smoketest-create-article URL:
       -X POST http://localhost:8080/v1/articles \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer $SAVETOINK_API_KEY" \
-      -d "{\"url\": \"{{ URL }}\", \"tags\":\"test\"}" | jq .
+      -d "{\"url\": \"{{ URL }}\", \"tags\":[\"test\", \"another-tag\"]}" | jq .
 
 smoketest-send-article ID:
     curl --silent \

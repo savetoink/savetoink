@@ -41,13 +41,26 @@ func TestArticle_JSONSerialization(t *testing.T) {
 				ReadingTimeMinutes: 1,
 				PublishedAt:        func() *time.Time { t := time.Date(2024, 3, 14, 10, 0, 0, 0, time.UTC); return &t }(),
 				Favorite:           true,
+				Tags:               []string{"tech", "golang"},
 			},
 			wantJSON: `{"account":"test-account","id":"test-id","url":"https://example.com/article",` +
 				`"createdAt":"2024-03-15T10:30:00Z","title":"Test Article","content":"Test content",` +
 				`"author":"Test Author","siteName":"Test Site","sourceDomain":"example.com",` +
 				`"excerpt":"Test excerpt","imageUrl":"https://example.com/image.jpg","contentType":"text/html",` +
 				`"language":"en","wordCount":100,"readingTimeMinutes":1,` +
-				`"publishedAt":"2024-03-14T10:00:00Z","favorite":true}`,
+				`"publishedAt":"2024-03-14T10:00:00Z","favorite":true,"tags":["tech","golang"]}`,
+		},
+		{
+			name: "article with tags only",
+			article: Article{
+				Account:   "test-account",
+				ID:        "test-id",
+				URL:       testArticleURL,
+				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
+				Tags:      []string{"programming"},
+			},
+			wantJSON: `{"account":"test-account","id":"test-id","url":"https://example.com/article",` +
+				`"createdAt":"2024-03-15T10:30:00Z","tags":["programming"]}`,
 		},
 		{
 			name: "minimal article",
@@ -165,6 +178,7 @@ func TestArticle_DynamoDBAttributeMapping(t *testing.T) {
 			assert.Equal(t, tt.article.Error, unmarshaled.Error)
 			assert.Equal(t, tt.article.WordCount, unmarshaled.WordCount)
 			assert.Equal(t, tt.article.ReadingTimeMinutes, unmarshaled.ReadingTimeMinutes)
+			assert.Equal(t, tt.article.Tags, unmarshaled.Tags)
 			// Favorite field is not persisted to DynamoDB; it's derived from the presence of accountFavorite
 			assert.False(t, unmarshaled.Favorite)
 
@@ -207,6 +221,7 @@ func TestArticle_EmptyFields(t *testing.T) {
 	assert.Zero(t, unmarshaled.ReadingTimeMinutes)
 	assert.False(t, unmarshaled.Favorite)
 	assert.Nil(t, unmarshaled.PublishedAt)
+	assert.Nil(t, unmarshaled.Tags)
 }
 
 func TestErrorResponse_JSONSerialization(t *testing.T) {

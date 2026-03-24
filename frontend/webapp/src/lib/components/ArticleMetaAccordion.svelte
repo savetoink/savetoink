@@ -44,6 +44,12 @@
 			<dt>Added</dt>
 			<dd><time datetime={article.createdAt}>{formatDate(article.createdAt)}</time></dd>
 		{/if}
+		{#if article.tags}
+			<dt>Tags</dt>
+			{#each article.tags as tag (tag)}
+				<dd>{tag}</dd>
+			{/each}
+		{/if}
 		<dt>Original link</dt>
 		<dd>
 			<a href={article.url} target="_blank" rel="external noopener">{article.url}</a>

@@ -83,6 +83,15 @@ const (
 	MinimumOutputSize = 0
 )
 
+// Tag constants.
+const (
+	// MaxTagsPerArticle is the maximum number of tags allowed per article.
+	MaxTagsPerArticle = 10
+
+	// MaxTagLength is the maximum allowed length for a single tag.
+	MaxTagLength = 50
+)
+
 // Auth0 client timeout constants.
 const (
 	// Auth0ClientTimeout is the timeout for Auth0 API calls.

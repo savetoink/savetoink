@@ -5,6 +5,8 @@
 	import ArticleControls from '$lib/components/ArticleControls.svelte';
 	import KeyboardNav from '$lib/components/KeyboardNav.svelte';
 	import ArticleMetaAccordion from '$lib/components/ArticleMetaAccordion.svelte';
+	import Tags from '$lib/components/Tags.svelte';
+
 	import {
 		DETAIL_BINDINGS,
 		toggleFavorite as toggleFavoriteAction,
@@ -104,6 +106,7 @@
 			{/if}
 		</h1>
 
+		<Tags tags={data.tags} />
 		<ArticleMetaAccordion article={data} />
 		<ArticleControls
 			article={data}

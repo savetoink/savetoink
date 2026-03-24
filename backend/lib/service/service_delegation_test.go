@@ -186,6 +186,39 @@ func (r *testSendsRepo) CountSendsByAccountDateRange(_ context.Context, _ string
 	return r.countResult, r.countErr
 }
 
+type testArticleTagsRepo struct {
+	deleteErr error
+}
+
+func (r *testArticleTagsRepo) AddTagsToArticle(_ context.Context, _, _ string, _ []string, _ *time.Time) error {
+	return nil
+}
+
+func (r *testArticleTagsRepo) RemoveTagsFromArticle(_ context.Context, _, _ string, _ []string) error {
+	return nil
+}
+
+func (r *testArticleTagsRepo) SetArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return nil
+}
+
+func (r *testArticleTagsRepo) GetArticleTags(_ context.Context, _, _ string) ([]string, error) {
+	return nil, nil
+}
+
+func (r *testArticleTagsRepo) GetArticlesByTag(_ context.Context, _, _ string, _, _ int) ( //nolint:gocritic
+	[]string, int, error) {
+	return nil, 0, nil
+}
+
+func (r *testArticleTagsRepo) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
+
+func (r *testArticleTagsRepo) DeleteTagsForArticle(_ context.Context, _, _ string) error {
+	return r.deleteErr
+}
+
 func TestCreateArticle_Success(t *testing.T) {
 	repo := &testArticlesRepo{articles: []*model.Article{}}
 	profileRepo := &testUserProfileRepo{}
@@ -1722,6 +1755,7 @@ func TestDeleteArticle_Success(t *testing.T) {
 	}
 	profileRepo := &testUserProfileRepo{}
 	sendsRepo := &testSendsRepo{}
+	articleTagsRepo := &testArticleTagsRepo{}
 
 	svc := New(&Dependencies{
 		Fetcher:         content.NewFetcher(""),
@@ -1732,6 +1766,7 @@ func TestDeleteArticle_Success(t *testing.T) {
 		ArticlesRepo:    repo,
 		UserProfileRepo: profileRepo,
 		SendsRepo:       sendsRepo,
+		ArticleTagsRepo: articleTagsRepo,
 	})
 
 	result, err := svc.DeleteArticle(context.Background(), "account-1", "article-1")

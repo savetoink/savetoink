@@ -124,6 +124,34 @@ func (m *webhookMockService) ToggleFavorite(_ context.Context, _, _ string) (boo
 	return false, errors.New("not implemented")
 }
 
+func (m *webhookMockService) AddArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return errors.New("not implemented")
+}
+
+func (m *webhookMockService) RemoveArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return errors.New("not implemented")
+}
+
+func (m *webhookMockService) SetArticleTags(_ context.Context, _, _ string, _ []string) error {
+	return errors.New("not implemented")
+}
+
+func (m *webhookMockService) GetArticleTags(_ context.Context, _, _ string) ([]string, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *webhookMockService) GetArticlesByTag(
+	_ context.Context,
+	_, _ string,
+	_, _ int,
+) (*servicetypes.GetArticlesResult, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *webhookMockService) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (m *webhookMockService) CountSendsByAccountDateRange(_ context.Context, _ string, _, _ time.Time) (int, error) {
 	return 0, nil
 }

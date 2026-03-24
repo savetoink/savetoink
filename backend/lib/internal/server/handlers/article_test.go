@@ -5,11 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
+	"strconv"
 	"testing"
 	"time"
 
@@ -90,7 +93,17 @@ type articleMockService struct {
 		accountID string,
 		startDate, endDate time.Time,
 	) (int, error)
-	dbError error
+	addTagsFunc          func(ctx context.Context, accountID, articleID string, tags []string) error
+	removeTagsFunc       func(ctx context.Context, accountID, articleID string, tags []string) error
+	setTagsFunc          func(ctx context.Context, accountID, articleID string, tags []string) error
+	getTagsFunc          func(ctx context.Context, accountID, articleID string) ([]string, error)
+	getArticlesByTagFunc func(
+		ctx context.Context,
+		accountID, tag string,
+		page, pageSize int,
+	) (*servicetypes.GetArticlesResult, error)
+	getAllTagsFunc func(ctx context.Context, accountID string) ([]string, error)
+	dbError        error
 }
 
 func (m *articleMockService) Fetch(
@@ -248,6 +261,58 @@ func (m *articleMockService) ToggleFavorite(ctx context.Context, accountID, arti
 	return true, nil
 }
 
+func (m *articleMockService) AddArticleTags(ctx context.Context, accountID, articleID string, tags []string) error {
+	if m.addTagsFunc != nil {
+		return m.addTagsFunc(ctx, accountID, articleID, tags)
+	}
+	return nil
+}
+
+func (m *articleMockService) RemoveArticleTags(ctx context.Context, accountID, articleID string, tags []string) error {
+	if m.removeTagsFunc != nil {
+		return m.removeTagsFunc(ctx, accountID, articleID, tags)
+	}
+	return nil
+}
+
+func (m *articleMockService) SetArticleTags(ctx context.Context, accountID, articleID string, tags []string) error {
+	if m.setTagsFunc != nil {
+		return m.setTagsFunc(ctx, accountID, articleID, tags)
+	}
+	return nil
+}
+
+func (m *articleMockService) GetArticleTags(ctx context.Context, accountID, articleID string) ([]string, error) {
+	if m.getTagsFunc != nil {
+		return m.getTagsFunc(ctx, accountID, articleID)
+	}
+	return []string{"tech", "programming"}, nil
+}
+
+func (m *articleMockService) GetArticlesByTag(
+	ctx context.Context,
+	accountID, tag string,
+	page, pageSize int,
+) (*servicetypes.GetArticlesResult, error) {
+	if m.getArticlesByTagFunc != nil {
+		return m.getArticlesByTagFunc(ctx, accountID, tag, page, pageSize)
+	}
+	return &servicetypes.GetArticlesResult{
+		Articles: []*model.Article{},
+		Page:     page,
+		PageSize: pageSize,
+		Total:    0,
+		HasMore:  false,
+	}, nil
+}
+
+func (m *articleMockService) GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error) {
+	if m.getAllTagsFunc != nil {
+		return m.getAllTagsFunc(ctx, accountID)
+	}
+	return []string{"tech", "programming", "golang"}, nil
+}
+
 func (m *articleMockService) CountSendsByAccountDateRange(
 	ctx context.Context,
 	accountID string,
@@ -316,7 +381,6 @@ func TestHandleCreateArticle_Success(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "article-123", resp.ID)
-	assert.Equal(t, "Test Article", resp.Title)
 	assert.Equal(t, "https://example.com/article", resp.URL)
 
 	assert.True(t, mockProc.startProcessingCalled)
@@ -365,7 +429,6 @@ func TestHandleCreateArticle_SendOnComplete(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, "article-123", resp.ID)
-	assert.Equal(t, "Test Article", resp.Title)
 	assert.Equal(t, "https://example.com/article", resp.URL)
 
 	assert.True(t, mockProc.startProcessingCalled)
@@ -1194,4 +1257,591 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 	h.HandleSendArticle(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+// Tag endpoint tests
+
+func TestHandleAddTags_Success(t *testing.T) {
+	mockSvc := &articleMockService{
+		addTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
+			assert.ElementsMatch(t, []string{"tech", "programming"}, tags)
+			return nil
+		},
+		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
+			return []string{"programming", "tech", "old-tag"}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	body := types.TagsRequest{Tags: []string{"tech", "programming"}}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount(), "POST", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "article-123")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	w := httptest.NewRecorder()
+
+	h.HandleAddTags(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.TagsResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"programming", "tech", "old-tag"}, resp.Tags)
+}
+
+func TestHandleAddTags_InvalidTags(t *testing.T) {
+	mockSvc := &articleMockService{
+		addTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
+			// Simulate service layer validation - invalid tags should fail
+			if len(tags) > 0 {
+				if slices.Contains(tags, "tag with special characters!@#") {
+					return fmt.Errorf("failed to validate tags: %w", apperrors.ErrInvalid)
+				}
+			}
+			return nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	body := types.TagsRequest{Tags: []string{"tag with special characters!@#"}}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount(), "POST", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "article-123")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	w := httptest.NewRecorder()
+
+	h.HandleAddTags(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var errResp model.ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errResp)
+	require.NoError(t, err)
+	assert.Contains(t, errResp.Error, "failed to validate tags")
+}
+
+func TestHandleAddTags_TooManyTags(t *testing.T) {
+	mockSvc := &articleMockService{
+		addTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
+			// Simulate service layer validation - too many tags should fail
+			if len(tags) > 10 {
+				return fmt.Errorf("failed to validate tags: %w", apperrors.ErrInvalid)
+			}
+			return nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	// Create 11 tags (max is 10)
+	tags := make([]string, 11)
+	for i := range 11 {
+		tags[i] = "tag" + strconv.Itoa(i)
+	}
+
+	body := types.TagsRequest{Tags: tags}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount(), "POST", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "article-123")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	w := httptest.NewRecorder()
+
+	h.HandleAddTags(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var errResp model.ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errResp)
+	require.NoError(t, err)
+	assert.Contains(t, errResp.Error, "failed to validate tags")
+}
+
+func TestHandleSetTags_Success(t *testing.T) {
+	mockSvc := &articleMockService{
+		setTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
+			assert.ElementsMatch(t, []string{"new-tag-1", "new-tag-2"}, tags)
+			return nil
+		},
+		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
+			return []string{"new-tag-1", "new-tag-2"}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	body := types.TagsRequest{Tags: []string{"new-tag-1", "new-tag-2"}}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount(), "PUT", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "article-123")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	w := httptest.NewRecorder()
+
+	h.HandleSetTags(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.TagsResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"new-tag-1", "new-tag-2"}, resp.Tags)
+}
+
+func TestHandleSetTags_EmptyTags(t *testing.T) {
+	mockSvc := &articleMockService{
+		setTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
+			assert.Empty(t, tags)
+			return nil
+		},
+		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
+			return []string{}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	body := types.TagsRequest{Tags: []string{}}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount(), "PUT", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "article-123")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	w := httptest.NewRecorder()
+
+	h.HandleSetTags(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.TagsResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Empty(t, resp.Tags)
+}
+
+func TestHandleGetTags_Success(t *testing.T) {
+	mockSvc := &articleMockService{
+		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
+			return []string{"programming", "tech"}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+		"GET",
+		"/v1/articles/article-123/tags",
+		nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "article-123")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	w := httptest.NewRecorder()
+
+	h.HandleGetTags(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.TagsResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(resp.Tags))
+	assert.Contains(t, resp.Tags, "programming")
+	assert.Contains(t, resp.Tags, "tech")
+}
+
+func TestHandleGetTags_Empty(t *testing.T) {
+	mockSvc := &articleMockService{
+		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
+			return []string{}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+		"GET",
+		"/v1/articles/article-123/tags",
+		nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "article-123")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	w := httptest.NewRecorder()
+
+	h.HandleGetTags(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.TagsResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Empty(t, resp.Tags)
+}
+
+func TestHandleGetTags_ServiceError(t *testing.T) {
+	tests := []struct {
+		name           string
+		serviceErr     error
+		expectedStatus int
+	}{
+		{
+			name:           "ErrNotFound",
+			serviceErr:     apperrors.ErrNotFound,
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:           "generic error",
+			serviceErr:     errors.New("some error"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockSvc := &articleMockService{
+				getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
+					return nil, tt.serviceErr
+				},
+			}
+
+			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+				"GET", "/v1/articles/article-123/tags", nil)
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("id", "article-123")
+			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+			w := httptest.NewRecorder()
+
+			h.HandleGetTags(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
+
+func TestHandleRemoveTags_Success(t *testing.T) {
+	mockSvc := &articleMockService{
+		removeTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
+			assert.ElementsMatch(t, []string{"old-tag"}, tags)
+			return nil
+		},
+		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
+			return []string{"programming", "tech"}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	body := types.TagsRequest{Tags: []string{"old-tag"}}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount(), "DELETE", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "article-123")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	w := httptest.NewRecorder()
+
+	h.HandleRemoveTags(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.TagsResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"programming", "tech"}, resp.Tags)
+}
+
+func TestHandleGetAllTags_Success(t *testing.T) {
+	mockSvc := &articleMockService{
+		getAllTagsFunc: func(_ context.Context, _ string) ([]string, error) {
+			return []string{"golang", "programming", "tech"}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+		"GET",
+		"/v1/tags",
+		nil)
+	w := httptest.NewRecorder()
+
+	h.HandleGetAllTags(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.TagsResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Equal(t, 3, len(resp.Tags))
+	assert.Contains(t, resp.Tags, "golang")
+	assert.Contains(t, resp.Tags, "programming")
+	assert.Contains(t, resp.Tags, "tech")
+}
+
+func TestHandleGetAllTags_Empty(t *testing.T) {
+	mockSvc := &articleMockService{
+		getAllTagsFunc: func(_ context.Context, _ string) ([]string, error) {
+			return []string{}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+		"GET",
+		"/v1/tags",
+		nil)
+	w := httptest.NewRecorder()
+
+	h.HandleGetAllTags(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.TagsResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Empty(t, resp.Tags)
+}
+
+func TestHandleGetAllTags_ServiceError(t *testing.T) {
+	tests := []struct {
+		name           string
+		serviceErr     error
+		expectedStatus int
+	}{
+		{
+			name:           "generic error",
+			serviceErr:     errors.New("some error"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockSvc := &articleMockService{
+				getAllTagsFunc: func(_ context.Context, _ string) ([]string, error) {
+					return nil, tt.serviceErr
+				},
+			}
+
+			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(), "GET", "/v1/tags", nil)
+			w := httptest.NewRecorder()
+
+			h.HandleGetAllTags(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
+
+func TestHandleGetArticles_WithTagFilter(t *testing.T) {
+	mockSvc := &articleMockService{
+		getArticlesByTagFunc: func(
+			_ context.Context,
+			accountID, tag string,
+			_, _ int,
+		) (*servicetypes.GetArticlesResult, error) {
+			assert.Equal(t, "account-123", accountID)
+			assert.Equal(t, "tech", tag)
+			return &servicetypes.GetArticlesResult{
+				Articles: []*model.Article{
+					{
+						ID:    "article-1",
+						Title: "Tech Article 1",
+						URL:   "https://example.com/1",
+						Tags:  []string{"tech", "programming"},
+					},
+					{
+						ID:    "article-2",
+						Title: "Tech Article 2",
+						URL:   "https://example.com/2",
+						Tags:  []string{"tech", "golang"},
+					},
+				},
+				Page:     1,
+				PageSize: 10,
+				Total:    2,
+				HasMore:  false,
+			}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+		"GET",
+		"/v1/articles?tag=tech",
+		nil)
+	w := httptest.NewRecorder()
+
+	h.HandleGetArticles(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.ListArticlesResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(resp.Articles))
+	assert.Equal(t, 1, resp.Page)
+	assert.Equal(t, 10, resp.PageSize)
+	assert.Equal(t, 2, resp.Total)
+	assert.False(t, resp.HasMore)
+	assert.Equal(t, "Tech Article 1", resp.Articles[0].Title)
+	assert.Contains(t, resp.Articles[0].Tags, "tech")
+	assert.Contains(t, resp.Articles[0].Tags, "programming")
+}
+
+func TestHandleGetArticles_WithTagFilter_NotFound(t *testing.T) {
+	mockSvc := &articleMockService{
+		getArticlesByTagFunc: func(
+			_ context.Context,
+			_, tag string,
+			_, _ int,
+		) (*servicetypes.GetArticlesResult, error) {
+			assert.Equal(t, "nonexistent", tag)
+			return &servicetypes.GetArticlesResult{
+				Articles: []*model.Article{},
+				Page:     1,
+				PageSize: 10,
+				Total:    0,
+				HasMore:  false,
+			}, nil
+		},
+	}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+		"GET",
+		"/v1/articles?tag=nonexistent",
+		nil)
+	w := httptest.NewRecorder()
+
+	h.HandleGetArticles(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.ListArticlesResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Empty(t, resp.Articles)
+	assert.Equal(t, 0, resp.Total)
+}
+
+func TestHandleGetArticles_WithTagFilter_ServiceError(t *testing.T) {
+	tests := []struct {
+		name           string
+		serviceErr     error
+		expectedStatus int
+	}{
+		{
+			name:           "ErrInvalid",
+			serviceErr:     apperrors.ErrInvalid,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "generic error",
+			serviceErr:     errors.New("some error"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockSvc := &articleMockService{
+				getArticlesByTagFunc: func(
+					_ context.Context,
+					_, _ string,
+					_, _ int,
+				) (*servicetypes.GetArticlesResult, error) {
+					return nil, tt.serviceErr
+				},
+			}
+
+			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+				"GET", "/v1/articles?tag=tech", nil)
+			w := httptest.NewRecorder()
+
+			h.HandleGetArticles(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
+
+func TestHandleCreateArticle_WithTags(t *testing.T) {
+	mockSvc := &articleMockService{
+		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
+			return &model.Article{
+				ID:    "article-123",
+				URL:   "https://example.com/article",
+				Title: "Test Article",
+			}, nil
+		},
+		setTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
+			assert.ElementsMatch(t, []string{"tech", "programming"}, tags)
+			return nil
+		},
+	}
+	mockProc := &mockProcessor{}
+
+	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+
+	body := types.ArticleRequest{
+		URL:  "https://example.com/article",
+		Tags: []string{"tech", "programming"},
+	}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(
+		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	h.HandleCreateArticle(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var resp types.ArticleResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Equal(t, "article-123", resp.ID)
+
+	assert.True(t, mockProc.startProcessingCalled)
 }

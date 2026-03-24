@@ -4,7 +4,10 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import type { PageData, ActionData } from './$types';
-	import type { UserProfile, ArticleResponse } from '@savetoink/shared';
+	import type { UserProfile } from '@savetoink/shared';
+
+	const MAX_TAGS = 10;
+	const MAX_TAG_LENGTH = 50;
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let user = $derived(data?.user as UserProfile | undefined);
@@ -14,7 +17,28 @@
 	let isSubmitting = $state(false);
 	let error = $state<string | null>(null);
 	let success = $state(false);
-	let article = $state<ArticleResponse | null>(null);
+	let tagsInput = $state('');
+	let tagsError = $state<string | null>(null);
+
+	let parsedTags = $derived(() => {
+		if (!tagsInput) return [];
+		return tagsInput
+			.split(',')
+			.map((tag) => tag.trim())
+			.filter((tag) => tag.length > 0);
+	});
+
+	function validateTags(tags: string[]): string | null {
+		if (tags.length > MAX_TAGS) {
+			return `Maximum ${MAX_TAGS} tags allowed per article`;
+		}
+		for (const tag of tags) {
+			if (tag.length > MAX_TAG_LENGTH) {
+				return `Tag "${tag}" exceeds maximum length of ${MAX_TAG_LENGTH} characters`;
+			}
+		}
+		return null;
+	}
 
 	onMount(() => {
 		if (data.incomingUrl && formElement) {
@@ -24,6 +48,16 @@
 
 	async function handleEnhance() {
 		error = null;
+		tagsError = null;
+
+		// Validate tags before submission
+		const tags = parsedTags();
+		const validationError = validateTags(tags);
+		if (validationError) {
+			tagsError = validationError;
+			return;
+		}
+
 		isSubmitting = true;
 		return async ({
 			update
@@ -34,7 +68,6 @@
 			isSubmitting = false;
 			if (form?.success) {
 				success = true;
-				article = form.article;
 				setTimeout(() => goto(resolve('/articles')), 2000);
 			} else if (form?.error) {
 				error = form.error;
@@ -66,6 +99,23 @@
 				/>
 				<small>Enter the full URL of the article you want to save</small>
 			</label>
+			<label>
+				Tags
+				<input
+					type="text"
+					name="tags"
+					placeholder="reading, tech, tutorial"
+					bind:value={tagsInput}
+					disabled={isSubmitting}
+				/>
+				<small>
+					Comma-separated list tags (max {MAX_TAGS} tags, {MAX_TAG_LENGTH} characters each).
+					{(parsedTags().length > 0 && ` Current: ${parsedTags().length}/${MAX_TAGS}`) || undefined}
+				</small>
+			</label>
+			{#if tagsError}
+				<p style="color: red" role="alert">{tagsError}</p>
+			{/if}
 			{#if data.user?.device_email != ''}
 				<label>
 					<input
@@ -89,7 +139,7 @@
 			<progress aria-busy="true"></progress>
 		{/if}
 		{#if error}
-			<p style="color: red">{error}</p>
+			<p style="color: red" role="alert">{error}</p>
 		{/if}
 	</form>
 </section>
@@ -100,7 +150,7 @@
 			<header>
 				<strong>Article Added!</strong>
 			</header>
-			<p>{article?.title || 'Your article has been saved'}</p>
+			<p>Your article has been saved</p>
 			<footer>
 				<progress aria-busy="true"></progress>
 				<small>Redirecting to articles...</small>

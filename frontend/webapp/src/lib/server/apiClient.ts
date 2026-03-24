@@ -67,9 +67,16 @@ export function getArticle(event: RequestEvent, id: string) {
 	return withSvelteKitError(() => client.getArticle(id, event.locals.auth ?? ''));
 }
 
-export function createArticle(event: RequestEvent, url: string, sendToDevice: boolean) {
+export function createArticle(
+	event: RequestEvent,
+	url: string,
+	sendToDevice: boolean,
+	tags?: string[]
+) {
 	const client = createApiClient(event);
-	return withSvelteKitError(() => client.createArticle(url, sendToDevice, event.locals.auth ?? ''));
+	return withSvelteKitError(() =>
+		client.createArticle(url, sendToDevice, event.locals.auth ?? '', tags)
+	);
 }
 
 export function sendArticle(event: RequestEvent, id: string) {

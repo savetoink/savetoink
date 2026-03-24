@@ -50,6 +50,7 @@ func (s *SQLiteRepositoryTestSuite) cleanupTables() {
 	_, _ = s.repository.db.ExecContext(s.ctx, "DELETE FROM sends")
 	_, _ = s.repository.db.ExecContext(s.ctx, "DELETE FROM user_profiles")
 	_, _ = s.repository.db.ExecContext(s.ctx, "DELETE FROM articles")
+	_, _ = s.repository.db.ExecContext(s.ctx, "DELETE FROM article_tags")
 }
 
 func (s *SQLiteRepositoryTestSuite) TestCreateTables() {
@@ -72,6 +73,10 @@ func (s *SQLiteRepositoryTestSuite) TestSchemaCreatedOnInitialization() {
 	err = s.repository.db.QueryRowContext(s.ctx, query, "sends").Scan(&tableName)
 	s.NoError(err)
 	s.Equal("sends", tableName)
+
+	err = s.repository.db.QueryRowContext(s.ctx, query, "article_tags").Scan(&tableName)
+	s.NoError(err)
+	s.Equal("article_tags", tableName)
 }
 
 func (s *SQLiteRepositoryTestSuite) TestNewSQLite_EmptyPath() {

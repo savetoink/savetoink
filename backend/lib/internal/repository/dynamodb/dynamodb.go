@@ -17,14 +17,18 @@ const (
 
 // DynamoDB implements Repository interface using AWS DynamoDB.
 type DynamoDB struct {
-	client           *dynamodb.Client
-	articleTableName string
-	profileTableName string
-	sendsTableName   string
+	client               *dynamodb.Client
+	articleTableName     string
+	articleTagsTableName string
+	profileTableName     string
+	sendsTableName       string
 }
 
 // NewDynamoDB creates a new DynamoDB repository instance.
-func NewDynamoDB(awsConfig *aws.Config, articlesTableName, profileTableName, sendsTableName string) *DynamoDB {
+func NewDynamoDB(
+	awsConfig *aws.Config,
+	articlesTableName, profileTableName, sendsTableName, articleTagsTableName string,
+) *DynamoDB {
 	if articlesTableName == "" {
 		panic("articles table name is required")
 	}
@@ -40,9 +44,10 @@ func NewDynamoDB(awsConfig *aws.Config, articlesTableName, profileTableName, sen
 		cfg.Region = awsConfig.Region
 	}
 	return &DynamoDB{
-		client:           dynamodb.NewFromConfig(cfg),
-		articleTableName: articlesTableName,
-		profileTableName: profileTableName,
-		sendsTableName:   sendsTableName,
+		client:               dynamodb.NewFromConfig(cfg),
+		articleTableName:     articlesTableName,
+		articleTagsTableName: articleTagsTableName,
+		profileTableName:     profileTableName,
+		sendsTableName:       sendsTableName,
 	}
 }

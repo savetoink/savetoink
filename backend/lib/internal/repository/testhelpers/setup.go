@@ -32,6 +32,9 @@ var (
 	}
 
 	accountFavoriteIndexProjection = append([]string{"account"}, accountCreatedAtIndexProjection...)
+
+	indexNameArticleIDCreatedAtIndex = "ArticleIdCreatedAtIndex"
+	indexNameAccountTagIndex         = "AccountTagIndex"
 )
 
 const (
@@ -107,10 +110,38 @@ func createArticleTagsTable(ctx context.Context, client *dynamodb.Client) error 
 		AttributeDefinitions: []types.AttributeDefinition{
 			{AttributeName: aws.String("accountTag"), AttributeType: types.ScalarAttributeTypeS},
 			{AttributeName: aws.String("createdAtArticleId"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("account"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("articleId"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("tag"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("createdAt"), AttributeType: types.ScalarAttributeTypeS},
 		},
 		KeySchema: []types.KeySchemaElement{
 			{AttributeName: aws.String("accountTag"), KeyType: types.KeyTypeHash},
 			{AttributeName: aws.String("createdAtArticleId"), KeyType: types.KeyTypeRange},
+		},
+		GlobalSecondaryIndexes: []types.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String(indexNameArticleIDCreatedAtIndex),
+				KeySchema: []types.KeySchemaElement{
+					{AttributeName: aws.String("articleId"), KeyType: types.KeyTypeHash},
+					{AttributeName: aws.String("createdAt"), KeyType: types.KeyTypeRange},
+				},
+				Projection: &types.Projection{
+					ProjectionType:   types.ProjectionTypeInclude,
+					NonKeyAttributes: []string{"tag"},
+				},
+			},
+			{
+				IndexName: aws.String(indexNameAccountTagIndex),
+				KeySchema: []types.KeySchemaElement{
+					{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
+					{AttributeName: aws.String("tag"), KeyType: types.KeyTypeRange},
+				},
+				Projection: &types.Projection{
+					ProjectionType:   types.ProjectionTypeInclude,
+					NonKeyAttributes: []string{"articleId", "createdAt"},
+				},
+			},
 		},
 		BillingMode: types.BillingModePayPerRequest,
 	})

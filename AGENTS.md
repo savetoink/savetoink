@@ -29,6 +29,7 @@ This repository contains the code for the savetoink application, composed of:
 ### Frontend
 
 - **NEVER use `new Date()` or the native JavaScript Date API**: Always use `Temporal` for all datetime management in the frontend. `Temporal` is exported from `@savetoink/shared` and should be imported as `import { Temporal } from '@savetoink/shared'`.
+- avoid adding custom CSS and make as much use of semantic HTML as possible, refer to [Pico.css documentation](https://picocss.com/docs) for details and examples
 
 ### Package Organization
 
