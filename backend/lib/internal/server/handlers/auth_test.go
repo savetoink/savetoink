@@ -20,6 +20,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 	"golang.org/x/net/html"
@@ -92,7 +93,7 @@ func (m *MockService) GetArticle(_ context.Context, _, _ string) (*model.Article
 }
 
 func (m *MockService) GetArticlesMetadata(
-	_ context.Context, _ string, _, _ int, _ *bool,
+	_ context.Context, _ string, _, _ int, _ *internaltype.ArticleFilter,
 ) (*servicetypes.GetArticlesResult, error) {
 	return nil, errors.New("not implemented")
 }

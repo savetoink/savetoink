@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	internaltypes "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -201,7 +202,8 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithFavoriteFilter
 	}
 
 	favorite := true
-	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, &favorite)
+	articles, _, total, err := s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
 	assert.Len(t, articles, 2)
@@ -412,7 +414,8 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPaginati
 
 	// First page
 	favorite := true
-	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, &favorite)
+	articles, _, total, err := s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 25, total)
 	assert.Len(t, articles, 10)
@@ -422,7 +425,8 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPaginati
 	}
 
 	// Second page
-	articles, _, total, err = s.repositories.GetMetadataByAccount(ctx, account, 2, 10, &favorite)
+	articles, _, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 2, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 25, total)
 	assert.Len(t, articles, 10)
@@ -432,7 +436,8 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPaginati
 	}
 
 	// Third page
-	articles, _, total, err = s.repositories.GetMetadataByAccount(ctx, account, 3, 10, &favorite)
+	articles, _, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 3, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 25, total)
 	assert.Len(t, articles, 5)
@@ -464,7 +469,8 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesEmptyRes
 
 	// Query for favorites - should return empty
 	favorite := true
-	articles, _, total, err := s.repositories.GetMetadataByAccount(ctx, account, 1, 10, &favorite)
+	articles, _, total, err := s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	require.NoError(t, err)
 	assert.Equal(t, 0, total)
 	assert.Empty(t, articles)

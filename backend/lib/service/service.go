@@ -26,6 +26,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/articles"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/profile"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	"github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"golang.org/x/net/html"
 )
@@ -62,7 +63,7 @@ type Interface interface {
 
 	// GetArticlesMetadata retrieves all articles metadata by account ID and pagination parameters.
 	GetArticlesMetadata(
-		ctx context.Context, accountID string, page, pageSize int, favoriteFilter *bool,
+		ctx context.Context, accountID string, page, pageSize int, filter *types.ArticleFilter,
 	) (*servicetypes.GetArticlesResult, error)
 
 	// DeleteArticle deletes an existing article by account ID and article ID from the database.

@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	internaltypes "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -94,10 +95,15 @@ func (d *DynamoDB) GetMetadataByAccount(
 	ctx context.Context,
 	account string,
 	page, pageSize int,
-	favoriteFilter *bool,
+	filter *internaltypes.ArticleFilter,
 ) (articles []*model.Article, lastEvaluatedKey any, total int, err error) {
 	if page < consts.MinPage || pageSize < consts.MinPageSize || pageSize > consts.MaxPageSize {
 		pageSize = consts.DefaultPageSize
+	}
+
+	var favoriteFilter *bool
+	if filter != nil {
+		favoriteFilter = filter.Favorite
 	}
 
 	total, err = d.totalCountByAccount(ctx, account, favoriteFilter)

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	internaltypes "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/stretchr/testify/suite"
 )
@@ -258,7 +259,8 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithFavoriteFilter(
 	}
 
 	favorite := true
-	articles, _, total, err := s.repository.GetMetadataByAccount(s.ctx, "test-account", 1, 10, &favorite)
+	articles, _, total, err := s.repository.GetMetadataByAccount(
+		s.ctx, "test-account", 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 3)
 	s.Equal(3, total)
@@ -1069,7 +1071,8 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPagination
 
 	favorite := true
 
-	articles, _, total, err := s.repository.GetMetadataByAccount(s.ctx, account, 1, 10, &favorite)
+	articles, _, total, err := s.repository.GetMetadataByAccount(
+		s.ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 10)
 	s.Equal(25, total)
@@ -1078,12 +1081,14 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPagination
 		s.True(article.Favorite)
 	}
 
-	articles, _, total, err = s.repository.GetMetadataByAccount(s.ctx, account, 2, 10, &favorite)
+	articles, _, total, err = s.repository.GetMetadataByAccount(
+		s.ctx, account, 2, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 10)
 	s.Equal(25, total)
 
-	articles, _, total, err = s.repository.GetMetadataByAccount(s.ctx, account, 3, 10, &favorite)
+	articles, _, total, err = s.repository.GetMetadataByAccount(
+		s.ctx, account, 3, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 5)
 	s.Equal(25, total)
@@ -1106,7 +1111,8 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_NonFavoritesFilter(
 	}
 
 	favorite := false
-	articles, _, total, err := s.repository.GetMetadataByAccount(s.ctx, account, 1, 10, &favorite)
+	articles, _, total, err := s.repository.GetMetadataByAccount(
+		s.ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 5)
 	s.Equal(5, total)

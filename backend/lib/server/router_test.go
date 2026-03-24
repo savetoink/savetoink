@@ -24,6 +24,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/handlers"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"golang.org/x/net/html"
@@ -100,7 +101,7 @@ func (m *mockService) GetArticle(_ context.Context, _, articleID string) (*model
 }
 
 func (m *mockService) GetArticlesMetadata(
-	_ context.Context, _ string, _, _ int, _ *bool,
+	_ context.Context, _ string, _, _ int, _ *internaltype.ArticleFilter,
 ) (*servicetypes.GetArticlesResult, error) {
 	return &servicetypes.GetArticlesResult{
 		Articles: []*model.Article{},

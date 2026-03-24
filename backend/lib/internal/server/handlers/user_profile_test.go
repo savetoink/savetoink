@@ -19,6 +19,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
+	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -112,7 +113,7 @@ func (m *userprofileMockService) GetArticlesMetadata(
 	_ context.Context,
 	_ string,
 	_, _ int,
-	_ *bool,
+	_ *internaltype.ArticleFilter,
 ) (*servicetypes.GetArticlesResult, error) {
 	return &servicetypes.GetArticlesResult{
 		Articles: []*model.Article{},
