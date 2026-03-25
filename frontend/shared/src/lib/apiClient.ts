@@ -27,6 +27,7 @@ export interface ApiClient {
       page?: number;
       page_size?: number;
       favorite?: boolean;
+      tag?: string;
     },
     token: string,
   ): Promise<{
@@ -46,6 +47,11 @@ export interface ApiClient {
   sendArticle(id: string, token: string): Promise<void>;
   favoriteArticle(id: string, token: string): Promise<void>;
   deleteArticle(id: string, token: string): Promise<void>;
+  addTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
+  setTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
+  getTags(id: string, token: string): Promise<{ tags: string[] }>;
+  removeTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
+  getAllTags(token: string): Promise<{ tags: string[] }>;
   updateDevice(
     deviceEmail: string,
     autoSend: boolean,
@@ -137,6 +143,7 @@ export function createApiClient({
         page?: number;
         page_size?: number;
         favorite?: boolean;
+        tag?: string;
       },
       token: string,
     ) => {
@@ -149,6 +156,9 @@ export function createApiClient({
       }
       if (params.favorite !== undefined) {
         queryParams.set("favorite", params.favorite.toString());
+      }
+      if (params.tag !== undefined) {
+        queryParams.set("tag", params.tag);
       }
       const path = `/v1/articles${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
       return request<{
@@ -183,6 +193,20 @@ export function createApiClient({
 
     deleteArticle: (id: string, token: string) =>
       request<void>("DELETE", `/v1/articles/${id}`, token),
+
+    addTags: (id: string, tags: string[], token: string) =>
+      request<{ tags: string[] }>("POST", `/v1/articles/${id}/tags`, token, { tags }),
+
+    setTags: (id: string, tags: string[], token: string) =>
+      request<{ tags: string[] }>("PUT", `/v1/articles/${id}/tags`, token, { tags }),
+
+    getTags: (id: string, token: string) =>
+      request<{ tags: string[] }>("GET", `/v1/articles/${id}/tags`, token),
+
+    removeTags: (id: string, tags: string[], token: string) =>
+      request<{ tags: string[] }>("DELETE", `/v1/articles/${id}/tags`, token, { tags }),
+
+    getAllTags: (token: string) => request<{ tags: string[] }>("GET", "/v1/tags", token),
 
     updateDevice: (deviceEmail: string, autoSend: boolean, token: string) =>
       request<void>("PUT", "/v1/devices", token, {

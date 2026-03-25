@@ -6,6 +6,7 @@
 		{ href: '/new', label: 'New' },
 		{ href: '/articles', label: 'Articles' },
 		{ href: '/articles?favorites=true', label: 'Favorites' },
+		{ href: '/tags', label: 'Tags' },
 		{ href: '/account', label: 'Account' }
 	] as const;
 

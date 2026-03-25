@@ -56,7 +56,7 @@ export function getProfile(event: RequestEvent) {
 
 export function getArticles(
 	event: RequestEvent,
-	params: { page?: number; page_size?: number; favorite?: boolean }
+	params: { page?: number; page_size?: number; favorite?: boolean; tag?: string }
 ) {
 	const client = createApiClient(event);
 	return withSvelteKitError(() => client.getArticles(params, event.locals.auth ?? ''));
@@ -92,6 +92,31 @@ export function favoriteArticle(event: RequestEvent, id: string) {
 export function deleteArticle(event: RequestEvent, id: string) {
 	const client = createApiClient(event);
 	return withSvelteKitError(() => client.deleteArticle(id, event.locals.auth ?? ''));
+}
+
+export function addTags(event: RequestEvent, id: string, tags: string[]) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.addTags(id, tags, event.locals.auth ?? ''));
+}
+
+export function setTags(event: RequestEvent, id: string, tags: string[]) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.setTags(id, tags, event.locals.auth ?? ''));
+}
+
+export function getTags(event: RequestEvent, id: string) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.getTags(id, event.locals.auth ?? ''));
+}
+
+export function removeTags(event: RequestEvent, id: string, tags: string[]) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.removeTags(id, tags, event.locals.auth ?? ''));
+}
+
+export function getAllTags(event: RequestEvent) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.getAllTags(event.locals.auth ?? ''));
 }
 
 export function updateDevice(event: RequestEvent, deviceEmail: string, autoSend: boolean) {

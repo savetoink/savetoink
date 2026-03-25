@@ -5,7 +5,7 @@
 	import ArticleControls from '$lib/components/ArticleControls.svelte';
 	import KeyboardNav from '$lib/components/KeyboardNav.svelte';
 	import ArticleMetaAccordion from '$lib/components/ArticleMetaAccordion.svelte';
-	import Tags from '$lib/components/Tags.svelte';
+	import TagsEditor from '$lib/components/TagsEditor.svelte';
 
 	import {
 		DETAIL_BINDINGS,
@@ -23,6 +23,8 @@
 	let favoriteForm = $state<HTMLFormElement>();
 	let sendForm = $state<HTMLFormElement>();
 	let deleteForm = $state<HTMLFormElement>();
+	let tagsForm = $state<HTMLFormElement>();
+	let tagsError = $state<string | null>(null);
 
 	let favoriteSubmitting = $state(false);
 	let sendSubmitting = $state(false);
@@ -78,6 +80,46 @@
 			deleteSubmitting = false;
 		};
 	}
+
+	async function handleSaveTags(tags: string[]) {
+		tagsError = null;
+		if (tagsForm) {
+			const formData = new FormData();
+			formData.append('tags', JSON.stringify(tags));
+			const actionUrl = tagsForm.action;
+			await fetch(actionUrl, {
+				method: 'POST',
+				body: formData
+			});
+			// Invalidate to refresh the page data
+			window.location.reload();
+		}
+	}
+
+	async function handleTagsEnhance() {
+		return async ({
+			result,
+			update
+		}: {
+			formData: FormData;
+			formElement: HTMLFormElement;
+			action: URL;
+			result: {
+				type: 'success' | 'failure' | 'redirect' | 'error';
+				data?: { message?: string };
+				status?: number;
+				location?: string;
+			};
+			update: (options?: { reset?: boolean; invalidateAll?: boolean }) => Promise<void>;
+		}) => {
+			if (result.type === 'failure') {
+				tagsError = result.data?.message || 'Failed to save tags';
+			} else {
+				tagsError = null;
+			}
+			await update();
+		};
+	}
 </script>
 
 <KeyboardNav bindings={DETAIL_BINDINGS} callbacks={keyboardCallbacks} {enabledKeys} />
@@ -106,7 +148,11 @@
 			{/if}
 		</h1>
 
-		<Tags tags={data.tags} />
+		<TagsEditor initialTags={data.tags || []} onSave={handleSaveTags} />
+		{#if tagsError}
+			<p class="error" role="alert">{tagsError}</p>
+		{/if}
+
 		<ArticleMetaAccordion article={data} />
 		<ArticleControls
 			article={data}
@@ -143,9 +189,20 @@
 	action="/articles/{data.id}?/delete"
 	use:enhance={handleDeleteEnhance}
 ></form>
+<form
+	bind:this={tagsForm}
+	method="POST"
+	action="/articles/{data.id}?/setTags"
+	use:enhance={handleTagsEnhance}
+></form>
 
 <style>
 	img {
 		padding-top: 1rem;
+	}
+
+	.error {
+		color: var(--pico-del-color);
+		margin: 0.5rem 0;
 	}
 </style>

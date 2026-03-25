@@ -43,7 +43,7 @@
 			{#if article.excerpt}
 				<p>{article.excerpt}</p>
 			{/if}
-			<Tags tags={article.tags} />
+			<Tags tags={article.tags} clickable={true} />
 		</header>
 	</article>
 </li>

@@ -1,9 +1,10 @@
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error, fail } from '@sveltejs/kit';
 import {
 	getArticle,
 	favoriteArticle,
 	sendArticle,
 	deleteArticle,
+	setTags,
 	withActionFail
 } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
@@ -50,5 +51,26 @@ export const actions = {
 			return result;
 		}
 		redirect(303, '/');
+	},
+	setTags: async ({ locals, fetch, params, request, getClientAddress }) => {
+		const data = await request.formData();
+		const tagsStr = data.get('tags');
+
+		if (typeof tagsStr !== 'string') {
+			return fail(400, { message: 'Invalid tags format' });
+		}
+
+		try {
+			const tags = JSON.parse(tagsStr);
+			if (!Array.isArray(tags) || !tags.every((t) => typeof t === 'string')) {
+				return fail(400, { message: 'Tags must be an array of strings' });
+			}
+
+			return withActionFail(() =>
+				setTags({ locals, fetch, request, getClientAddress } as RequestEvent, params.id, tags)
+			);
+		} catch {
+			return fail(400, { message: 'Invalid JSON format' });
+		}
 	}
 } satisfies Actions;
