@@ -18,3 +18,5 @@ export type ErrorResponse = components["schemas"]["ErrorResponse"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type SendsResponse = components["schemas"]["SendsResponse"];
 export type SendsResponseNoLimits = components["schemas"]["SendsResponseNoLimits"];
+export type TagsRequest = components["schemas"]["TagsRequest"];
+export type TagsResponse = components["schemas"]["TagsResponse"];

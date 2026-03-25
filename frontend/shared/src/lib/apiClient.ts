@@ -8,6 +8,8 @@ import type {
   DeviceRequest,
   SendsResponse,
   SendsResponseNoLimits,
+  TagsRequest,
+  TagsResponse,
 } from "../types";
 
 export class ApiError extends Error {
@@ -27,6 +29,7 @@ export interface ApiClient {
       page?: number;
       page_size?: number;
       favorite?: boolean;
+      tag?: string;
     },
     token: string,
   ): Promise<{
@@ -46,6 +49,11 @@ export interface ApiClient {
   sendArticle(id: string, token: string): Promise<void>;
   favoriteArticle(id: string, token: string): Promise<void>;
   deleteArticle(id: string, token: string): Promise<void>;
+  addTags(id: string, tags: string[], token: string): Promise<TagsResponse>;
+  setTags(id: string, tags: string[], token: string): Promise<TagsResponse>;
+  getTags(id: string, token: string): Promise<TagsResponse>;
+  removeTags(id: string, tags: string[], token: string): Promise<TagsResponse>;
+  getAllTags(token: string): Promise<TagsResponse>;
   updateDevice(
     deviceEmail: string,
     autoSend: boolean,
@@ -137,6 +145,7 @@ export function createApiClient({
         page?: number;
         page_size?: number;
         favorite?: boolean;
+        tag?: string;
       },
       token: string,
     ) => {
@@ -149,6 +158,9 @@ export function createApiClient({
       }
       if (params.favorite !== undefined) {
         queryParams.set("favorite", params.favorite.toString());
+      }
+      if (params.tag !== undefined) {
+        queryParams.set("tag", params.tag);
       }
       const path = `/v1/articles${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
       return request<{
@@ -183,6 +195,21 @@ export function createApiClient({
 
     deleteArticle: (id: string, token: string) =>
       request<void>("DELETE", `/v1/articles/${id}`, token),
+
+    addTags: (id: string, tags: string[], token: string) =>
+      request<TagsResponse>("POST", `/v1/articles/${id}/tags`, token, { tags } as TagsRequest),
+
+    setTags: (id: string, tags: string[], token: string) =>
+      request<TagsResponse>("PUT", `/v1/articles/${id}/tags`, token, { tags } as TagsRequest),
+
+    getTags: (id: string, token: string) =>
+      request<TagsResponse>("GET", `/v1/articles/${id}/tags`, token),
+
+    removeTags: (id: string, tags: string[], token: string) =>
+      request<TagsResponse>("DELETE", `/v1/articles/${id}/tags`, token, { tags } as TagsRequest),
+
+    getAllTags: (token: string) =>
+      request<TagsResponse>("GET", "/v1/tags", token),
 
     updateDevice: (deviceEmail: string, autoSend: boolean, token: string) =>
       request<void>("PUT", "/v1/devices", token, {
