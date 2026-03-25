@@ -27,6 +27,7 @@ export interface ApiClient {
       page?: number;
       page_size?: number;
       favorite?: boolean;
+      tag?: string;
     },
     token: string,
   ): Promise<{
@@ -112,7 +113,9 @@ export function createApiClient({
     } catch (e) {
       throw new ApiError(
         503,
-        e instanceof Error ? e.message : "Network error: Failed to connect to the server",
+        e instanceof Error
+          ? e.message
+          : "Network error: Failed to connect to the server",
       );
     }
 
@@ -137,6 +140,7 @@ export function createApiClient({
         page?: number;
         page_size?: number;
         favorite?: boolean;
+        tag?: string;
       },
       token: string,
     ) => {
@@ -149,6 +153,9 @@ export function createApiClient({
       }
       if (params.favorite !== undefined) {
         queryParams.set("favorite", params.favorite.toString());
+      }
+      if (params.tag !== undefined) {
+        queryParams.set("tag", params.tag);
       }
       const path = `/v1/articles${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
       return request<{

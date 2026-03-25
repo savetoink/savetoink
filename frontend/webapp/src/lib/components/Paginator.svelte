@@ -1,11 +1,30 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
-	let { page, hasMore: has_more }: { page: number; hasMore: boolean } = $props();
+	let {
+		page,
+		hasMore: has_more,
+		tag,
+		favorite
+	}: {
+		page: number;
+		hasMore: boolean;
+		tag?: string;
+		favorite?: boolean;
+	} = $props();
 
 	function navigateTo(newPage: number) {
-		goto(resolve(`/articles?page=${newPage}` as unknown as '/'));
+		const params = new SvelteURLSearchParams();
+		params.set('page', String(newPage));
+		if (tag) {
+			params.set('tag', tag);
+		}
+		if (favorite) {
+			params.set('favorite', 'true');
+		}
+		goto(resolve(`/articles?${params.toString()}` as unknown as '/'));
 	}
 </script>
 

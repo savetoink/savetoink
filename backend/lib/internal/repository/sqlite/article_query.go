@@ -13,22 +13,48 @@ func (s *SQLite) queryArticlesByAccount(
 	account string,
 	pageSize, offset int,
 	favoriteFilter *bool,
+	tagFilter *string,
 ) ([]*model.Article, error) {
-	query := `
-		SELECT account, id, url, created_at, title, content, author, site_name,
-			source_domain, excerpt, image_url, content_type, language, error,
-			word_count, reading_time_minutes, published_at, favorite
-		FROM articles
-		WHERE account = ?
-	`
+	var query string
+	var args []any
 
-	args := []any{account}
+	if tagFilter != nil {
+		// Use JOIN for tag filtering
+		query = `
+			SELECT a.account, a.id, a.url, a.created_at, a.title, a.content, a.author,
+				a.site_name, a.source_domain, a.excerpt, a.image_url, a.content_type,
+				a.language, a.error, a.word_count, a.reading_time_minutes, a.published_at, a.favorite
+			FROM articles a
+			LEFT JOIN article_tags at ON a.account = at.account AND a.id = at.article_id
+			WHERE a.account = ? AND at.tag = ?
+		`
+		args = []any{account, *tagFilter}
+	} else {
+		// No tag filter, simple query
+		query = `
+			SELECT account, id, url, created_at, title, content, author, site_name,
+				source_domain, excerpt, image_url, content_type, language, error,
+				word_count, reading_time_minutes, published_at, favorite
+			FROM articles
+			WHERE account = ?
+		`
+		args = []any{account}
+	}
+
 	if favoriteFilter != nil {
-		query += queryAndFavoriteFilter
+		if tagFilter != nil {
+			query += ` AND a.favorite = ?`
+		} else {
+			query += ` AND favorite = ?`
+		}
 		args = append(args, boolToInt(*favoriteFilter))
 	}
 
-	query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
+	if tagFilter != nil {
+		query += ` ORDER BY a.created_at DESC LIMIT ? OFFSET ?`
+	} else {
+		query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
+	}
 	args = append(args, pageSize, offset)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)

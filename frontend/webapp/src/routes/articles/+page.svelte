@@ -21,6 +21,7 @@
 	let favoriteForm: HTMLFormElement | undefined;
 	let sendForm: HTMLFormElement | undefined;
 	let deleteForm: HTMLFormElement | undefined;
+	let currentTag = $derived(data.tag || undefined);
 
 	function setArticleElement(element: HTMLLIElement | undefined, index: number) {
 		if (element) {
@@ -101,6 +102,12 @@
 	});
 </script>
 
+{#if currentTag}
+	<p>
+		Showing articles tagged <ins>#{currentTag}</ins>
+	</p>
+{/if}
+
 {#if data.articles.length === 0}
 	<p>No articles found</p>
 {:else}
@@ -115,7 +122,7 @@
 	</ul>
 {/if}
 
-<Paginator page={data.page} hasMore={data.has_more} />
+<Paginator page={data.page} hasMore={data.has_more} tag={data.tag} favorite={data.favorite} />
 
 <KeyboardNav bindings={LIST_BINDINGS} callbacks={keyboardCallbacks} {enabledKeys} />
 

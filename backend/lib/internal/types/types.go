@@ -4,4 +4,5 @@ package types
 // ArticleFilter holds filtering options for getting articles.
 type ArticleFilter struct {
 	Favorite *bool
+	Tag      *string
 }
