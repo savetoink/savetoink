@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { Article } from '@savetoink/shared';
 
 	let { tags }: { tags: Article['tags'] } = $props();
@@ -8,7 +9,9 @@
 	<ul>
 		{#each tags as tag (tag)}
 			<li>
-				<ins>#{tag}</ins>
+				<a href={resolve(`/articles?tag=${tag}`)}>
+					<ins>#{tag}</ins>
+				</a>
 			</li>
 		{/each}
 	</ul>
@@ -23,5 +26,9 @@
 
 	li {
 		list-style: none;
+	}
+
+	a {
+		text-decoration: none;
 	}
 </style>

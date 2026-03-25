@@ -292,11 +292,13 @@ func (s *SQLite) GetMetadataByAccount(
 	}
 
 	var favoriteFilter *bool
+	var tagFilter *string
 	if filter != nil {
 		favoriteFilter = filter.Favorite
+		tagFilter = filter.Tag
 	}
 
-	total, err = s.countArticlesByAccount(ctx, account, favoriteFilter)
+	total, err = s.countArticlesByAccount(ctx, account, favoriteFilter, tagFilter)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count articles: %w", err)
 	}
@@ -310,7 +312,7 @@ func (s *SQLite) GetMetadataByAccount(
 		return []*model.Article{}, total, nil
 	}
 
-	articles, err = s.queryArticlesByAccount(ctx, account, pageSize, offset, favoriteFilter)
+	articles, err = s.queryArticlesByAccount(ctx, account, pageSize, offset, favoriteFilter, tagFilter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -318,12 +320,31 @@ func (s *SQLite) GetMetadataByAccount(
 	return articles, total, nil
 }
 
-func (s *SQLite) countArticlesByAccount(ctx context.Context, account string, favoriteFilter *bool) (int, error) {
-	query := `SELECT COUNT(*) FROM articles WHERE account = ?`
+func (s *SQLite) countArticlesByAccount(ctx context.Context, account string, favoriteFilter *bool, tagFilter *string) (int, error) {
+	var query string
+	var args []any
 
-	args := []any{account}
+	if tagFilter != nil {
+		// Use JOIN for tag filtering
+		query = `
+			SELECT COUNT(DISTINCT a.id)
+			FROM articles a
+			LEFT JOIN article_tags at ON a.account = at.account AND a.id = at.article_id
+			WHERE a.account = ? AND at.tag = ?
+		`
+		args = []any{account, *tagFilter}
+	} else {
+		// No tag filter, simple count
+		query = `SELECT COUNT(*) FROM articles WHERE account = ?`
+		args = []any{account}
+	}
+
 	if favoriteFilter != nil {
-		query += queryAndFavoriteFilter
+		if tagFilter != nil {
+			query += ` AND a.favorite = ?`
+		} else {
+			query += ` AND favorite = ?`
+		}
 		args = append(args, boolToInt(*favoriteFilter))
 	}
 

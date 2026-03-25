@@ -5,7 +5,7 @@
 	const links = [
 		{ href: '/new', label: 'New' },
 		{ href: '/articles', label: 'Articles' },
-		{ href: '/articles?favorites=true', label: 'Favorites' },
+		{ href: '/articles?favorite=true', label: 'Favorites' },
 		{ href: '/account', label: 'Account' }
 	] as const;
 

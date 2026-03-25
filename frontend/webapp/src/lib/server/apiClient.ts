@@ -56,7 +56,7 @@ export function getProfile(event: RequestEvent) {
 
 export function getArticles(
 	event: RequestEvent,
-	params: { page?: number; page_size?: number; favorite?: boolean }
+	params: { page?: number; page_size?: number; favorite?: boolean; tag?: string }
 ) {
 	const client = createApiClient(event);
 	return withSvelteKitError(() => client.getArticles(params, event.locals.auth ?? ''));
