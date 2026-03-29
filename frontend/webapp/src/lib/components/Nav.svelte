@@ -48,7 +48,7 @@
 	}
 
 	a {
-		background: var(--pico-switch-background-color);
+		background-color: var(--pico-card-sectioning-background-color);
 		text-decoration: none;
 	}
 
