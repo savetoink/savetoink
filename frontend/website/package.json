@@ -12,20 +12,20 @@
 		"icons:generate": "bun run ../../tools/generate_icons.ts ../../favicon.svg icon-targets.csv"
 	},
 	"dependencies": {
-		"@astrojs/sitemap": "3.7.1",
+		"@astrojs/sitemap": "3.7.2",
 		"@savetoink/shared": "workspace:*",
-		"@scalar/astro": "^0.2.3",
-		"astro": "^6.0.4"
+		"@scalar/astro": "^0.2.5",
+		"astro": "^6.1.1"
 	},
 	"devDependencies": {
-		"@astrojs/check": "^0.9.7",
+		"@astrojs/check": "^0.9.8",
 		"@eslint/compat": "^2.0.3",
 		"@eslint/js": "^10.0.1",
-		"eslint": "^10.0.3",
+		"eslint": "^10.1.0",
 		"eslint-config-prettier": "^10.1.8",
 		"globals": "^17.4.0",
 		"prettier": "^3.8.1",
-		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.57.0"
+		"typescript": "^6.0.2",
+		"typescript-eslint": "^8.57.2"
 	}
 }
