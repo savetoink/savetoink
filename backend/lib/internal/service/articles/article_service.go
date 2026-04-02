@@ -285,66 +285,6 @@ func (s *ArticleService) GetArticleTags(ctx context.Context, accountID, articleI
 	return sortTags(tags), nil
 }
 
-// GetArticlesByTag retrieves articles with a specific tag for a given account.
-func (s *ArticleService) GetArticlesByTag(
-	ctx context.Context,
-	accountID, tag string,
-	page, pageSize int,
-) (*servicetypes.GetArticlesResult, error) {
-	// Validate tag
-	if tag == "" {
-		return nil, fmt.Errorf("%w: tag cannot be empty", apperrors.ErrInvalid)
-	}
-
-	normalizedTag, err := validation.ValidateTag(tag)
-	if err != nil {
-		return nil, fmt.Errorf("failed to validate tag: %w", err)
-	}
-
-	// Get article IDs by tag
-	articleIDs, total, err := s.articleTagsRepo.GetArticlesByTag(ctx, accountID, normalizedTag, page, pageSize)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get articles by tag: %w", err)
-	}
-
-	if len(articleIDs) == 0 {
-		return &servicetypes.GetArticlesResult{
-			Articles: []*model.Article{},
-			Page:     page,
-			PageSize: pageSize,
-			Total:    total,
-			HasMore:  (page * pageSize) < total,
-		}, nil
-	}
-
-	// Fetch article metadata for all IDs
-	articles := make([]*model.Article, 0, len(articleIDs))
-	for _, articleID := range articleIDs {
-		article, getErr := s.articlesRepo.GetByAccountAndID(ctx, accountID, articleID)
-		if getErr != nil {
-			// Log but don't fail if individual article lookup fails
-			if !errors.Is(getErr, repoimpl.ErrNotFound) {
-				return nil, fmt.Errorf("failed to get article %s: %w", articleID, getErr)
-			}
-			continue
-		}
-		articles = append(articles, article)
-	}
-
-	// Populate tags for articles
-	if populateErr := s.populateTagsForArticles(ctx, accountID, articles); populateErr != nil {
-		return nil, fmt.Errorf("failed to populate tags: %w", populateErr)
-	}
-
-	return &servicetypes.GetArticlesResult{
-		Articles: articles,
-		Page:     page,
-		PageSize: pageSize,
-		Total:    total,
-		HasMore:  (page * pageSize) < total,
-	}, nil
-}
-
 // GetAllTagsForAccount retrieves all unique tags for an account.
 func (s *ArticleService) GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error) {
 	tags, err := s.articleTagsRepo.GetAllTagsForAccount(ctx, accountID)

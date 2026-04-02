@@ -151,14 +151,6 @@ func (m *quotaCheckMockService) GetArticleTags(_ context.Context, _, _ string) (
 	panic("not implemented")
 }
 
-func (m *quotaCheckMockService) GetArticlesByTag(
-	_ context.Context,
-	_, _ string,
-	_, _ int,
-) (*servicetypes.GetArticlesResult, error) {
-	panic("not implemented")
-}
-
 func (m *quotaCheckMockService) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
 	panic("not implemented")
 }

@@ -203,14 +203,6 @@ func (m *userprofileMockService) GetArticleTags(_ context.Context, _, _ string) 
 	return nil, errors.New("not implemented")
 }
 
-func (m *userprofileMockService) GetArticlesByTag(
-	_ context.Context,
-	_, _ string,
-	_, _ int,
-) (*servicetypes.GetArticlesResult, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (m *userprofileMockService) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
 	return nil, errors.New("not implemented")
 }

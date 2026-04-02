@@ -177,14 +177,6 @@ func (m *sendsMockService) GetArticleTags(_ context.Context, _, _ string) ([]str
 	return nil, errors.New("not implemented")
 }
 
-func (m *sendsMockService) GetArticlesByTag(
-	_ context.Context,
-	_, _ string,
-	_, _ int,
-) (*servicetypes.GetArticlesResult, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (m *sendsMockService) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
 	return nil, errors.New("not implemented")
 }

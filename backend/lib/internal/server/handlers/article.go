@@ -17,7 +17,6 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
-	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
 	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/validation"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
@@ -158,7 +157,7 @@ func (h *Handlers) startArticleProcessing(
 func (h *Handlers) HandleGetArticles(w http.ResponseWriter, r *http.Request) {
 	page := consts.DefaultPage
 	pageSize := consts.DefaultPageSize
-	var filter *internaltype.ArticleFilter
+	filter := &internaltype.ArticleFilter{}
 
 	if p := r.URL.Query().Get("page"); p != "" {
 		if parsed, err := strconv.Atoi(p); err == nil && parsed >= consts.MinPage {
@@ -172,30 +171,30 @@ func (h *Handlers) HandleGetArticles(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Parse favorite filter
 	if f := r.URL.Query().Get("favorite"); f == "true" {
 		fav := true
-		filter = &internaltype.ArticleFilter{Favorite: &fav}
+		filter.Favorite = &fav
+	}
+
+	// Parse tag filter
+	if tag := r.URL.Query().Get("tag"); tag != "" {
+		normalizedTag, err := validation.ValidateTag(tag)
+		if err != nil {
+			utils.WriteJSONError(w, http.StatusBadRequest, err)
+			return
+		}
+		filter.Tag = &normalizedTag
+		logging.AddLogAttr(r.Context(), slog.String("tag", normalizedTag))
 	}
 
 	accountID := auth.GetAccountIDFromCtx(r.Context())
 
-	var result *servicetypes.GetArticlesResult
-	var err error
-
-	// Check if filtering by tag
-	if tag := r.URL.Query().Get("tag"); tag != "" {
-		result, err = h.service.GetArticlesByTag(r.Context(), accountID, tag, page, pageSize)
-		if err != nil {
-			utils.HandleServiceError(w, r, err, "get articles by tag")
-			return
-		}
-		logging.AddLogAttr(r.Context(), slog.String("tag", tag))
-	} else {
-		result, err = h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, filter)
-		if err != nil {
-			utils.HandleServiceError(w, r, err, "get articles metadata")
-			return
-		}
+	// Always use GetArticlesMetadata with combined filter
+	result, err := h.service.GetArticlesMetadata(r.Context(), accountID, page, pageSize, filter)
+	if err != nil {
+		utils.HandleServiceError(w, r, err, "get articles metadata")
+		return
 	}
 
 	logging.AddLogAttr(r.Context(), slog.Int("page", page))

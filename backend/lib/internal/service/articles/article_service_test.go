@@ -1365,63 +1365,6 @@ func TestGetArticleTags_ArticleNotFound(t *testing.T) {
 	assert.True(t, errors.Is(err, apperrors.ErrNotFound))
 }
 
-func TestGetArticlesByTag_Success(t *testing.T) {
-	mockRepo := &MockRepository{
-		articles: []*model.Article{
-			{Account: "account-123", ID: "article-1", Title: "Article 1", CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-2", Title: "Article 2", CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-3", Title: "Article 3", CreatedAt: time.Now()},
-		},
-	}
-	mockTagsRepo := NewMockArticleTagsRepository()
-	svc := New(mockRepo, mockTagsRepo, epub.NewPublisher(), nil)
-
-	ctx := context.Background()
-
-	// Tag two articles
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-1", []string{"tech"}, nil)
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-2", []string{"tech"}, nil)
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-3", []string{"programming"}, nil)
-
-	result, err := svc.GetArticlesByTag(ctx, "account-123", "tech", 1, 10)
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(result.Articles))
-	assert.Equal(t, 2, result.Total)
-}
-
-func TestGetArticlesByTag_EmptyTag(t *testing.T) {
-	mockRepo := &MockRepository{
-		articles: []*model.Article{},
-	}
-	mockTagsRepo := NewMockArticleTagsRepository()
-	svc := New(mockRepo, mockTagsRepo, epub.NewPublisher(), nil)
-
-	ctx := context.Background()
-
-	_, err := svc.GetArticlesByTag(ctx, "account-123", "", 1, 10)
-	assert.Error(t, err)
-}
-
-func TestGetArticlesByTag_NoResults(t *testing.T) {
-	mockRepo := &MockRepository{
-		articles: []*model.Article{
-			{Account: "account-123", ID: "article-1", Title: "Article 1", CreatedAt: time.Now()},
-		},
-	}
-	mockTagsRepo := NewMockArticleTagsRepository()
-	svc := New(mockRepo, mockTagsRepo, epub.NewPublisher(), nil)
-
-	ctx := context.Background()
-
-	// Tag with different tag
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-1", []string{"programming"}, nil)
-
-	result, err := svc.GetArticlesByTag(ctx, "account-123", "tech", 1, 10)
-	require.NoError(t, err)
-	assert.Equal(t, 0, len(result.Articles))
-	assert.Equal(t, 0, result.Total)
-}
-
 func TestGetAllTagsForAccount_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
