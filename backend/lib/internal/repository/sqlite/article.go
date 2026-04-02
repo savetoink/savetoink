@@ -320,7 +320,12 @@ func (s *SQLite) GetMetadataByAccount(
 	return articles, total, nil
 }
 
-func (s *SQLite) countArticlesByAccount(ctx context.Context, account string, favoriteFilter *bool, tagFilter *string) (int, error) {
+func (s *SQLite) countArticlesByAccount(
+	ctx context.Context,
+	account string,
+	favoriteFilter *bool,
+	tagFilter *string,
+) (int, error) {
 	var query string
 	var args []any
 
@@ -340,11 +345,7 @@ func (s *SQLite) countArticlesByAccount(ctx context.Context, account string, fav
 	}
 
 	if favoriteFilter != nil {
-		if tagFilter != nil {
-			query += ` AND a.favorite = ?`
-		} else {
-			query += ` AND favorite = ?`
-		}
+		query += queryAndFavoriteFilter
 		args = append(args, boolToInt(*favoriteFilter))
 	}
 

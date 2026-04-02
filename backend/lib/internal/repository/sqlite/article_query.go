@@ -3,10 +3,41 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
+
+// scanArticleRows scans sql.Rows into a slice of Article models.
+func scanArticleRows(rows *sql.Rows) ([]*model.Article, error) {
+	var articles []*model.Article
+	for rows.Next() {
+		var a articleRow
+		err := rows.Scan(
+			&a.Account, &a.ID, &a.URL, &a.CreatedAt,
+			&a.Title, &a.Content, &a.Author, &a.SiteName,
+			&a.SourceDomain, &a.Excerpt, &a.ImageURL, &a.ContentType,
+			&a.Language, &a.Error, &a.WordCount, &a.ReadingTimeMinutes,
+			&a.PublishedAt, &a.Favorite,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan article row: %w", err)
+		}
+
+		article, articleErr := a.toArticle()
+		if articleErr != nil {
+			return nil, articleErr
+		}
+		articles = append(articles, article)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate rows: %w", err)
+	}
+
+	return articles, nil
+}
 
 func (s *SQLite) queryArticlesByAccount(
 	ctx context.Context,
@@ -42,11 +73,7 @@ func (s *SQLite) queryArticlesByAccount(
 	}
 
 	if favoriteFilter != nil {
-		if tagFilter != nil {
-			query += ` AND a.favorite = ?`
-		} else {
-			query += ` AND favorite = ?`
-		}
+		query += queryAndFavoriteFilter
 		args = append(args, boolToInt(*favoriteFilter))
 	}
 
@@ -67,30 +94,5 @@ func (s *SQLite) queryArticlesByAccount(
 		}
 	}()
 
-	var articles []*model.Article
-	for rows.Next() {
-		var a articleRow
-		scanErr := rows.Scan(
-			&a.Account, &a.ID, &a.URL, &a.CreatedAt,
-			&a.Title, &a.Content, &a.Author, &a.SiteName,
-			&a.SourceDomain, &a.Excerpt, &a.ImageURL, &a.ContentType,
-			&a.Language, &a.Error, &a.WordCount, &a.ReadingTimeMinutes,
-			&a.PublishedAt, &a.Favorite,
-		)
-		if scanErr != nil {
-			return nil, fmt.Errorf("failed to scan article row: %w", scanErr)
-		}
-
-		article, articleErr := a.toArticle()
-		if articleErr != nil {
-			return nil, articleErr
-		}
-		articles = append(articles, article)
-	}
-
-	if iterErr := rows.Err(); iterErr != nil {
-		return nil, fmt.Errorf("failed to iterate rows: %w", iterErr)
-	}
-
-	return articles, nil
+	return scanArticleRows(rows)
 }
