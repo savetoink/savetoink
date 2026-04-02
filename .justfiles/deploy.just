@@ -17,3 +17,7 @@ destroy: lint-cfn
     aws cloudformation wait stack-delete-complete --stack-name {{ project_name }}-bucket
     aws cloudformation delete-stack --stack-name {{ project_name }}-cert --region us-east-1
     aws cloudformation wait stack-delete-complete --stack-name {{ project_name }}-cert --region us-east-1
+
+destroy-api: lint-cfn
+    aws cloudformation delete-stack --stack-name {{ project_name }}-infra
+    aws cloudformation wait stack-delete-complete --stack-name {{ project_name }}-infra
