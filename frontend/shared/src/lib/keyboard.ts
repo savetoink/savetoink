@@ -9,7 +9,7 @@ export const BASE_BINDINGS: KeyBindingMap = {
   f: { description: "Toggle favorite", category: "action" },
   d: { description: "Delete article", category: "action" },
   s: { description: "Send to device", category: "action" },
-  n: { description: "New article", category: "navigation" },
+  n: { description: "Add article", category: "navigation" },
   h: { description: "Go home", category: "navigation" },
   a: { description: "Account page", category: "navigation" },
 };

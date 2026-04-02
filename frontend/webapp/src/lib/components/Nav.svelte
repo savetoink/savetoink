@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 
 	const links = [
-		{ href: '/new', label: 'New' },
+		{ href: '/new', label: 'Add' },
 		{ href: '/articles', label: 'Articles' },
 		{ href: '/articles?favorite=true', label: 'Favorites' },
 		{ href: '/account', label: 'Account' }
