@@ -48,11 +48,11 @@
 	}
 
 	a {
-		background-color: var(--pico-card-sectioning-background-color);
+		font-size: 1.3rem;
 		text-decoration: none;
 	}
 
 	a:not([aria-current='page']) {
-		color: white;
+		color: var(--pico-secondary);
 	}
 </style>
