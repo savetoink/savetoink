@@ -476,23 +476,28 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesEmptyRes
 	assert.Empty(t, articles)
 }
 
-
 func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 	ctx := context.Background()
 	t := s.T()
+
+	const (
+		tagTech        = "tech"
+		tagProgramming = "programming"
+		tagNonexistent = "nonexistent"
+	)
 
 	account := "test-account-tag"
 
 	// Create articles with different tags
 	testCases := []struct {
-		id      string
-		tags    []string
-		fav     bool
+		id   string
+		tags []string
+		fav  bool
 	}{
-		{"article-tag-1", []string{"tech"}, false},
-		{"article-tag-2", []string{"tech", "programming"}, true},
-		{"article-tag-3", []string{"programming"}, false},
-		{"article-tag-4", []string{"tech"}, true},
+		{"article-tag-1", []string{tagTech}, false},
+		{"article-tag-2", []string{tagTech, tagProgramming}, true},
+		{"article-tag-3", []string{tagProgramming}, false},
+		{"article-tag-4", []string{tagTech}, true},
 		{"article-tag-5", []string{}, false},
 	}
 
@@ -530,7 +535,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 	}
 
 	// Test filtering by "tech" tag
-	tag := "tech"
+	tag := tagTech
 	articles, total, err := s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
 	require.NoError(t, err)
@@ -542,7 +547,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 	}
 
 	// Test filtering by "programming" tag
-	tag = "programming"
+	tag = tagProgramming
 	articles, total, err = s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
 	require.NoError(t, err)
@@ -554,7 +559,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 	}
 
 	// Test filtering by non-existent tag
-	tag = "nonexistent"
+	tag = tagNonexistent
 	articles, total, err = s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
 	require.NoError(t, err)
@@ -566,22 +571,27 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 	ctx := context.Background()
 	t := s.T()
 
+	const (
+		tagTech        = "tech"
+		tagProgramming = "programming"
+	)
+
 	account := "test-account-combined"
 
 	// Create articles with different tag and favorite combinations
 	testCases := []struct {
-		id      string
-		tags    []string
-		fav     bool
+		id   string
+		tags []string
+		fav  bool
 	}{
-		{"article-1", []string{"tech"}, true},       // tech AND favorite
-		{"article-2", []string{"tech"}, false},      // tech only
-		{"article-3", []string{"programming"}, true}, // programming AND favorite
-		{"article-4", []string{"programming"}, false}, // programming only
-		{"article-5", []string{}, true},             // favorite only
-		{"article-6", []string{}, false},            // neither
-		{"article-7", []string{"tech", "programming"}, true}, // both tags AND favorite
-		{"article-8", []string{"tech", "programming"}, false}, // both tags only
+		{"article-1", []string{tagTech}, true},                  // tech AND favorite
+		{"article-2", []string{tagTech}, false},                 // tech only
+		{"article-3", []string{tagProgramming}, true},           // programming AND favorite
+		{"article-4", []string{tagProgramming}, false},          // programming only
+		{"article-5", []string{}, true},                         // favorite only
+		{"article-6", []string{}, false},                        // neither
+		{"article-7", []string{tagTech, tagProgramming}, true},  // both tags AND favorite
+		{"article-8", []string{tagTech, tagProgramming}, false}, // both tags only
 	}
 
 	for _, tc := range testCases {
@@ -618,7 +628,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 	}
 
 	// Test: favorite=true AND tag="tech"
-	tag := "tech"
+	tag := tagTech
 	favorite := true
 	articles, total, err := s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
@@ -635,7 +645,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 	assert.Contains(t, ids, "article-7")
 
 	// Test: favorite=true AND tag="programming"
-	tag = "programming"
+	tag = tagProgramming
 	articles, total, err = s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	require.NoError(t, err)
@@ -652,7 +662,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 
 	// Test: favorite=false AND tag="tech"
 	favorite = false
-	tag = "tech"
+	tag = tagTech
 	articles, total, err = s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	require.NoError(t, err)
@@ -688,6 +698,8 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPagination() {
 	ctx := context.Background()
 	t := s.T()
+
+	const tagTech = "tech"
 
 	account := "test-account-tag-pag"
 
@@ -754,7 +766,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPaginati
 	}
 
 	// Test pagination with tag filter only
-	tag := "tech"
+	tag := tagTech
 	articles, total, err := s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
 	require.NoError(t, err)
@@ -762,7 +774,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPaginati
 	assert.Len(t, articles, 10)
 
 	// Test pagination with tag and favorite filters
-	tag = "tech"
+	tag = tagTech
 	favorite := true
 	articles, total, err = s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})

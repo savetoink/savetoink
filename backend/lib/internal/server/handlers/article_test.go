@@ -93,10 +93,10 @@ type articleMockService struct {
 		accountID string,
 		startDate, endDate time.Time,
 	) (int, error)
-	addTagsFunc          func(ctx context.Context, accountID, articleID string, tags []string) error
-	removeTagsFunc       func(ctx context.Context, accountID, articleID string, tags []string) error
-	setTagsFunc          func(ctx context.Context, accountID, articleID string, tags []string) error
-	getTagsFunc          func(ctx context.Context, accountID, articleID string) ([]string, error)
+	addTagsFunc    func(ctx context.Context, accountID, articleID string, tags []string) error
+	removeTagsFunc func(ctx context.Context, accountID, articleID string, tags []string) error
+	setTagsFunc    func(ctx context.Context, accountID, articleID string, tags []string) error
+	getTagsFunc    func(ctx context.Context, accountID, articleID string) ([]string, error)
 	getAllTagsFunc func(ctx context.Context, accountID string) ([]string, error)
 	dbError        error
 }
@@ -748,7 +748,6 @@ func TestHandleGetArticles_ServiceError(t *testing.T) {
 	}
 }
 
-
 func TestHandleGetArticles_InvalidTag(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -775,13 +774,13 @@ func TestHandleGetArticles_InvalidTag(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			
+
 			mockSvc := &articleMockService{
 				getArticlesMetadataFunc: func(
 					_ context.Context,
 					_ string,
 					_, _ int,
-					f *internaltype.ArticleFilter,
+					_ *internaltype.ArticleFilter,
 				) (*servicetypes.GetArticlesResult, error) {
 					return &servicetypes.GetArticlesResult{
 						Articles: []*model.Article{},
@@ -797,7 +796,7 @@ func TestHandleGetArticles_InvalidTag(t *testing.T) {
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"GET",
-				fmt.Sprintf("/v1/articles?tag=%s", url.QueryEscape(tt.tag)),
+				"/v1/articles?tag="+url.QueryEscape(tt.tag),
 				nil)
 			w := httptest.NewRecorder()
 
@@ -871,7 +870,7 @@ func TestHandleGetArticles_PaginationEdgeCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			calledPage := -1
 			calledSize := -1
-			
+
 			mockSvc := &articleMockService{
 				getArticlesMetadataFunc: func(
 					_ context.Context,
@@ -956,14 +955,14 @@ func TestHandleGetArticles_EmptyResults(t *testing.T) {
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"GET",
-				fmt.Sprintf("/v1/articles?%s", tt.queryParams),
+				"/v1/articles?"+tt.queryParams,
 				nil)
 			w := httptest.NewRecorder()
 
 			h.HandleGetArticles(w, req)
 
 			assert.Equal(t, http.StatusOK, w.Code)
-			
+
 			var resp types.ListArticlesResponse
 			err := json.Unmarshal(w.Body.Bytes(), &resp)
 			require.NoError(t, err)
@@ -1867,8 +1866,8 @@ func TestHandleGetAllTags_ServiceError(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
 	}
-
 }
+
 func TestHandleCreateArticle_WithTags(t *testing.T) {
 	mockSvc := &articleMockService{
 		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {

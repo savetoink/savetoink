@@ -14,7 +14,7 @@ describe('Tags.svelte', () => {
 		try {
 			page.getByRole('button', { name: 'Remove tag: tech' });
 			expect.fail('Remove button should not be present when not editable');
-		} catch (e) {
+		} catch {
 			// Expected - button should not be found
 		}
 	});
@@ -35,7 +35,7 @@ describe('Tags.svelte', () => {
 		try {
 			page.getByRole('button', { name: 'Remove tag: tech' });
 			expect.fail('Remove button should not be present when editable is false');
-		} catch (e) {
+		} catch {
 			// Expected - button should not be found
 		}
 	});
@@ -46,7 +46,7 @@ describe('Tags.svelte', () => {
 		try {
 			page.getByRole('button', { name: 'Remove tag: tech' });
 			expect.fail('Remove button should not be present when articleId is not provided');
-		} catch (e) {
+		} catch {
 			// Expected - button should not be found
 		}
 	});
@@ -57,7 +57,7 @@ describe('Tags.svelte', () => {
 		try {
 			page.getByRole('list');
 			expect.fail('List should not be present when tags is empty');
-		} catch (e) {
+		} catch {
 			// Expected - list should not be found
 		}
 	});
@@ -68,7 +68,7 @@ describe('Tags.svelte', () => {
 		try {
 			page.getByRole('list');
 			expect.fail('List should not be present when tags is undefined');
-		} catch (e) {
+		} catch {
 			// Expected - list should not be found
 		}
 	});

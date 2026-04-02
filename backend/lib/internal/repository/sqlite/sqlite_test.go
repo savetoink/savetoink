@@ -1124,22 +1124,27 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_NonFavoritesFilter(
 	}
 }
 
-
 func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithTagFilter() {
 	ctx := context.Background()
+
+	const (
+		tagTech        = "tech"
+		tagProgramming = "programming"
+		tagNonexistent = "nonexistent"
+	)
 
 	account := "test-account-tag"
 
 	// Create articles with different tags
 	testCases := []struct {
-		id      string
-		tags    []string
-		fav     bool
+		id   string
+		tags []string
+		fav  bool
 	}{
-		{"article-tag-1", []string{"tech"}, false},
-		{"article-tag-2", []string{"tech", "programming"}, true},
-		{"article-tag-3", []string{"programming"}, false},
-		{"article-tag-4", []string{"tech"}, true},
+		{"article-tag-1", []string{tagTech}, false},
+		{"article-tag-2", []string{tagTech, tagProgramming}, true},
+		{"article-tag-3", []string{tagProgramming}, false},
+		{"article-tag-4", []string{tagTech}, true},
 		{"article-tag-5", []string{}, false},
 	}
 
@@ -1175,57 +1180,62 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithTagFilter() {
 	}
 
 	// Test filtering by "tech" tag
-	tag := "tech"
+	tag := tagTech
 	articles, total, err := s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
 	s.NoError(err)
-	s.Equal( 3, total)
-	s.Len( articles, 3)
+	s.Equal(3, total)
+	s.Len(articles, 3)
 
 	for _, article := range articles {
-		s.Contains( []string{"article-tag-1", "article-tag-2", "article-tag-4"}, article.ID)
+		s.Contains([]string{"article-tag-1", "article-tag-2", "article-tag-4"}, article.ID)
 	}
 
 	// Test filtering by "programming" tag
-	tag = "programming"
+	tag = tagProgramming
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
 	s.NoError(err)
-	s.Equal( 2, total)
-	s.Len( articles, 2)
+	s.Equal(2, total)
+	s.Len(articles, 2)
 
 	for _, article := range articles {
-		s.Contains( []string{"article-tag-2", "article-tag-3"}, article.ID)
+		s.Contains([]string{"article-tag-2", "article-tag-3"}, article.ID)
 	}
 
 	// Test filtering by non-existent tag
-	tag = "nonexistent"
+	tag = tagNonexistent
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
 	s.NoError(err)
-	s.Equal( 0, total)
-	s.Empty( articles)
+	s.Equal(0, total)
+	s.Empty(articles)
 }
 
 func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters() {
 	ctx := context.Background()
 
+	const (
+		tagTech        = "tech"
+		tagProgramming = "programming"
+	)
+
 	account := "test-account-combined"
 
 	// Create articles with different tag and favorite combinations
 	testCases := []struct {
-		id      string
-		tags    []string
-		fav     bool
+		id   string
+		tags []string
+		fav  bool
 	}{
-		{"article-1", []string{"tech"}, true},       // tech AND favorite
-		{"article-2", []string{"tech"}, false},      // tech only
-		{"article-3", []string{"programming"}, true}, // programming AND favorite
-		{"article-4", []string{"programming"}, false}, // programming only
-		{"article-5", []string{}, true},             // favorite only
-		{"article-6", []string{}, false},            // neither
-		{"article-7", []string{"tech", "programming"}, true}, // both tags AND favorite
-		{"article-8", []string{"tech", "programming"}, false}, // both tags only
+		{"article-1", []string{tagTech}, true},                  // tech AND favorite
+		{"article-2", []string{tagTech}, false},                 // tech only
+		{"article-3", []string{tagProgramming}, true},           // programming AND favorite
+		{"article-4", []string{tagProgramming}, false},          // programming only
+		{"article-5", []string{}, true},                         // favorite only
+		{"article-6", []string{}, false},                        // neither
+		{"article-7", []string{tagTech, tagProgramming}, true},  // both tags AND favorite
+		{"article-8", []string{tagTech, tagProgramming}, false}, // both tags only
 	}
 
 	for _, tc := range testCases {
@@ -1260,54 +1270,54 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters
 	}
 
 	// Test: favorite=true AND tag="tech"
-	tag := "tech"
+	tag := tagTech
 	favorite := true
 	articles, total, err := s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	s.NoError(err)
-	s.Equal( 2, total)
-	s.Len( articles, 2)
+	s.Equal(2, total)
+	s.Len(articles, 2)
 
 	ids := make([]string, len(articles))
 	for i, a := range articles {
 		ids[i] = a.ID
-		s.True( a.Favorite)
+		s.True(a.Favorite)
 	}
-	s.Contains( ids, "article-1")
-	s.Contains( ids, "article-7")
+	s.Contains(ids, "article-1")
+	s.Contains(ids, "article-7")
 
 	// Test: favorite=true AND tag="programming"
-	tag = "programming"
+	tag = tagProgramming
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	s.NoError(err)
-	s.Equal( 2, total)
-	s.Len( articles, 2)
+	s.Equal(2, total)
+	s.Len(articles, 2)
 
 	ids = make([]string, len(articles))
 	for i, a := range articles {
 		ids[i] = a.ID
-		s.True( a.Favorite)
+		s.True(a.Favorite)
 	}
-	s.Contains( ids, "article-3")
-	s.Contains( ids, "article-7")
+	s.Contains(ids, "article-3")
+	s.Contains(ids, "article-7")
 
 	// Test: favorite=false AND tag="tech"
 	favorite = false
-	tag = "tech"
+	tag = tagTech
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	s.NoError(err)
-	s.Equal( 2, total)
-	s.Len( articles, 2)
+	s.Equal(2, total)
+	s.Len(articles, 2)
 
 	ids = make([]string, len(articles))
 	for i, a := range articles {
 		ids[i] = a.ID
-		s.False( a.Favorite)
+		s.False(a.Favorite)
 	}
-	s.Contains( ids, "article-2")
-	s.Contains( ids, "article-8")
+	s.Contains(ids, "article-2")
+	s.Contains(ids, "article-8")
 
 	// Test: favorite=true AND non-existent tag
 	tag = "nonexistent"
@@ -1315,20 +1325,22 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	s.NoError(err)
-	s.Equal( 0, total)
-	s.Empty( articles)
+	s.Equal(0, total)
+	s.Empty(articles)
 
 	// Test: favorite=false AND non-existent tag
 	favorite = false
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	s.NoError(err)
-	s.Equal( 0, total)
-	s.Empty( articles)
+	s.Equal(0, total)
+	s.Empty(articles)
 }
 
 func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPagination() {
 	ctx := context.Background()
+
+	const tagTech = "tech"
 
 	account := "test-account-tag-pag"
 
@@ -1395,33 +1407,33 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPagination
 	}
 
 	// Test pagination with tag filter only
-	tag := "tech"
+	tag := tagTech
 	articles, total, err := s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
 	s.NoError(err)
-	s.Equal( 25, total)
-	s.Len( articles, 10)
+	s.Equal(25, total)
+	s.Len(articles, 10)
 
 	// Test pagination with tag and favorite filters
-	tag = "tech"
+	tag = tagTech
 	favorite := true
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	s.NoError(err)
-	s.Equal( 12, total) // Half of 25 are favorites
-	s.Len( articles, 10)
+	s.Equal(12, total) // Half of 25 are favorites
+	s.Len(articles, 10)
 
 	// Test second page with combined filters
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 2, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	s.NoError(err)
-	s.Equal( 12, total)
-	s.Len( articles, 2)
+	s.Equal(12, total)
+	s.Len(articles, 2)
 
 	// Test third page (empty result) with combined filters
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 3, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
 	s.NoError(err)
-	s.Equal( 12, total)
-	s.Empty( articles)
+	s.Equal(12, total)
+	s.Empty(articles)
 }

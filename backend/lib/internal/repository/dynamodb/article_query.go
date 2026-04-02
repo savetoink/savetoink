@@ -174,8 +174,9 @@ func (d *DynamoDB) getArticlesByTagAndFavorite(
 
 	// Fetch article metadata for all IDs and apply favorite filter
 	allArticles := make([]*model.Article, 0, len(articleIDs))
+	var article *model.Article
 	for _, articleID := range articleIDs {
-		article, err := d.GetByAccountAndID(ctx, account, articleID)
+		article, err = d.GetByAccountAndID(ctx, account, articleID)
 		if err != nil {
 			if errors.Is(err, ErrNotFound) {
 				continue
@@ -200,9 +201,7 @@ func (d *DynamoDB) getArticlesByTagAndFavorite(
 	}
 
 	end := start + pageSize
-	if end > total {
-		end = total
-	}
+	end = min(end, total)
 
 	return allArticles[start:end], total, nil
 }

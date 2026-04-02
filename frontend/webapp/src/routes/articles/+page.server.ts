@@ -40,11 +40,7 @@ export const actions = {
 		}
 
 		return withActionFail(() =>
-			removeTags(
-				{ locals, fetch, request, getClientAddress } as RequestEvent,
-				articleId,
-				[tagName]
-			)
+			removeTags({ locals, fetch, request, getClientAddress } as RequestEvent, articleId, [tagName])
 		);
 	}
 } satisfies Actions;
