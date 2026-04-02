@@ -1,5 +1,5 @@
-import type { PageServerLoad, RequestEvent } from './$types';
-import { getArticles } from '$lib/server/apiClient';
+import type { PageServerLoad, RequestEvent, Actions } from './$types';
+import { getArticles, removeTags, withActionFail } from '$lib/server/apiClient';
 
 export const load: PageServerLoad = async ({ locals, fetch, url, request, getClientAddress }) => {
 	const pageParam = url.searchParams.get('page');
@@ -20,3 +20,31 @@ export const load: PageServerLoad = async ({ locals, fetch, url, request, getCli
 
 	return { ...data, user: locals.user, tag: tag, favorite };
 };
+
+export const actions = {
+	removeTag: async ({ locals, fetch, request, getClientAddress }) => {
+		const formData = await request.formData();
+		const articleId = formData.get('articleId');
+		const tagName = formData.get('tag');
+
+		if (!articleId || typeof articleId !== 'string') {
+			return withActionFail(() => {
+				throw new Error('articleId is required');
+			});
+		}
+
+		if (!tagName || typeof tagName !== 'string') {
+			return withActionFail(() => {
+				throw new Error('tag is required');
+			});
+		}
+
+		return withActionFail(() =>
+			removeTags(
+				{ locals, fetch, request, getClientAddress } as RequestEvent,
+				articleId,
+				[tagName]
+			)
+		);
+	}
+} satisfies Actions;

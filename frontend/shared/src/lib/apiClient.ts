@@ -58,6 +58,10 @@ export interface ApiClient {
     redirectUri: string,
   ): Promise<AuthTokenExchangeResponse>;
   getSends(token: string): Promise<SendsResponse | SendsResponseNoLimits>;
+  getTags(id: string, token: string): Promise<{ tags: string[] }>;
+  addTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
+  removeTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
+  setTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
 }
 
 export interface ApiClientOptions {
@@ -208,5 +212,17 @@ export function createApiClient({
 
     getSends: (token: string) =>
       request<SendsResponse | SendsResponseNoLimits>("GET", "/v1/sends", token),
+
+    getTags: (id: string, token: string) =>
+      request<{ tags: string[] }>("GET", `/v1/articles/${id}/tags`, token),
+
+    addTags: (id: string, tags: string[], token: string) =>
+      request<{ tags: string[] }>("POST", `/v1/articles/${id}/tags`, token, { tags }),
+
+    removeTags: (id: string, tags: string[], token: string) =>
+      request<{ tags: string[] }>("DELETE", `/v1/articles/${id}/tags`, token, { tags }),
+
+    setTags: (id: string, tags: string[], token: string) =>
+      request<{ tags: string[] }>("PUT", `/v1/articles/${id}/tags`, token, { tags }),
   };
 }

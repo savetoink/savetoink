@@ -4,6 +4,7 @@ import {
 	favoriteArticle,
 	sendArticle,
 	deleteArticle,
+	removeTags,
 	withActionFail
 } from '$lib/server/apiClient';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
@@ -50,5 +51,23 @@ export const actions = {
 			return result;
 		}
 		redirect(303, '/');
+	},
+	removeTag: async ({ locals, fetch, params, request, getClientAddress }) => {
+		const formData = await request.formData();
+		const tagName = formData.get('tag');
+
+		if (!tagName || typeof tagName !== 'string') {
+			return withActionFail(() => {
+				throw new Error('tag is required');
+			});
+		}
+
+		return withActionFail(() =>
+			removeTags(
+				{ locals, fetch, request, getClientAddress } as RequestEvent,
+				params.id,
+				[tagName]
+			)
+		);
 	}
 } satisfies Actions;

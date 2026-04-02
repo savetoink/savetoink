@@ -106,7 +106,7 @@
 			{/if}
 		</h1>
 
-		<Tags tags={data.tags} />
+		<Tags tags={data.tags} articleId={data.id} editable={true} />
 		<ArticleMetaAccordion article={data} />
 		<ArticleControls
 			article={data}
