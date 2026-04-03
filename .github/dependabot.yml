@@ -1,0 +1,67 @@
+version: 2
+updates:
+  # Go module at root (backend + CLI)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "go"
+
+  # Frontend shared package
+  - package-ecosystem: "bun"
+    directory: "/frontend/shared"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+
+  # Frontend webapp (SvelteKit)
+  - package-ecosystem: "bun"
+    directory: "/frontend/webapp"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+
+  # Frontend extension (WXT)
+  - package-ecosystem: "bun"
+    directory: "/frontend/extension"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+
+  # Frontend website (Astro)
+  - package-ecosystem: "bun"
+    directory: "/frontend/website"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+
+  # Tools package
+  - package-ecosystem: "bun"
+    directory: "/tools"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "tools"
