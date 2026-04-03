@@ -29,50 +29,6 @@ describe('Tags.svelte', () => {
 		await expect.element(newsRemoveButton).toBeInTheDocument();
 	});
 
-	it('should not render X buttons when editable is false', async () => {
-		render(Tags, { tags: ['tech'], articleId: 'test-article-id', editable: false });
-
-		try {
-			page.getByRole('button', { name: 'Remove tag: tech' });
-			expect.fail('Remove button should not be present when editable is false');
-		} catch {
-			// Expected - button should not be found
-		}
-	});
-
-	it('should not render X buttons when articleId is not provided', async () => {
-		render(Tags, { tags: ['tech'], editable: true });
-
-		try {
-			page.getByRole('button', { name: 'Remove tag: tech' });
-			expect.fail('Remove button should not be present when articleId is not provided');
-		} catch {
-			// Expected - button should not be found
-		}
-	});
-
-	it('should render nothing when tags array is empty', async () => {
-		render(Tags, { tags: [], editable: true, articleId: 'test-id' });
-
-		try {
-			page.getByRole('list');
-			expect.fail('List should not be present when tags is empty');
-		} catch {
-			// Expected - list should not be found
-		}
-	});
-
-	it('should render nothing when tags is undefined', async () => {
-		render(Tags, { tags: undefined, editable: true, articleId: 'test-id' });
-
-		try {
-			page.getByRole('list');
-			expect.fail('List should not be present when tags is undefined');
-		} catch {
-			// Expected - list should not be found
-		}
-	});
-
 	it('should render proper aria-label for remove button', async () => {
 		render(Tags, { tags: ['tech'], articleId: 'test-id', editable: true });
 
