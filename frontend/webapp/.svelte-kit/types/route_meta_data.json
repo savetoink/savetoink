@@ -1,0 +1,29 @@
+{
+	"/": [
+		"src/routes/+page.server.ts",
+		"src/routes/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/account": [
+		"src/routes/account/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/articles": [
+		"src/routes/articles/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/articles/[id]": [
+		"src/routes/articles/[id]/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/auth/callback": [
+		"src/routes/auth/callback/+server.ts"
+	],
+	"/new": [
+		"src/routes/new/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/sentry/tunnel": [
+		"src/routes/sentry/tunnel/+server.ts"
+	]
+}

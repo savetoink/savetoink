@@ -79,6 +79,31 @@ export function createArticle(
 	);
 }
 
+export function addTags(event: RequestEvent, id: string, tags: string[]) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.addTags(id, tags, event.locals.auth ?? ''));
+}
+
+export function removeTags(event: RequestEvent, id: string, tags: string[]) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.removeTags(id, tags, event.locals.auth ?? ''));
+}
+
+export function setTags(event: RequestEvent, id: string, tags: string[]) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.setTags(id, tags, event.locals.auth ?? ''));
+}
+
+export function getTags(event: RequestEvent, id: string) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.getTags(id, event.locals.auth ?? ''));
+}
+
+export function getAllTags(event: RequestEvent) {
+	const client = createApiClient(event);
+	return withSvelteKitError(() => client.getAllTags(event.locals.auth ?? ''));
+}
+
 export function sendArticle(event: RequestEvent, id: string) {
 	const client = createApiClient(event);
 	return withSvelteKitError(() => client.sendArticle(id, event.locals.auth ?? ''));

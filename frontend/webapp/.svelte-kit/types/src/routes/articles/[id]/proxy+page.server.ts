@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { redirect, error, fail } from '@sveltejs/kit';
 import {
 	getArticle,
@@ -11,13 +12,13 @@ import {
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 import { ApiError } from '@savetoink/shared';
 
-export const load: PageServerLoad = async ({
+export const load = async ({
 	locals,
 	fetch,
 	params,
 	request,
 	getClientAddress
-}) => {
+}: Parameters<PageServerLoad>[0]) => {
 	try {
 		const article = await getArticle(
 			{ locals, fetch, request, getClientAddress } as RequestEvent,

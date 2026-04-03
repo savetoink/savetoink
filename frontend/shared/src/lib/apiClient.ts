@@ -44,6 +44,11 @@ export interface ApiClient {
     token: string,
     tags?: string[],
   ): Promise<ArticleResponse>;
+  addTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
+  removeTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
+  setTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
+  getTags(id: string, token: string): Promise<{ tags: string[] }>;
+  getAllTags(token: string): Promise<{ tags: string[] }>;
   sendArticle(id: string, token: string): Promise<void>;
   favoriteArticle(id: string, token: string): Promise<void>;
   deleteArticle(id: string, token: string): Promise<void>;
@@ -181,6 +186,36 @@ export function createApiClient({
         send_on_complete: sendToDevice,
         ...(tags && tags.length > 0 ? { tags } : {}),
       } as ArticleRequest),
+
+    addTags: (id: string, tags: string[], token: string) =>
+      request<{ tags: string[] }>(
+        "POST",
+        `/v1/articles/${id}/tags`,
+        token,
+        { tags },
+      ),
+
+    removeTags: (id: string, tags: string[], token: string) =>
+      request<{ tags: string[] }>(
+        "DELETE",
+        `/v1/articles/${id}/tags`,
+        token,
+        { tags },
+      ),
+
+    setTags: (id: string, tags: string[], token: string) =>
+      request<{ tags: string[] }>(
+        "PUT",
+        `/v1/articles/${id}/tags`,
+        token,
+        { tags },
+      ),
+
+    getTags: (id: string, token: string) =>
+      request<{ tags: string[] }>("GET", `/v1/articles/${id}/tags`, token),
+
+    getAllTags: (token: string) =>
+      request<{ tags: string[] }>("GET", "/v1/tags", token),
 
     sendArticle: (id: string, token: string) =>
       request<void>("POST", `/v1/articles/${id}/send`, token),
