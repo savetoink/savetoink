@@ -9,7 +9,7 @@
 	};
 
 	const links: NavLink[] = [
-		{ path: '/new', label: 'New' },
+		{ path: '/new', label: 'Add' },
 		{ path: '/articles', label: 'Articles' },
 		{ path: '/articles', queryParams: { favorite: 'true' }, label: 'Favorites' },
 		{ path: '/account', label: 'Account' }

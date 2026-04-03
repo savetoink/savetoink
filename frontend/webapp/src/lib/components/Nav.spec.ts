@@ -33,7 +33,7 @@ describe('Nav.svelte - isActive logic', () => {
 	};
 
 	const links: NavLink[] = [
-		{ path: '/new', label: 'New' },
+		{ path: '/new', label: 'Add' },
 		{ path: '/articles', label: 'Articles' },
 		{ path: '/articles', queryParams: { favorite: 'true' }, label: 'Favorites' },
 		{ path: '/account', label: 'Account' }
@@ -108,19 +108,19 @@ describe('Nav.svelte - isActive logic', () => {
 		});
 	});
 
-	describe('New link', () => {
+	describe('Add link', () => {
 		it('should be active on /new', () => {
-			const link = links.find((l) => l.label === 'New')!;
+			const link = links.find((l) => l.label === 'Add')!;
 			expect(isActive(link, '/new', '')).toBe(true);
 		});
 
 		it('should be active on /new?ref=home', () => {
-			const link = links.find((l) => l.label === 'New')!;
+			const link = links.find((l) => l.label === 'Add')!;
 			expect(isActive(link, '/new', '?ref=home')).toBe(true);
 		});
 
 		it('should NOT be active on /articles', () => {
-			const link = links.find((l) => l.label === 'New')!;
+			const link = links.find((l) => l.label === 'Add')!;
 			expect(isActive(link, '/articles', '')).toBe(false);
 		});
 	});
