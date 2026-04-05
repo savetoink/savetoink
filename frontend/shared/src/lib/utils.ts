@@ -29,3 +29,7 @@ export const DeviceDomains = [
   "@pbsync.com",
   "@mytolino.com",
 ];
+
+// Tag constants (matching backend/lib/consts/app.go)
+export const MAX_TAGS = 10;
+export const MAX_TAG_LENGTH = 50;

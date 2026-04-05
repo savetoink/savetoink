@@ -33,7 +33,7 @@
 						}}
 					>
 						<button type="submit" aria-label={'Remove tag: ' + tag}>
-							<a href={resolve(`/articles?tag=${tag}`)} onclick={(e) => e.preventDefault()}>
+							<a href={resolve(`/articles?tag=${tag}`)} onclick={(e) => e.stopPropagation()}>
 								<ins>#{tag}</ins>
 							</a>
 							<span aria-hidden="true">&times;</span>

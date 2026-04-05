@@ -5,7 +5,7 @@
 	import ArticleControls from '$lib/components/ArticleControls.svelte';
 	import KeyboardNav from '$lib/components/KeyboardNav.svelte';
 	import ArticleMetaAccordion from '$lib/components/ArticleMetaAccordion.svelte';
-	import Tags from '$lib/components/Tags.svelte';
+	import TagManager from '$lib/components/TagManager.svelte';
 
 	import {
 		DETAIL_BINDINGS,
@@ -27,6 +27,12 @@
 	let favoriteSubmitting = $state(false);
 	let sendSubmitting = $state(false);
 	let deleteSubmitting = $state(false);
+
+	let showAddTag = $state(false);
+
+	function toggleAddTag() {
+		showAddTag = !showAddTag;
+	}
 
 	const keyboardCallbacks = {
 		f: () => favoriteForm && toggleFavoriteAction(favoriteForm),
@@ -106,7 +112,13 @@
 			{/if}
 		</h1>
 
-		<Tags tags={data.tags} articleId={data.id} editable={true} />
+		<TagManager
+			tags={data.tags}
+			articleId={data.id}
+			editable={true}
+			{showAddTag}
+			onClose={toggleAddTag}
+		/>
 		<ArticleMetaAccordion article={data} />
 		<ArticleControls
 			article={data}
@@ -117,6 +129,9 @@
 			{favoriteSubmitting}
 			{sendSubmitting}
 			{deleteSubmitting}
+			onAddTag={toggleAddTag}
+			tagCount={data.tags?.length ?? 0}
+			showAddTagForm={showAddTag}
 		/>
 	</header>
 	<section>
