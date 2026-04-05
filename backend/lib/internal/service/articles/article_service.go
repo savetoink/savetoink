@@ -298,10 +298,16 @@ func (s *ArticleService) GetAllTagsForAccount(ctx context.Context, accountID str
 
 // sortTags sorts tags alphabetically.
 func sortTags(tags []string) []string {
-	sorted := make([]string, len(tags))
-	copy(sorted, tags)
-	sort.Strings(sorted)
-	return sorted
+	if len(tags) == 0 {
+		return tags
+	}
+
+	// Deduplicate tags using the shared helper
+	unique := validation.DeduplicateStrings(tags)
+
+	// Sort the deduplicated tags
+	sort.Strings(unique)
+	return unique
 }
 
 // populateTagsForArticles populates the Tags field for all provided articles.

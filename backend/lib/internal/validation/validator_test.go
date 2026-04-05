@@ -764,3 +764,54 @@ func TestValidateTags_MaxTagLength(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "exceeds maximum length")
 }
+
+func TestDeduplicateStrings(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{
+			name:     "empty slice",
+			input:    []string{},
+			expected: []string{},
+		},
+		{
+			name:     "single element",
+			input:    []string{"apple"},
+			expected: []string{"apple"},
+		},
+		{
+			name:     "no duplicates",
+			input:    []string{"apple", "banana", "cherry"},
+			expected: []string{"apple", "banana", "cherry"},
+		},
+		{
+			name:     "all duplicates",
+			input:    []string{"same", "same", "same"},
+			expected: []string{"same"},
+		},
+		{
+			name:     "some duplicates",
+			input:    []string{"apple", "banana", "apple", "cherry", "banana"},
+			expected: []string{"apple", "banana", "cherry"},
+		},
+		{
+			name:     "case sensitive",
+			input:    []string{"Apple", "apple", "APPLE"},
+			expected: []string{"Apple", "apple", "APPLE"},
+		},
+		{
+			name:     "preserves order",
+			input:    []string{"zebra", "apple", "zebra", "middle"},
+			expected: []string{"zebra", "apple", "middle"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DeduplicateStrings(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

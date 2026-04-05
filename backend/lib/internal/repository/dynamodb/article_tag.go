@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/shaftoe/savetoink/backend/lib/internal/validation"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -29,6 +30,66 @@ const (
 	maxPageSize = 100
 )
 
+// getArticleCreatedAt retrieves the creation time for an article.
+// Returns an error if the article doesn't exist.
+func (d *DynamoDB) getArticleCreatedAt(
+	ctx context.Context,
+	accountID, articleID string,
+) (time.Time, error) {
+	article, err := d.GetByAccountAndID(ctx, accountID, articleID)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return time.Time{}, fmt.Errorf("article not found: %s", articleID)
+		}
+		return time.Time{}, fmt.Errorf("failed to get article: %w", err)
+	}
+	return article.CreatedAt, nil
+}
+
+// createPutWriteRequest creates a put write request for an article tag.
+func createPutWriteRequest(
+	accountID, articleID, tag string,
+	createdAt time.Time,
+) (types.WriteRequest, error) {
+	item := model.ArticleTag{
+		Account:            accountID,
+		Tag:                tag,
+		AccountTag:         buildAccountTagKey(accountID, tag),
+		ArticleID:          articleID,
+		CreatedAt:          createdAt,
+		CreatedAtArticleID: buildCreatedAtArticleIDKey(createdAt, articleID),
+	}
+
+	marshaled, err := attributevalue.MarshalMap(item)
+	if err != nil {
+		return types.WriteRequest{}, fmt.Errorf("failed to marshal article tag: %w", err)
+	}
+
+	return types.WriteRequest{
+		PutRequest: &types.PutRequest{
+			Item: marshaled,
+		},
+	}, nil
+}
+
+// executeBatchWrite writes items to DynamoDB in batches.
+func (d *DynamoDB) executeBatchWrite(
+	ctx context.Context,
+	writeReqs []types.WriteRequest,
+) error {
+	for i := 0; i < len(writeReqs); i += batchSize {
+		_, err := d.client.BatchWriteItem(ctx, &dynamodb.BatchWriteItemInput{
+			RequestItems: map[string][]types.WriteRequest{
+				d.articleTagsTableName: writeReqs[i:min(i+batchSize, len(writeReqs))],
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to batch write article tags: %w", err)
+		}
+	}
+	return nil
+}
+
 // AddTagsToArticle adds tags to an article. If createdAt is nil, it fetches the article
 // from the database to get the creation time. If createdAt is provided, it uses it directly,
 // avoiding the extra database query.
@@ -42,58 +103,33 @@ func (d *DynamoDB) AddTagsToArticle(
 		return nil
 	}
 
+	// Deduplicate tags to prevent duplicate entries in the database
+	tags = validation.DeduplicateStrings(tags)
+
+	// Get the article creation time
 	var articleCreatedAt time.Time
 	if createdAt != nil {
 		articleCreatedAt = *createdAt
 	} else {
-		// Get the article's creation time for the range key
-		article, err := d.GetByAccountAndID(ctx, accountID, articleID)
+		var err error
+		articleCreatedAt, err = d.getArticleCreatedAt(ctx, accountID, articleID)
 		if err != nil {
-			if errors.Is(err, ErrNotFound) {
-				return fmt.Errorf("article not found: %s", articleID)
-			}
-			return fmt.Errorf("failed to get article: %w", err)
+			return err
 		}
-		articleCreatedAt = article.CreatedAt
 	}
 
 	// Create write requests for batch operation
 	writeReqs := make([]types.WriteRequest, 0, len(tags))
 	for _, tag := range tags {
-		item := model.ArticleTag{
-			Account:            accountID,
-			Tag:                tag,
-			AccountTag:         buildAccountTagKey(accountID, tag),
-			ArticleID:          articleID,
-			CreatedAt:          articleCreatedAt,
-			CreatedAtArticleID: buildCreatedAtArticleIDKey(articleCreatedAt, articleID),
-		}
-
-		marshaled, marshalErr := attributevalue.MarshalMap(item)
-		if marshalErr != nil {
-			return fmt.Errorf("failed to marshal article tag: %w", marshalErr)
-		}
-
-		writeReqs = append(writeReqs, types.WriteRequest{
-			PutRequest: &types.PutRequest{
-				Item: marshaled,
-			},
-		})
-	}
-
-	// Execute batch write in chunks of batchSize (DynamoDB limit)
-	for i := 0; i < len(writeReqs); i += batchSize {
-		_, err := d.client.BatchWriteItem(ctx, &dynamodb.BatchWriteItemInput{
-			RequestItems: map[string][]types.WriteRequest{
-				d.articleTagsTableName: writeReqs[i:min(i+batchSize, len(writeReqs))],
-			},
-		})
+		req, err := createPutWriteRequest(accountID, articleID, tag, articleCreatedAt)
 		if err != nil {
-			return fmt.Errorf("failed to batch write article tags: %w", err)
+			return err
 		}
+		writeReqs = append(writeReqs, req)
 	}
 
-	return nil
+	// Execute batch write
+	return d.executeBatchWrite(ctx, writeReqs)
 }
 
 // RemoveTagsFromArticle removes specific tags from an article.

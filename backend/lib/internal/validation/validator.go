@@ -148,6 +148,19 @@ func ValidateDeviceEmail(email string) error {
 	)
 }
 
+// DeduplicateStrings removes duplicate strings from a slice, preserving order.
+func DeduplicateStrings(strs []string) []string {
+	seen := make(map[string]bool)
+	unique := make([]string, 0, len(strs))
+	for _, s := range strs {
+		if !seen[s] {
+			seen[s] = true
+			unique = append(unique, s)
+		}
+	}
+	return unique
+}
+
 // ValidateTags validates and normalizes a list of tags.
 // Returns an empty slice if tags is nil or empty (used to clear all tags).
 // Tags are trimmed, validated for format, deduplicated, and converted to lowercase.
@@ -161,7 +174,6 @@ func ValidateTags(tags []string) ([]string, error) {
 		return nil, fmt.Errorf("%w: maximum %d tags allowed per article", ErrInvalidTag, consts.MaxTagsPerArticle)
 	}
 
-	seen := make(map[string]bool)
 	normalizedTags := make([]string, 0, len(tags))
 
 	for _, tag := range tags {
@@ -169,15 +181,11 @@ func ValidateTags(tags []string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		// Deduplicate tags
-		if !seen[normalized] {
-			seen[normalized] = true
-			normalizedTags = append(normalizedTags, normalized)
-		}
+		normalizedTags = append(normalizedTags, normalized)
 	}
 
-	return normalizedTags, nil
+	// Deduplicate tags
+	return DeduplicateStrings(normalizedTags), nil
 }
 
 // ValidateTag validates and normalizes a single tag.

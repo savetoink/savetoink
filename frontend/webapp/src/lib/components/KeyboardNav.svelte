@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import type { KeyBindingMap } from '@savetoink/shared';
 	import { HELP_KEY } from '@savetoink/shared';
+	import { isEditableElement } from '$lib/utils/isEditableElement';
 
 	let {
 		bindings,
@@ -17,29 +18,6 @@
 	let dialogElement: HTMLDialogElement;
 
 	const allEnabledKeys = $derived(enabledKeys || Object.keys(bindings));
-
-	function isEditableElement(element: EventTarget | null): boolean {
-		if (!(element instanceof HTMLElement)) {
-			return false;
-		}
-		const tagName = element.tagName.toLowerCase();
-
-		// Check for contenteditable elements
-		if (element.isContentEditable) {
-			return true;
-		}
-
-		// Check for text-based input types (excluding checkboxes, radio buttons, etc.)
-		if (tagName === 'input') {
-			const inputElement = element as HTMLInputElement;
-			const inputType = inputElement.type.toLowerCase();
-			const textInputTypes = ['text', 'url', 'email', 'password', 'search', 'tel', 'number'];
-			return textInputTypes.includes(inputType);
-		}
-
-		// Check for textarea and select elements
-		return tagName === 'textarea' || tagName === 'select';
-	}
 
 	function handleKeydown(e: KeyboardEvent) {
 		// Disable keyboard shortcuts when user is typing in an input field

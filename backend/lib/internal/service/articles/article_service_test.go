@@ -1444,3 +1444,54 @@ func TestDeleteArticle_TagsErrorFailsDelete(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "failed to delete tags for article")
 }
+
+func TestSortTags(t *testing.T) {
+	tests := []struct {
+		name     string
+		tags     []string
+		expected []string
+	}{
+		{
+			name:     "empty slice",
+			tags:     []string{},
+			expected: []string{},
+		},
+		{
+			name:     "single tag",
+			tags:     []string{"tech"},
+			expected: []string{"tech"},
+		},
+		{
+			name:     "unique tags sorted",
+			tags:     []string{"zebra", "apple", "middle"},
+			expected: []string{"apple", "middle", "zebra"},
+		},
+		{
+			name:     "duplicate tags deduplicated and sorted",
+			tags:     []string{"tech", "web", "tech", "go", "web"},
+			expected: []string{"go", "tech", "web"},
+		},
+		{
+			name:     "all duplicates",
+			tags:     []string{"same", "same", "same"},
+			expected: []string{"same"},
+		},
+		{
+			name:     "already sorted unique tags",
+			tags:     []string{"a", "b", "c"},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name:     "case-sensitive duplicates",
+			tags:     []string{"Tech", "tech", "TECH"},
+			expected: []string{"TECH", "Tech", "tech"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sortTags(tt.tags)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
