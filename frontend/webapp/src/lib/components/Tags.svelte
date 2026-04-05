@@ -21,26 +21,28 @@
 		{#each tags as tag (tag)}
 			<li>
 				{#if canRemoveTags}
-					<form
-						method="POST"
-						action="?/removeTag"
-						use:enhance={({ formData }) => {
-							formData.set('tag', tag);
-							formData.set('articleId', articleId!);
-							return async ({ update }) => {
-								await update();
-							};
-						}}
-					>
-						<button type="submit" aria-label={'Remove tag: ' + tag}>
-							<a href={resolve(`/articles?tag=${tag}`)} onclick={(e) => e.stopPropagation()}>
-								<ins>#{tag}</ins>
-							</a>
-							<span aria-hidden="true">&times;</span>
-						</button>
-					</form>
+					<div class="tag-wrapper">
+						<a href={resolve(`/articles?tag=${tag}`)} class="tag-link">
+							<ins>#{tag}</ins>
+						</a>
+						<form
+							method="POST"
+							action="?/removeTag"
+							use:enhance={({ formData }) => {
+								formData.set('tag', tag);
+								formData.set('articleId', articleId!);
+								return async ({ update }) => {
+									await update();
+								};
+							}}
+						>
+							<button type="submit" aria-label={'Remove ' + tag + ' tag'} class="remove-tag-btn">
+								<span aria-hidden="true">&times;</span>
+							</button>
+						</form>
+					</div>
 				{:else}
-					<a href={resolve(`/articles?tag=${tag}`)}>
+					<a href={resolve(`/articles?tag=${tag}`)} class="tag-link">
 						<ins>#{tag}</ins>
 					</a>
 				{/if}
@@ -60,33 +62,32 @@
 		list-style: none;
 	}
 
-	form {
+	.tag-wrapper {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
 		margin: 0;
 		padding: 0;
 	}
 
-	button {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		background: none;
-		border: none;
-		padding: 0;
-		cursor: pointer;
-		font: inherit;
-	}
-
-	a,
-	button :global(ins) {
+	.tag-link {
 		text-decoration: none;
 	}
 
-	button span[aria-hidden='true'] {
+	.remove-tag-btn {
+		background: none;
+		border: none;
+		padding: 0;
+		margin: 0;
+		cursor: pointer;
+	}
+
+	.remove-tag-btn span[aria-hidden='true'] {
 		color: var(--pico-muted-color);
 		font-weight: bold;
 	}
 
-	button:hover span {
+	.remove-tag-btn:hover span {
 		color: var(--pico-del-color);
 	}
 </style>

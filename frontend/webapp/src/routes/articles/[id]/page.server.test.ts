@@ -5,13 +5,15 @@ import type { RequestEvent } from '@sveltejs/kit';
 
 const mockGetArticle = vi.fn();
 const mockAddTags = vi.fn();
+const mockRemoveTags = vi.fn();
 
 vi.mock('$lib/server/apiClient', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('$lib/server/apiClient')>();
 	return {
 		...actual,
 		getArticle: mockGetArticle,
-		addTags: mockAddTags
+		addTags: mockAddTags,
+		removeTags: mockRemoveTags
 	};
 });
 
@@ -57,6 +59,9 @@ describe('/articles/[id] - addTags action', () => {
 		});
 		mockAddTags.mockResolvedValue({
 			tags: ['existing-tag', 'new-tag']
+		});
+		mockRemoveTags.mockResolvedValue({
+			tags: []
 		});
 	});
 
@@ -183,6 +188,75 @@ describe('/articles/[id] - addTags action', () => {
 				'tech',
 				'news'
 			]);
+		});
+	});
+});
+
+describe('/articles/[id] - removeTag action', () => {
+	const mockLocals = {
+		auth: 'test-auth-token',
+		user: {
+			account: 'test-account',
+			email: 'test@example.com',
+			device_email: 'test@kindle.com',
+			auto_send: true
+		}
+	};
+
+	const mockGetClientAddress = vi.fn(() => '127.0.0.1');
+	const mockFetch = vi.fn();
+
+	const mockRequestEvent = {
+		locals: mockLocals,
+		request: new Request('http://localhost/articles/test-id'),
+		fetch: mockFetch,
+		getClientAddress: mockGetClientAddress,
+		url: new URL('http://localhost/articles/test-id'),
+		params: { id: 'test-id' },
+		route: { id: '/articles/[id]' },
+		isDataRequest: false,
+		isSubRequest: false,
+		isRemoteRequest: false,
+		cookies: {} as Record<string, unknown>,
+		platform: {} as Record<string, unknown>,
+		setHeaders: vi.fn(),
+		tracing: vi.fn(),
+		parent: async () => ({}),
+		depends: vi.fn(),
+		untrack: vi.fn((fn) => fn())
+	} as unknown as RequestEvent;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockGetArticle.mockResolvedValue({
+			id: 'test-id',
+			tags: ['tech', 'news']
+		});
+		mockRemoveTags.mockResolvedValue({
+			tags: ['news']
+		});
+	});
+
+	it('should remove a tag successfully', async () => {
+		const formData = new FormData();
+		formData.append('tag', 'tech');
+
+		const mockRequest = new Request('http://localhost/articles/test-id', {
+			method: 'POST',
+			body: formData
+		});
+
+		const eventWithForm = {
+			...mockRequestEvent,
+			request: mockRequest
+		};
+
+		const { actions } = await import('./+page.server');
+		const result = await actions.removeTag(eventWithForm as any);
+
+		expect(mockRemoveTags).toHaveBeenCalledWith(expect.any(Object), 'test-id', ['tech']);
+		expect(result).toEqual({
+			tags: ['news']
 		});
 	});
 });
