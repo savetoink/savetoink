@@ -18,7 +18,7 @@
 		"icons:generate": "bun run ../../tools/generate_icons.ts ../../favicon.svg icon-targets.csv"
 	},
 	"devDependencies": {
-		"@eslint/compat": "^2.0.3",
+		"@eslint/compat": "^2.0.4",
 		"@eslint/js": "^10.0.1",
 		"@playwright/test": "^1.59.1",
 		"@sveltejs/adapter-cloudflare": "^7.2.8",
