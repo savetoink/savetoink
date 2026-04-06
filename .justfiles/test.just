@@ -40,7 +40,7 @@ test-extension:
 
 [working-directory('frontend/website')]
 test-website:
-    bun run check
+    ASTRO_TELEMETRY_DISABLED=1 bun run check
     bun run lint
 
 [working-directory('frontend/webapp')]
