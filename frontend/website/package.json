@@ -19,7 +19,7 @@
 	},
 	"devDependencies": {
 		"@astrojs/check": "^0.9.8",
-		"@eslint/compat": "^2.0.3",
+		"@eslint/compat": "^2.0.4",
 		"@eslint/js": "^10.0.1",
 		"eslint": "^10.1.0",
 		"eslint-config-prettier": "^10.1.8",
