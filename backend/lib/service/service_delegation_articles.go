@@ -104,19 +104,6 @@ func (s *Service) GetArticleTags(ctx context.Context, accountID, articleID strin
 	return tags, nil
 }
 
-// GetArticlesByTag delegates to ArticleService.
-func (s *Service) GetArticlesByTag(
-	ctx context.Context,
-	accountID, tag string,
-	page, pageSize int,
-) (*servicetypes.GetArticlesResult, error) {
-	result, err := s.articles.GetArticlesByTag(ctx, accountID, tag, page, pageSize)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get articles by tag: %w", err)
-	}
-	return result, nil
-}
-
 // GetAllTagsForAccount delegates to ArticleService.
 func (s *Service) GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error) {
 	tags, err := s.articles.GetAllTagsForAccount(ctx, accountID)

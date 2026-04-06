@@ -84,13 +84,6 @@ type Interface interface {
 	// GetArticleTags retrieves all tags for a specific article.
 	GetArticleTags(ctx context.Context, accountID, articleID string) ([]string, error)
 
-	// GetArticlesByTag retrieves articles with a specific tag for a given account.
-	GetArticlesByTag(
-		ctx context.Context,
-		accountID, tag string,
-		page, pageSize int,
-	) (*servicetypes.GetArticlesResult, error)
-
 	// GetAllTagsForAccount retrieves all unique tags for an account.
 	GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error)
 

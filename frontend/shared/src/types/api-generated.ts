@@ -574,11 +574,11 @@ export interface operations {
             query?: {
                 /** @description Page number, default is 1 */
                 page?: number;
-                /** @description Number of articles per page, default is 20, max is 100 */
+                /** @description Number of articles per page, default is 20, max is 20 */
                 page_size?: number;
-                /** @description Filter by favorite status */
+                /** @description Filter by favorite status. Can be combined with tag filter for AND logic */
                 favorite?: boolean;
-                /** @description Filter by tag */
+                /** @description Filter by tag. Can be combined with favorite filter for AND logic */
                 tag?: string;
             };
             header?: never;

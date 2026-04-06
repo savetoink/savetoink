@@ -475,3 +475,324 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesEmptyRes
 	assert.Equal(t, 0, total)
 	assert.Empty(t, articles)
 }
+
+func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
+	ctx := context.Background()
+	t := s.T()
+
+	const (
+		tagTech        = "tech"
+		tagProgramming = "programming"
+		tagNonexistent = "nonexistent"
+	)
+
+	account := "test-account-tag"
+
+	// Create articles with different tags
+	testCases := []struct {
+		id   string
+		tags []string
+		fav  bool
+	}{
+		{"article-tag-1", []string{tagTech}, false},
+		{"article-tag-2", []string{tagTech, tagProgramming}, true},
+		{"article-tag-3", []string{tagProgramming}, false},
+		{"article-tag-4", []string{tagTech}, true},
+		{"article-tag-5", []string{}, false},
+	}
+
+	for _, tc := range testCases {
+		now := time.Now()
+		publishedAt := now
+
+		article := &model.Article{
+			Account:            account,
+			ID:                 tc.id,
+			URL:                "https://example.com/" + tc.id,
+			Title:              "Article " + tc.id,
+			Content:            "Content " + tc.id,
+			CreatedAt:          now,
+			Favorite:           tc.fav,
+			Author:             "Author",
+			Excerpt:            "Excerpt",
+			ImageURL:           "https://example.com/image.jpg",
+			Language:           "en",
+			PublishedAt:        &publishedAt,
+			WordCount:          100,
+			ReadingTimeMinutes: 1,
+			SiteName:           "Example Site",
+			SourceDomain:       "example.com",
+		}
+
+		err := s.repositories.Store(ctx, article)
+		require.NoError(t, err)
+
+		// Add tags
+		for _, tag := range tc.tags {
+			err = s.repositories.AddTagsToArticle(ctx, account, tc.id, []string{tag}, nil)
+			require.NoError(t, err)
+		}
+	}
+
+	// Test filtering by "tech" tag
+	tag := tagTech
+	articles, total, err := s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 3, total)
+	assert.Len(t, articles, 3)
+
+	for _, article := range articles {
+		assert.Contains(t, []string{"article-tag-1", "article-tag-2", "article-tag-4"}, article.ID)
+	}
+
+	// Test filtering by "programming" tag
+	tag = tagProgramming
+	articles, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 2, total)
+	assert.Len(t, articles, 2)
+
+	for _, article := range articles {
+		assert.Contains(t, []string{"article-tag-2", "article-tag-3"}, article.ID)
+	}
+
+	// Test filtering by non-existent tag
+	tag = tagNonexistent
+	articles, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 0, total)
+	assert.Empty(t, articles)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters() {
+	ctx := context.Background()
+	t := s.T()
+
+	const (
+		tagTech        = "tech"
+		tagProgramming = "programming"
+	)
+
+	account := "test-account-combined"
+
+	// Create articles with different tag and favorite combinations
+	testCases := []struct {
+		id   string
+		tags []string
+		fav  bool
+	}{
+		{"article-1", []string{tagTech}, true},                  // tech AND favorite
+		{"article-2", []string{tagTech}, false},                 // tech only
+		{"article-3", []string{tagProgramming}, true},           // programming AND favorite
+		{"article-4", []string{tagProgramming}, false},          // programming only
+		{"article-5", []string{}, true},                         // favorite only
+		{"article-6", []string{}, false},                        // neither
+		{"article-7", []string{tagTech, tagProgramming}, true},  // both tags AND favorite
+		{"article-8", []string{tagTech, tagProgramming}, false}, // both tags only
+	}
+
+	for _, tc := range testCases {
+		now := time.Now()
+		publishedAt := now
+
+		article := &model.Article{
+			Account:            account,
+			ID:                 tc.id,
+			URL:                "https://example.com/" + tc.id,
+			Title:              "Article " + tc.id,
+			Content:            "Content " + tc.id,
+			CreatedAt:          now,
+			Favorite:           tc.fav,
+			Author:             "Author",
+			Excerpt:            "Excerpt",
+			ImageURL:           "https://example.com/image.jpg",
+			Language:           "en",
+			PublishedAt:        &publishedAt,
+			WordCount:          100,
+			ReadingTimeMinutes: 1,
+			SiteName:           "Example Site",
+			SourceDomain:       "example.com",
+		}
+
+		err := s.repositories.Store(ctx, article)
+		require.NoError(t, err)
+
+		// Add tags
+		for _, tag := range tc.tags {
+			err = s.repositories.AddTagsToArticle(ctx, account, tc.id, []string{tag}, nil)
+			require.NoError(t, err)
+		}
+	}
+
+	// Test: favorite=true AND tag="tech"
+	tag := tagTech
+	favorite := true
+	articles, total, err := s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 2, total)
+	assert.Len(t, articles, 2)
+
+	ids := make([]string, len(articles))
+	for i, a := range articles {
+		ids[i] = a.ID
+		assert.True(t, a.Favorite)
+	}
+	assert.Contains(t, ids, "article-1")
+	assert.Contains(t, ids, "article-7")
+
+	// Test: favorite=true AND tag="programming"
+	tag = tagProgramming
+	articles, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 2, total)
+	assert.Len(t, articles, 2)
+
+	ids = make([]string, len(articles))
+	for i, a := range articles {
+		ids[i] = a.ID
+		assert.True(t, a.Favorite)
+	}
+	assert.Contains(t, ids, "article-3")
+	assert.Contains(t, ids, "article-7")
+
+	// Test: favorite=false AND tag="tech"
+	favorite = false
+	tag = tagTech
+	articles, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 2, total)
+	assert.Len(t, articles, 2)
+
+	ids = make([]string, len(articles))
+	for i, a := range articles {
+		ids[i] = a.ID
+		assert.False(t, a.Favorite)
+	}
+	assert.Contains(t, ids, "article-2")
+	assert.Contains(t, ids, "article-8")
+
+	// Test: favorite=true AND non-existent tag
+	tag = "nonexistent"
+	favorite = true
+	articles, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 0, total)
+	assert.Empty(t, articles)
+
+	// Test: favorite=false AND non-existent tag
+	favorite = false
+	articles, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 0, total)
+	assert.Empty(t, articles)
+}
+
+func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPagination() {
+	ctx := context.Background()
+	t := s.T()
+
+	const tagTech = "tech"
+
+	account := "test-account-tag-pag"
+
+	// Create 25 articles with "tech" tag
+	for i := 1; i <= 25; i++ {
+		now := time.Now().Add(-time.Duration(i) * time.Hour)
+		publishedAt := now
+
+		article := &model.Article{
+			Account:            account,
+			ID:                 "article-tech-" + string(rune('a'+(i-1)%26)),
+			URL:                "https://example.com/tech" + string(rune('a'+(i-1)%26)),
+			Title:              "Tech Article " + string(rune('a'+(i-1)%26)),
+			Content:            "Tech Content " + string(rune('a'+(i-1)%26)),
+			CreatedAt:          now,
+			Favorite:           i%2 == 0, // Half are favorites
+			Author:             "Author",
+			Excerpt:            "Excerpt",
+			ImageURL:           "https://example.com/image.jpg",
+			Language:           "en",
+			PublishedAt:        &publishedAt,
+			WordCount:          100,
+			ReadingTimeMinutes: 1,
+			SiteName:           "Example Site",
+			SourceDomain:       "example.com",
+		}
+
+		err := s.repositories.Store(ctx, article)
+		require.NoError(t, err)
+
+		err = s.repositories.AddTagsToArticle(ctx, account, article.ID, []string{"tech"}, nil)
+		require.NoError(t, err)
+	}
+
+	// Create 5 articles with "other" tag
+	for i := 1; i <= 5; i++ {
+		now := time.Now().Add(-time.Duration(i) * time.Hour)
+		publishedAt := now
+
+		article := &model.Article{
+			Account:            account,
+			ID:                 "article-other-" + string(rune('a'+i-1)),
+			URL:                "https://example.com/other" + string(rune('a'+i-1)),
+			Title:              "Other Article " + string(rune('a'+i-1)),
+			Content:            "Other Content " + string(rune('a'+i-1)),
+			CreatedAt:          now,
+			Favorite:           false,
+			Author:             "Author",
+			Excerpt:            "Excerpt",
+			ImageURL:           "https://example.com/image.jpg",
+			Language:           "en",
+			PublishedAt:        &publishedAt,
+			WordCount:          100,
+			ReadingTimeMinutes: 1,
+			SiteName:           "Example Site",
+			SourceDomain:       "example.com",
+		}
+
+		err := s.repositories.Store(ctx, article)
+		require.NoError(t, err)
+
+		err = s.repositories.AddTagsToArticle(ctx, account, article.ID, []string{"other"}, nil)
+		require.NoError(t, err)
+	}
+
+	// Test pagination with tag filter only
+	tag := tagTech
+	articles, total, err := s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 25, total)
+	assert.Len(t, articles, 10)
+
+	// Test pagination with tag and favorite filters
+	tag = tagTech
+	favorite := true
+	articles, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 12, total) // Half of 25 are favorites
+	assert.Len(t, articles, 10)
+
+	// Test second page with combined filters
+	articles, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 2, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 12, total)
+	assert.Len(t, articles, 2)
+
+	// Test third page (empty result) with combined filters
+	articles, total, err = s.repositories.GetMetadataByAccount(
+		ctx, account, 3, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
+	require.NoError(t, err)
+	assert.Equal(t, 12, total)
+	assert.Empty(t, articles)
+}

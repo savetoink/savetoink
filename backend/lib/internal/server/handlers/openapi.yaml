@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: Save to Ink API
   description: REST API for article management and delivery service
-  version: 0.34.1
+  version: 0.34.1-dev+04042215.04aacb1-dev+02040201.update_filters
 
 servers:
   - url: /v1
@@ -450,20 +450,20 @@ paths:
             default: 1
         - name: page_size
           in: query
-          description: Number of articles per page, default is 20, max is 100
+          description: Number of articles per page, default is 20, max is 20
           schema:
             type: integer
             minimum: 1
-            maximum: 100
+            maximum: 20
             default: 20
         - name: favorite
           in: query
-          description: Filter by favorite status
+          description: Filter by favorite status. Can be combined with tag filter for AND logic
           schema:
             type: boolean
         - name: tag
           in: query
-          description: Filter by tag
+          description: Filter by tag. Can be combined with favorite filter for AND logic
           schema:
             type: string
       responses:

@@ -2,27 +2,45 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 
-	const links = [
-		{ href: '/new', label: 'New' },
-		{ href: '/articles', label: 'Articles' },
-		{ href: '/articles?favorite=true', label: 'Favorites' },
-		{ href: '/account', label: 'Account' }
+	type NavLink = {
+		path: string;
+		queryParams?: Record<string, string>;
+		label: string;
+	};
+
+	const links: NavLink[] = [
+		{ path: '/new', label: 'Add' },
+		{ path: '/articles', label: 'Articles' },
+		{ path: '/articles', queryParams: { favorite: 'true' }, label: 'Favorites' },
+		{ path: '/account', label: 'Account' }
 	] as const;
 
-	const isActive = (href: string) => {
+	const linkHref = (link: NavLink): string => {
+		if (!link.queryParams) return link.path;
+		const params = new URLSearchParams(link.queryParams);
+		return `${link.path}?${params.toString()}` as unknown as '/';
+	};
+
+	const isActive = (link: NavLink): boolean => {
 		const currentPath = page.url.pathname;
 		const currentParams = new URLSearchParams(page.url.search);
-		const [linkPath, linkParams] = href.split('?');
-		const params = new URLSearchParams(linkParams);
 
-		if (currentPath !== linkPath) return false;
+		// Path must match exactly
+		if (currentPath !== link.path) return false;
 
-		for (const [key, value] of params) {
-			if (currentParams.get(key) !== value) return false;
+		// If link has queryParams, all specified ones must match
+		// Extra params in current URL are OK
+		if (link.queryParams) {
+			for (const [key, value] of Object.entries(link.queryParams)) {
+				if (currentParams.get(key) !== value) return false;
+			}
+			return true;
 		}
 
-		for (const [key, value] of currentParams) {
-			if (params.get(key) !== value) return false;
+		// If link has NO queryParams, ensure no conflicting params are set
+		// Specifically for /articles links, don't match if favorite=true is set
+		if (link.path === '/articles' && currentParams.has('favorite')) {
+			return false;
 		}
 
 		return true;
@@ -31,10 +49,13 @@
 
 <nav>
 	<ul>
-		{#each links as { href, label } (href)}
+		{#each links as link (link.path + JSON.stringify(link.queryParams ?? {}))}
 			<li>
-				<a href={resolve(href)} aria-current={isActive(href) ? 'page' : undefined}>
-					{label}
+				<a
+					href={resolve(linkHref(link) as unknown as '/')}
+					aria-current={isActive(link) ? 'page' : undefined}
+				>
+					{link.label}
 				</a>
 			</li>
 		{/each}
@@ -48,11 +69,11 @@
 	}
 
 	a {
-		background-color: var(--pico-card-sectioning-background-color);
+		font-size: 1.3rem;
 		text-decoration: none;
 	}
 
 	a:not([aria-current='page']) {
-		color: white;
+		color: var(--pico-secondary);
 	}
 </style>

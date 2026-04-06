@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -102,8 +103,15 @@ func (d *DynamoDB) GetMetadataByAccount(
 	}
 
 	var favoriteFilter *bool
+	var tagFilter *string
 	if filter != nil {
 		favoriteFilter = filter.Favorite
+		tagFilter = filter.Tag
+	}
+
+	// If tag filter is present, use tag-based query
+	if tagFilter != nil {
+		return d.getArticlesByTagAndFavorite(ctx, account, page, pageSize, *tagFilter, favoriteFilter)
 	}
 
 	total, err = d.totalCountByAccount(ctx, account, favoriteFilter)
@@ -146,6 +154,56 @@ func (d *DynamoDB) GetMetadataByAccount(
 	}
 
 	return articles, total, nil
+}
+
+// getArticlesByTagAndFavorite retrieves articles by tag and applies favorite filter.
+// This is used when both tag and/or favorite filters are present.
+func (d *DynamoDB) getArticlesByTagAndFavorite(
+	ctx context.Context,
+	account string,
+	page, pageSize int,
+	tag string,
+	favoriteFilter *bool,
+) ([]*model.Article, int, error) {
+	// Get all article IDs for the tag (with high page size to get more results)
+	const maxFetch = 1000
+	articleIDs, _, err := d.GetArticlesByTag(ctx, account, tag, 1, maxFetch)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get articles by tag: %w", err)
+	}
+
+	// Fetch article metadata for all IDs and apply favorite filter
+	allArticles := make([]*model.Article, 0, len(articleIDs))
+	var article *model.Article
+	for _, articleID := range articleIDs {
+		article, err = d.GetByAccountAndID(ctx, account, articleID)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				continue
+			}
+			return nil, 0, fmt.Errorf("failed to get article %s: %w", articleID, err)
+		}
+
+		// Apply favorite filter
+		if favoriteFilter != nil && article.Favorite != *favoriteFilter {
+			continue
+		}
+
+		allArticles = append(allArticles, article)
+	}
+
+	total := len(allArticles)
+
+	// Apply pagination
+	start := (page - 1) * pageSize
+	if start >= total {
+		return []*model.Article{}, total, nil
+	}
+
+	end := start + pageSize
+	end = min(end, total)
+
+	return allArticles[start:end], total, nil
 }
 
 func (d *DynamoDB) queryArticlesByAccount(

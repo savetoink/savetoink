@@ -166,14 +166,6 @@ func (m *mockService) GetArticleTags(_ context.Context, _, _ string) ([]string, 
 	return nil, errors.New("not implemented in mock")
 }
 
-func (m *mockService) GetArticlesByTag(
-	_ context.Context,
-	_, _ string,
-	_, _ int,
-) (*servicetypes.GetArticlesResult, error) {
-	return nil, errors.New("not implemented in mock")
-}
-
 func (m *mockService) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
 	return nil, errors.New("not implemented in mock")
 }

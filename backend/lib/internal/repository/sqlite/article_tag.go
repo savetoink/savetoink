@@ -23,6 +23,17 @@ func (s *SQLite) AddTagsToArticle(ctx context.Context, accountID, articleID stri
 		return nil
 	}
 
+	// Deduplicate tags to prevent duplicate entries in the database
+	seen := make(map[string]bool)
+	uniqueTags := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		if !seen[tag] {
+			seen[tag] = true
+			uniqueTags = append(uniqueTags, tag)
+		}
+	}
+	tags = uniqueTags
+
 	var articleCreatedAt time.Time
 	if createdAt != nil {
 		articleCreatedAt = *createdAt

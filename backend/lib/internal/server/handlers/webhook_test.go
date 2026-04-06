@@ -140,14 +140,6 @@ func (m *webhookMockService) GetArticleTags(_ context.Context, _, _ string) ([]s
 	return nil, errors.New("not implemented")
 }
 
-func (m *webhookMockService) GetArticlesByTag(
-	_ context.Context,
-	_, _ string,
-	_, _ int,
-) (*servicetypes.GetArticlesResult, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (m *webhookMockService) GetAllTagsForAccount(_ context.Context, _ string) ([]string, error) {
 	return nil, errors.New("not implemented")
 }

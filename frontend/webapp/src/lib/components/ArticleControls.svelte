@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Article, UserProfile } from '@savetoink/shared';
-	import { deleteArticle as deleteArticleAction } from '@savetoink/shared';
+	import { deleteArticle as deleteArticleAction, MAX_TAGS } from '@savetoink/shared';
 
 	let {
 		article,
@@ -10,7 +10,11 @@
 		deleteForm,
 		favoriteSubmitting = false,
 		sendSubmitting = false,
-		deleteSubmitting = false
+		deleteSubmitting = false,
+		onAddTag,
+		tagCount = 0,
+		maxTags = MAX_TAGS,
+		showAddTagForm = false
 	}: {
 		article: Article;
 		user?: UserProfile;
@@ -20,9 +24,14 @@
 		favoriteSubmitting?: boolean;
 		sendSubmitting?: boolean;
 		deleteSubmitting?: boolean;
+		onAddTag?: () => void;
+		tagCount?: number;
+		maxTags?: number;
+		showAddTagForm?: boolean;
 	} = $props();
 
 	const canSendToDevice = $derived(!!user?.device_email);
+	const atMaxTags = $derived(tagCount >= maxTags);
 
 	async function handleFavoriteClick() {
 		favoriteForm?.requestSubmit();
@@ -36,6 +45,10 @@
 		if (!deleteForm) return;
 		deleteArticleAction(deleteForm);
 	}
+
+	function handleAddTagClick() {
+		onAddTag?.();
+	}
 </script>
 
 <div>
@@ -48,6 +61,12 @@
 	{/if}
 
 	<button type="button" aria-busy={deleteSubmitting} onclick={handleDeleteClick}>Delete</button>
+
+	{#if onAddTag}
+		<button type="button" onclick={handleAddTagClick} disabled={atMaxTags && !showAddTagForm}
+			>{showAddTagForm ? 'Close' : 'Add tag'}</button
+		>
+	{/if}
 </div>
 
 <style>

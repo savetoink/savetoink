@@ -1365,63 +1365,6 @@ func TestGetArticleTags_ArticleNotFound(t *testing.T) {
 	assert.True(t, errors.Is(err, apperrors.ErrNotFound))
 }
 
-func TestGetArticlesByTag_Success(t *testing.T) {
-	mockRepo := &MockRepository{
-		articles: []*model.Article{
-			{Account: "account-123", ID: "article-1", Title: "Article 1", CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-2", Title: "Article 2", CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-3", Title: "Article 3", CreatedAt: time.Now()},
-		},
-	}
-	mockTagsRepo := NewMockArticleTagsRepository()
-	svc := New(mockRepo, mockTagsRepo, epub.NewPublisher(), nil)
-
-	ctx := context.Background()
-
-	// Tag two articles
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-1", []string{"tech"}, nil)
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-2", []string{"tech"}, nil)
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-3", []string{"programming"}, nil)
-
-	result, err := svc.GetArticlesByTag(ctx, "account-123", "tech", 1, 10)
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(result.Articles))
-	assert.Equal(t, 2, result.Total)
-}
-
-func TestGetArticlesByTag_EmptyTag(t *testing.T) {
-	mockRepo := &MockRepository{
-		articles: []*model.Article{},
-	}
-	mockTagsRepo := NewMockArticleTagsRepository()
-	svc := New(mockRepo, mockTagsRepo, epub.NewPublisher(), nil)
-
-	ctx := context.Background()
-
-	_, err := svc.GetArticlesByTag(ctx, "account-123", "", 1, 10)
-	assert.Error(t, err)
-}
-
-func TestGetArticlesByTag_NoResults(t *testing.T) {
-	mockRepo := &MockRepository{
-		articles: []*model.Article{
-			{Account: "account-123", ID: "article-1", Title: "Article 1", CreatedAt: time.Now()},
-		},
-	}
-	mockTagsRepo := NewMockArticleTagsRepository()
-	svc := New(mockRepo, mockTagsRepo, epub.NewPublisher(), nil)
-
-	ctx := context.Background()
-
-	// Tag with different tag
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-1", []string{"programming"}, nil)
-
-	result, err := svc.GetArticlesByTag(ctx, "account-123", "tech", 1, 10)
-	require.NoError(t, err)
-	assert.Equal(t, 0, len(result.Articles))
-	assert.Equal(t, 0, result.Total)
-}
-
 func TestGetAllTagsForAccount_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
@@ -1500,4 +1443,55 @@ func TestDeleteArticle_TagsErrorFailsDelete(t *testing.T) {
 	_, err := svc.DeleteArticle(ctx, "account-123", "article-456")
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "failed to delete tags for article")
+}
+
+func TestSortTags(t *testing.T) {
+	tests := []struct {
+		name     string
+		tags     []string
+		expected []string
+	}{
+		{
+			name:     "empty slice",
+			tags:     []string{},
+			expected: []string{},
+		},
+		{
+			name:     "single tag",
+			tags:     []string{"tech"},
+			expected: []string{"tech"},
+		},
+		{
+			name:     "unique tags sorted",
+			tags:     []string{"zebra", "apple", "middle"},
+			expected: []string{"apple", "middle", "zebra"},
+		},
+		{
+			name:     "duplicate tags deduplicated and sorted",
+			tags:     []string{"tech", "web", "tech", "go", "web"},
+			expected: []string{"go", "tech", "web"},
+		},
+		{
+			name:     "all duplicates",
+			tags:     []string{"same", "same", "same"},
+			expected: []string{"same"},
+		},
+		{
+			name:     "already sorted unique tags",
+			tags:     []string{"a", "b", "c"},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name:     "case-sensitive duplicates",
+			tags:     []string{"Tech", "tech", "TECH"},
+			expected: []string{"TECH", "Tech", "tech"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sortTags(tt.tags)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }

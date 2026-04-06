@@ -93,15 +93,10 @@ type articleMockService struct {
 		accountID string,
 		startDate, endDate time.Time,
 	) (int, error)
-	addTagsFunc          func(ctx context.Context, accountID, articleID string, tags []string) error
-	removeTagsFunc       func(ctx context.Context, accountID, articleID string, tags []string) error
-	setTagsFunc          func(ctx context.Context, accountID, articleID string, tags []string) error
-	getTagsFunc          func(ctx context.Context, accountID, articleID string) ([]string, error)
-	getArticlesByTagFunc func(
-		ctx context.Context,
-		accountID, tag string,
-		page, pageSize int,
-	) (*servicetypes.GetArticlesResult, error)
+	addTagsFunc    func(ctx context.Context, accountID, articleID string, tags []string) error
+	removeTagsFunc func(ctx context.Context, accountID, articleID string, tags []string) error
+	setTagsFunc    func(ctx context.Context, accountID, articleID string, tags []string) error
+	getTagsFunc    func(ctx context.Context, accountID, articleID string) ([]string, error)
 	getAllTagsFunc func(ctx context.Context, accountID string) ([]string, error)
 	dbError        error
 }
@@ -287,23 +282,6 @@ func (m *articleMockService) GetArticleTags(ctx context.Context, accountID, arti
 		return m.getTagsFunc(ctx, accountID, articleID)
 	}
 	return []string{"tech", "programming"}, nil
-}
-
-func (m *articleMockService) GetArticlesByTag(
-	ctx context.Context,
-	accountID, tag string,
-	page, pageSize int,
-) (*servicetypes.GetArticlesResult, error) {
-	if m.getArticlesByTagFunc != nil {
-		return m.getArticlesByTagFunc(ctx, accountID, tag, page, pageSize)
-	}
-	return &servicetypes.GetArticlesResult{
-		Articles: []*model.Article{},
-		Page:     page,
-		PageSize: pageSize,
-		Total:    0,
-		HasMore:  false,
-	}, nil
 }
 
 func (m *articleMockService) GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error) {
@@ -766,6 +744,231 @@ func TestHandleGetArticles_ServiceError(t *testing.T) {
 			h.HandleGetArticles(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
+
+func TestHandleGetArticles_InvalidTag(t *testing.T) {
+	tests := []struct {
+		name         string
+		tag          string
+		expectedCode int
+	}{
+		{
+			name:         "empty tag",
+			tag:          "",
+			expectedCode: http.StatusOK, // Empty tag should be ignored
+		},
+		{
+			name:         "tag with invalid characters",
+			tag:          "tag with spaces!",
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "tag that normalizes to empty",
+			tag:          "   ", // Only whitespace
+			expectedCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+
+			mockSvc := &articleMockService{
+				getArticlesMetadataFunc: func(
+					_ context.Context,
+					_ string,
+					_, _ int,
+					_ *internaltype.ArticleFilter,
+				) (*servicetypes.GetArticlesResult, error) {
+					return &servicetypes.GetArticlesResult{
+						Articles: []*model.Article{},
+						Page:     1,
+						PageSize: 10,
+						Total:    0,
+						HasMore:  false,
+					}, nil
+				},
+			}
+
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+				"GET",
+				"/v1/articles?tag="+url.QueryEscape(tt.tag),
+				nil)
+			w := httptest.NewRecorder()
+
+			h.HandleGetArticles(w, req)
+
+			assert.Equal(t, tt.expectedCode, w.Code)
+		})
+	}
+}
+
+func TestHandleGetArticles_PaginationEdgeCases(t *testing.T) {
+	tests := []struct {
+		name         string
+		page         string
+		pageSize     string
+		expectedPage int
+		expectedSize int
+	}{
+		{
+			name:         "default pagination",
+			page:         "",
+			pageSize:     "",
+			expectedPage: 1,
+			expectedSize: 20, // consts.DefaultPageSize
+		},
+		{
+			name:         "explicit page and size",
+			page:         "3",
+			pageSize:     "20",
+			expectedPage: 3,
+			expectedSize: 20,
+		},
+		{
+			name:         "page zero uses default",
+			page:         "0",
+			pageSize:     "10",
+			expectedPage: 1,
+			expectedSize: 10,
+		},
+		{
+			name:         "negative page uses default",
+			page:         "-1",
+			pageSize:     "10",
+			expectedPage: 1,
+			expectedSize: 10,
+		},
+		{
+			name:         "page size exceeds max",
+			page:         "1",
+			pageSize:     "200",
+			expectedPage: 1,
+			expectedSize: 20, // consts.MaxPageSize
+		},
+		{
+			name:         "page size below min",
+			page:         "1",
+			pageSize:     "0",
+			expectedPage: 1,
+			expectedSize: 20, // Default
+		},
+		{
+			name:         "invalid page size ignored",
+			page:         "1",
+			pageSize:     "invalid",
+			expectedPage: 1,
+			expectedSize: 20,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			calledPage := -1
+			calledSize := -1
+
+			mockSvc := &articleMockService{
+				getArticlesMetadataFunc: func(
+					_ context.Context,
+					_ string,
+					page, pageSize int,
+					_ *internaltype.ArticleFilter,
+				) (*servicetypes.GetArticlesResult, error) {
+					calledPage = page
+					calledSize = pageSize
+					return &servicetypes.GetArticlesResult{
+						Articles: []*model.Article{},
+						Page:     page,
+						PageSize: pageSize,
+						Total:    0,
+						HasMore:  false,
+					}, nil
+				},
+			}
+
+			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+				"GET",
+				fmt.Sprintf("/v1/articles?page=%s&page_size=%s", tt.page, tt.pageSize),
+				nil)
+			w := httptest.NewRecorder()
+
+			h.HandleGetArticles(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Equal(t, tt.expectedPage, calledPage)
+			assert.Equal(t, tt.expectedSize, calledSize)
+		})
+	}
+}
+
+func TestHandleGetArticles_EmptyResults(t *testing.T) {
+	tests := []struct {
+		name        string
+		queryParams string
+		description string
+	}{
+		{
+			name:        "empty result with favorite and tag",
+			queryParams: "favorite=true&tag=nonexistent",
+			description: "No articles match both criteria",
+		},
+		{
+			name:        "empty result with tag only",
+			queryParams: "tag=nonexistent",
+			description: "No articles with this tag",
+		},
+		{
+			name:        "empty result with favorite only",
+			queryParams: "favorite=true",
+			description: "No favorite articles",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockSvc := &articleMockService{
+				getArticlesMetadataFunc: func(
+					_ context.Context,
+					_ string,
+					_, _ int,
+					_ *internaltype.ArticleFilter,
+				) (*servicetypes.GetArticlesResult, error) {
+					return &servicetypes.GetArticlesResult{
+						Articles: []*model.Article{},
+						Page:     1,
+						PageSize: 10,
+						Total:    0,
+						HasMore:  false,
+					}, nil
+				},
+			}
+
+			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
+			h := New(cfg, mockSvc, http.DefaultClient, nil)
+
+			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
+				"GET",
+				"/v1/articles?"+tt.queryParams,
+				nil)
+			w := httptest.NewRecorder()
+
+			h.HandleGetArticles(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+
+			var resp types.ListArticlesResponse
+			err := json.Unmarshal(w.Body.Bytes(), &resp)
+			require.NoError(t, err)
+			assert.Empty(t, resp.Articles)
+			assert.Zero(t, resp.Total)
+			assert.False(t, resp.HasMore)
 		})
 	}
 }
@@ -1659,146 +1862,6 @@ func TestHandleGetAllTags_ServiceError(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			h.HandleGetAllTags(w, req)
-
-			assert.Equal(t, tt.expectedStatus, w.Code)
-		})
-	}
-}
-
-func TestHandleGetArticles_WithTagFilter(t *testing.T) {
-	mockSvc := &articleMockService{
-		getArticlesByTagFunc: func(
-			_ context.Context,
-			accountID, tag string,
-			_, _ int,
-		) (*servicetypes.GetArticlesResult, error) {
-			assert.Equal(t, "account-123", accountID)
-			assert.Equal(t, "tech", tag)
-			return &servicetypes.GetArticlesResult{
-				Articles: []*model.Article{
-					{
-						ID:    "article-1",
-						Title: "Tech Article 1",
-						URL:   "https://example.com/1",
-						Tags:  []string{"tech", "programming"},
-					},
-					{
-						ID:    "article-2",
-						Title: "Tech Article 2",
-						URL:   "https://example.com/2",
-						Tags:  []string{"tech", "golang"},
-					},
-				},
-				Page:     1,
-				PageSize: 10,
-				Total:    2,
-				HasMore:  false,
-			}, nil
-		},
-	}
-
-	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
-
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
-		"GET",
-		"/v1/articles?tag=tech",
-		nil)
-	w := httptest.NewRecorder()
-
-	h.HandleGetArticles(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	var resp types.ListArticlesResponse
-	err := json.Unmarshal(w.Body.Bytes(), &resp)
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(resp.Articles))
-	assert.Equal(t, 1, resp.Page)
-	assert.Equal(t, 10, resp.PageSize)
-	assert.Equal(t, 2, resp.Total)
-	assert.False(t, resp.HasMore)
-	assert.Equal(t, "Tech Article 1", resp.Articles[0].Title)
-	assert.Contains(t, resp.Articles[0].Tags, "tech")
-	assert.Contains(t, resp.Articles[0].Tags, "programming")
-}
-
-func TestHandleGetArticles_WithTagFilter_NotFound(t *testing.T) {
-	mockSvc := &articleMockService{
-		getArticlesByTagFunc: func(
-			_ context.Context,
-			_, tag string,
-			_, _ int,
-		) (*servicetypes.GetArticlesResult, error) {
-			assert.Equal(t, "nonexistent", tag)
-			return &servicetypes.GetArticlesResult{
-				Articles: []*model.Article{},
-				Page:     1,
-				PageSize: 10,
-				Total:    0,
-				HasMore:  false,
-			}, nil
-		},
-	}
-
-	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
-
-	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
-		"GET",
-		"/v1/articles?tag=nonexistent",
-		nil)
-	w := httptest.NewRecorder()
-
-	h.HandleGetArticles(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	var resp types.ListArticlesResponse
-	err := json.Unmarshal(w.Body.Bytes(), &resp)
-	require.NoError(t, err)
-	assert.Empty(t, resp.Articles)
-	assert.Equal(t, 0, resp.Total)
-}
-
-func TestHandleGetArticles_WithTagFilter_ServiceError(t *testing.T) {
-	tests := []struct {
-		name           string
-		serviceErr     error
-		expectedStatus int
-	}{
-		{
-			name:           "ErrInvalid",
-			serviceErr:     apperrors.ErrInvalid,
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name:           "generic error",
-			serviceErr:     errors.New("some error"),
-			expectedStatus: http.StatusInternalServerError,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockSvc := &articleMockService{
-				getArticlesByTagFunc: func(
-					_ context.Context,
-					_, _ string,
-					_, _ int,
-				) (*servicetypes.GetArticlesResult, error) {
-					return nil, tt.serviceErr
-				},
-			}
-
-			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
-
-			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
-				"GET", "/v1/articles?tag=tech", nil)
-			w := httptest.NewRecorder()
-
-			h.HandleGetArticles(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})

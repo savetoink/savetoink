@@ -10,7 +10,7 @@ describe('keyboard bindings', () => {
 		expect(BASE_BINDINGS.f.description).toBe('Toggle favorite');
 		expect(BASE_BINDINGS.d.description).toBe('Delete article');
 		expect(BASE_BINDINGS.s.description).toBe('Send to device');
-		expect(BASE_BINDINGS.n.description).toBe('New article');
+		expect(BASE_BINDINGS.n.description).toBe('Add article');
 		expect(BASE_BINDINGS.h.description).toBe('Go home');
 		expect(BASE_BINDINGS.a.description).toBe('Account page');
 	});

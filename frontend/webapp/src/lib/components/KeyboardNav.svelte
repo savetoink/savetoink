@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import type { KeyBindingMap } from '@savetoink/shared';
 	import { HELP_KEY } from '@savetoink/shared';
+	import { isEditableElement } from '$lib/utils/isEditableElement';
 
 	let {
 		bindings,
@@ -19,6 +20,11 @@
 	const allEnabledKeys = $derived(enabledKeys || Object.keys(bindings));
 
 	function handleKeydown(e: KeyboardEvent) {
+		// Disable keyboard shortcuts when user is typing in an input field
+		if (isEditableElement(e.target)) {
+			return;
+		}
+
 		if (showHelpModal && (e.key === 'Escape' || e.key === HELP_KEY)) {
 			e.preventDefault();
 			closeHelpModal();

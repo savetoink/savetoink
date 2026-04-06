@@ -79,7 +79,7 @@
 <section>
 	<hgroup>
 		<h1>Add Article</h1>
-		<p>Save a new article to your reading list</p>
+		<p>Save an article to your reading list</p>
 	</hgroup>
 
 	<!-- svelte-ignore a11y_autofocus -->
