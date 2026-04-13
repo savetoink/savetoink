@@ -29,6 +29,7 @@ func TestNewSender(t *testing.T) {
 	sender := NewSender("test-key", "test-secret", testSenderEmail)
 	if sender == nil {
 		t.Fatal("NewSender returned nil")
+		return
 	}
 
 	if sender.apiKey != "test-key" {
@@ -800,6 +801,7 @@ func TestParseResponse(t *testing.T) {
 
 			if resp == nil {
 				t.Fatal("parseResponse() returned nil response")
+				return
 			}
 
 			if resp.Status != "success" {

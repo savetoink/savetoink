@@ -14,18 +14,18 @@
 	"dependencies": {
 		"@astrojs/sitemap": "3.7.2",
 		"@savetoink/shared": "workspace:*",
-		"@scalar/astro": "^0.2.6",
-		"astro": "^6.1.4"
+		"@scalar/astro": "^0.2.7",
+		"astro": "^6.1.6"
 	},
 	"devDependencies": {
 		"@astrojs/check": "^0.9.8",
-		"@eslint/compat": "^2.0.4",
+		"@eslint/compat": "^2.0.5",
 		"@eslint/js": "^10.0.1",
 		"eslint": "^10.2.0",
 		"eslint-config-prettier": "^10.1.8",
-		"globals": "^17.4.0",
-		"prettier": "^3.8.1",
+		"globals": "^17.5.0",
+		"prettier": "^3.8.2",
 		"typescript": "^6.0.2",
-		"typescript-eslint": "^8.58.0"
+		"typescript-eslint": "^8.58.2"
 	}
 }

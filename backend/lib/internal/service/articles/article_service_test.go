@@ -602,6 +602,7 @@ func TestGetArticlesMetadata_Success(t *testing.T) {
 
 	if result == nil {
 		t.Fatal("expected result to not be nil")
+		return
 	}
 
 	if len(result.Articles) != 3 {

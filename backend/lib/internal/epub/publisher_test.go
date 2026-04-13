@@ -20,6 +20,7 @@ func TestNewPublisher_WithMemoryStorage(t *testing.T) {
 	pub := NewPublisher(WithMemoryStorage())
 	if pub == nil {
 		t.Fatal("NewPublisher returned nil")
+		return
 	}
 	if !pub.useMemoryStorage {
 		t.Error("NewPublisher WithMemoryStorage option did not set useMemoryStorage flag")

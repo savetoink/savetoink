@@ -1302,6 +1302,7 @@ func TestNewFromConfig(t *testing.T) {
 
 	if svc == nil {
 		t.Fatal("expected service to be not nil")
+		return
 	}
 	if svc.fetcher == nil {
 		t.Error("expected fetcher to be not nil")
