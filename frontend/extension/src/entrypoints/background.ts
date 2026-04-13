@@ -1,20 +1,9 @@
-import { createArticle } from '../lib/api';
-import { getAPIKey, getUserProfile } from '../lib/storage';
+const APP_URL = import.meta.env.PUBLIC_APP_URL;
+
+// browser.action is MV3 (Chrome), browser.browserAction is MV2 (Firefox)
+const browserAction = browser.action ?? browser.browserAction;
 
 export default defineBackground(() => {
-	async function showNotification(title: string, message: string) {
-		try {
-			await browser.notifications.create({
-				type: 'basic',
-				iconUrl: browser.runtime.getURL('/icon/48.png'),
-				title,
-				message
-			});
-		} catch (error) {
-			console.warn('failed to show notification:', error);
-		}
-	}
-
 	browser.runtime.onInstalled.addListener(() => {
 		browser.contextMenus.create({
 			id: 'send-to-ink',
@@ -23,38 +12,26 @@ export default defineBackground(() => {
 		});
 	});
 
-	browser.contextMenus.onClicked.addListener(async (info) => {
+	browser.contextMenus.onClicked.addListener((info) => {
 		if (info.menuItemId !== 'send-to-ink') {
 			return;
 		}
 
 		const url = info.linkUrl;
 		if (!url) {
-			await showNotification('Error', 'No link URL found');
 			return;
 		}
 
-		try {
-			const apiKey = await getAPIKey();
-			if (!apiKey) {
-				await showNotification(
-					'Authentication Required',
-					'Please login to your Save to Ink account'
-				);
-				return;
-			}
+		browser.tabs.create({ url: `${APP_URL}/new?url=${encodeURIComponent(url)}` });
+	});
 
-			const profile = await getUserProfile();
-
-			await createArticle(url, profile?.auto_send || false, apiKey);
-			if (profile?.auto_send) {
-				await showNotification('Success', 'Article saved and sent to device');
-			} else {
-				await showNotification('Success', 'Article saved to your reading list');
-			}
-		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : 'failed to save article';
-			await showNotification('Error', errorMessage);
+	browserAction.onClicked.addListener(async (tab) => {
+		const url = tab?.url;
+		if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+			browser.tabs.create({ url: `${APP_URL}/new` });
+			return;
 		}
+
+		browser.tabs.create({ url: `${APP_URL}/new?url=${encodeURIComponent(url)}` });
 	});
 });

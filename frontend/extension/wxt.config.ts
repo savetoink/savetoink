@@ -6,9 +6,11 @@ import { getBuildConfig } from '@savetoink/shared/lib/build-config';
 export default defineConfig({
 	srcDir: 'src',
 	outDir: 'dist',
-	modules: ['@wxt-dev/module-svelte'],
 	manifest: {
-		permissions: ['storage', 'activeTab', 'contextMenus', 'identity', 'notifications']
+		permissions: ['activeTab', 'contextMenus'],
+		action: {
+			default_title: 'Save to Ink'
+		}
 	},
 	vite() {
 		const { version } = getBuildConfig();
