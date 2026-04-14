@@ -10,6 +10,13 @@ export default defineConfig({
 		permissions: ['activeTab', 'contextMenus'],
 		action: {
 			default_title: 'Save to Ink'
+		},
+		browser_specific_settings: {
+			gecko: {
+				data_collection_permissions: {
+					required: ['none']
+				}
+			}
 		}
 	},
 	vite() {
