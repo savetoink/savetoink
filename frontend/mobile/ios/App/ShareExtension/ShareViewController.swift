@@ -3,6 +3,8 @@ import UniformTypeIdentifiers
 
 class ShareViewController: UIViewController {
 
+    let APP_GROUP_ID = "group.ink.saveto.app"
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
@@ -19,7 +21,7 @@ class ShareViewController: UIViewController {
                 let url: URL? =
                     data as? URL
                     ?? (data as? String).flatMap(URL.init)
-                self?.open(sharedUrl: url?.absoluteString ?? "")
+                self?.saveAndOpen(text: url?.absoluteString ?? "")
             }
             return
         }
@@ -29,7 +31,7 @@ class ShareViewController: UIViewController {
             provider.loadItem(forTypeIdentifier: UTType.plainText.identifier) {
                 [weak self] data, _ in
                 let text = data as? String ?? ""
-                self?.open(sharedUrl: text)
+                self?.saveAndOpen(text: text)
             }
             return
         }
@@ -37,16 +39,29 @@ class ShareViewController: UIViewController {
         done()
     }
 
-    private func open(sharedUrl: String) {
-        guard !sharedUrl.isEmpty,
-            let encoded = sharedUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-            let appUrl = URL(string: "savetoink://share?url=\(encoded)")
-        else {
+    private func saveAndOpen(text: String) {
+        guard !text.isEmpty else {
             done()
             return
         }
 
-        // UIApplication.shared is unavailable in extensions, so walk the responder chain
+        // Save to shared UserDefaults so the CapacitorShareTarget plugin can read it
+        let shareData: [String: Any] = [
+            "title": "",
+            "texts": [text],
+            "files": [],
+        ]
+
+        let userDefaults = UserDefaults(suiteName: APP_GROUP_ID)
+        userDefaults?.set(shareData, forKey: "share-target-data")
+        userDefaults?.synchronize()
+
+        // Open the main app via URL scheme so it becomes active and the plugin can process
+        guard let appUrl = URL(string: "savetoink://share") else {
+            done()
+            return
+        }
+
         var responder: UIResponder? = self
         while responder != nil {
             if let app = responder as? UIApplication {

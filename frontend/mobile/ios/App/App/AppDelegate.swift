@@ -10,22 +10,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(
         _ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
-        print("✅ AppDelegate: Received URL - \(url.absoluteString)")
-
-        if url.scheme == "savetoink", url.host == "share",
-            let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-            let articleUrl = components.queryItems?.first(where: { $0.name == "url" })?.value,
-            let encoded = articleUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-            let rootVC = self.window?.rootViewController as? RootViewController,
-            !RootViewController.appUrl.isEmpty,
-            let destination = URL(string: "\(RootViewController.appUrl)/new?url=\(encoded)")
-        {
-            DispatchQueue.main.async {
-                rootVC.bridge?.webView?.load(URLRequest(url: destination))
-            }
-            return true
-        }
-
+        // Let Capacitor handle the URL (triggers CapacitorShareTarget plugin's handleOpenURL)
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
 }
