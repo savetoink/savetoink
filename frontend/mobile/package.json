@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "android": "cap run android",
+    "ios": "cap run ios",
     "icons:generate": "bun run ../../tools/generate_icons.ts ../../favicon.svg icon-targets.csv"
   },
   "devDependencies": {
