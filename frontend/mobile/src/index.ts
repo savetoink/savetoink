@@ -1,10 +1,11 @@
 import { CapacitorShareTarget } from "@capgo/capacitor-share-target";
+import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 
 const APP_URL = import.meta.env.PUBLIC_APP_URL;
 
 if (Capacitor.isNativePlatform()) {
-	CapacitorShareTarget.addListener("shareReceived", (event) => {
+	CapacitorShareTarget.addListener("shareReceived", async (event) => {
 		const url = event.texts?.[0];
 		if (!url) {
 			return;
@@ -15,7 +16,9 @@ if (Capacitor.isNativePlatform()) {
 			return;
 		}
 
-		// Navigate the Capacitor webview to the web app's /new page
-		window.location.href = `${APP_URL}/new?url=${encodeURIComponent(url)}`;
+		// Open the default browser with the web app's /new page
+		await Browser.open({
+			url: `${APP_URL}/new?url=${encodeURIComponent(url)}`,
+		});
 	});
 }
