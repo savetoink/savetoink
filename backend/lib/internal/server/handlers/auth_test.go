@@ -18,6 +18,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
+	"github.com/shaftoe/savetoink/backend/lib/internal/paseto"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
 	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
@@ -40,6 +41,7 @@ const (
 	expectedStatusFormat    = "expected status %d, got %d"
 	httpsScheme             = "https://"
 	testAuth0TokenURL       = "https://test.auth0.com/oauth/token"
+	testPasetoKey           = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=" //nolint:gosec // test key
 )
 
 type MockService struct {
@@ -185,7 +187,7 @@ func TestAuthTokenExchange_MissingCode(t *testing.T) {
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, nil, http.DefaultClient, nil)
+	h := New(cfg, nil, http.DefaultClient, nil, nil)
 
 	body := types.AuthTokenExchangeRequest{
 		RedirectURI: "http://localhost/callback",
@@ -210,7 +212,7 @@ func TestAuthTokenExchange_MissingRedirectURI(t *testing.T) {
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, nil, http.DefaultClient, nil)
+	h := New(cfg, nil, http.DefaultClient, nil, nil)
 
 	body := types.AuthTokenExchangeRequest{
 		Code: testCode,
@@ -235,7 +237,7 @@ func TestAuthTokenExchange_InvalidJSON(t *testing.T) {
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, nil, http.DefaultClient, nil)
+	h := New(cfg, nil, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(
 		context.Background(),
@@ -284,7 +286,7 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, nil, client, nil)
+	h := New(cfg, nil, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
@@ -471,52 +473,50 @@ func TestGetSubjectFromIDToken(t *testing.T) {
 
 func TestHandleAuth0Error(t *testing.T) {
 	tests := []struct {
-		name           string
-		body           []byte
-		expectedStatus int
+		name        string
+		body        []byte
+		wantErr     bool
+		errContains string
 	}{
 		{
-			name:           "error with description",
-			body:           []byte(`{"error":"invalid_grant","error_description":"Invalid authorization code"}`),
-			expectedStatus: http.StatusUnauthorized,
+			name:        "error with description",
+			body:        []byte(`{"error":"invalid_grant","error_description":"Invalid authorization code"}`),
+			wantErr:     true,
+			errContains: "Invalid authorization code",
 		},
 		{
-			name:           "error without description",
-			body:           []byte(`{"error":"invalid_request"}`),
-			expectedStatus: http.StatusUnauthorized,
+			name:        "error without description",
+			body:        []byte(`{"error":"invalid_request"}`),
+			wantErr:     true,
+			errContains: "invalid_request",
 		},
 		{
-			name:           "invalid json body",
-			body:           []byte(`not valid json`),
-			expectedStatus: http.StatusUnauthorized,
+			name:    "invalid json body",
+			body:    []byte(`not valid json`),
+			wantErr: true,
 		},
 		{
-			name:           "empty body",
-			body:           []byte(`{}`),
-			expectedStatus: http.StatusUnauthorized,
+			name:    "empty body",
+			body:    []byte(`{}`),
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := httptest.NewRecorder()
-			ctx := context.Background()
 			h := &Handlers{}
-			h.handleAuth0Error(ctx, w, tt.body)
+			ctx := context.Background()
 
-			if w.Code != tt.expectedStatus {
-				t.Errorf("handleAuth0Error() status = %v, want %v", w.Code, tt.expectedStatus)
+			err := h.auth0Error(ctx, tt.body)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("auth0Error() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			var resp struct {
-				Error string `json:"error"`
-			}
-			if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-				t.Errorf("failed to unmarshal response: %v", err)
-			}
-
-			if resp.Error == "" {
-				t.Errorf("handleAuth0Error() response should contain error message")
+			if err != nil && tt.errContains != "" {
+				if !strings.Contains(err.Error(), tt.errContains) {
+					t.Errorf("auth0Error() error = %v, want containing %v", err, tt.errContains)
+				}
 			}
 		})
 	}
@@ -599,7 +599,7 @@ func TestAuthTokenExchange_Auth0Error(t *testing.T) {
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, nil, client, nil)
+	h := New(cfg, nil, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
@@ -623,8 +623,8 @@ func TestAuthTokenExchange_Auth0Error(t *testing.T) {
 		t.Errorf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.Error != "Invalid authorization code" {
-		t.Errorf("expected error 'Invalid authorization code', got '%s'", resp.Error)
+	if resp.Error != "auth0 rejected the token exchange: Invalid authorization code" {
+		t.Errorf("expected wrapped error, got '%s'", resp.Error)
 	}
 }
 
@@ -663,7 +663,7 @@ func TestAuthTokenExchange_WithIDToken(t *testing.T) {
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, mockService, client, nil)
+	h := New(cfg, mockService, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
@@ -726,7 +726,7 @@ func TestAuthTokenExchange_InvalidIDToken(t *testing.T) {
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, mockService, client, nil)
+	h := New(cfg, mockService, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
@@ -783,7 +783,7 @@ func TestAuthTokenExchange_ServiceError(t *testing.T) {
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, mockService, client, nil)
+	h := New(cfg, mockService, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
@@ -831,7 +831,7 @@ func TestAuthTokenExchange_Auth0InvalidJSON(t *testing.T) { //nolint:dupl // tes
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, nil, client, nil)
+	h := New(cfg, nil, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
@@ -870,7 +870,7 @@ func TestAuthTokenExchange_Auth0SuccessInvalidJSON(t *testing.T) { //nolint:dupl
 		Auth0ClientSecret: testClientSecret,
 		Auth0Audience:     "test-audience",
 	}
-	h := New(cfg, nil, client, nil)
+	h := New(cfg, nil, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
@@ -970,4 +970,16 @@ func TestBuildTokenRequest_DefaultGrantType(t *testing.T) {
 
 func base64Encode(s string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(s))
+}
+
+func newTestPasetoKeyStore(t *testing.T) *paseto.KeyStore {
+	t.Helper()
+	ks, err := paseto.NewKeyStore(paseto.KeyStoreConfig{
+		SymmetricKey: testPasetoKey,
+		KeyVersion:   "v1",
+	})
+	if err != nil {
+		t.Fatalf("failed to create test paseto keystore: %v", err)
+	}
+	return ks
 }

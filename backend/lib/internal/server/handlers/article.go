@@ -15,6 +15,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
+	"github.com/shaftoe/savetoink/backend/lib/internal/paseto"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
 	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
@@ -27,10 +28,11 @@ import (
 
 // Handlers manages HTTP handlers for the savetoink application.
 type Handlers struct {
-	cfg       *config.Config
-	service   service.Interface
-	client    *http.Client
-	processor processor.Processor
+	cfg            *config.Config
+	service        service.Interface
+	client         *http.Client
+	processor      processor.Processor
+	pasetoKeyStore *paseto.KeyStore
 }
 
 // HandleCreateArticle handles the article creation endpoint.

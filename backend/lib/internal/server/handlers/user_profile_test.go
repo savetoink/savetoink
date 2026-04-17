@@ -246,7 +246,7 @@ func TestHandleGetUserProfile_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", testUserProfileEndpoint, nil)
 	w := httptest.NewRecorder()
@@ -275,7 +275,7 @@ func TestHandleGetUserProfile_NilProfile(t *testing.T) {
 	}
 
 	cfg := &config.Config{}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", testUserProfileEndpoint, nil)
 	w := httptest.NewRecorder()
@@ -320,7 +320,7 @@ func TestHandleGetUserProfile_GetUserDeviceEmailError(t *testing.T) {
 			}
 
 			cfg := &config.Config{}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", testUserProfileEndpoint, nil)
 			w := httptest.NewRecorder()
@@ -362,7 +362,7 @@ func TestHandleGetUserProfile_GetUserProfileError(t *testing.T) {
 			}
 
 			cfg := &config.Config{}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "GET", testUserProfileEndpoint, nil)
 			w := httptest.NewRecorder()
@@ -382,7 +382,7 @@ func TestHandleSetDevice_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	body := types.DeviceRequest{
 		DeviceEmail: testArticleDeviceEmail,
@@ -413,7 +413,7 @@ func TestHandleSetDevice_InvalidJSON(t *testing.T) {
 	mockSvc := &userprofileMockService{}
 
 	cfg := &config.Config{}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newUserprofileTestContext(),
 		"PUT",
@@ -454,7 +454,7 @@ func TestHandleSetDevice_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			body := types.DeviceRequest{
 				DeviceEmail: testArticleDeviceEmail,
@@ -485,7 +485,7 @@ func TestHandleDeleteDevice_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newUserprofileTestContext(), "DELETE", testDevicesEndpoint, nil)
 	w := httptest.NewRecorder()
@@ -528,7 +528,7 @@ func TestHandleDeleteDevice_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newUserprofileTestContext(), "DELETE", testDevicesEndpoint, nil)
 			w := httptest.NewRecorder()

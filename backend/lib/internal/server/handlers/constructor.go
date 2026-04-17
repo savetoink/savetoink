@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/shaftoe/savetoink/backend/lib/config"
+	"github.com/shaftoe/savetoink/backend/lib/internal/paseto"
 	"github.com/shaftoe/savetoink/backend/lib/processor"
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
@@ -14,11 +15,13 @@ func New(
 	svc service.Interface,
 	client *http.Client,
 	proc processor.Processor,
+	pasetoKeyStore *paseto.KeyStore,
 ) *Handlers {
 	return &Handlers{
-		cfg:       cfg,
-		service:   svc,
-		client:    client,
-		processor: proc,
+		cfg:            cfg,
+		service:        svc,
+		client:         client,
+		processor:      proc,
+		pasetoKeyStore: pasetoKeyStore,
 	}
 }

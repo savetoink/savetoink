@@ -5,15 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/url"
 	"strings"
-	"time"
 
-	"github.com/auth0/go-jwt-middleware/v3/jwks"
-	"github.com/auth0/go-jwt-middleware/v3/validator"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
+	"github.com/shaftoe/savetoink/backend/lib/internal/paseto"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
@@ -21,7 +18,6 @@ const (
 	authHeader       = "Authorization"
 	authHeaderPrefix = "Bearer "
 	adminAccountID   = "admin"
-	allowedClockSkew = 30 * time.Second
 )
 
 // NewAccountIDMiddleware returns authentication middleware based on the configured auth backend.
@@ -32,7 +28,8 @@ func NewAccountIDMiddleware(cfg *config.Config) func(http.Handler) http.Handler 
 	case consts.AuthBackendSharedAPIKey:
 		return sharedAPIKeyMiddleware(cfg.APIKeySecret)
 	case consts.AuthBackendAuth0:
-		return auth0Middleware(cfg.Auth0Domain, cfg.Auth0Audience)
+		keyStore := newPasetoKeyStore(cfg)
+		return pasetoMiddleware(keyStore)
 	default:
 		return sharedAPIKeyMiddleware(cfg.APIKeySecret)
 	}
@@ -82,55 +79,43 @@ func sharedAPIKeyMiddleware(apiKeySecret string) func(http.Handler) http.Handler
 	}
 }
 
-func auth0Middleware(domain, audience string) func(http.Handler) http.Handler {
-	issuerURL, err := url.Parse("https://" + domain + "/")
-	if err != nil {
-		panic("failed to parse issuer URL: " + err.Error())
-	}
-
-	provider, err := jwks.NewCachingProvider(
-		jwks.WithIssuerURL(issuerURL),
-	)
-	if err != nil {
-		panic("failed to create JWKS provider: " + err.Error())
-	}
-
-	jwtValidator, err := validator.New(
-		validator.WithKeyFunc(provider.KeyFunc),
-		validator.WithAlgorithm(validator.RS256),
-		validator.WithIssuer(issuerURL.String()),
-		validator.WithAudience(audience),
-		validator.WithAllowedClockSkew(allowedClockSkew),
-	)
-	if err != nil {
-		panic("failed to create JWT validator: " + err.Error())
-	}
-
+func pasetoMiddleware(keyStore *paseto.KeyStore) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHeader := r.Header.Get(authHeader)
-			if authHeader == "" || !strings.HasPrefix(authHeader, authHeaderPrefix) {
+			authHeaderVal := r.Header.Get(authHeader)
+			if authHeaderVal == "" || !strings.HasPrefix(authHeaderVal, authHeaderPrefix) {
+				// No auth header — let EnsureAutheticatedMiddleware handle it
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			token := strings.TrimPrefix(authHeader, authHeaderPrefix)
-			claims, validateErr := jwtValidator.ValidateToken(r.Context(), token)
+			token := strings.TrimPrefix(authHeaderVal, authHeaderPrefix)
+			if token == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			claims, validateErr := keyStore.ValidateToken(token)
 			if validateErr != nil {
-				handleAuthError(r.Context(), next, w, r, "invalid JWT token: "+validateErr.Error())
+				handleAuthError(r.Context(), next, w, r, "invalid token: "+validateErr.Error())
 				return
 			}
 
-			validatedClaims, ok := claims.(*validator.ValidatedClaims)
-			if !ok {
-				handleAuthError(r.Context(), next, w, r, "failed to parse JWT claims")
-				return
-			}
-
-			ctx := auth.AddAccountIDToCtx(r.Context(), validatedClaims.RegisteredClaims.Subject)
+			ctx := auth.AddAccountIDToCtx(r.Context(), claims.Subject)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func newPasetoKeyStore(cfg *config.Config) *paseto.KeyStore {
+	keyStore, err := paseto.NewKeyStore(paseto.KeyStoreConfig{
+		SymmetricKey: cfg.PASETOSymmetricKey,
+		KeyVersion:   cfg.PASETOKeyVersion,
+	})
+	if err != nil {
+		panic("failed to create paseto key store: " + err.Error())
+	}
+	return keyStore
 }
 
 func handleAuthError(ctx context.Context, next http.Handler, w http.ResponseWriter, r *http.Request, msg string) {

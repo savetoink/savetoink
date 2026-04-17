@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/shaftoe/savetoink/backend/lib/internal/paseto"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
@@ -27,6 +28,8 @@ const (
 )
 
 // HandleAuthTokenExchange handles the OAuth token exchange endpoint.
+// It exchanges the authorization code with Auth0, extracts user claims,
+// generates PASETO tokens, and returns them to the frontend.
 func (h *Handlers) HandleAuthTokenExchange(w http.ResponseWriter, r *http.Request) {
 	var req types.AuthTokenExchangeRequest
 	if decodeErr := utils.DecodeAndValidateRequest(w, r, &req); decodeErr != nil {
@@ -49,46 +52,122 @@ func (h *Handlers) HandleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 
 	logging.AddLogAttr(r.Context(), slog.String("redirect_uri", req.RedirectURI))
 
+	response, err := h.exchangeAndGenerateTokens(r, req)
+	if err != nil {
+		logging.AddRequestError(r.Context(), err)
+		utils.WriteJSONError(w, httpStatusForError(err), err)
+		return
+	}
+
+	logging.AddLogAttr(r.Context(), slog.String("token_type", "Bearer"))
+	logging.AddLogAttr(r.Context(), slog.Int("expires_in", response.ExpiresIn))
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(response) //nolint:gosec // returning PASETO access token, not a secret
+}
+
+func httpStatusForError(err error) int {
+	if errors.Is(err, errAuth0Rejected) {
+		return http.StatusUnauthorized
+	}
+	return http.StatusInternalServerError
+}
+
+var errAuth0Rejected = errors.New("auth0 rejected the token exchange")
+
+func (h *Handlers) exchangeAndGenerateTokens(
+	r *http.Request, req types.AuthTokenExchangeRequest,
+) (*types.AuthTokenExchangeResponse, error) {
 	tokenReq := h.buildTokenRequest(req)
 	//nolint:bodyclose // response is closed in executeTokenExchange
 	resp, body, execErr := h.executeTokenExchange(tokenReq)
 	if execErr != nil {
-		logging.AddRequestError(r.Context(), execErr)
-		utils.WriteJSONError(w, http.StatusInternalServerError,
-			fmt.Errorf("failed to exchange token with Auth0: %w", execErr))
-		return
+		return nil, fmt.Errorf("failed to exchange token with Auth0: %w", execErr)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		h.handleAuth0Error(r.Context(), w, body)
-		return
+		return nil, h.auth0Error(r.Context(), body)
 	}
 
-	var tokenResp types.AuthTokenExchangeResponse
-	if unmarshalErr := json.Unmarshal(body, &tokenResp); unmarshalErr != nil {
-		logging.AddRequestError(r.Context(), unmarshalErr)
-		utils.WriteJSONError(w, http.StatusInternalServerError,
-			fmt.Errorf("failed to decode token response: %w", unmarshalErr))
-		return
+	var auth0Resp types.AuthTokenExchangeResponse
+	if unmarshalErr := json.Unmarshal(body, &auth0Resp); unmarshalErr != nil {
+		return nil, fmt.Errorf("failed to decode token response: %w", unmarshalErr)
 	}
 
-	logging.AddLogAttr(r.Context(), slog.String("token_type", tokenResp.TokenType))
-	logging.AddLogAttr(r.Context(), slog.Int("expires_in", tokenResp.ExpiresIn))
+	email, accountID := h.extractAuth0Claims(r, &auth0Resp)
 
-	if tokenResp.IDToken != "" {
-		email, extractErr := extractEmailFromIDToken(tokenResp.IDToken)
-		if extractErr != nil {
-			logging.AddRequestError(r.Context(), fmt.Errorf("failed to extract email from id_token: %w", extractErr))
-		} else {
-			tokenResp.Email = email
-			if storeErr := h.storeUserEmail(r.Context(), email, tokenResp.AccessToken); storeErr != nil {
-				logging.AddRequestError(r.Context(), fmt.Errorf("failed to store user email: %w", storeErr))
-			}
+	if email != "" && accountID != "" {
+		if storeErr := h.storeUserEmail(r.Context(), email, auth0Resp.AccessToken); storeErr != nil {
+			logging.AddRequestError(r.Context(), fmt.Errorf("failed to store user email: %w", storeErr))
 		}
 	}
 
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(tokenResp) //nolint:gosec // returning OAuth access token, not a secret
+	pasetoPair, pasetoErr := h.generatePASETOTokens(accountID, email)
+	if pasetoErr != nil {
+		return nil, fmt.Errorf("failed to generate tokens: %w", pasetoErr)
+	}
+
+	return &types.AuthTokenExchangeResponse{
+		AccessToken:  pasetoPair.AccessToken,
+		RefreshToken: pasetoPair.RefreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int(pasetoPair.ExpiresIn),
+		Email:        email,
+	}, nil
+}
+
+func (h *Handlers) extractAuth0Claims(
+	r *http.Request, auth0Resp *types.AuthTokenExchangeResponse,
+) (email, accountID string) {
+	if auth0Resp.IDToken != "" {
+		extracted, extractErr := extractEmailFromIDToken(auth0Resp.IDToken)
+		if extractErr != nil {
+			logging.AddRequestError(r.Context(), fmt.Errorf("failed to extract email from id_token: %w", extractErr))
+		} else {
+			email = extracted
+		}
+	}
+
+	if auth0Resp.AccessToken != "" {
+		subject, subjectErr := getSubjectFromIDToken(auth0Resp.AccessToken)
+		if subjectErr != nil {
+			logging.AddRequestError(r.Context(), fmt.Errorf("failed to extract subject from access token: %w", subjectErr))
+		} else {
+			accountID = subject
+		}
+	}
+	return email, accountID
+}
+
+func (h *Handlers) generatePASETOTokens(accountID, email string) (*paseto.TokenPair, error) {
+	if h.pasetoKeyStore == nil {
+		return nil, errors.New("paseto key store not configured")
+	}
+
+	claims := paseto.TokenClaims{
+		Subject: accountID,
+		Email:   email,
+	}
+
+	pair, err := h.pasetoKeyStore.GenerateTokenPair(claims)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate paseto token pair: %w", err)
+	}
+	return pair, nil
+}
+
+func (h *Handlers) auth0Error(ctx context.Context, body []byte) error {
+	var errResp struct {
+		Error            string `json:"error"`
+		ErrorDescription string `json:"error_description"`
+	}
+	_ = json.Unmarshal(body, &errResp)
+	logging.AddLogAttr(ctx, slog.String("auth0_error", errResp.Error))
+
+	if errResp.ErrorDescription != "" {
+		return fmt.Errorf("%w: %s", errAuth0Rejected, errResp.ErrorDescription)
+	}
+	return fmt.Errorf("%w: %s", errAuth0Rejected, errResp.Error)
 }
 
 func (h *Handlers) buildTokenRequest(req types.AuthTokenExchangeRequest) *http.Request {
@@ -124,21 +203,6 @@ func (h *Handlers) executeTokenExchange(httpReq *http.Request) (*http.Response, 
 		return nil, nil, fmt.Errorf("failed to read response body: %w", readErr)
 	}
 	return resp, body, nil
-}
-
-func (h *Handlers) handleAuth0Error(ctx context.Context, w http.ResponseWriter, body []byte) {
-	var errResp struct {
-		Error            string `json:"error"`
-		ErrorDescription string `json:"error_description"`
-	}
-	_ = json.Unmarshal(body, &errResp)
-	logging.AddLogAttr(ctx, slog.String("auth0_error", errResp.Error))
-
-	if errResp.ErrorDescription != "" {
-		utils.WriteJSONError(w, http.StatusUnauthorized, errors.New(errResp.ErrorDescription))
-	} else {
-		utils.WriteJSONError(w, http.StatusUnauthorized, fmt.Errorf("token exchange failed: %s", errResp.Error))
-	}
 }
 
 func extractEmailFromIDToken(idToken string) (string, error) {

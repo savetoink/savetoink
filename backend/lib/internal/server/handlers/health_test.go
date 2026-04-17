@@ -15,7 +15,7 @@ import (
 
 func TestHandleHealth(t *testing.T) {
 	cfg := &config.Config{}
-	h := New(cfg, nil, http.DefaultClient, nil)
+	h := New(cfg, nil, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/health", http.NoBody)
 	w := httptest.NewRecorder()

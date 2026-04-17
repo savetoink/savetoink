@@ -42,6 +42,7 @@ const (
 	testSentryDSN            = "https://test@sentry.io/123"
 	testSentryEnvironment    = "test"
 	testDeviceEmail          = "test@kindle.com"
+	testPasetoKey            = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="
 )
 
 type mockService struct{}
@@ -195,6 +196,7 @@ func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
 		svc,
 		client,
 		nil,
+		nil,
 	)
 
 	r.Use(auth.NewAccountIDMiddleware(cfg))
@@ -237,6 +239,8 @@ func setupMinimalConfig(t *testing.T) *config.Config {
 		Auth0Audience:        "",
 		Auth0ClientID:        "",
 		Auth0ClientSecret:    "",
+		PASETOSymmetricKey:   "",
+		PASETOKeyVersion:     "",
 		MailjetAPIKey:        "",
 		MailjetAPISecret:     "",
 		MailjetWebhookSecret: "",
@@ -620,6 +624,8 @@ func TestSetupRoutes_AuthRoute(t *testing.T) {
 		cfg.AuthBackend = consts.AuthBackendAuth0
 		cfg.Auth0Domain = strings.TrimPrefix(parsedURL.Host, "https://")
 		cfg.Auth0Audience = "test-audience"
+		cfg.PASETOSymmetricKey = testPasetoKey
+		cfg.PASETOKeyVersion = "v1"
 		cfg.Auth0ClientID = "test-client-id"
 		cfg.Auth0ClientSecret = "test-client-secret"
 
@@ -878,12 +884,14 @@ func TestNewRouter_AuthTokenRoute(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		APIKeySecret:      "test-key",
-		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
-		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
-		Auth0Audience:     "test-audience",
+		APIKeySecret:       "test-key",
+		AuthBackend:        consts.AuthBackendAuth0,
+		Auth0Domain:        strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0ClientID:      "test-client-id",
+		Auth0ClientSecret:  "test-client-secret",
+		Auth0Audience:      "test-audience",
+		PASETOSymmetricKey: testPasetoKey,
+		PASETOKeyVersion:   "v1",
 	}
 	r := newRouterWithClient(cfg, client)
 
@@ -922,12 +930,14 @@ func TestAuthTokenRoute_Registered(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		APIKeySecret:      "test-key",
-		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
-		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
-		Auth0Audience:     "test-audience",
+		APIKeySecret:       "test-key",
+		AuthBackend:        consts.AuthBackendAuth0,
+		Auth0Domain:        strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0ClientID:      "test-client-id",
+		Auth0ClientSecret:  "test-client-secret",
+		Auth0Audience:      "test-audience",
+		PASETOSymmetricKey: testPasetoKey,
+		PASETOKeyVersion:   "v1",
 	}
 	r := newRouterWithClient(cfg, client)
 

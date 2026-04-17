@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
+	"github.com/shaftoe/savetoink/backend/lib/internal/paseto"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/auth"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/handlers"
 	"github.com/shaftoe/savetoink/backend/lib/logging"
@@ -27,11 +28,17 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 	srv := service.NewFromConfig(cfg)
 	proc := newProcessor(cfg, srv)
 
+	var keyStore *paseto.KeyStore
+	if cfg.AuthBackend == consts.AuthBackendAuth0 {
+		keyStore = newPasetoKeyStore(cfg)
+	}
+
 	h := handlers.New(
 		cfg,
 		srv,
 		client,
 		proc,
+		keyStore,
 	)
 
 	r.Use(middleware.Recoverer)
@@ -108,4 +115,15 @@ func setupRoutes(r *chi.Mux, h *handlers.Handlers, cfg *config.Config, _ service
 			r.Get("/", h.HandleGetAllTags)
 		})
 	})
+}
+
+func newPasetoKeyStore(cfg *config.Config) *paseto.KeyStore {
+	keyStore, err := paseto.NewKeyStore(paseto.KeyStoreConfig{
+		SymmetricKey: cfg.PASETOSymmetricKey,
+		KeyVersion:   cfg.PASETOKeyVersion,
+	})
+	if err != nil {
+		panic("failed to create paseto key store: " + err.Error())
+	}
+	return keyStore
 }

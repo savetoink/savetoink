@@ -220,7 +220,7 @@ func TestHandleGetSends_Success(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend: consts.AuthBackendAuth0,
 	}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newSendsTestContext(), "GET", "/v1/sends", nil)
 	w := httptest.NewRecorder()
@@ -249,7 +249,7 @@ func TestHandleGetSends_ZeroSends(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend: consts.AuthBackendAuth0,
 	}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newSendsTestContext(), "GET", "/v1/sends", nil)
 	w := httptest.NewRecorder()
@@ -295,7 +295,7 @@ func TestHandleGetSends_ServiceError(t *testing.T) {
 			cfg := &config.Config{
 				AuthBackend: consts.AuthBackendAuth0,
 			}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newSendsTestContext(), "GET", "/v1/sends", nil)
 			w := httptest.NewRecorder()
@@ -317,7 +317,7 @@ func TestHandleGetSends_SharedAPIKey(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend: consts.AuthBackendSharedAPIKey,
 	}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newSendsTestContext(), "GET", "/v1/sends", nil)
 	w := httptest.NewRecorder()
@@ -342,7 +342,7 @@ func TestHandleGetSends_SharedAPIKeyError(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend: consts.AuthBackendSharedAPIKey,
 	}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newSendsTestContext(), "GET", "/v1/sends", nil)
 	w := httptest.NewRecorder()
