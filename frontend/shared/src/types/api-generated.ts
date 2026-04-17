@@ -259,9 +259,29 @@ export interface paths {
         put?: never;
         /**
          * Exchange auth code
-         * @description Exchange an OAuth authorization code for access tokens (Auth0 only)
+         * @description Exchange an OAuth authorization code for PASETO tokens (Auth0 only)
          */
         post: operations["authTokenExchange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh tokens
+         * @description Exchange a PASETO refresh token for a new token pair (Auth0 only)
+         */
+        post: operations["authTokenRefresh"];
         delete?: never;
         options?: never;
         head?: never;
@@ -458,11 +478,11 @@ export interface components {
             grant_type: string;
         };
         AuthTokenExchangeResponse: {
-            /** @description OAuth access token */
+            /** @description PASETO v4.local access token */
             access_token: string;
-            /** @description OAuth refresh token */
+            /** @description PASETO v4.local refresh token */
             refresh_token?: string;
-            /** @description JWT ID token */
+            /** @description JWT ID token (not returned to frontend) */
             id_token?: string;
             /** @description User email extracted from ID token */
             email?: string;
@@ -470,6 +490,10 @@ export interface components {
             token_type: string;
             /** @description Token expiration time in seconds */
             expires_in: number;
+        };
+        AuthTokenRefreshRequest: {
+            /** @description PASETO v4.local refresh token */
+            refresh_token: string;
         };
         ErrorResponse: {
             /**
@@ -1339,6 +1363,57 @@ export interface operations {
                 };
             };
             /** @description Token exchange failed */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    authTokenRefresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthTokenRefreshRequest"];
+            };
+        };
+        responses: {
+            /** @description Token refresh successful */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthTokenExchangeResponse"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid or expired refresh token */
             401: {
                 headers: {
                     [name: string]: unknown;
