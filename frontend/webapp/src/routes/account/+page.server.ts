@@ -5,6 +5,7 @@ import {
 	AUTH_KEY,
 	setAuthCookie,
 	deleteAuthCookie,
+	deleteRefreshCookie,
 	setUserCookie,
 	deleteUserCookie,
 	getValidRedirectUrl
@@ -29,6 +30,7 @@ export const load: PageServerLoad = async ({ locals, fetch, request, getClientAd
 export const actions: Actions = {
 	clean: async ({ cookies }) => {
 		deleteAuthCookie(cookies);
+		deleteRefreshCookie(cookies);
 		deleteUserCookie(cookies);
 
 		if (PUBLIC_AUTH_BACKEND === Auth0) {

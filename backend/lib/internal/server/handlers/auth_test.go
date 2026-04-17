@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,6 +25,8 @@ import (
 	internaltype "github.com/shaftoe/savetoink/backend/lib/internal/types"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/shaftoe/savetoink/backend/lib/service"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"
 )
 
@@ -982,4 +985,94 @@ func newTestPasetoKeyStore(t *testing.T) *paseto.KeyStore {
 		t.Fatalf("failed to create test paseto keystore: %v", err)
 	}
 	return ks
+}
+
+func TestHandleAuthRefresh(t *testing.T) {
+	cfg := &config.Config{
+		AuthBackend:       consts.AuthBackendAuth0,
+		Auth0Domain:       "test.auth0.com",
+		Auth0ClientID:     "test-client-id",
+		Auth0ClientSecret: testClientSecret,
+		Auth0Audience:     "test-audience",
+	}
+	ks := newTestPasetoKeyStore(t)
+	h := New(cfg, nil, http.DefaultClient, nil, ks)
+
+	t.Run("valid refresh token returns new pair", func(t *testing.T) {
+		pair, err := ks.GenerateTokenPair(paseto.TokenClaims{
+			Subject: "auth0|123",
+			Email:   "user@example.com",
+		})
+		require.NoError(t, err)
+
+		body := fmt.Sprintf(`{"refresh_token":%q}`, pair.RefreshToken)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/refresh", strings.NewReader(body))
+		req.Header.Set(contentTypeHeader, contentTypeJSON)
+		w := httptest.NewRecorder()
+
+		h.HandleAuthRefresh(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp types.AuthTokenExchangeResponse
+		err = json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
+		assert.Equal(t, "Bearer", resp.TokenType)
+		assert.Equal(t, 3600, resp.ExpiresIn)
+		assert.True(t, strings.HasPrefix(resp.AccessToken, "v4.local."))
+		assert.True(t, strings.HasPrefix(resp.RefreshToken, "v4.local."))
+		assert.NotEqual(t, pair.AccessToken, resp.AccessToken)
+	})
+
+	t.Run("missing refresh token returns 400", func(t *testing.T) {
+		body := `{}`
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/refresh", strings.NewReader(body))
+		req.Header.Set(contentTypeHeader, contentTypeJSON)
+		w := httptest.NewRecorder()
+
+		h.HandleAuthRefresh(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("invalid refresh token returns 401", func(t *testing.T) {
+		body := `{"refresh_token":"v4.local.invalidtoken"}`
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/refresh", strings.NewReader(body))
+		req.Header.Set(contentTypeHeader, contentTypeJSON)
+		w := httptest.NewRecorder()
+
+		h.HandleAuthRefresh(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("access token used as refresh returns 401", func(t *testing.T) {
+		pair, err := ks.GenerateTokenPair(paseto.TokenClaims{
+			Subject: "auth0|123",
+			Email:   "user@example.com",
+		})
+		require.NoError(t, err)
+
+		body := fmt.Sprintf(`{"refresh_token":%q}`, pair.AccessToken)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/refresh", strings.NewReader(body))
+		req.Header.Set(contentTypeHeader, contentTypeJSON)
+		w := httptest.NewRecorder()
+
+		h.HandleAuthRefresh(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("nil key store returns 500", func(t *testing.T) {
+		hNoKS := New(cfg, nil, http.DefaultClient, nil, nil)
+
+		body := `{"refresh_token":"sometoken"}`
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/refresh", strings.NewReader(body))
+		req.Header.Set(contentTypeHeader, contentTypeJSON)
+		w := httptest.NewRecorder()
+
+		hNoKS.HandleAuthRefresh(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
 }

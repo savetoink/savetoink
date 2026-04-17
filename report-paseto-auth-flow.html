@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Save to Ink — PASETO Auth Flow</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      background: #f8f9fa;
+      padding: 0 0 4rem 0;
+    }
+    .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: #fff;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-size: 1.75rem; margin-bottom: .25rem; }
+    header p.meta { opacity: .7; font-size: .85rem; }
+    section { margin: 2.5rem 0; }
+    section h2 {
+      font-size: 1.3rem;
+      padding-bottom: .4rem;
+      border-bottom: 2px solid #e9ecef;
+      margin-bottom: 1rem;
+      color: #1a1a2e;
+    }
+    section h3 { font-size: 1.1rem; margin: 1.5rem 0 .5rem; color: #343a40; }
+
+    /* Sequence diagrams */
+    .flow {
+      background: #fff;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 1.5rem 1.5rem 1rem;
+      margin: 1rem 0;
+      overflow-x: auto;
+    }
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .35rem;
+      font-size: .88rem;
+      white-space: nowrap;
+    }
+    .flow-row.step { margin-left: 1rem; }
+    .flow-row.response { margin-left: 1rem; }
+    .actor {
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: .8rem;
+      min-width: 80px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .actor-browser  { background: #d0ebff; color: #1864ab; }
+    .actor-backend  { background: #d3f9d8; color: #2b8a3e; }
+    .actor-auth0    { background: #ffe8cc; color: #d9480f; }
+    .arrow { color: #868e96; font-family: monospace; }
+    .payload {
+      background: #f1f3f5;
+      padding: .15rem .5rem;
+      border-radius: 4px;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: .82rem;
+    }
+    .note {
+      color: #868e96;
+      font-style: italic;
+      font-size: .82rem;
+    }
+
+    /* Callouts */
+    .callout {
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      border-left: 4px solid;
+    }
+    .callout-info    { background: #e7f5ff; border-color: #339af0; }
+    .callout-success { background: #ebfbee; border-color: #51cf66; }
+    .callout-warn    { background: #fff9db; border-color: #fcc419; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { padding: .6rem 1rem; text-align: left; border-bottom: 1px solid #dee2e6; font-size: .9rem; }
+    th { background: #f1f3f5; font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .03em; }
+
+    code {
+      background: #f1f3f5;
+      padding: .15em .4em;
+      border-radius: 4px;
+      font-size: .88em;
+    }
+    pre {
+      background: #1a1a2e;
+      color: #e9ecef;
+      padding: 1.25rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1rem 0;
+      font-size: .85rem;
+      line-height: 1.5;
+    }
+    .badge {
+      display: inline-block;
+      padding: .15rem .6rem;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+    .badge-green  { background: #d3f9d8; color: #2b8a3e; }
+    .badge-blue   { background: #d0ebff; color: #1864ab; }
+    .badge-yellow { background: #fff3bf; color: #e67700; }
+
+    .nav { background: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 1rem 1.5rem; margin: 1.5rem 0; }
+    .nav h2 { font-size: 1rem; margin-bottom: .5rem; color: #495057; border: none; padding: 0; }
+    .nav ol { padding-left: 1.25rem; }
+    .nav li { margin-bottom: .25rem; }
+    .nav a { color: #0d6efd; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+
+    .separator {
+      text-align: center;
+      color: #adb5bd;
+      margin: .75rem 0;
+      font-size: .8rem;
+      letter-spacing: .1em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Save to Ink — PASETO Auth Flow</h1>
+    <p class="meta">How authentication works with PASETO tokens &amp; refresh</p>
+  </header>
+
+  <div class="container">
+    <nav class="nav">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#actors">The actors</a></li>
+        <li><a href="#login">Login flow (code exchange)</a></li>
+        <li><a href="#authenticated">Authenticated request</a></li>
+        <li><a href="#refresh">Token refresh (auto)</a></li>
+        <li><a href="#logout">Logout</a></li>
+        <li><a href="#tokens">Token details</a></li>
+        <li><a href="#files">Key files</a></li>
+      </ol>
+    </nav>
+
+    <!-- ===== ACTORS ===== -->
+    <section id="actors">
+      <h2>1. The Actors</h2>
+      <table>
+        <thead>
+          <tr><th>Actor</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="actor actor-browser">Browser</span></td>
+            <td>The user's browser running the SvelteKit webapp. Stores tokens in httpOnly cookies.</td>
+          </tr>
+          <tr>
+            <td><span class="actor actor-backend">Backend</span></td>
+            <td>Go HTTP server. Validates PASETO tokens locally — no external call needed per request.</td>
+          </tr>
+          <tr>
+            <td><span class="actor actor-auth0">Auth0</span></td>
+            <td>Identity provider. Only involved during initial login — never sees PASETO tokens.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout callout-info">
+        <strong>Key idea:</strong> Auth0 is the identity provider. PASETO is the token format between backend and browser. The browser <em>never</em> sees or handles Auth0 JWTs — only opaque <code>v4.local.*</code> PASETO tokens.
+      </div>
+    </section>
+
+    <!-- ===== LOGIN FLOW ===== -->
+    <section id="login">
+      <h2>2. Login Flow (Authorization Code Exchange)</h2>
+      <p>This happens once when the user clicks "Log In".</p>
+
+      <div class="flow">
+        <!-- Step 1 -->
+        <div class="flow-row">
+          <span class="actor actor-browser">Browser</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-auth0">Auth0</span>
+          <span class="payload">GET /authorize (redirect user to Auth0 login page)</span>
+        </div>
+        <div class="separator">· · · user authenticates on Auth0 · · ·</div>
+        <div class="flow-row response">
+          <span class="actor actor-auth0">Auth0</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-browser">Browser</span>
+          <span class="payload">302 → /auth/callback?code=abc123</span>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="separator">· · · · · · · · · · · · · · · · · · ·</div>
+        <div class="flow-row step">
+          <span class="actor actor-browser">Browser</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-backend">Backend</span>
+          <span class="payload">POST /v1/auth/token { code, redirect_uri }</span>
+        </div>
+        <div class="flow-row step">
+          <span class="actor actor-backend">Backend</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-auth0">Auth0</span>
+          <span class="payload">POST /oauth/token { code, client_secret }</span>
+        </div>
+        <div class="flow-row step response">
+          <span class="actor actor-auth0">Auth0</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-backend">Backend</span>
+          <span class="payload">{ access_token (JWT), id_token (JWT) }</span>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="separator">· · · backend swaps JWTs for PASETO · · ·</div>
+        <div class="flow-row step">
+          <span class="note">Backend extracts sub + email from Auth0 JWTs, generates PASETO pair</span>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="flow-row step response">
+          <span class="actor actor-backend">Backend</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-browser">Browser</span>
+          <span class="payload">{ access_token, refresh_token, email, expires_in: 3600 }</span>
+        </div>
+        <div class="flow-row">
+          <span class="note">SvelteKit callback stores → <code>auth</code> cookie (access, 1h) + <code>refresh</code> cookie (refresh, 7d)</span>
+        </div>
+      </div>
+
+      <div class="callout callout-success">
+        <strong>Result:</strong> The browser now has two httpOnly cookies. The Auth0 JWTs are discarded — they never reach the browser.
+      </div>
+    </section>
+
+    <!-- ===== AUTHENTICATED REQUEST ===== -->
+    <section id="authenticated">
+      <h2>3. Authenticated Request</h2>
+      <p>Every API call (list articles, send article, etc.) follows this pattern. No external call — validation is local.</p>
+
+      <div class="flow">
+        <div class="flow-row">
+          <span class="actor actor-browser">Browser</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-backend">Backend</span>
+          <span class="payload">GET /v1/articles · Cookie: auth=v4.local.xxx</span>
+        </div>
+        <div class="flow-row">
+          <span class="note">SvelteKit hooks read <code>auth</code> cookie → pass as <code>Authorization: Bearer v4.local.xxx</code></span>
+        </div>
+        <div class="flow-row">
+          <span class="note">Backend middleware: decrypt PASETO with local symmetric key → extract account_id</span>
+        </div>
+        <div class="flow-row response">
+          <span class="actor actor-backend">Backend</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-browser">Browser</span>
+          <span class="payload">200 { articles: [...] }</span>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <strong>No JWKS fetch, no Auth0 call.</strong> PASETO v4.local uses symmetric encryption (XChaCha20-Poly1305). The backend validates tokens with a single local key — fast and self-contained.
+      </div>
+    </section>
+
+    <!-- ===== REFRESH ===== -->
+    <section id="refresh">
+      <h2>4. Token Refresh (Automatic)</h2>
+      <p>When the access token expires (1h), the SvelteKit server hooks detect the failure and automatically refresh.</p>
+
+      <div class="flow">
+        <div class="flow-row">
+          <span class="actor actor-browser">Browser</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-backend">Backend</span>
+          <span class="payload">GET /v1/articles · Cookie: auth=v4.local.EXPIRED</span>
+        </div>
+        <div class="flow-row response">
+          <span class="actor actor-backend">Backend</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-browser">Browser</span>
+          <span class="payload">401 Unauthorized</span>
+        </div>
+
+        <div class="separator">· · · SvelteKit hooks catch the 401 · · ·</div>
+
+        <div class="flow-row step">
+          <span class="actor actor-browser">SvelteKit server</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-backend">Backend</span>
+          <span class="payload">POST /v1/auth/refresh { refresh_token }</span>
+        </div>
+        <div class="flow-row">
+          <span class="note">Backend validates refresh token → generates fresh access + refresh pair</span>
+        </div>
+        <div class="flow-row step response">
+          <span class="actor actor-backend">Backend</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-browser">SvelteKit server</span>
+          <span class="payload">{ access_token, refresh_token, expires_in: 3600 }</span>
+        </div>
+        <div class="flow-row">
+          <span class="note">Hooks update both cookies → retry the original request → user never notices</span>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <strong>If the refresh token is also expired</strong> (7 days), both cookies are cleared and the user is redirected to the login page.
+      </div>
+    </section>
+
+    <!-- ===== LOGOUT ===== -->
+    <section id="logout">
+      <h2>5. Logout</h2>
+
+      <div class="flow">
+        <div class="flow-row">
+          <span class="actor actor-browser">Browser</span>
+          <span class="arrow">→</span>
+          <span class="actor actor-backend">Backend</span>
+          <span class="payload">POST /account ?/clean</span>
+        </div>
+        <div class="flow-row">
+          <span class="note">SvelteKit action: delete <code>auth</code> cookie + delete <code>refresh</code> cookie</span>
+        </div>
+        <div class="flow-row">
+          <span class="note">If Auth0: redirect to Auth0 /logout endpoint</span>
+        </div>
+        <div class="flow-row">
+          <span class="note">If SharedKey: redirect to /account</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TOKEN DETAILS ===== -->
+    <section id="tokens">
+      <h2>6. Token Details</h2>
+
+      <table>
+        <thead>
+          <tr><th>Property</th><th>Access Token</th><th>Refresh Token</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Format</td>
+            <td><code>v4.local.&lt;encrypted&gt;</code></td>
+            <td><code>v4.local.&lt;encrypted&gt;</code></td>
+          </tr>
+          <tr>
+            <td>TTL</td>
+            <td>1 hour</td>
+            <td>7 days</td>
+          </tr>
+          <tr>
+            <td>Stored in</td>
+            <td><code>auth</code> httpOnly cookie</td>
+            <td><code>refresh</code> httpOnly cookie</td>
+          </tr>
+          <tr>
+            <td>Sent as</td>
+            <td><code>Authorization: Bearer v4.local.*</code></td>
+            <td>JSON body to <code>/v1/auth/refresh</code></td>
+          </tr>
+          <tr>
+            <td>Encryption</td>
+            <td colspan="2">XChaCha20-Poly1305 + BLAKE2b-MAC (PASETO v4.local)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Token Claims (encrypted inside)</h3>
+      <pre><code>{
+  "sub":   "auth0|abc123",     // account ID from Auth0
+  "email": "user@example.com",
+  "key_version": "v1",         // which symmetric key encrypted this
+  "token_type":  "access",     // or "refresh"
+  "iat": 1744900000,           // issued at
+  "nbf": 1744900000,           // not before
+  "exp": 1744903600            // expiration
+}</code></pre>
+    </section>
+
+    <!-- ===== KEY FILES ===== -->
+    <section id="files">
+      <h2>7. Key Files</h2>
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>File</th><th>What it does</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Backend</td>
+            <td><code>backend/lib/internal/paseto/paseto.go</code></td>
+            <td>KeyStore, token generation, validation, refresh logic</td>
+          </tr>
+          <tr>
+            <td>Backend</td>
+            <td><code>backend/lib/internal/server/handlers/auth.go</code></td>
+            <td><code>/v1/auth/token</code> and <code>/v1/auth/refresh</code> handlers</td>
+          </tr>
+          <tr>
+            <td>Backend</td>
+            <td><code>backend/lib/internal/server/auth/auth.go</code></td>
+            <td>PASETO middleware — decrypts Bearer token on every request</td>
+          </tr>
+          <tr>
+            <td>Frontend</td>
+            <td><code>frontend/webapp/src/routes/auth/callback/+server.ts</code></td>
+            <td>Auth0 callback — stores PASETO tokens in cookies</td>
+          </tr>
+          <tr>
+            <td>Frontend</td>
+            <td><code>frontend/webapp/src/lib/server/hooks.ts</code></td>
+            <td>Server hooks — reads cookies, auto-refreshes on expiry</td>
+          </tr>
+          <tr>
+            <td>Frontend</td>
+            <td><code>frontend/webapp/src/lib/server/cookies.ts</code></td>
+            <td><code>auth</code> and <code>refresh</code> httpOnly cookie management</td>
+          </tr>
+          <tr>
+            <td>Shared</td>
+            <td><code>frontend/shared/src/lib/apiClient.ts</code></td>
+            <td>API client with <code>exchangeCodeForToken</code> and <code>refreshToken</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

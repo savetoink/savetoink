@@ -3,6 +3,7 @@ import type { Cookies } from '@sveltejs/kit';
 import type { UserProfile } from '@savetoink/shared';
 
 const AUTH_KEY = 'auth';
+const REFRESH_KEY = 'refresh';
 const USER_COOKIE_KEY = 'profile';
 const REDIRECT_TO_KEY = 'redirect_to';
 
@@ -67,6 +68,26 @@ export function getAuthCookie(cookies: Cookies) {
 }
 
 export { AUTH_KEY };
+
+export function setRefreshCookie(cookies: Cookies, token: string) {
+	cookies.set(REFRESH_KEY, token, {
+		path: '/',
+		httpOnly: true,
+		secure: getSecure(),
+		sameSite: 'lax',
+		maxAge: 60 * 60 * 24 * 7 // 7 days (matches PASETO refresh TTL)
+	});
+}
+
+export function deleteRefreshCookie(cookies: Cookies) {
+	cookies.delete(REFRESH_KEY, { path: '/', secure: getSecure() });
+}
+
+export function getRefreshCookie(cookies: Cookies) {
+	return cookies.get(REFRESH_KEY);
+}
+
+export { REFRESH_KEY };
 
 async function sign(data: string): Promise<string> {
 	const key = await getCryptoKey();

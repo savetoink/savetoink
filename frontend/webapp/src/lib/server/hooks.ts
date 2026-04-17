@@ -2,12 +2,17 @@ import { redirect } from '@sveltejs/kit';
 import { validateEnv } from '$lib/server/validateEnv';
 import {
 	getAuthCookie,
+	getRefreshCookie,
+	setAuthCookie,
+	setRefreshCookie,
+	deleteAuthCookie,
+	deleteRefreshCookie,
 	getUserCookie,
 	setUserCookie,
 	setRedirectToCookie
 } from '$lib/server/cookies';
 import { isAuthenticatedPath } from '$lib/consts';
-import { getProfile } from '$lib/server/apiClient';
+import { getProfile, refreshToken } from '$lib/server/apiClient';
 import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -28,7 +33,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 			};
 			event.locals.isLoggedIn = true;
 		} else {
-			// get profile data from API if user is authenticated but no cookie is found
 			try {
 				const profileData = await getProfile(event);
 				event.locals.user = {
@@ -40,7 +44,32 @@ export const handle: Handle = async ({ event, resolve }) => {
 				event.locals.isLoggedIn = true;
 				await setUserCookie(event.cookies, profileData);
 			} catch {
-				// Profile fetch failed, stay logged out
+				const refresh = getRefreshCookie(event.cookies);
+				if (refresh) {
+					try {
+						const refreshed = await refreshToken(event, refresh);
+						setAuthCookie(event.cookies, refreshed.access_token, {
+							maxAge: refreshed.expires_in
+						});
+						if (refreshed.refresh_token) {
+							setRefreshCookie(event.cookies, refreshed.refresh_token);
+						}
+						event.locals.auth = refreshed.access_token;
+
+						const profileData = await getProfile(event);
+						event.locals.user = {
+							account: profileData.account,
+							email: profileData.email,
+							device_email: profileData.device_email,
+							auto_send: profileData.auto_send
+						};
+						event.locals.isLoggedIn = true;
+						await setUserCookie(event.cookies, profileData);
+					} catch {
+						deleteAuthCookie(event.cookies);
+						deleteRefreshCookie(event.cookies);
+					}
+				}
 			}
 		}
 	}

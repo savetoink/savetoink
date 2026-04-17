@@ -109,6 +109,9 @@ export function deleteDevice(event: RequestEvent) {
 export const exchangeCodeForToken = (event: RequestEvent, code: string, redirectUri: string) =>
 	withSvelteKitError(() => createApiClient(event).exchangeCodeForToken(code, redirectUri));
 
+export const refreshToken = (event: RequestEvent, token: string) =>
+	withSvelteKitError(() => createApiClient(event).refreshToken(token));
+
 export function getSends(event: RequestEvent) {
 	const client = createApiClient(event);
 	return withSvelteKitError(() => client.getSends(event.locals.auth ?? ''));

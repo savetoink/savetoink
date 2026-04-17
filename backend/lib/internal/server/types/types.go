@@ -62,6 +62,11 @@ type AuthTokenExchangeRequest struct {
 	GrantType   string `json:"grant_type"`
 }
 
+// AuthTokenRefreshRequest represents a request to refresh tokens.
+type AuthTokenRefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 // AuthTokenExchangeResponse represents a response from token exchange.
 type AuthTokenExchangeResponse struct {
 	AccessToken  string `json:"access_token"`

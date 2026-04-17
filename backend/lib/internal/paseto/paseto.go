@@ -119,7 +119,6 @@ func (ks *KeyStore) GenerateTokenPair(claims TokenClaims) (*TokenPair, error) {
 	now := time.Now()
 
 	accessToken := ks.generateToken(claims, "access", now, ks.accessTTL)
-
 	refreshToken := ks.generateToken(claims, "refresh", now, ks.refreshTTL)
 
 	return &TokenPair{
@@ -132,12 +131,48 @@ func (ks *KeyStore) GenerateTokenPair(claims TokenClaims) (*TokenPair, error) {
 // ValidateToken validates a PASETO token and returns its claims.
 // It tries the current key first, then falls back to previous keys.
 func (ks *KeyStore) ValidateToken(token string) (*TokenClaims, error) {
+	parsedToken, err := ks.parseToken(token)
+	if err != nil {
+		return nil, err
+	}
+	return extractClaims(parsedToken)
+}
+
+// ValidateRefreshToken validates a PASETO refresh token and returns its claims.
+// Returns an error if the token is not a refresh token.
+func (ks *KeyStore) ValidateRefreshToken(token string) (*TokenClaims, error) {
+	claims, err := ks.ValidateToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.TokenType != "refresh" {
+		return nil, errors.New("token is not a refresh token")
+	}
+
+	return claims, nil
+}
+
+// RefreshTokens validates a refresh token and generates a new token pair.
+func (ks *KeyStore) RefreshTokens(refreshToken string) (*TokenPair, error) {
+	claims, err := ks.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("invalid refresh token: %w", err)
+	}
+
+	return ks.GenerateTokenPair(TokenClaims{
+		Subject: claims.Subject,
+		Email:   claims.Email,
+	})
+}
+
+// parseToken parses and validates a PASETO token using current and previous keys.
+func (ks *KeyStore) parseToken(token string) (*paseto.Token, error) {
 	parser := paseto.NewParser()
 	parser.AddRule(paseto.ValidAt(time.Now()))
 
 	parsedToken, err := parser.ParseV4Local(ks.currentKey, token, nil)
 	if err != nil {
-		// Try previous keys for rotation support
 		for _, prevKey := range ks.previousKeys {
 			parsedToken, err = parser.ParseV4Local(prevKey, token, nil)
 			if err == nil {
@@ -149,14 +184,19 @@ func (ks *KeyStore) ValidateToken(token string) (*TokenClaims, error) {
 		}
 	}
 
-	subject, err := parsedToken.GetSubject()
+	return parsedToken, nil
+}
+
+// extractClaims extracts claims from a parsed PASETO token.
+func extractClaims(token *paseto.Token) (*TokenClaims, error) {
+	subject, err := token.GetSubject()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get subject from token: %w", err)
 	}
 
-	email, _ := parsedToken.GetString("email")
-	keyVersion, _ := parsedToken.GetString("key_version")
-	tokenType, _ := parsedToken.GetString("token_type")
+	email, _ := token.GetString("email")
+	keyVersion, _ := token.GetString("key_version")
+	tokenType, _ := token.GetString("token_type")
 
 	return &TokenClaims{
 		Subject:    subject,

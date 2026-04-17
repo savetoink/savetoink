@@ -99,6 +99,7 @@ func setupRoutes(r *chi.Mux, h *handlers.Handlers, cfg *config.Config, _ service
 
 		if cfg.AuthBackend == consts.AuthBackendAuth0 {
 			r.Post("/auth/token", h.HandleAuthTokenExchange)
+			r.Post("/auth/refresh", h.HandleAuthRefresh)
 		}
 
 		if cfg.EmailProvider == consts.EmailBackendMailjet {

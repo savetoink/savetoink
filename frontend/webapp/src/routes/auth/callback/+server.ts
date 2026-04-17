@@ -1,7 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import { env as publicEnv } from '$env/dynamic/public';
 import { exchangeCodeForToken, getProfile } from '$lib/server/apiClient';
-import { setAuthCookie, setUserCookie, getValidRedirectUrl } from '$lib/server/cookies';
+import { setAuthCookie, setRefreshCookie, setUserCookie, getValidRedirectUrl } from '$lib/server/cookies';
 import type { RequestHandler, RequestEvent } from './$types';
 
 export const GET: RequestHandler = async ({ fetch, url, cookies, request, getClientAddress }) => {
@@ -24,6 +24,10 @@ export const GET: RequestHandler = async ({ fetch, url, cookies, request, getCli
 	setAuthCookie(cookies, response.access_token, {
 		maxAge: response.expires_in
 	});
+
+	if (response.refresh_token) {
+		setRefreshCookie(cookies, response.refresh_token);
+	}
 
 	const profile = await getProfile({
 		locals: { auth: response.access_token },

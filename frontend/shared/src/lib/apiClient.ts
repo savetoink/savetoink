@@ -57,6 +57,7 @@ export interface ApiClient {
     code: string,
     redirectUri: string,
   ): Promise<AuthTokenExchangeResponse>;
+  refreshToken(refreshToken: string): Promise<AuthTokenExchangeResponse>;
   getSends(token: string): Promise<SendsResponse | SendsResponseNoLimits>;
   getTags(id: string, token: string): Promise<{ tags: string[] }>;
   addTags(id: string, tags: string[], token: string): Promise<{ tags: string[] }>;
@@ -209,6 +210,11 @@ export function createApiClient({
         code,
         redirect_uri: redirectUri,
       } as AuthTokenExchangeRequest),
+
+    refreshToken: (refresh_token: string) =>
+      request<AuthTokenExchangeResponse>("POST", "/v1/auth/refresh", undefined, {
+        refresh_token,
+      }),
 
     getSends: (token: string) =>
       request<SendsResponse | SendsResponseNoLimits>("GET", "/v1/sends", token),

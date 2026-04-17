@@ -156,6 +156,41 @@ func (h *Handlers) generatePASETOTokens(accountID, email string) (*paseto.TokenP
 	return pair, nil
 }
 
+// HandleAuthRefresh handles the token refresh endpoint.
+// It validates the refresh token and returns a new token pair.
+func (h *Handlers) HandleAuthRefresh(w http.ResponseWriter, r *http.Request) {
+	if h.pasetoKeyStore == nil {
+		utils.WriteJSONError(w, http.StatusInternalServerError, errors.New("paseto key store not configured"))
+		return
+	}
+
+	var req types.AuthTokenRefreshRequest
+	if decodeErr := utils.DecodeAndValidateRequest(w, r, &req); decodeErr != nil {
+		return
+	}
+
+	if req.RefreshToken == "" {
+		utils.WriteJSONError(w, http.StatusBadRequest, errors.New("missing refresh_token in request body"))
+		return
+	}
+
+	pair, err := h.pasetoKeyStore.RefreshTokens(req.RefreshToken)
+	if err != nil {
+		utils.WriteJSONError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	response := &types.AuthTokenExchangeResponse{
+		AccessToken:  pair.AccessToken,
+		RefreshToken: pair.RefreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int(pair.ExpiresIn),
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(response) //nolint:gosec // returning PASETO access token, not a secret
+}
+
 func (h *Handlers) auth0Error(ctx context.Context, body []byte) error {
 	var errResp struct {
 		Error            string `json:"error"`

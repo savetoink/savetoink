@@ -447,3 +447,99 @@ func TestKeyStore_SubjectPreservation(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateRefreshToken(t *testing.T) {
+	ks := testKeyStore(t)
+	claims := TokenClaims{
+		Subject: "auth0|123456",
+		Email:   "user@example.com",
+	}
+
+	t.Run("valid refresh token", func(t *testing.T) {
+		pair, err := ks.GenerateTokenPair(claims)
+		require.NoError(t, err)
+
+		validated, err := ks.ValidateRefreshToken(pair.RefreshToken)
+		require.NoError(t, err)
+		assert.Equal(t, claims.Subject, validated.Subject)
+		assert.Equal(t, "refresh", validated.TokenType)
+	})
+
+	t.Run("access token rejected as refresh token", func(t *testing.T) {
+		pair, err := ks.GenerateTokenPair(claims)
+		require.NoError(t, err)
+
+		_, err = ks.ValidateRefreshToken(pair.AccessToken)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "not a refresh token")
+	})
+
+	t.Run("invalid token rejected", func(t *testing.T) {
+		_, err := ks.ValidateRefreshToken("v4.local.invalid")
+		require.Error(t, err)
+	})
+}
+
+func TestRefreshTokens(t *testing.T) {
+	ks := testKeyStore(t)
+	claims := TokenClaims{
+		Subject: "auth0|123456",
+		Email:   "user@example.com",
+	}
+
+	t.Run("valid refresh returns new token pair", func(t *testing.T) {
+		originalPair, err := ks.GenerateTokenPair(claims)
+		require.NoError(t, err)
+
+		time.Sleep(10 * time.Millisecond)
+
+		newPair, err := ks.RefreshTokens(originalPair.RefreshToken)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, originalPair.AccessToken, newPair.AccessToken)
+		assert.NotEqual(t, originalPair.RefreshToken, newPair.RefreshToken)
+
+		validated, validateErr := ks.ValidateToken(newPair.AccessToken)
+		require.NoError(t, validateErr)
+		assert.Equal(t, claims.Subject, validated.Subject)
+		assert.Equal(t, claims.Email, validated.Email)
+		assert.Equal(t, "access", validated.TokenType)
+
+		refreshValidated, refreshErr := ks.ValidateRefreshToken(newPair.RefreshToken)
+		require.NoError(t, refreshErr)
+		assert.Equal(t, claims.Subject, refreshValidated.Subject)
+	})
+
+	t.Run("access token cannot be used to refresh", func(t *testing.T) {
+		pair, err := ks.GenerateTokenPair(claims)
+		require.NoError(t, err)
+
+		_, err = ks.RefreshTokens(pair.AccessToken)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid refresh token")
+	})
+
+	t.Run("invalid token rejected", func(t *testing.T) {
+		_, err := ks.RefreshTokens("v4.local.invalid")
+		require.Error(t, err)
+	})
+
+	t.Run("refreshed refresh token can be used again", func(t *testing.T) {
+		pair1, err := ks.GenerateTokenPair(claims)
+		require.NoError(t, err)
+
+		time.Sleep(10 * time.Millisecond)
+
+		pair2, err := ks.RefreshTokens(pair1.RefreshToken)
+		require.NoError(t, err)
+
+		time.Sleep(10 * time.Millisecond)
+
+		pair3, err := ks.RefreshTokens(pair2.RefreshToken)
+		require.NoError(t, err)
+
+		validated, validateErr := ks.ValidateToken(pair3.AccessToken)
+		require.NoError(t, validateErr)
+		assert.Equal(t, claims.Subject, validated.Subject)
+	})
+}

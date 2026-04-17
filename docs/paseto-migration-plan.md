@@ -121,11 +121,17 @@ Backend validates PASETO token using local key  ← No JWKS fetch needed
    - [x] Update router tests
    - [x] Integration test: full PASETO round-trip (exchange → authenticate)
 
-### Phase 4: Frontend Integration
+### Phase 4: Frontend Integration ✅ COMPLETE
 
-1. **Token handling** — PASETO tokens use the same `Bearer` pattern, should be transparent
-2. **Token refresh** — update if response structure changes
-3. **E2E tests**
+1. **Token handling** ✅ — PASETO tokens use the same `Bearer` pattern, transparent to frontend
+2. **Refresh token endpoint** ✅ — `POST /v1/auth/refresh` accepts a refresh token, returns new token pair
+3. **Frontend refresh token storage** ✅
+   - Auth callback stores `refresh_token` in httpOnly cookie
+   - Server hooks auto-refresh on expired access token (401)
+   - Logout clears both access and refresh cookies
+4. **Shared API client** ✅ — Added `refreshToken()` method to `@savetoink/shared`
+5. **OpenAPI spec** ✅ — Updated with `/auth/refresh` endpoint and PASETO descriptions
+6. **E2E tests** — Existing E2E test covers shared key flow; Auth0 flow requires live Auth0 credentials
 
 ### Phase 5: Deployment
 
@@ -205,7 +211,7 @@ Authorization: Bearer v4.local.<encrypted>
 | Phase 1: Foundation | ✅ Done | PASETO package, 95% coverage |
 | Phase 2: Configuration | ✅ Done | Required config, validation |
 | Phase 3: Implementation | ✅ Done | Handler, middleware, cleanup |
-| Phase 4: Frontend | ⬜ Pending | Frontend updates |
+| Phase 4: Frontend | ✅ Done | Refresh endpoint, auto-refresh, cookie storage |
 | Phase 5: Deployment | ⬜ Pending | Key generation, deploy |
 
 ## Resources
