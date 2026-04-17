@@ -31,3 +31,18 @@ var HTMLErrorPatterns = []string{
 
 // ArticleProcessingTimeout is the maximum duration for processing an article.
 const ArticleProcessingTimeout = 30 * time.Second
+
+// Auth tokens constants.
+const (
+	// TokenPrefix is the prefix of v4.local PASETO tokens.
+	TokenPrefix = "v4.local."
+
+	// keySize is the required size in bytes for a v4 symmetric key.
+	KeySize = 32
+
+	// DefaultAccessTTL is the default time-to-live for access tokens.
+	DefaultAccessTTL = 1 * time.Hour
+
+	// DefaultRefreshTTL is the default time-to-live for refresh tokens.
+	DefaultRefreshTTL = 30 * 24 * time.Hour
+)

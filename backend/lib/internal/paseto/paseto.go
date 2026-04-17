@@ -9,20 +9,7 @@ import (
 	"time"
 
 	"aidanwoods.dev/go-paseto"
-)
-
-const (
-	// TokenPrefix is the prefix of v4.local PASETO tokens.
-	TokenPrefix = "v4.local."
-
-	// keySize is the required size in bytes for a v4 symmetric key.
-	keySize = 32
-
-	// DefaultAccessTTL is the default time-to-live for access tokens.
-	DefaultAccessTTL = 1 * time.Hour
-
-	// DefaultRefreshTTL is the default time-to-live for refresh tokens.
-	DefaultRefreshTTL = 7 * 24 * time.Hour
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 )
 
 // TokenClaims represents the claims stored in PASETO tokens.
@@ -64,10 +51,10 @@ type KeyStoreConfig struct {
 	// KeyVersion identifies the current key version.
 	KeyVersion string
 
-	// AccessTTL is the time-to-live for access tokens. Defaults to DefaultAccessTTL.
+	// AccessTTL is the time-to-live for access tokens.
 	AccessTTL time.Duration
 
-	// RefreshTTL is the time-to-live for refresh tokens. Defaults to DefaultRefreshTTL.
+	// RefreshTTL is the time-to-live for refresh tokens.
 	RefreshTTL time.Duration
 }
 
@@ -86,8 +73,8 @@ func NewKeyStore(cfg KeyStoreConfig) (*KeyStore, error) {
 		return nil, fmt.Errorf("failed to decode paseto key: %w", err)
 	}
 
-	if len(keyBytes) != keySize {
-		return nil, fmt.Errorf("paseto key must be %d bytes, got %d", keySize, len(keyBytes))
+	if len(keyBytes) != consts.KeySize {
+		return nil, fmt.Errorf("paseto key must be %d bytes, got %d", consts.KeySize, len(keyBytes))
 	}
 
 	key, err := paseto.V4SymmetricKeyFromBytes(keyBytes)
@@ -97,12 +84,12 @@ func NewKeyStore(cfg KeyStoreConfig) (*KeyStore, error) {
 
 	accessTTL := cfg.AccessTTL
 	if accessTTL == 0 {
-		accessTTL = DefaultAccessTTL
+		accessTTL = consts.DefaultAccessTTL
 	}
 
 	refreshTTL := cfg.RefreshTTL
 	if refreshTTL == 0 {
-		refreshTTL = DefaultRefreshTTL
+		refreshTTL = consts.DefaultRefreshTTL
 	}
 
 	return &KeyStore{
@@ -213,8 +200,8 @@ func (ks *KeyStore) AddPreviousKey(version, encodedKey string) error {
 		return fmt.Errorf("failed to decode previous key: %w", err)
 	}
 
-	if len(keyBytes) != keySize {
-		return fmt.Errorf("previous key must be %d bytes, got %d", keySize, len(keyBytes))
+	if len(keyBytes) != consts.KeySize {
+		return fmt.Errorf("previous key must be %d bytes, got %d", consts.KeySize, len(keyBytes))
 	}
 
 	key, err := paseto.V4SymmetricKeyFromBytes(keyBytes)
@@ -245,5 +232,5 @@ func (ks *KeyStore) generateToken(
 
 // IsPASETOToken checks if a token string looks like a PASETO v4.local token.
 func IsPASETOToken(token string) bool {
-	return len(token) > len(TokenPrefix) && token[:len(TokenPrefix)] == TokenPrefix
+	return len(token) > len(consts.TokenPrefix) && token[:len(consts.TokenPrefix)] == consts.TokenPrefix
 }

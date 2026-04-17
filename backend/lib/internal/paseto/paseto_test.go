@@ -8,6 +8,7 @@ import (
 	"aidanwoods.dev/go-paseto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 )
 
 func testKeyStore(t *testing.T) *KeyStore {
@@ -18,8 +19,8 @@ func testKeyStore(t *testing.T) *KeyStore {
 	ks, err := NewKeyStore(KeyStoreConfig{
 		SymmetricKey: encoded,
 		KeyVersion:   "v1",
-		AccessTTL:    DefaultAccessTTL,
-		RefreshTTL:   DefaultRefreshTTL,
+		AccessTTL:    consts.DefaultAccessTTL,
+		RefreshTTL:   consts.DefaultRefreshTTL,
 	})
 	require.NoError(t, err)
 	return ks
@@ -37,8 +38,8 @@ func TestNewKeyStore(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, ks)
 		assert.Equal(t, "v1", ks.currentVersion)
-		assert.Equal(t, DefaultAccessTTL, ks.accessTTL)
-		assert.Equal(t, DefaultRefreshTTL, ks.refreshTTL)
+		assert.Equal(t, consts.DefaultAccessTTL, ks.accessTTL)
+		assert.Equal(t, consts.DefaultRefreshTTL, ks.refreshTTL)
 	})
 
 	t.Run("custom TTL", func(t *testing.T) {
