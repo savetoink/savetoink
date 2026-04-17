@@ -14,7 +14,6 @@ import (
 
 	goPaseto "aidanwoods.dev/go-paseto"
 
-	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
@@ -384,14 +383,12 @@ func TestNewAccountIDMiddleware(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{
-				AuthBackend:        tt.authBackend,
-				APIKeySecret:       tt.apiKey,
-				PASETOSymmetricKey: tt.pasetoKey,
-				PASETOKeyVersion:   tt.pasetoVer,
+			var ks *localPaseto.KeyStore
+			if tt.pasetoKey != "" {
+				ks = testKeyStore(t)
 			}
 
-			middleware := NewAccountIDMiddleware(cfg)
+			middleware := NewAccountIDMiddleware(tt.authBackend, tt.apiKey, ks)
 			assert.NotNil(t, middleware)
 
 			nextCalled := false

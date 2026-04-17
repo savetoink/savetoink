@@ -93,32 +93,33 @@ Backend validates PASETO token using local key  ← No JWKS fetch needed
    - Both required when `SAVETOINK_AUTH_BACKEND=auth0`
 2. **Validation** ✅ — missing PASETO fields reported alongside missing Auth0 fields
 
-### Phase 3: Implementation (Current)
+### Phase 3: Implementation ✅ COMPLETE
 
-1. **Update `/v1/auth/token` endpoint**
-   - [ ] After Auth0 exchange, extract claims (sub, email) from Auth0 response
-   - [ ] Generate PASETO token pair from claims
-   - [ ] Return PASETO tokens to frontend (never return Auth0 JWTs)
+1. **Update `/v1/auth/token` endpoint** ✅
+   - [x] After Auth0 exchange, extract claims (sub, email) from Auth0 response
+   - [x] Generate PASETO token pair from claims
+   - [x] Return PASETO tokens to frontend (never return Auth0 JWTs)
 
-2. **Replace authentication middleware**
-   - [ ] Remove `auth0Middleware` (JWT/JWKS validation)
-   - [ ] Add `pasetoMiddleware` using the PASETO KeyStore
-   - [ ] Extract account ID from PASETO token claims
+2. **Replace authentication middleware** ✅
+   - [x] Remove `auth0Middleware` (JWT/JWKS validation)
+   - [x] Add `pasetoMiddleware` using the PASETO KeyStore
+   - [x] Extract account ID from PASETO token claims
 
-3. **Wire up PASETO KeyStore**
-   - [ ] Create KeyStore during server initialization from config
-   - [ ] Pass KeyStore to token exchange handler
-   - [ ] Pass KeyStore to auth middleware
+3. **Wire up PASETO KeyStore** ✅
+   - [x] Create KeyStore during server initialization from config
+   - [x] Pass KeyStore to token exchange handler
+   - [x] Pass KeyStore to auth middleware
 
-4. **Remove JWT dependency**
-   - [ ] Remove `go-jwt-middleware` import and usage
-   - [ ] Remove JWKS provider setup
-   - [ ] Clean up `auth.go`
+4. **Remove JWT dependency** ✅
+   - [x] Remove `go-jwt-middleware` import and usage
+   - [x] Remove JWKS provider setup
+   - [x] Clean up `auth.go`
 
-5. **Testing**
-   - [ ] Update handler tests for PASETO token generation
-   - [ ] Update middleware tests for PASETO validation
-   - [ ] Update router tests
+5. **Testing** ✅
+   - [x] Update handler tests for PASETO token generation
+   - [x] Update middleware tests for PASETO validation
+   - [x] Update router tests
+   - [x] Integration test: full PASETO round-trip (exchange → authenticate)
 
 ### Phase 4: Frontend Integration
 
@@ -203,7 +204,7 @@ Authorization: Bearer v4.local.<encrypted>
 |-------|--------|------------------|
 | Phase 1: Foundation | ✅ Done | PASETO package, 95% coverage |
 | Phase 2: Configuration | ✅ Done | Required config, validation |
-| Phase 3: Implementation | 🔄 Current | Handler, middleware, cleanup |
+| Phase 3: Implementation | ✅ Done | Handler, middleware, cleanup |
 | Phase 4: Frontend | ⬜ Pending | Frontend updates |
 | Phase 5: Deployment | ⬜ Pending | Key generation, deploy |
 

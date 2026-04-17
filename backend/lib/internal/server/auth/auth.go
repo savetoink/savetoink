@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/shaftoe/savetoink/backend/lib/config"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
 	"github.com/shaftoe/savetoink/backend/lib/internal/paseto"
@@ -23,15 +22,20 @@ const (
 // NewAccountIDMiddleware returns authentication middleware based on the configured auth backend.
 // The returned middleware ensures the accountID is set in the context, adds authentication error
 // to the context if any. To subsequently validate authentication use EnsureAutheticatedMiddleware.
-func NewAccountIDMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
-	switch cfg.AuthBackend {
-	case consts.AuthBackendSharedAPIKey:
-		return sharedAPIKeyMiddleware(cfg.APIKeySecret)
+//
+// When authBackend is AuthBackendAuth0, a non-nil pasetoKeyStore must be provided.
+func NewAccountIDMiddleware(
+	authBackend consts.AuthBackend,
+	apiKeySecret string,
+	pasetoKeyStore *paseto.KeyStore,
+) func(http.Handler) http.Handler {
+	switch authBackend {
 	case consts.AuthBackendAuth0:
-		keyStore := newPasetoKeyStore(cfg)
-		return pasetoMiddleware(keyStore)
+		return pasetoMiddleware(pasetoKeyStore)
+	case consts.AuthBackendSharedAPIKey:
+		return sharedAPIKeyMiddleware(apiKeySecret)
 	default:
-		return sharedAPIKeyMiddleware(cfg.APIKeySecret)
+		return sharedAPIKeyMiddleware(apiKeySecret)
 	}
 }
 
@@ -105,17 +109,6 @@ func pasetoMiddleware(keyStore *paseto.KeyStore) func(http.Handler) http.Handler
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-}
-
-func newPasetoKeyStore(cfg *config.Config) *paseto.KeyStore {
-	keyStore, err := paseto.NewKeyStore(paseto.KeyStoreConfig{
-		SymmetricKey: cfg.PASETOSymmetricKey,
-		KeyVersion:   cfg.PASETOKeyVersion,
-	})
-	if err != nil {
-		panic("failed to create paseto key store: " + err.Error())
-	}
-	return keyStore
 }
 
 func handleAuthError(ctx context.Context, next http.Handler, w http.ResponseWriter, r *http.Request, msg string) {
