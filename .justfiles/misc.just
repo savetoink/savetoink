@@ -48,5 +48,5 @@ dotenv ENV="local":
 sonarcloud-report pr_number="":
     @bun run ./tools/sonarcloud.ts {{ pr_number }}
 
-gen-pareto-key:
+gen-paseto-key:
     openssl rand -base64 32
