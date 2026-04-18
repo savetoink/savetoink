@@ -891,9 +891,9 @@ func TestNewRouter_AuthTokenRoute(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken: "test-access-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			AccessToken:     "test-access-token",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
 		})
 	}))
 	defer server.Close()
@@ -937,9 +937,9 @@ func TestAuthTokenRoute_Registered(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken: "test-access-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			AccessToken:     "test-access-token",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
 		})
 	}))
 	defer server.Close()
@@ -986,10 +986,10 @@ func TestIntegration_PasetoRoundTrip(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken: "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
-			IDToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			AccessToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
+			IDToken:         "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
 		})
 	}))
 	defer server.Close()
@@ -1036,7 +1036,7 @@ func TestIntegration_PasetoRoundTrip(t *testing.T) {
 	assert.True(t, strings.HasPrefix(tokenResp.RefreshToken, "v4.local."),
 		"refresh_token should be a PASETO v4.local token, got: %s", tokenResp.RefreshToken[:20])
 	assert.Equal(t, "Bearer", tokenResp.TokenType)
-	assert.Equal(t, int(consts.DefaultAccessTTL.Seconds()), tokenResp.ExpiresIn)
+	assert.Equal(t, int(consts.DefaultAccessTTL.Seconds()), tokenResp.AccessExpiresIn)
 	assert.Equal(t, int(consts.DefaultRefreshTTL.Seconds()), tokenResp.RefreshExpiresIn)
 	assert.Equal(t, "roundtrip@example.com", tokenResp.Email)
 

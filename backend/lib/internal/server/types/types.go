@@ -74,7 +74,7 @@ type AuthTokenExchangeResponse struct {
 	IDToken          string `json:"id_token,omitempty"`
 	Email            string `json:"email,omitempty"`
 	TokenType        string `json:"token_type"`
-	ExpiresIn        int    `json:"expires_in"`
+	AccessExpiresIn  int    `json:"access_expires_in"`
 	RefreshExpiresIn int    `json:"refresh_expires_in,omitempty"`
 }
 

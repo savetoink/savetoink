@@ -330,7 +330,7 @@ components:
       required:
         - access_token
         - token_type
-        - expires_in
+        - access_expires_in
       properties:
         access_token:
           type: string
@@ -347,9 +347,9 @@ components:
         token_type:
           type: string
           description: Token type (typically "Bearer")
-        expires_in:
+        access_expires_in:
           type: integer
-          description: Token expiration time in seconds
+          description: Access token expiration time in seconds
         refresh_expires_in:
           type: integer
           description: Refresh token expiration time in seconds

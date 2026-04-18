@@ -31,7 +31,7 @@ type TokenClaims struct {
 type TokenPair struct {
 	AccessToken      string
 	RefreshToken     string
-	ExpiresIn        int64
+	AccessExpiresIn  int64
 	RefreshExpiresIn int64
 }
 
@@ -112,7 +112,7 @@ func (ks *KeyStore) GenerateTokenPair(claims TokenClaims) (*TokenPair, error) {
 	return &TokenPair{
 		AccessToken:      accessToken,
 		RefreshToken:     refreshToken,
-		ExpiresIn:        int64(ks.accessTTL.Seconds()),
+		AccessExpiresIn:  int64(ks.accessTTL.Seconds()),
 		RefreshExpiresIn: int64(ks.refreshTTL.Seconds()),
 	}, nil
 }

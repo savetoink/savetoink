@@ -269,9 +269,9 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken: "test-access-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			AccessToken:     "test-access-token",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
 		})
 	}))
 	defer server.Close()
@@ -645,10 +645,10 @@ func TestAuthTokenExchange_WithIDToken(t *testing.T) {
 		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken: "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
-			IDToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			AccessToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
+			IDToken:         "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
 		})
 	}))
 	defer server.Close()
@@ -708,10 +708,10 @@ func TestAuthTokenExchange_InvalidIDToken(t *testing.T) {
 		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken: "test-access-token",
-			IDToken:     "invalid.token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			AccessToken:     "test-access-token",
+			IDToken:         "invalid.token",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
 		})
 	}))
 	defer server.Close()
@@ -765,10 +765,10 @@ func TestAuthTokenExchange_ServiceError(t *testing.T) {
 		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken: "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
-			IDToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			AccessToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
+			IDToken:         "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
 		})
 	}))
 	defer server.Close()
@@ -1018,7 +1018,7 @@ func TestHandleAuthRefresh(t *testing.T) {
 		err = json.Unmarshal(w.Body.Bytes(), &resp)
 		require.NoError(t, err)
 		assert.Equal(t, "Bearer", resp.TokenType)
-		assert.Equal(t, int(consts.DefaultAccessTTL.Seconds()), resp.ExpiresIn)
+		assert.Equal(t, int(consts.DefaultAccessTTL.Seconds()), resp.AccessExpiresIn)
 		assert.Equal(t, int(consts.DefaultRefreshTTL.Seconds()), resp.RefreshExpiresIn)
 		assert.True(t, strings.HasPrefix(resp.AccessToken, "v4.local."))
 		assert.True(t, strings.HasPrefix(resp.RefreshToken, "v4.local."))

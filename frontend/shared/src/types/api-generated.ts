@@ -488,8 +488,8 @@ export interface components {
             email?: string;
             /** @description Token type (typically "Bearer") */
             token_type: string;
-            /** @description Token expiration time in seconds */
-            expires_in: number;
+            /** @description Access token expiration time in seconds */
+            access_expires_in: number;
             /** @description Refresh token expiration time in seconds */
             refresh_expires_in?: number;
         };

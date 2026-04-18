@@ -60,7 +60,7 @@ func (h *Handlers) HandleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	}
 
 	logging.AddLogAttr(r.Context(), slog.String("token_type", "Bearer"))
-	logging.AddLogAttr(r.Context(), slog.Int("expires_in", response.ExpiresIn))
+	logging.AddLogAttr(r.Context(), slog.Int("access_expires_in", response.AccessExpiresIn))
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(response) //nolint:gosec // returning PASETO access token, not a secret
@@ -102,7 +102,7 @@ func (h *Handlers) exchangeAndGenerateTokens(
 		AccessToken:      pasetoPair.AccessToken,
 		RefreshToken:     pasetoPair.RefreshToken,
 		TokenType:        "Bearer",
-		ExpiresIn:        int(pasetoPair.ExpiresIn),
+		AccessExpiresIn:  int(pasetoPair.AccessExpiresIn),
 		RefreshExpiresIn: int(pasetoPair.RefreshExpiresIn),
 		Email:            email,
 	}, nil
@@ -176,7 +176,7 @@ func (h *Handlers) HandleAuthRefresh(w http.ResponseWriter, r *http.Request) {
 		AccessToken:      pair.AccessToken,
 		RefreshToken:     pair.RefreshToken,
 		TokenType:        "Bearer",
-		ExpiresIn:        int(pair.ExpiresIn),
+		AccessExpiresIn:  int(pair.AccessExpiresIn),
 		RefreshExpiresIn: int(pair.RefreshExpiresIn),
 	}
 

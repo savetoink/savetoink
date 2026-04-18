@@ -134,7 +134,7 @@ describe('cookies', () => {
 
 			setTokenCookies(mockCookies, {
 				access_token: 'test-access',
-				expires_in: 10,
+				access_expires_in: 10,
 				refresh_token: 'test-refresh',
 				refresh_expires_in: 2592000
 			});
@@ -160,7 +160,7 @@ describe('cookies', () => {
 
 			setTokenCookies(mockCookies, {
 				access_token: 'test-access',
-				expires_in: 10
+				access_expires_in: 10
 			});
 
 			expect(mockSet).toHaveBeenCalledTimes(1);
@@ -172,7 +172,7 @@ describe('cookies', () => {
 
 			setTokenCookies(mockCookies, {
 				access_token: 'test-access',
-				expires_in: 10,
+				access_expires_in: 10,
 				refresh_token: 'test-refresh'
 			});
 

@@ -95,7 +95,7 @@ const defaultRefreshMaxAge = 60 * 60 * 24 * 30; // 30 days
 /** Shape of a token exchange / refresh response. */
 interface TokenResponse {
 	access_token: string;
-	expires_in: number;
+	access_expires_in: number;
 	refresh_token?: string;
 	refresh_expires_in?: number;
 }
@@ -107,7 +107,7 @@ interface TokenResponse {
  */
 export function setTokenCookies(cookies: Cookies, response: TokenResponse) {
 	setAuthCookie(cookies, response.access_token, {
-		maxAge: response.expires_in
+		maxAge: response.access_expires_in
 	});
 	if (response.refresh_token) {
 		setRefreshCookie(
