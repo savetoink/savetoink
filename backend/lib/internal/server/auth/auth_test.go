@@ -2,8 +2,8 @@ package auth
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,17 +12,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shaftoe/savetoink/backend/lib/config"
+	goPaseto "aidanwoods.dev/go-paseto"
+
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/auth"
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
+	localPaseto "github.com/shaftoe/savetoink/backend/lib/internal/paseto"
 	"github.com/shaftoe/savetoink/backend/lib/internal/service/servicetypes"
 	"github.com/shaftoe/savetoink/backend/lib/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"
 )
+
+const testPasetoKey = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="
 
 type MockService struct {
 	deviceEmail               string
@@ -76,10 +80,7 @@ func (m *MockService) GetArticle(_ context.Context, _, _ string) (*model.Article
 }
 
 func (m *MockService) GetArticlesMetadata(
-	_ context.Context,
-	_ string,
-	_, _ int,
-	_ *bool,
+	_ context.Context, _ string, _, _ int, _ *bool,
 ) (*servicetypes.GetArticlesResult, error) {
 	panic("not implemented")
 }
@@ -153,6 +154,16 @@ func (m *MockService) GetAccountIDByDeviceEmail(_ context.Context, _ string) (st
 	return m.accountIDByDeviceEmail, nil
 }
 
+func testKeyStore(t *testing.T) *localPaseto.KeyStore {
+	t.Helper()
+	ks, err := localPaseto.NewKeyStore(localPaseto.KeyStoreConfig{
+		SymmetricKey: testPasetoKey,
+		KeyVersion:   "v1",
+	})
+	require.NoError(t, err)
+	return ks
+}
+
 func TestGetAccountID(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -182,92 +193,13 @@ func TestGetAccountID(t *testing.T) {
 	}
 }
 
-func setupMockJWKSServer() *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		jwksResponse := `{
-			"keys": [{
-				"kty": "RSA",
-				"kid": "test-key-id",
-				"n": "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1` +
-			`L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-` +
-			`65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08q` +
-			`NLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awap` +
-			`JzKnqDKgw",
-				"e": "AQAB",
-				"alg": "RS256"
-			}]
-		}`
-		if _, err := w.Write([]byte(jwksResponse)); err != nil {
-			panic(fmt.Sprintf("failed to write JWKS response: %v", err))
-		}
-	}))
-}
-
-func TestAuth0Middleware(t *testing.T) {
-	t.Run("missing auth header continues", func(t *testing.T) {
-		middleware := auth0Middleware("test.auth0.com", "test-audience")
-
-		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		})
-
-		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-		w := httptest.NewRecorder()
-
-		middleware(next).ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
-		}
-	})
-
-	t.Run("invalid JWT token adds error to context", func(t *testing.T) {
-		jwksServer := setupMockJWKSServer()
-		defer jwksServer.Close()
-
-		middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
-
-		var capturedContext context.Context
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			capturedContext = r.Context()
-			w.WriteHeader(http.StatusOK)
-		})
-
-		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-		token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIiwidHlwIjoiUlNBIiwiYWxnIjoiUlMyNTYifQ." +
-			"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
-			"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature"
-		req.Header.Set(authHeader, authHeaderPrefix+token)
-		w := httptest.NewRecorder()
-
-		middleware(next).ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
-		}
-
-		err := auth.GetAuthErrorFromCtx(capturedContext)
-		if err == nil {
-			t.Error("expected auth error in context")
-		}
-	})
-}
-
 func TestHandleAuthError(t *testing.T) {
 	tests := []struct {
 		name     string
 		errorMsg string
 	}{
-		{
-			name:     "error added to context",
-			errorMsg: "test error message",
-		},
-		{
-			name:     "empty error message",
-			errorMsg: "",
-		},
+		{name: "error added to context", errorMsg: "test error message"},
+		{name: "empty error message", errorMsg: ""},
 	}
 
 	for _, tt := range tests {
@@ -389,22 +321,10 @@ func TestAddAuthErrorToCtx(t *testing.T) {
 		name     string
 		errorMsg string
 	}{
-		{
-			name:     "add error message",
-			errorMsg: "invalid credentials",
-		},
-		{
-			name:     "empty error message",
-			errorMsg: "",
-		},
-		{
-			name:     "long error message",
-			errorMsg: strings.Repeat("error ", 100),
-		},
-		{
-			name:     "error with special characters",
-			errorMsg: "error: authentication failed (code: 401)",
-		},
+		{name: "add error message", errorMsg: "invalid credentials"},
+		{name: "empty error message", errorMsg: ""},
+		{name: "long error message", errorMsg: strings.Repeat("error ", 100)},
+		{name: "error with special characters", errorMsg: "error: authentication failed (code: 401)"},
 	}
 
 	for _, tt := range tests {
@@ -440,8 +360,8 @@ func TestNewAccountIDMiddleware(t *testing.T) {
 		name        string
 		authBackend consts.AuthBackend
 		apiKey      string
-		auth0Domain string
-		auth0Aud    string
+		pasetoKey   string
+		pasetoVer   string
 	}{
 		{
 			name:        "shared API key backend",
@@ -449,10 +369,10 @@ func TestNewAccountIDMiddleware(t *testing.T) {
 			apiKey:      "test-api-key",
 		},
 		{
-			name:        "auth0 backend",
+			name:        "auth0 backend with paseto",
 			authBackend: consts.AuthBackendAuth0,
-			auth0Domain: "test.auth0.com",
-			auth0Aud:    "test-audience",
+			pasetoKey:   testPasetoKey,
+			pasetoVer:   "v1",
 		},
 		{
 			name:        "default backend (empty) falls back to shared API key",
@@ -463,15 +383,12 @@ func TestNewAccountIDMiddleware(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.Config{
-				AuthBackend:   tt.authBackend,
-				APIKeySecret:  tt.apiKey,
-				Auth0Domain:   tt.auth0Domain,
-				Auth0Audience: tt.auth0Aud,
+			var ks *localPaseto.KeyStore
+			if tt.pasetoKey != "" {
+				ks = testKeyStore(t)
 			}
 
-			middleware := NewAccountIDMiddleware(cfg)
-
+			middleware := NewAccountIDMiddleware(tt.authBackend, tt.apiKey, ks)
 			assert.NotNil(t, middleware)
 
 			nextCalled := false
@@ -484,7 +401,6 @@ func TestNewAccountIDMiddleware(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			middleware(next).ServeHTTP(w, req)
-
 			assert.True(t, nextCalled)
 		})
 	}
@@ -517,19 +433,15 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		authHeader    string
+		authHeaderVal string
 		expectedError string
 	}{
 		{
 			name:          "malformed auth header - no Bearer prefix",
-			authHeader:    "secret-key",
+			authHeaderVal: "secret-key",
 			expectedError: "malformed auth header",
 		},
-		{
-			name:          "invalid API key",
-			authHeader:    "Bearer wrong-key",
-			expectedError: "invalid API key",
-		},
+		{name: "invalid API key", authHeaderVal: "Bearer wrong-key", expectedError: "invalid API key"},
 	}
 
 	for _, tt := range tests {
@@ -543,7 +455,7 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 			})
 
 			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-			req.Header.Set("Authorization", tt.authHeader)
+			req.Header.Set("Authorization", tt.authHeaderVal)
 			w := httptest.NewRecorder()
 
 			middleware(next).ServeHTTP(w, req)
@@ -582,38 +494,13 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 		accountID := auth.GetAccountIDFromCtx(capturedContext)
 		assert.Equal(t, adminAccountID, accountID)
 	})
-
-	t.Run("valid API key with different case", func(t *testing.T) {
-		middleware := sharedAPIKeyMiddleware("Secret-Key")
-
-		var capturedContext context.Context
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			capturedContext = r.Context()
-			w.WriteHeader(http.StatusOK)
-		})
-
-		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-		req.Header.Set("Authorization", "Bearer Secret-Key")
-		w := httptest.NewRecorder()
-
-		middleware(next).ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		err := auth.GetAuthErrorFromCtx(capturedContext)
-		assert.NoError(t, err)
-
-		accountID := auth.GetAccountIDFromCtx(capturedContext)
-		assert.Equal(t, adminAccountID, accountID)
-	})
 }
 
-func TestAuth0Middleware_ContextPropagation(t *testing.T) {
-	jwksServer := setupMockJWKSServer()
-	defer jwksServer.Close()
+func TestPasetoMiddleware(t *testing.T) {
+	ks := testKeyStore(t)
 
-	t.Run("auth0 middleware continues without auth header", func(t *testing.T) {
-		middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
+	t.Run("missing auth header continues without error", func(t *testing.T) {
+		middleware := pasetoMiddleware(ks)
 
 		var capturedContext context.Context
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -627,164 +514,20 @@ func TestAuth0Middleware_ContextPropagation(t *testing.T) {
 		middleware(next).ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-
 		err := auth.GetAuthErrorFromCtx(capturedContext)
 		assert.NoError(t, err)
-
 		accountID := auth.GetAccountIDFromCtx(capturedContext)
 		assert.Empty(t, accountID)
 	})
-}
 
-func TestAuth0Middleware_MalformedAuthHeader(t *testing.T) {
-	jwksServer := setupMockJWKSServer()
-	defer jwksServer.Close()
-
-	tests := []struct {
-		name       string
-		authHeader string
-	}{
-		{
-			name:       "auth header without Bearer prefix",
-			authHeader: "invalid-token",
-		},
-		{
-			name:       "auth header with lowercase bearer",
-			authHeader: "bearer token",
-		},
-		{
-			name:       "auth header with Bearer but no space",
-			authHeader: "Bearertoken",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
-
-			var capturedContext context.Context
-			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				capturedContext = r.Context()
-				w.WriteHeader(http.StatusOK)
-			})
-
-			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-			if tt.authHeader != "" {
-				req.Header.Set(authHeader, tt.authHeader)
-			}
-			w := httptest.NewRecorder()
-
-			middleware(next).ServeHTTP(w, req)
-
-			assert.Equal(t, http.StatusOK, w.Code)
-
-			err := auth.GetAuthErrorFromCtx(capturedContext)
-			assert.NoError(t, err)
-
-			accountID := auth.GetAccountIDFromCtx(capturedContext)
-			assert.Empty(t, accountID)
+	t.Run("valid PASETO token sets account ID", func(t *testing.T) {
+		pair, err := ks.GenerateTokenPair(localPaseto.TokenClaims{
+			Subject: "auth0|123456",
+			Email:   "user@example.com",
 		})
-	}
-}
+		require.NoError(t, err)
 
-func TestAuth0Middleware_InvalidJWTScenarios(t *testing.T) {
-	jwksServer := setupMockJWKSServer()
-	defer jwksServer.Close()
-
-	tests := []struct {
-		name       string
-		token      string
-		wantErrMsg string
-	}{
-		{
-			name:       "empty token",
-			token:      "",
-			wantErrMsg: "invalid JWT token",
-		},
-		{
-			name:       "malformed JWT - missing header",
-			token:      "invalid.jwt",
-			wantErrMsg: "invalid JWT token",
-		},
-		{
-			name:       "malformed JWT - invalid base64",
-			token:      "invalid.token.format@#",
-			wantErrMsg: "invalid JWT token",
-		},
-		{
-			name:       "malformed JWT - wrong separator",
-			token:      "invalid|token|format",
-			wantErrMsg: "invalid JWT token",
-		},
-		{
-			name: "JWT with invalid signature",
-			token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0." +
-				"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
-				"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature",
-			wantErrMsg: "invalid JWT token",
-		},
-		{
-			name: "expired JWT token",
-			token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0." +
-				"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0" +
-				"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxNjAwMDAwMDAwLCJpYXQiOjE1OTk5OTk5OTl9.invalid_signature",
-			wantErrMsg: "invalid JWT token",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
-
-			var capturedContext context.Context
-			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				capturedContext = r.Context()
-				w.WriteHeader(http.StatusOK)
-			})
-
-			req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-			req.Header.Set(authHeader, authHeaderPrefix+tt.token)
-			w := httptest.NewRecorder()
-
-			middleware(next).ServeHTTP(w, req)
-
-			assert.Equal(t, http.StatusOK, w.Code)
-
-			err := auth.GetAuthErrorFromCtx(capturedContext)
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), tt.wantErrMsg)
-
-			accountID := auth.GetAccountIDFromCtx(capturedContext)
-			assert.Empty(t, accountID)
-		})
-	}
-}
-
-func TestAuth0Middleware_ClaimsParsingFailure(t *testing.T) {
-	jwksServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		jwksResponse := `{
-			"keys": [{
-				"kty": "RSA",
-				"kid": "test-key-id",
-				"n": "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1` +
-			`L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-` +
-			`65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08q` +
-			`NLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awap` +
-			`JzKnqDKgw",
-				"e": "AQAB",
-				"alg": "RS256"
-			}]
-		}`
-		if _, err := w.Write([]byte(jwksResponse)); err != nil {
-			panic(fmt.Sprintf("failed to write JWKS response: %v", err))
-		}
-	}))
-	defer jwksServer.Close()
-
-	t.Run("claims type assertion failure", func(t *testing.T) {
-		middleware := auth0Middleware(jwksServer.URL[7:], "test-audience")
+		mw := pasetoMiddleware(ks)
 
 		var capturedContext context.Context
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -793,21 +536,86 @@ func TestAuth0Middleware_ClaimsParsingFailure(t *testing.T) {
 		})
 
 		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
-		req.Header.Set(authHeader, authHeaderPrefix+
-			"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0."+
-			"eyJzdWIiOiJ0ZXN0LXVzZXItMTIzIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmF1dGgwLmNvbS8iLCJhdWQiOiJ0"+
-			"ZXN0LWF1ZGllbmNlIiwiZXhwIjoxOTk5OTk5OTk5LCJpYXQiOjE2MDAwMDAwMDB9.invalid_signature")
+		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+		w := httptest.NewRecorder()
+
+		mw(next).ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		err = auth.GetAuthErrorFromCtx(capturedContext)
+		assert.NoError(t, err)
+		assert.Equal(t, "auth0|123456", auth.GetAccountIDFromCtx(capturedContext))
+	})
+
+	t.Run("invalid token adds error to context", func(t *testing.T) {
+		middleware := pasetoMiddleware(ks)
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+		req.Header.Set("Authorization", "Bearer v4.local.invalidtoken")
 		w := httptest.NewRecorder()
 
 		middleware(next).ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-
 		err := auth.GetAuthErrorFromCtx(capturedContext)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid JWT token")
+		assert.Contains(t, err.Error(), "invalid token")
+	})
 
-		accountID := auth.GetAccountIDFromCtx(capturedContext)
-		assert.Empty(t, accountID)
+	t.Run("token encrypted with different key is rejected", func(t *testing.T) {
+		otherKey := goPaseto.NewV4SymmetricKey()
+		otherEncoded := base64.StdEncoding.EncodeToString(otherKey.ExportBytes())
+		otherKS, err := localPaseto.NewKeyStore(localPaseto.KeyStoreConfig{
+			SymmetricKey: otherEncoded,
+			KeyVersion:   "other",
+		})
+		require.NoError(t, err)
+
+		pair, genErr := otherKS.GenerateTokenPair(localPaseto.TokenClaims{Subject: "auth0|evil"})
+		require.NoError(t, genErr)
+
+		middleware := pasetoMiddleware(ks)
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		err = auth.GetAuthErrorFromCtx(capturedContext)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid token")
+	})
+
+	t.Run("malformed auth header continues without error", func(t *testing.T) {
+		middleware := pasetoMiddleware(ks)
+
+		var capturedContext context.Context
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedContext = r.Context()
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
+		req.Header.Set("Authorization", "bearer some-token")
+		w := httptest.NewRecorder()
+
+		middleware(next).ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		err := auth.GetAuthErrorFromCtx(capturedContext)
+		assert.NoError(t, err)
 	})
 }

@@ -38,6 +38,10 @@ type Config struct {
 	Auth0Domain       string
 	AuthBackend       consts.AuthBackend
 
+	// PASETO
+	PASETOSymmetricKey string
+	PASETOKeyVersion   string
+
 	// Email
 	EmailProvider        consts.EmailProvider
 	MailjetAPIKey        string
@@ -124,6 +128,8 @@ func bindEnvVars() error {
 		{"email-backend", "SAVETOINK_EMAIL_BACKEND"},
 		{"http-port", "SAVETOINK_HTTP_PORT"},
 		{"logging-provider", "SAVETOINK_LOGGING_PROVIDER"},
+		{"paseto-key", "SAVETOINK_PASETO_KEY"},
+		{"paseto-key-version", "SAVETOINK_PASETO_KEY_VERSION"},
 		{"process-article-lambda", "SAVETOINK_PROCESS_ARTICLE_LAMBDA"},
 		{"sender-email", "SAVETOINK_SENDER_EMAIL"},
 		{"sends-table", "SAVETOINK_SENDS_TABLE_NAME"},
@@ -166,6 +172,8 @@ func loadConfig(mode consts.RunMode) *Config {
 		Port:                 viper.GetInt("http-port"),
 		MailjetWebhookSecret: viper.GetString("api-webhook-secret"),
 		Mode:                 mode,
+		PASETOSymmetricKey:   viper.GetString("paseto-key"),
+		PASETOKeyVersion:     viper.GetString("paseto-key-version"),
 		ProcessArticleLambda: viper.GetString("process-article-lambda"),
 		SQLitePath:           viper.GetString("sqlite-path"),
 		SenderEmail:          viper.GetString("sender-email"),
@@ -304,6 +312,12 @@ func (c *Config) validateAuthBackendConfig(missing *[]string) error {
 		}
 		if c.Auth0ClientSecret == "" {
 			*missing = append(*missing, "SAVETOINK_AUTH0_CLIENT_SECRET")
+		}
+		if c.PASETOSymmetricKey == "" {
+			*missing = append(*missing, "SAVETOINK_PASETO_KEY")
+		}
+		if c.PASETOKeyVersion == "" {
+			*missing = append(*missing, "SAVETOINK_PASETO_KEY_VERSION")
 		}
 	default:
 		return fmt.Errorf("unsupported auth backend: %s", c.AuthBackend)

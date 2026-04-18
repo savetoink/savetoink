@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
@@ -20,6 +21,7 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/internal/content"
 	"github.com/shaftoe/savetoink/backend/lib/internal/email"
+	"github.com/shaftoe/savetoink/backend/lib/internal/paseto"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/auth"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/handlers"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
@@ -42,6 +44,7 @@ const (
 	testSentryDSN            = "https://test@sentry.io/123"
 	testSentryEnvironment    = "test"
 	testDeviceEmail          = "test@kindle.com"
+	testPasetoKey            = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="
 )
 
 type mockService struct{}
@@ -186,18 +189,25 @@ func (m *mockService) GetAccountIDByDeviceEmail(_ context.Context, _ string) (st
 	return "", errors.New("not implemented in mock")
 }
 
-func newTestRouter(cfg *config.Config, client *http.Client) *chi.Mux {
+func newTestRouter(t *testing.T, cfg *config.Config, client *http.Client) *chi.Mux {
+	t.Helper()
 	r := chi.NewRouter()
 	svc := &mockService{}
+
+	var keyStore *paseto.KeyStore
+	if cfg.AuthBackend == consts.AuthBackendAuth0 {
+		keyStore = newTestPasetoKeyStore(t, cfg)
+	}
 
 	h := handlers.New(
 		cfg,
 		svc,
 		client,
 		nil,
+		keyStore,
 	)
 
-	r.Use(auth.NewAccountIDMiddleware(cfg))
+	r.Use(auth.NewAccountIDMiddleware(cfg.AuthBackend, cfg.APIKeySecret, keyStore))
 	r.Use(requestIDMiddleware)
 	r.Use(logging.Middleware)
 	r.Use(newCorsMiddleware(cfg))
@@ -237,6 +247,8 @@ func setupMinimalConfig(t *testing.T) *config.Config {
 		Auth0Audience:        "",
 		Auth0ClientID:        "",
 		Auth0ClientSecret:    "",
+		PASETOSymmetricKey:   "",
+		PASETOKeyVersion:     "",
 		MailjetAPIKey:        "",
 		MailjetAPISecret:     "",
 		MailjetWebhookSecret: "",
@@ -248,6 +260,19 @@ func cleanupLogging() {
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
+}
+
+func newTestPasetoKeyStore(t *testing.T, cfg *config.Config) *paseto.KeyStore {
+	t.Helper()
+	if cfg.PASETOSymmetricKey == "" || cfg.PASETOKeyVersion == "" {
+		return nil
+	}
+	ks, err := paseto.NewKeyStore(paseto.KeyStoreConfig{
+		SymmetricKey: cfg.PASETOSymmetricKey,
+		KeyVersion:   cfg.PASETOKeyVersion,
+	})
+	require.NoError(t, err)
+	return ks
 }
 
 func TestNewRouter(t *testing.T) {
@@ -355,7 +380,7 @@ func TestSetupRoutes_BaseRoutes(t *testing.T) {
 
 func TestSetupRoutes_ArticleRoutes(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := newTestRouter(cfg, http.DefaultClient)
+	router := newTestRouter(t, cfg, http.DefaultClient)
 
 	authHeader := "Bearer " + testAPIKeySecret
 
@@ -446,7 +471,7 @@ func TestSetupRoutes_SendArticleRoute(t *testing.T) {
 		cfg.MailjetWebhookSecret = testMailjetWebhookSecret
 		cfg.SenderEmail = testSenderEmail
 
-		router := newTestRouter(cfg, http.DefaultClient)
+		router := newTestRouter(t, cfg, http.DefaultClient)
 		authHeader := "Bearer " + testAPIKeySecret
 
 		req := httptest.NewRequestWithContext(
@@ -467,7 +492,7 @@ func TestSetupRoutes_SendArticleRoute(t *testing.T) {
 		cfg := setupMinimalConfig(t)
 		cfg.EmailProvider = ""
 
-		router := newTestRouter(cfg, http.DefaultClient)
+		router := newTestRouter(t, cfg, http.DefaultClient)
 		authHeader := "Bearer " + testAPIKeySecret
 
 		req := httptest.NewRequestWithContext(
@@ -490,7 +515,7 @@ func TestSetupRoutes_SendArticleRoute(t *testing.T) {
 
 func TestSetupRoutes_UserProfileRoutes(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := newTestRouter(cfg, http.DefaultClient)
+	router := newTestRouter(t, cfg, http.DefaultClient)
 	authHeader := "Bearer " + testAPIKeySecret
 
 	t.Run("GET /v1/user/profile requires authentication", func(t *testing.T) {
@@ -526,7 +551,7 @@ func TestSetupRoutes_UserProfileRoutes(t *testing.T) {
 
 func TestSetupRoutes_DeviceRoutes(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := newTestRouter(cfg, http.DefaultClient)
+	router := newTestRouter(t, cfg, http.DefaultClient)
 	authHeader := "Bearer " + testAPIKeySecret
 
 	t.Run("PUT /v1/devices requires authentication", func(t *testing.T) {
@@ -620,10 +645,12 @@ func TestSetupRoutes_AuthRoute(t *testing.T) {
 		cfg.AuthBackend = consts.AuthBackendAuth0
 		cfg.Auth0Domain = strings.TrimPrefix(parsedURL.Host, "https://")
 		cfg.Auth0Audience = "test-audience"
+		cfg.PASETOSymmetricKey = testPasetoKey
+		cfg.PASETOKeyVersion = "v1"
 		cfg.Auth0ClientID = "test-client-id"
 		cfg.Auth0ClientSecret = "test-client-secret"
 
-		router := newTestRouter(cfg, client)
+		router := newTestRouter(t, cfg, client)
 
 		body := strings.NewReader(
 			`{"code":"test","redirect_uri":"http://localhost"}`,
@@ -647,7 +674,7 @@ func TestSetupRoutes_AuthRoute(t *testing.T) {
 		cfg := setupMinimalConfig(t)
 		cfg.AuthBackend = consts.AuthBackendSharedAPIKey
 
-		router := newTestRouter(cfg, http.DefaultClient)
+		router := newTestRouter(t, cfg, http.DefaultClient)
 
 		body := strings.NewReader(
 			`{"code":"test","redirect_uri":"http://localhost"}`,
@@ -676,7 +703,7 @@ func TestSetupRoutes_WebhookRoute(t *testing.T) {
 		cfg.MailjetWebhookSecret = testMailjetWebhookSecret
 		cfg.SenderEmail = testSenderEmail
 
-		router := newTestRouter(cfg, http.DefaultClient)
+		router := newTestRouter(t, cfg, http.DefaultClient)
 
 		req := httptest.NewRequestWithContext(
 			context.Background(),
@@ -697,7 +724,7 @@ func TestSetupRoutes_WebhookRoute(t *testing.T) {
 		cfg := setupMinimalConfig(t)
 		cfg.EmailProvider = ""
 
-		router := newTestRouter(cfg, http.DefaultClient)
+		router := newTestRouter(t, cfg, http.DefaultClient)
 
 		req := httptest.NewRequestWithContext(
 			context.Background(),
@@ -722,7 +749,7 @@ func TestSetupLogging_LogLevel(t *testing.T) {
 		cfg.Debug = false
 		cfg.LoggingProvider = consts.LoggingBackendNone
 
-		_ = newTestRouter(cfg, http.DefaultClient)
+		_ = newTestRouter(t, cfg, http.DefaultClient)
 	})
 
 	t.Run("sets debug level when debug is true", func(t *testing.T) {
@@ -730,7 +757,7 @@ func TestSetupLogging_LogLevel(t *testing.T) {
 		cfg.Debug = true
 		cfg.LoggingProvider = consts.LoggingBackendNone
 
-		_ = newTestRouter(cfg, http.DefaultClient)
+		_ = newTestRouter(t, cfg, http.DefaultClient)
 	})
 }
 
@@ -740,7 +767,7 @@ func TestSetupLogging_WithoutSentry(t *testing.T) {
 	cfg := setupMinimalConfig(t)
 	cfg.LoggingProvider = consts.LoggingBackendNone
 
-	_ = newTestRouter(cfg, http.DefaultClient)
+	_ = newTestRouter(t, cfg, http.DefaultClient)
 }
 
 func TestSetupLogging_WithSentry(t *testing.T) {
@@ -752,7 +779,7 @@ func TestSetupLogging_WithSentry(t *testing.T) {
 	cfg.SentryEnvironment = testSentryEnvironment
 	cfg.SentrySampleRate = 1.0
 
-	_ = newTestRouter(cfg, http.DefaultClient)
+	_ = newTestRouter(t, cfg, http.DefaultClient)
 }
 
 func TestSetupLogging_WithSentryAndDebug(t *testing.T) {
@@ -765,7 +792,7 @@ func TestSetupLogging_WithSentryAndDebug(t *testing.T) {
 	cfg.SentryEnvironment = testSentryEnvironment
 	cfg.SentrySampleRate = 1.0
 
-	_ = newTestRouter(cfg, http.DefaultClient)
+	_ = newTestRouter(t, cfg, http.DefaultClient)
 }
 
 func TestSetupLogging_SentryInitializationError(t *testing.T) {
@@ -777,12 +804,12 @@ func TestSetupLogging_SentryInitializationError(t *testing.T) {
 	cfg.SentryEnvironment = "test"
 	cfg.SentrySampleRate = 1.0
 
-	_ = newTestRouter(cfg, http.DefaultClient)
+	_ = newTestRouter(t, cfg, http.DefaultClient)
 }
 
 func TestIntegration_HealthEndpointAccessible(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := newTestRouter(cfg, http.DefaultClient)
+	router := newTestRouter(t, cfg, http.DefaultClient)
 
 	req := httptest.NewRequestWithContext(
 		context.Background(),
@@ -804,7 +831,7 @@ func TestIntegration_HealthEndpointAccessible(t *testing.T) {
 
 func TestIntegration_AuthenticatedRouteRequiresAuth(t *testing.T) {
 	cfg := setupMinimalConfig(t)
-	router := newTestRouter(cfg, http.DefaultClient)
+	router := newTestRouter(t, cfg, http.DefaultClient)
 
 	t.Run("articles endpoint without auth returns 401", func(t *testing.T) {
 		req := httptest.NewRequestWithContext(
@@ -864,9 +891,9 @@ func TestNewRouter_AuthTokenRoute(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken: "test-access-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			AccessToken:     "test-access-token",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
 		})
 	}))
 	defer server.Close()
@@ -878,12 +905,14 @@ func TestNewRouter_AuthTokenRoute(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		APIKeySecret:      "test-key",
-		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
-		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
-		Auth0Audience:     "test-audience",
+		APIKeySecret:       "test-key",
+		AuthBackend:        consts.AuthBackendAuth0,
+		Auth0Domain:        strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0ClientID:      "test-client-id",
+		Auth0ClientSecret:  "test-client-secret",
+		Auth0Audience:      "test-audience",
+		PASETOSymmetricKey: testPasetoKey,
+		PASETOKeyVersion:   "v1",
 	}
 	r := newRouterWithClient(cfg, client)
 
@@ -908,9 +937,9 @@ func TestAuthTokenRoute_Registered(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken: "test-access-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			AccessToken:     "test-access-token",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
 		})
 	}))
 	defer server.Close()
@@ -922,12 +951,14 @@ func TestAuthTokenRoute_Registered(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		APIKeySecret:      "test-key",
-		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, "https://"),
-		Auth0ClientID:     "test-client-id",
-		Auth0ClientSecret: "test-client-secret",
-		Auth0Audience:     "test-audience",
+		APIKeySecret:       "test-key",
+		AuthBackend:        consts.AuthBackendAuth0,
+		Auth0Domain:        strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0ClientID:      "test-client-id",
+		Auth0ClientSecret:  "test-client-secret",
+		Auth0Audience:      "test-audience",
+		PASETOSymmetricKey: testPasetoKey,
+		PASETOKeyVersion:   "v1",
 	}
 	r := newRouterWithClient(cfg, client)
 
@@ -945,4 +976,83 @@ func TestAuthTokenRoute_Registered(t *testing.T) {
 	if w.Code == http.StatusNotFound {
 		t.Errorf("route should be registered when AuthBackend is Auth0, got status %d", w.Code)
 	}
+}
+
+func TestIntegration_PasetoRoundTrip(t *testing.T) {
+	testAccessTokenPayload := `{"sub":"auth0|roundtrip"}`                             //nolint:gosec // test fixture
+	testIDTokenPayload := `{"email":"roundtrip@example.com","sub":"auth0|roundtrip"}` //nolint:gosec // test fixture
+
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
+			AccessToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
+			IDToken:         "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
+			TokenType:       "Bearer",
+			AccessExpiresIn: 3600,
+		})
+	}))
+	defer server.Close()
+
+	parsedURL, _ := url.Parse(server.URL)
+	client := server.Client()
+	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	cfg := &config.Config{
+		APIKeySecret:       "test-key",
+		AuthBackend:        consts.AuthBackendAuth0,
+		Auth0Domain:        strings.TrimPrefix(parsedURL.Host, "https://"),
+		Auth0ClientID:      "test-client-id",
+		Auth0ClientSecret:  "test-client-secret",
+		Auth0Audience:      "test-audience",
+		PASETOSymmetricKey: testPasetoKey,
+		PASETOKeyVersion:   "v1",
+	}
+	r := newTestRouter(t, cfg, client)
+
+	// Step 1: Exchange auth code → get PASETO tokens
+	body := types.AuthTokenExchangeRequest{
+		Code:        "test-code",
+		RedirectURI: "http://localhost/callback",
+	}
+	bodyBytes, _ := json.Marshal(body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var tokenResp types.AuthTokenExchangeResponse
+	err := json.NewDecoder(w.Body).Decode(&tokenResp)
+	require.NoError(t, err)
+
+	// Verify response contains PASETO tokens (v4.local prefix)
+	assert.True(t, strings.HasPrefix(tokenResp.AccessToken, "v4.local."),
+		"access_token should be a PASETO v4.local token, got: %s", tokenResp.AccessToken[:20])
+	assert.True(t, strings.HasPrefix(tokenResp.RefreshToken, "v4.local."),
+		"refresh_token should be a PASETO v4.local token, got: %s", tokenResp.RefreshToken[:20])
+	assert.Equal(t, "Bearer", tokenResp.TokenType)
+	assert.Equal(t, int(consts.DefaultAccessTTL.Seconds()), tokenResp.AccessExpiresIn)
+	assert.Equal(t, int(consts.DefaultRefreshTTL.Seconds()), tokenResp.RefreshExpiresIn)
+	assert.Equal(t, "roundtrip@example.com", tokenResp.Email)
+
+	// Step 2: Use PASETO access token to authenticate a protected route
+	authReq := httptest.NewRequestWithContext(
+		context.Background(),
+		"GET",
+		"/v1/user/profile",
+		http.NoBody,
+	)
+	authReq.Header.Set("Authorization", "Bearer "+tokenResp.AccessToken)
+	authW := httptest.NewRecorder()
+
+	r.ServeHTTP(authW, authReq)
+
+	// Should not be 401 — PASETO token should be valid
+	assert.NotEqual(t, http.StatusUnauthorized, authW.Code,
+		"authenticated request with PASETO token should not be rejected")
 }

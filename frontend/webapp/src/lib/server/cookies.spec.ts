@@ -90,13 +90,91 @@ describe('cookies', () => {
 		});
 	});
 
-	describe('deleteJwtCookie', () => {
-		it('should delete cookie', async () => {
-			const { deleteAuthCookie: deleteJwtCookie } = await import('./cookies');
+	describe('clearAuthCookies', () => {
+		it('should delete auth, refresh, and user cookies', async () => {
+			const { clearAuthCookies } = await import('./cookies');
 
-			deleteJwtCookie(mockCookies);
+			clearAuthCookies(mockCookies);
 
 			expect(mockDelete).toHaveBeenCalledWith('auth', { path: '/', secure: false });
+			expect(mockDelete).toHaveBeenCalledWith('refresh', { path: '/', secure: false });
+			expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/', secure: false });
+		});
+	});
+
+	describe('setRefreshCookie', () => {
+		it('should set cookie with provided maxAge', async () => {
+			const { setRefreshCookie } = await import('./cookies');
+			const testToken = 'test-refresh-token';
+			const maxAge = 60 * 60 * 24 * 30;
+
+			setRefreshCookie(mockCookies, testToken, maxAge);
+
+			expect(mockSet).toHaveBeenCalledWith('refresh', testToken, {
+				path: '/',
+				httpOnly: true,
+				secure: false,
+				sameSite: 'lax',
+				maxAge
+			});
+		});
+	});
+
+	describe('setTokenCookies', () => {
+		it('should set auth and refresh cookies from token response', async () => {
+			const { setTokenCookies } = await import('./cookies');
+
+			setTokenCookies(mockCookies, {
+				access_token: 'test-access',
+				access_expires_in: 10,
+				refresh_token: 'test-refresh',
+				refresh_expires_in: 2592000
+			});
+
+			expect(mockSet).toHaveBeenCalledWith('auth', 'test-access', {
+				path: '/',
+				httpOnly: true,
+				secure: false,
+				sameSite: 'lax',
+				maxAge: 10
+			});
+			expect(mockSet).toHaveBeenCalledWith('refresh', 'test-refresh', {
+				path: '/',
+				httpOnly: true,
+				secure: false,
+				sameSite: 'lax',
+				maxAge: 2592000
+			});
+		});
+
+		it('should skip refresh cookie when refresh_token is missing', async () => {
+			const { setTokenCookies } = await import('./cookies');
+
+			setTokenCookies(mockCookies, {
+				access_token: 'test-access',
+				access_expires_in: 10
+			});
+
+			expect(mockSet).toHaveBeenCalledTimes(1);
+			expect(mockSet).toHaveBeenCalledWith('auth', 'test-access', expect.any(Object));
+		});
+
+		it('should use default maxAge when refresh_expires_in is not provided', async () => {
+			const { setTokenCookies } = await import('./cookies');
+
+			setTokenCookies(mockCookies, {
+				access_token: 'test-access',
+				access_expires_in: 10,
+				refresh_token: 'test-refresh'
+			});
+
+			expect(mockSet).toHaveBeenCalledWith('refresh', 'test-refresh', {
+				path: '/',
+				httpOnly: true,
+				secure: false,
+				sameSite: 'lax',
+				maxAge: 60 * 60 * 24 * 30
+			});
 		});
 	});
 
@@ -165,16 +243,6 @@ describe('cookies', () => {
 			const decoded = await getUserCookie(mockCookies);
 
 			expect(decoded).toBeUndefined();
-		});
-	});
-
-	describe('deleteUserCookie', () => {
-		it('should delete user cookie', async () => {
-			const { deleteUserCookie } = await import('./cookies');
-
-			await deleteUserCookie(mockCookies);
-
-			expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/', secure: false });
 		});
 	});
 

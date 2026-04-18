@@ -342,7 +342,7 @@ func TestHandleCreateArticle_Success(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
 	body := types.ArticleRequest{URL: "https://example.com/article"}
 	bodyBytes, _ := json.Marshal(body)
@@ -390,7 +390,7 @@ func TestHandleCreateArticle_SendOnComplete(t *testing.T) {
 		EmailProvider: consts.EmailBackendMailjet,
 		AuthBackend:   consts.AuthBackendAuth0,
 	}
-	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
 	body := types.ArticleRequest{URL: "https://example.com/article", SendOnComplete: true}
 	bodyBytes, _ := json.Marshal(body)
@@ -422,7 +422,7 @@ func TestHandleCreateArticle_MissingURL(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
 	body := types.ArticleRequest{}
 	bodyBytes, _ := json.Marshal(body)
@@ -448,7 +448,7 @@ func TestHandleCreateArticle_InvalidURL(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
 	body := types.ArticleRequest{URL: "not-a-valid-url"}
 	bodyBytes, _ := json.Marshal(body)
@@ -512,7 +512,7 @@ func TestHandleCreateArticle_ServiceError(t *testing.T) {
 			mockProc := &mockProcessor{}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+			h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
 			body := types.ArticleRequest{URL: "https://example.com/article"}
 			bodyBytes, _ := json.Marshal(body)
@@ -542,7 +542,7 @@ func TestHandleCreateArticle_DBError(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
 	body := types.ArticleRequest{URL: "https://example.com/article"}
 	bodyBytes, _ := json.Marshal(body)
@@ -580,7 +580,7 @@ func TestHandleGetArticles_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -623,7 +623,7 @@ func TestHandleGetArticles_WithFavoriteFilter(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -657,7 +657,7 @@ func TestHandleGetArticles_InvalidPage(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -691,7 +691,7 @@ func TestHandleGetArticles_PageSizeCapped(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -736,7 +736,7 @@ func TestHandleGetArticles_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(), "GET", "/v1/articles", nil)
 			w := httptest.NewRecorder()
@@ -792,7 +792,7 @@ func TestHandleGetArticles_InvalidTag(t *testing.T) {
 				},
 			}
 
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"GET",
@@ -891,7 +891,7 @@ func TestHandleGetArticles_PaginationEdgeCases(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"GET",
@@ -951,7 +951,7 @@ func TestHandleGetArticles_EmptyResults(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"GET",
@@ -985,7 +985,7 @@ func TestHandleGetArticle_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -1015,7 +1015,7 @@ func TestHandleGetArticle_NotFound(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -1039,7 +1039,7 @@ func TestHandleDeleteArticle_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"DELETE",
@@ -1087,7 +1087,7 @@ func TestHandleDeleteArticle_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"DELETE",
@@ -1113,7 +1113,7 @@ func TestHandleToggleFavorite_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"PUT",
@@ -1161,7 +1161,7 @@ func TestHandleToggleFavorite_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"PUT",
@@ -1199,7 +1199,7 @@ func TestHandleSendArticle_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1246,7 +1246,7 @@ func TestHandleSendArticle_WithSendsCount(t *testing.T) {
 		AuthBackend:   consts.AuthBackendAuth0,
 		EmailProvider: consts.EmailBackendMailjet,
 	}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	ctx := newArticleTestContextWithAccount()
 	req := httptest.NewRequestWithContext(ctx, "POST", "/v1/articles/article-123/send", nil)
@@ -1279,7 +1279,7 @@ func TestHandleCreateArticle_SendOnCompleteWithoutEmailBackend(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: ""}
-	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
 	body := types.ArticleRequest{URL: "https://example.com/article", SendOnComplete: true}
 	bodyBytes, _ := json.Marshal(body)
@@ -1308,7 +1308,7 @@ func TestHandleSendArticle_ArticleNotFound(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1332,7 +1332,7 @@ func TestHandleSendArticle_GenerateEPUBError(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1356,7 +1356,7 @@ func TestHandleSendArticle_GetDeviceEmailError(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1380,7 +1380,7 @@ func TestHandleSendArticle_NoDeviceEmail(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1409,7 +1409,7 @@ func TestHandleSendArticle_SendArticleError(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1446,7 +1446,7 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"POST",
@@ -1476,7 +1476,7 @@ func TestHandleAddTags_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	body := types.TagsRequest{Tags: []string{"tech", "programming"}}
 	bodyBytes, _ := json.Marshal(body)
@@ -1512,7 +1512,7 @@ func TestHandleAddTags_InvalidTags(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	body := types.TagsRequest{Tags: []string{"tag with special characters!@#"}}
 	bodyBytes, _ := json.Marshal(body)
@@ -1546,7 +1546,7 @@ func TestHandleAddTags_TooManyTags(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	// Create 11 tags (max is 10)
 	tags := make([]string, 11)
@@ -1586,7 +1586,7 @@ func TestHandleSetTags_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	body := types.TagsRequest{Tags: []string{"new-tag-1", "new-tag-2"}}
 	bodyBytes, _ := json.Marshal(body)
@@ -1620,7 +1620,7 @@ func TestHandleSetTags_EmptyTags(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	body := types.TagsRequest{Tags: []string{}}
 	bodyBytes, _ := json.Marshal(body)
@@ -1650,7 +1650,7 @@ func TestHandleGetTags_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -1681,7 +1681,7 @@ func TestHandleGetTags_Empty(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -1729,7 +1729,7 @@ func TestHandleGetTags_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"GET", "/v1/articles/article-123/tags", nil)
@@ -1757,7 +1757,7 @@ func TestHandleRemoveTags_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	body := types.TagsRequest{Tags: []string{"old-tag"}}
 	bodyBytes, _ := json.Marshal(body)
@@ -1787,7 +1787,7 @@ func TestHandleGetAllTags_Success(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -1816,7 +1816,7 @@ func TestHandleGetAllTags_Empty(t *testing.T) {
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, nil)
+	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 	req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 		"GET",
@@ -1856,7 +1856,7 @@ func TestHandleGetAllTags_ServiceError(t *testing.T) {
 			}
 
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-			h := New(cfg, mockSvc, http.DefaultClient, nil)
+			h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(), "GET", "/v1/tags", nil)
 			w := httptest.NewRecorder()
@@ -1885,7 +1885,7 @@ func TestHandleCreateArticle_WithTags(t *testing.T) {
 	mockProc := &mockProcessor{}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
-	h := New(cfg, mockSvc, http.DefaultClient, mockProc)
+	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
 	body := types.ArticleRequest{
 		URL:  "https://example.com/article",

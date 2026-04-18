@@ -39,6 +39,8 @@ func TestMain(m *testing.M) {
 	_ = os.Unsetenv("SAVETOINK_PROCESS_ARTICLE_LAMBDA")
 	_ = os.Unsetenv("SAVETOINK_TASKS")
 	_ = os.Unsetenv("SAVETOINK_HTTP_PORT")
+	_ = os.Unsetenv("SAVETOINK_PASETO_KEY")
+	_ = os.Unsetenv("SAVETOINK_PASETO_KEY_VERSION")
 	os.Exit(m.Run())
 }
 
@@ -156,6 +158,8 @@ func TestLoad_Auth0_Backend_Success(t *testing.T) {
 		"SAVETOINK_AUTH0_AUDIENCE":          "auth0-audience",
 		"SAVETOINK_AUTH0_CLIENT_ID":         "auth0-client-id",
 		"SAVETOINK_AUTH0_CLIENT_SECRET":     "auth0-client-secret",
+		"SAVETOINK_PASETO_KEY":              "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=",
+		"SAVETOINK_PASETO_KEY_VERSION":      "v1",
 		"SAVETOINK_STORAGE_BACKEND":         "dynamodb",
 		"SAVETOINK_ARTICLE_TABLE_NAME":      "articles-table",
 		"SAVETOINK_USER_PROFILE_TABLE_NAME": "profiles-table",
@@ -171,6 +175,8 @@ func TestLoad_Auth0_Backend_Success(t *testing.T) {
 	assert.Equal(t, "auth0-audience", cfg.Auth0Audience)
 	assert.Equal(t, "auth0-client-id", cfg.Auth0ClientID)
 	assert.Equal(t, "auth0-client-secret", cfg.Auth0ClientSecret)
+	assert.Equal(t, "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=", cfg.PASETOSymmetricKey)
+	assert.Equal(t, "v1", cfg.PASETOKeyVersion)
 }
 
 func TestLoad_Invalid_Auth_Backend(t *testing.T) {
@@ -226,6 +232,8 @@ func TestLoad_Missing_Multiple_Auth0_Env(t *testing.T) {
 	assert.Contains(t, errMsg, "SAVETOINK_AUTH0_AUDIENCE")
 	assert.Contains(t, errMsg, "SAVETOINK_AUTH0_CLIENT_ID")
 	assert.Contains(t, errMsg, "SAVETOINK_AUTH0_CLIENT_SECRET")
+	assert.Contains(t, errMsg, "SAVETOINK_PASETO_KEY")
+	assert.Contains(t, errMsg, "SAVETOINK_PASETO_KEY_VERSION")
 }
 
 func TestLoad_Missing_ArticlesTable(t *testing.T) {
@@ -470,6 +478,8 @@ func TestLoad_Multiple_Validation_Errors(t *testing.T) {
 	assert.Contains(t, errMsg, "SAVETOINK_AUTH0_AUDIENCE")
 	assert.Contains(t, errMsg, "SAVETOINK_AUTH0_CLIENT_ID")
 	assert.Contains(t, errMsg, "SAVETOINK_AUTH0_CLIENT_SECRET")
+	assert.Contains(t, errMsg, "SAVETOINK_PASETO_KEY")
+	assert.Contains(t, errMsg, "SAVETOINK_PASETO_KEY_VERSION")
 	assert.Contains(t, errMsg, "SAVETOINK_ARTICLE_TABLE_NAME")
 	assert.Contains(t, errMsg, "SAVETOINK_USER_PROFILE_TABLE_NAME")
 	assert.Contains(t, errMsg, "SAVETOINK_SENDS_TABLE_NAME")
@@ -1104,4 +1114,42 @@ func TestLoad_Tasks_Config_WithRestore(t *testing.T) {
 	assert.Equal(t, "restore", cfg.Tasks[0].Task)
 	assert.Equal(t, "backup-123", cfg.Tasks[0].BackupName)
 	assert.True(t, cfg.Tasks[0].Overwrite)
+}
+
+func TestLoad_Auth0_MissingPASETOKey(t *testing.T) {
+	setupEnvVars(t, map[string]string{ //nolint:gosec // Test values, not real credentials
+		"SAVETOINK_AUTH_BACKEND":        "auth0",
+		"SAVETOINK_AUTH0_DOMAIN":        "auth0-domain",
+		"SAVETOINK_AUTH0_AUDIENCE":      "auth0-audience",
+		"SAVETOINK_AUTH0_CLIENT_ID":     "auth0-client-id",
+		"SAVETOINK_AUTH0_CLIENT_SECRET": "auth0-client-secret",
+		"SAVETOINK_PASETO_KEY_VERSION":  "v1",
+		"SAVETOINK_STORAGE_BACKEND":     "sqlite",
+		"SAVETOINK_SQLITE_PATH":         "/path/to/database.db",
+	})
+
+	awsLoader := mockAWSLoader()
+
+	_, err := Load(consts.ModeServer, awsLoader)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "SAVETOINK_PASETO_KEY")
+}
+
+func TestLoad_Auth0_MissingPASETOKeyVersion(t *testing.T) {
+	setupEnvVars(t, map[string]string{ //nolint:gosec // Test values, not real credentials
+		"SAVETOINK_AUTH_BACKEND":        "auth0",
+		"SAVETOINK_AUTH0_DOMAIN":        "auth0-domain",
+		"SAVETOINK_AUTH0_AUDIENCE":      "auth0-audience",
+		"SAVETOINK_AUTH0_CLIENT_ID":     "auth0-client-id",
+		"SAVETOINK_AUTH0_CLIENT_SECRET": "auth0-client-secret",
+		"SAVETOINK_PASETO_KEY":          "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=",
+		"SAVETOINK_STORAGE_BACKEND":     "sqlite",
+		"SAVETOINK_SQLITE_PATH":         "/path/to/database.db",
+	})
+
+	awsLoader := mockAWSLoader()
+
+	_, err := Load(consts.ModeServer, awsLoader)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "SAVETOINK_PASETO_KEY_VERSION")
 }

@@ -396,24 +396,26 @@ func TestAuthTokenExchangeResponse_JSONSerialization(t *testing.T) {
 		{
 			name: "full response",
 			resp: AuthTokenExchangeResponse{
-				AccessToken:  "access-token",
-				RefreshToken: "refresh-token",
-				IDToken:      "id-token",
-				Email:        "user@example.com",
-				TokenType:    "Bearer",
-				ExpiresIn:    3600,
+				AccessToken:      "access-token",
+				RefreshToken:     "refresh-token",
+				IDToken:          "id-token",
+				Email:            "user@example.com",
+				TokenType:        "Bearer",
+				AccessExpiresIn:  3600,
+				RefreshExpiresIn: 2592000,
 			},
 			wantJSON: `{"access_token":"access-token","refresh_token":"refresh-token",` +
-				`"id_token":"id-token","email":"user@example.com","token_type":"Bearer","expires_in":3600}`,
+				`"id_token":"id-token","email":"user@example.com",` +
+				`"token_type":"Bearer","access_expires_in":3600,"refresh_expires_in":2592000}`,
 		},
 		{
 			name: "minimal response",
 			resp: AuthTokenExchangeResponse{
-				AccessToken: "access-token",
-				TokenType:   "Bearer",
-				ExpiresIn:   3600,
+				AccessToken:     "access-token",
+				TokenType:       "Bearer",
+				AccessExpiresIn: 3600,
 			},
-			wantJSON: `{"access_token":"access-token","token_type":"Bearer","expires_in":3600}`,
+			wantJSON: `{"access_token":"access-token","token_type":"Bearer","access_expires_in":3600}`,
 		},
 	}
 
@@ -432,7 +434,7 @@ func TestAuthTokenExchangeResponse_JSONSerialization(t *testing.T) {
 			assert.Equal(t, tt.resp.IDToken, unmarshaled.IDToken)
 			assert.Equal(t, tt.resp.Email, unmarshaled.Email)
 			assert.Equal(t, tt.resp.TokenType, unmarshaled.TokenType)
-			assert.Equal(t, tt.resp.ExpiresIn, unmarshaled.ExpiresIn)
+			assert.Equal(t, tt.resp.AccessExpiresIn, unmarshaled.AccessExpiresIn)
 		})
 	}
 }

@@ -13,7 +13,7 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
+      bearerFormat: PASETO
 
   schemas:
     Article:
@@ -330,26 +330,38 @@ components:
       required:
         - access_token
         - token_type
-        - expires_in
+        - access_expires_in
       properties:
         access_token:
           type: string
-          description: OAuth access token
+          description: PASETO v4.local access token
         refresh_token:
           type: string
-          description: OAuth refresh token
+          description: PASETO v4.local refresh token
         id_token:
           type: string
-          description: JWT ID token
+          description: JWT ID token (not returned to frontend)
         email:
           type: string
           description: User email extracted from ID token
         token_type:
           type: string
           description: Token type (typically "Bearer")
-        expires_in:
+        access_expires_in:
           type: integer
-          description: Token expiration time in seconds
+          description: Access token expiration time in seconds
+        refresh_expires_in:
+          type: integer
+          description: Refresh token expiration time in seconds
+
+    AuthTokenRefreshRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          description: PASETO v4.local refresh token
 
     ErrorResponse:
       type: object
@@ -1046,7 +1058,7 @@ paths:
   /auth/token:
     post:
       summary: Exchange auth code
-      description: Exchange an OAuth authorization code for access tokens (Auth0 only)
+      description: Exchange an OAuth authorization code for PASETO tokens (Auth0 only)
       operationId: authTokenExchange
       tags:
         - Auth
@@ -1071,6 +1083,45 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: Token exchange failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/refresh:
+    post:
+      summary: Refresh tokens
+      description: Exchange a PASETO refresh token for a new token pair (Auth0 only)
+      operationId: authTokenRefresh
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthTokenRefreshRequest"
+      responses:
+        "200":
+          description: Token refresh successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenExchangeResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid or expired refresh token
           content:
             application/json:
               schema:

@@ -3,6 +3,7 @@ import type { Cookies } from '@sveltejs/kit';
 import type { UserProfile } from '@savetoink/shared';
 
 const AUTH_KEY = 'auth';
+const REFRESH_KEY = 'refresh';
 const USER_COOKIE_KEY = 'profile';
 const REDIRECT_TO_KEY = 'redirect_to';
 
@@ -58,7 +59,7 @@ export function setAuthCookie(cookies: Cookies, token: string, options?: SetAuth
 	});
 }
 
-export function deleteAuthCookie(cookies: Cookies) {
+function deleteAuthCookie(cookies: Cookies) {
 	cookies.delete(AUTH_KEY, { path: '/', secure: getSecure() });
 }
 
@@ -67,6 +68,55 @@ export function getAuthCookie(cookies: Cookies) {
 }
 
 export { AUTH_KEY };
+
+export function setRefreshCookie(cookies: Cookies, token: string, maxAge: number) {
+	cookies.set(REFRESH_KEY, token, {
+		path: '/',
+		httpOnly: true,
+		secure: getSecure(),
+		sameSite: 'lax',
+		maxAge
+	});
+}
+
+function deleteRefreshCookie(cookies: Cookies) {
+	cookies.delete(REFRESH_KEY, { path: '/', secure: getSecure() });
+}
+
+export function getRefreshCookie(cookies: Cookies) {
+	return cookies.get(REFRESH_KEY);
+}
+
+export { REFRESH_KEY };
+
+/** Default refresh cookie maxAge used when the backend doesn't provide refresh_expires_in. */
+const defaultRefreshMaxAge = 60 * 60 * 24 * 30; // 30 days
+
+/** Shape of a token exchange / refresh response. */
+interface TokenResponse {
+	access_token: string;
+	access_expires_in: number;
+	refresh_token?: string;
+	refresh_expires_in?: number;
+}
+
+/**
+ * Sets auth and refresh cookies from a token response.
+ * Handles optional refresh token and falls back to a default maxAge when
+ * refresh_expires_in is not provided by the backend.
+ */
+export function setTokenCookies(cookies: Cookies, response: TokenResponse) {
+	setAuthCookie(cookies, response.access_token, {
+		maxAge: response.access_expires_in
+	});
+	if (response.refresh_token) {
+		setRefreshCookie(
+			cookies,
+			response.refresh_token,
+			response.refresh_expires_in ?? defaultRefreshMaxAge
+		);
+	}
+}
 
 async function sign(data: string): Promise<string> {
 	const key = await getCryptoKey();
@@ -131,8 +181,14 @@ export async function setUserCookie(cookies: Cookies, userData: UserProfile) {
 	});
 }
 
-export function deleteUserCookie(cookies: Cookies) {
+function deleteUserCookie(cookies: Cookies) {
 	cookies.delete(USER_COOKIE_KEY, { path: '/', secure: getSecure() });
+}
+
+export function clearAuthCookies(cookies: Cookies) {
+	deleteAuthCookie(cookies);
+	deleteRefreshCookie(cookies);
+	deleteUserCookie(cookies);
 }
 
 export function setRedirectToCookie(cookies: Cookies, url: string) {
