@@ -156,6 +156,12 @@ export function deleteUserCookie(cookies: Cookies) {
 	cookies.delete(USER_COOKIE_KEY, { path: '/', secure: getSecure() });
 }
 
+export function clearAuthCookies(cookies: Cookies) {
+	deleteAuthCookie(cookies);
+	deleteRefreshCookie(cookies);
+	deleteUserCookie(cookies);
+}
+
 export function setRedirectToCookie(cookies: Cookies, url: string) {
 	cookies.set(REDIRECT_TO_KEY, url, {
 		path: '/',
