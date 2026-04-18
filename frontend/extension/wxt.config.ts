@@ -16,7 +16,7 @@ export default defineConfig({
 				data_collection_permissions: {
 					required: ['none']
 				}
-			}
+			} as Record<string, unknown>
 		}
 	},
 	vite() {
