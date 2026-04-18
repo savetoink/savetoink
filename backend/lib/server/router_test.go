@@ -1037,6 +1037,7 @@ func TestIntegration_PasetoRoundTrip(t *testing.T) {
 		"refresh_token should be a PASETO v4.local token, got: %s", tokenResp.RefreshToken[:20])
 	assert.Equal(t, "Bearer", tokenResp.TokenType)
 	assert.Equal(t, int(consts.DefaultAccessTTL.Seconds()), tokenResp.ExpiresIn)
+	assert.Equal(t, int(consts.DefaultRefreshTTL.Seconds()), tokenResp.RefreshExpiresIn)
 	assert.Equal(t, "roundtrip@example.com", tokenResp.Email)
 
 	// Step 2: Use PASETO access token to authenticate a protected route

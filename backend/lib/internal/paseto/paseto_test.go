@@ -105,6 +105,7 @@ func TestGenerateTokenPair(t *testing.T) {
 		assert.NotEmpty(t, pair.AccessToken)
 		assert.NotEmpty(t, pair.RefreshToken)
 		assert.Equal(t, int64(consts.DefaultAccessTTL.Seconds()), pair.ExpiresIn)
+		assert.Equal(t, int64(consts.DefaultRefreshTTL.Seconds()), pair.RefreshExpiresIn)
 
 		assert.True(t, IsPASETOToken(pair.AccessToken))
 		assert.True(t, IsPASETOToken(pair.RefreshToken))

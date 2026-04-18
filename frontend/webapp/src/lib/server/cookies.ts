@@ -69,13 +69,13 @@ export function getAuthCookie(cookies: Cookies) {
 
 export { AUTH_KEY };
 
-export function setRefreshCookie(cookies: Cookies, token: string) {
+export function setRefreshCookie(cookies: Cookies, token: string, maxAge: number) {
 	cookies.set(REFRESH_KEY, token, {
 		path: '/',
 		httpOnly: true,
 		secure: getSecure(),
 		sameSite: 'lax',
-		maxAge: 60 * 60 * 24 * 7 // 7 days (matches PASETO refresh TTL)
+		maxAge
 	});
 }
 
@@ -88,6 +88,35 @@ export function getRefreshCookie(cookies: Cookies) {
 }
 
 export { REFRESH_KEY };
+
+/** Default refresh cookie maxAge used when the backend doesn't provide refresh_expires_in. */
+const defaultRefreshMaxAge = 60 * 60 * 24 * 30; // 30 days
+
+/** Shape of a token exchange / refresh response. */
+interface TokenResponse {
+	access_token: string;
+	expires_in: number;
+	refresh_token?: string;
+	refresh_expires_in?: number;
+}
+
+/**
+ * Sets auth and refresh cookies from a token response.
+ * Handles optional refresh token and falls back to a default maxAge when
+ * refresh_expires_in is not provided by the backend.
+ */
+export function setTokenCookies(cookies: Cookies, response: TokenResponse) {
+	setAuthCookie(cookies, response.access_token, {
+		maxAge: response.expires_in
+	});
+	if (response.refresh_token) {
+		setRefreshCookie(
+			cookies,
+			response.refresh_token,
+			response.refresh_expires_in ?? defaultRefreshMaxAge
+		);
+	}
+}
 
 async function sign(data: string): Promise<string> {
 	const key = await getCryptoKey();

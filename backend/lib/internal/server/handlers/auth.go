@@ -99,11 +99,12 @@ func (h *Handlers) exchangeAndGenerateTokens(
 	}
 
 	return &types.AuthTokenExchangeResponse{
-		AccessToken:  pasetoPair.AccessToken,
-		RefreshToken: pasetoPair.RefreshToken,
-		TokenType:    "Bearer",
-		ExpiresIn:    int(pasetoPair.ExpiresIn),
-		Email:        email,
+		AccessToken:      pasetoPair.AccessToken,
+		RefreshToken:     pasetoPair.RefreshToken,
+		TokenType:        "Bearer",
+		ExpiresIn:        int(pasetoPair.ExpiresIn),
+		RefreshExpiresIn: int(pasetoPair.RefreshExpiresIn),
+		Email:            email,
 	}, nil
 }
 
@@ -172,10 +173,11 @@ func (h *Handlers) HandleAuthRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := &types.AuthTokenExchangeResponse{
-		AccessToken:  pair.AccessToken,
-		RefreshToken: pair.RefreshToken,
-		TokenType:    "Bearer",
-		ExpiresIn:    int(pair.ExpiresIn),
+		AccessToken:      pair.AccessToken,
+		RefreshToken:     pair.RefreshToken,
+		TokenType:        "Bearer",
+		ExpiresIn:        int(pair.ExpiresIn),
+		RefreshExpiresIn: int(pair.RefreshExpiresIn),
 	}
 
 	w.WriteHeader(http.StatusOK)

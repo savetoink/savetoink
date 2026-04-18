@@ -396,15 +396,17 @@ func TestAuthTokenExchangeResponse_JSONSerialization(t *testing.T) {
 		{
 			name: "full response",
 			resp: AuthTokenExchangeResponse{
-				AccessToken:  "access-token",
-				RefreshToken: "refresh-token",
-				IDToken:      "id-token",
-				Email:        "user@example.com",
-				TokenType:    "Bearer",
-				ExpiresIn:    3600,
+				AccessToken:      "access-token",
+				RefreshToken:     "refresh-token",
+				IDToken:          "id-token",
+				Email:            "user@example.com",
+				TokenType:        "Bearer",
+				ExpiresIn:        3600,
+				RefreshExpiresIn: 2592000,
 			},
 			wantJSON: `{"access_token":"access-token","refresh_token":"refresh-token",` +
-				`"id_token":"id-token","email":"user@example.com","token_type":"Bearer","expires_in":3600}`,
+				`"id_token":"id-token","email":"user@example.com",` +
+				`"token_type":"Bearer","expires_in":3600,"refresh_expires_in":2592000}`,
 		},
 		{
 			name: "minimal response",

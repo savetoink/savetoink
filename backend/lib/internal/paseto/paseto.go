@@ -29,9 +29,10 @@ type TokenClaims struct {
 
 // TokenPair holds an access and refresh token pair.
 type TokenPair struct {
-	AccessToken  string
-	RefreshToken string
-	ExpiresIn    int64
+	AccessToken      string
+	RefreshToken     string
+	ExpiresIn        int64
+	RefreshExpiresIn int64
 }
 
 // KeyStore manages PASETO symmetric keys with support for multiple versions.
@@ -109,9 +110,10 @@ func (ks *KeyStore) GenerateTokenPair(claims TokenClaims) (*TokenPair, error) {
 	refreshToken := ks.generateToken(claims, "refresh", now, ks.refreshTTL)
 
 	return &TokenPair{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    int64(ks.accessTTL.Seconds()),
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		ExpiresIn:        int64(ks.accessTTL.Seconds()),
+		RefreshExpiresIn: int64(ks.refreshTTL.Seconds()),
 	}, nil
 }
 

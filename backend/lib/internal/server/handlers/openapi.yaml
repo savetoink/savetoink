@@ -350,6 +350,9 @@ components:
         expires_in:
           type: integer
           description: Token expiration time in seconds
+        refresh_expires_in:
+          type: integer
+          description: Refresh token expiration time in seconds
 
     AuthTokenRefreshRequest:
       type: object

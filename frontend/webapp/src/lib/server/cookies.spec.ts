@@ -100,6 +100,92 @@ describe('cookies', () => {
 		});
 	});
 
+	describe('setRefreshCookie', () => {
+		it('should set cookie with provided maxAge', async () => {
+			const { setRefreshCookie } = await import('./cookies');
+			const testToken = 'test-refresh-token';
+			const maxAge = 60 * 60 * 24 * 30;
+
+			setRefreshCookie(mockCookies, testToken, maxAge);
+
+			expect(mockSet).toHaveBeenCalledWith('refresh', testToken, {
+				path: '/',
+				httpOnly: true,
+				secure: false,
+				sameSite: 'lax',
+				maxAge
+			});
+		});
+	});
+
+	describe('deleteRefreshCookie', () => {
+		it('should delete refresh cookie', async () => {
+			const { deleteRefreshCookie } = await import('./cookies');
+
+			deleteRefreshCookie(mockCookies);
+
+			expect(mockDelete).toHaveBeenCalledWith('refresh', { path: '/', secure: false });
+		});
+	});
+
+	describe('setTokenCookies', () => {
+		it('should set auth and refresh cookies from token response', async () => {
+			const { setTokenCookies } = await import('./cookies');
+
+			setTokenCookies(mockCookies, {
+				access_token: 'test-access',
+				expires_in: 10,
+				refresh_token: 'test-refresh',
+				refresh_expires_in: 2592000
+			});
+
+			expect(mockSet).toHaveBeenCalledWith('auth', 'test-access', {
+				path: '/',
+				httpOnly: true,
+				secure: false,
+				sameSite: 'lax',
+				maxAge: 10
+			});
+			expect(mockSet).toHaveBeenCalledWith('refresh', 'test-refresh', {
+				path: '/',
+				httpOnly: true,
+				secure: false,
+				sameSite: 'lax',
+				maxAge: 2592000
+			});
+		});
+
+		it('should skip refresh cookie when refresh_token is missing', async () => {
+			const { setTokenCookies } = await import('./cookies');
+
+			setTokenCookies(mockCookies, {
+				access_token: 'test-access',
+				expires_in: 10
+			});
+
+			expect(mockSet).toHaveBeenCalledTimes(1);
+			expect(mockSet).toHaveBeenCalledWith('auth', 'test-access', expect.any(Object));
+		});
+
+		it('should use default maxAge when refresh_expires_in is not provided', async () => {
+			const { setTokenCookies } = await import('./cookies');
+
+			setTokenCookies(mockCookies, {
+				access_token: 'test-access',
+				expires_in: 10,
+				refresh_token: 'test-refresh'
+			});
+
+			expect(mockSet).toHaveBeenCalledWith('refresh', 'test-refresh', {
+				path: '/',
+				httpOnly: true,
+				secure: false,
+				sameSite: 'lax',
+				maxAge: 60 * 60 * 24 * 30
+			});
+		});
+	});
+
 	describe('AUTH_KEY', () => {
 		it('should export AUTH_KEY constant', async () => {
 			const { AUTH_KEY } = await import('./cookies');

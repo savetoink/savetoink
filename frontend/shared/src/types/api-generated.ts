@@ -490,6 +490,8 @@ export interface components {
             token_type: string;
             /** @description Token expiration time in seconds */
             expires_in: number;
+            /** @description Refresh token expiration time in seconds */
+            refresh_expires_in?: number;
         };
         AuthTokenRefreshRequest: {
             /** @description PASETO v4.local refresh token */

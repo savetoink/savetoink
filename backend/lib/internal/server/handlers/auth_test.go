@@ -1019,6 +1019,7 @@ func TestHandleAuthRefresh(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "Bearer", resp.TokenType)
 		assert.Equal(t, int(consts.DefaultAccessTTL.Seconds()), resp.ExpiresIn)
+		assert.Equal(t, int(consts.DefaultRefreshTTL.Seconds()), resp.RefreshExpiresIn)
 		assert.True(t, strings.HasPrefix(resp.AccessToken, "v4.local."))
 		assert.True(t, strings.HasPrefix(resp.RefreshToken, "v4.local."))
 		assert.NotEqual(t, pair.AccessToken, resp.AccessToken)

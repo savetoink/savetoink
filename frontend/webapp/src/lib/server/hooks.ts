@@ -4,8 +4,7 @@ import { validateEnv } from '$lib/server/validateEnv';
 import {
 	getAuthCookie,
 	getRefreshCookie,
-	setAuthCookie,
-	setRefreshCookie,
+	setTokenCookies,
 	getUserCookie,
 	setUserCookie,
 	clearAuthCookies,
@@ -59,12 +58,7 @@ async function attemptTokenRefresh(
 
 	try {
 		const refreshed = await refreshToken(event, refresh);
-		setAuthCookie(event.cookies, refreshed.access_token, {
-			maxAge: refreshed.expires_in
-		});
-		if (refreshed.refresh_token) {
-			setRefreshCookie(event.cookies, refreshed.refresh_token);
-		}
+		setTokenCookies(event.cookies, refreshed);
 		return refreshed.access_token;
 	} catch {
 		return undefined;
