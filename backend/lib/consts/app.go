@@ -27,8 +27,6 @@ const (
 	// AuthBackendSharedAPIKey indicates shared API key authentication.
 	AuthBackendSharedAPIKey AuthBackend = "shared_api_key"
 	// AuthBackendAuth0 indicates Auth0 JWT/PASETO authentication.
-	// When PASETO config is provided, the Auth0 backend issues PASETO tokens
-	// instead of passing Auth0 JWTs through to the frontend.
 	AuthBackendAuth0 AuthBackend = "auth0"
 )
 
