@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"aidanwoods.dev/go-paseto"
+	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/shaftoe/savetoink/backend/lib/consts"
 )
 
 func testKeyStore(t *testing.T) *KeyStore {

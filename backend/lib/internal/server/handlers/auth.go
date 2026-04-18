@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"strings"
 
+	apperrors "github.com/shaftoe/savetoink/backend/lib/internal/apperrors"
 	"github.com/shaftoe/savetoink/backend/lib/internal/paseto"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/utils"
@@ -54,8 +55,7 @@ func (h *Handlers) HandleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 
 	response, err := h.exchangeAndGenerateTokens(r, req)
 	if err != nil {
-		logging.AddRequestError(r.Context(), err)
-		utils.WriteJSONError(w, httpStatusForError(err), err)
+		utils.HandleServiceError(w, r, err, "exchange auth tokens")
 		return
 	}
 
@@ -65,15 +65,6 @@ func (h *Handlers) HandleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(response) //nolint:gosec // returning PASETO access token, not a secret
 }
-
-func httpStatusForError(err error) int {
-	if errors.Is(err, errAuth0Rejected) {
-		return http.StatusUnauthorized
-	}
-	return http.StatusInternalServerError
-}
-
-var errAuth0Rejected = errors.New("auth0 rejected the token exchange")
 
 func (h *Handlers) exchangeAndGenerateTokens(
 	r *http.Request, req types.AuthTokenExchangeRequest,
@@ -200,9 +191,9 @@ func (h *Handlers) auth0Error(ctx context.Context, body []byte) error {
 	logging.AddLogAttr(ctx, slog.String("auth0_error", errResp.Error))
 
 	if errResp.ErrorDescription != "" {
-		return fmt.Errorf("%w: %s", errAuth0Rejected, errResp.ErrorDescription)
+		return fmt.Errorf("%s: %w", errResp.ErrorDescription, apperrors.ErrUnauthorized)
 	}
-	return fmt.Errorf("%w: %s", errAuth0Rejected, errResp.Error)
+	return fmt.Errorf("%s: %w", errResp.Error, apperrors.ErrUnauthorized)
 }
 
 func (h *Handlers) buildTokenRequest(req types.AuthTokenExchangeRequest) *http.Request {

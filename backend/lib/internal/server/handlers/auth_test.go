@@ -626,7 +626,7 @@ func TestAuthTokenExchange_Auth0Error(t *testing.T) {
 		t.Errorf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.Error != "auth0 rejected the token exchange: Invalid authorization code" {
+	if resp.Error != "Invalid authorization code: unauthorized" {
 		t.Errorf("expected wrapped error, got '%s'", resp.Error)
 	}
 }
