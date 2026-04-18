@@ -42,6 +42,8 @@ deploy-api: lint-cfn
             MailjetAPIKey="$SAVETOINK_MAILJET_API_KEY" \
             MailjetAPISecret="$SAVETOINK_MAILJET_API_SECRET" \
             MailjetWebhookSecret=${SAVETOINK_MAILJET_WEBHOOK_SECRET} \
+            PasetoKey=${SAVETOINK_PASETO_KEY} \
+            PasetoKeyVersion=${SAVETOINK_PASETO_KEY_VERSION} \
             ProcessorSourceBucketKey={{ lambda_processor_archive }} \
             ProjectName={{ project_name }} \
             SchedulerSourceBucketKey={{ lambda_scheduler_archive }} \

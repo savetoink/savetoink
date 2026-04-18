@@ -131,6 +131,17 @@ Parameters:
     Description: Browserless API key for fallback content fetching
     Default: ""
 
+  PasetoKey:
+    Type: String
+    NoEcho: true
+    Description: Base64-encoded 32-byte PASETO v4 symmetric key
+    Default: ""
+
+  PasetoKeyVersion:
+    Type: String
+    Description: PASETO key version identifier (e.g. v1)
+    Default: ""
+
   DomainName:
     Type: String
     Description: Custom domain name for the API (e.g. api.saveto.ink)
@@ -310,6 +321,8 @@ Resources:
           SAVETOINK_PROCESS_ARTICLE_LAMBDA: !Sub "${ProjectName}-processor"
           SAVETOINK_SENDER_EMAIL: !Ref SenderEmail
           SAVETOINK_SENDS_TABLE_NAME: !Ref SendsTable
+          SAVETOINK_PASETO_KEY: !Ref PasetoKey
+          SAVETOINK_PASETO_KEY_VERSION: !Ref PasetoKeyVersion
           SAVETOINK_SENTRY_DSN: !Ref SentryDSN
           SAVETOINK_SENTRY_ENVIRONMENT: !Ref SentryEnvironment
           SAVETOINK_SENTRY_SAMPLE_RATE: !Ref SentrySampleRate
