@@ -59,7 +59,7 @@ export function setAuthCookie(cookies: Cookies, token: string, options?: SetAuth
 	});
 }
 
-export function deleteAuthCookie(cookies: Cookies) {
+function deleteAuthCookie(cookies: Cookies) {
 	cookies.delete(AUTH_KEY, { path: '/', secure: getSecure() });
 }
 
@@ -79,7 +79,7 @@ export function setRefreshCookie(cookies: Cookies, token: string, maxAge: number
 	});
 }
 
-export function deleteRefreshCookie(cookies: Cookies) {
+function deleteRefreshCookie(cookies: Cookies) {
 	cookies.delete(REFRESH_KEY, { path: '/', secure: getSecure() });
 }
 
@@ -181,7 +181,7 @@ export async function setUserCookie(cookies: Cookies, userData: UserProfile) {
 	});
 }
 
-export function deleteUserCookie(cookies: Cookies) {
+function deleteUserCookie(cookies: Cookies) {
 	cookies.delete(USER_COOKIE_KEY, { path: '/', secure: getSecure() });
 }
 

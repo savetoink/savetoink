@@ -90,13 +90,15 @@ describe('cookies', () => {
 		});
 	});
 
-	describe('deleteJwtCookie', () => {
-		it('should delete cookie', async () => {
-			const { deleteAuthCookie: deleteJwtCookie } = await import('./cookies');
+	describe('clearAuthCookies', () => {
+		it('should delete auth, refresh, and user cookies', async () => {
+			const { clearAuthCookies } = await import('./cookies');
 
-			deleteJwtCookie(mockCookies);
+			clearAuthCookies(mockCookies);
 
 			expect(mockDelete).toHaveBeenCalledWith('auth', { path: '/', secure: false });
+			expect(mockDelete).toHaveBeenCalledWith('refresh', { path: '/', secure: false });
+			expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/', secure: false });
 		});
 	});
 
@@ -115,16 +117,6 @@ describe('cookies', () => {
 				sameSite: 'lax',
 				maxAge
 			});
-		});
-	});
-
-	describe('deleteRefreshCookie', () => {
-		it('should delete refresh cookie', async () => {
-			const { deleteRefreshCookie } = await import('./cookies');
-
-			deleteRefreshCookie(mockCookies);
-
-			expect(mockDelete).toHaveBeenCalledWith('refresh', { path: '/', secure: false });
 		});
 	});
 
@@ -251,16 +243,6 @@ describe('cookies', () => {
 			const decoded = await getUserCookie(mockCookies);
 
 			expect(decoded).toBeUndefined();
-		});
-	});
-
-	describe('deleteUserCookie', () => {
-		it('should delete user cookie', async () => {
-			const { deleteUserCookie } = await import('./cookies');
-
-			await deleteUserCookie(mockCookies);
-
-			expect(mockDelete).toHaveBeenCalledWith('profile', { path: '/', secure: false });
 		});
 	});
 

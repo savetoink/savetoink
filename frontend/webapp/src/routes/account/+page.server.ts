@@ -4,10 +4,8 @@ import { env as publicEnv } from '$env/dynamic/public';
 import {
 	AUTH_KEY,
 	setAuthCookie,
-	deleteAuthCookie,
-	deleteRefreshCookie,
+	clearAuthCookies,
 	setUserCookie,
-	deleteUserCookie,
 	getValidRedirectUrl
 } from '$lib/server/cookies';
 import { getProfile, updateDevice, deleteDevice, getSends } from '$lib/server/apiClient';
@@ -29,9 +27,7 @@ export const load: PageServerLoad = async ({ locals, fetch, request, getClientAd
 
 export const actions: Actions = {
 	clean: async ({ cookies }) => {
-		deleteAuthCookie(cookies);
-		deleteRefreshCookie(cookies);
-		deleteUserCookie(cookies);
+		clearAuthCookies(cookies);
 
 		if (PUBLIC_AUTH_BACKEND === Auth0) {
 			const auth0LogoutUrl = new URL(`https://${publicEnv.PUBLIC_AUTH0_DOMAIN}/logout`);
