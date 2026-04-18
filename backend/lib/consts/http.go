@@ -41,7 +41,7 @@ const (
 	KeySize = 32
 
 	// DefaultAccessTTL is the default time-to-live for access tokens.
-	DefaultAccessTTL = 1 * time.Hour
+	DefaultAccessTTL = 10 * time.Second
 
 	// DefaultRefreshTTL is the default time-to-live for refresh tokens.
 	DefaultRefreshTTL = 30 * 24 * time.Hour
