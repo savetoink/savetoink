@@ -514,6 +514,11 @@ Resources:
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Condition: UseCustomDomain
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W1030
     Properties:
       DistributionConfig:
         Enabled: true

@@ -34,6 +34,10 @@ jobs:
           PUBLIC_SENTRY_DSN: ${{ vars.PUBLIC_SENTRY_DSN }}
           PUBLIC_SENTRY_ENVIRONMENT: ${{ vars.PUBLIC_SENTRY_ENVIRONMENT }}
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
       - name: Upload secrets
         working-directory: frontend/webapp
         run: |
