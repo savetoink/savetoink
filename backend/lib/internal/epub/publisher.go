@@ -12,11 +12,42 @@ import (
 	"github.com/go-shiori/go-epub"
 	"github.com/shaftoe/savetoink/backend/lib/consts"
 	"github.com/shaftoe/savetoink/backend/lib/model"
+	"github.com/vincent-petithory/dataurl"
 )
 
 const (
 	emptyDiv = "<div style=\"font-size: 0.85em; color: #666; margin-bottom: 2em; " +
 		"padding: 1em; border-left: 3px solid #ccc; background-color: #f9f9f9;\">\n</div>\n"
+
+	defaultCSSFilename = "content.css"
+
+	defaultCSSContent = `pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 1em 0;
+  padding: 0.75em;
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 0.9em;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+
+code {
+  font-family: monospace;
+  font-size: 0.9em;
+  background-color: #f4f4f4;
+  padding: 0.15em 0.3em;
+  border-radius: 3px;
+}
+
+pre code {
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+}
+`
 )
 
 // PublisherOption configures a Publisher.
@@ -77,6 +108,17 @@ func buildMetadataHeader(article *model.Article) string {
 	return result
 }
 
+// addContentCSS adds the default content stylesheet to the EPUB and returns
+// the internal path to the CSS file.
+func (p *Publisher) addContentCSS(e *epub.Epub) (string, error) {
+	cssDataURL := dataurl.EncodeBytes([]byte(defaultCSSContent))
+	cssPath, err := e.AddCSS(cssDataURL, defaultCSSFilename)
+	if err != nil {
+		return "", fmt.Errorf("failed to add content css: %w", err)
+	}
+	return cssPath, nil
+}
+
 // GenerateEPUB creates an EPUB file from the given article and returns a ReadCloser.
 func (p *Publisher) GenerateEPUB(article *model.Article) (io.ReadCloser, error) {
 	if p.useMemoryStorage {
@@ -109,7 +151,12 @@ func (p *Publisher) GenerateEPUB(article *model.Article) (io.ReadCloser, error) 
 
 	articleContent := buildMetadataHeader(article) + article.Content
 
-	_, err = e.AddSection(articleContent, consts.DefaultChapterTitle, consts.DefaultChapterFilename, "")
+	cssPath, err := p.addContentCSS(e)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = e.AddSection(articleContent, consts.DefaultChapterTitle, consts.DefaultChapterFilename, cssPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add chapter: %w", err)
 	}

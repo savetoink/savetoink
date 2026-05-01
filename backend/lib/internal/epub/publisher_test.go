@@ -1,6 +1,8 @@
 package epub
 
 import (
+	"archive/zip"
+	"bytes"
 	"io"
 	"strings"
 	"testing"
@@ -8,6 +10,35 @@ import (
 
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
+
+// extractFileFromEPUB is a test helper that extracts a file from an EPUB zip archive.
+func extractFileFromEPUB(t *testing.T, epubData []byte, path string) string {
+	t.Helper()
+
+	zipReader, err := zip.NewReader(bytes.NewReader(epubData), int64(len(epubData)))
+	if err != nil {
+		t.Fatalf("failed to open epub as zip: %v", err)
+	}
+
+	for _, f := range zipReader.File {
+		if f.Name == path {
+			rc, err := f.Open()
+			if err != nil {
+				t.Fatalf("failed to open %s: %v", path, err)
+			}
+			defer func() { _ = rc.Close() }()
+
+			content, err := io.ReadAll(rc)
+			if err != nil {
+				t.Fatalf("failed to read %s: %v", path, err)
+			}
+			return string(content)
+		}
+	}
+
+	t.Fatalf("file %q not found in epub archive", path)
+	return ""
+}
 
 func TestNewPublisher(t *testing.T) {
 	pub := NewPublisher()
@@ -600,5 +631,121 @@ func TestBuildMetadataHeader_HtmlStructure(t *testing.T) {
 		if !strings.Contains(result, tag) {
 			t.Errorf("buildMetadataHeader() expected %q in HTML structure, got %q", tag, result)
 		}
+	}
+}
+
+func TestDefaultCSSContent_ContainsCodeStyling(t *testing.T) {
+	requiredRules := []string{
+		"white-space: pre-wrap",
+		"word-wrap: break-word",
+		"font-family: monospace",
+		"pre code",
+		"pre {",
+		"code {",
+	}
+
+	for _, rule := range requiredRules {
+		if !strings.Contains(defaultCSSContent, rule) {
+			t.Errorf("defaultCSSContent missing required CSS rule: %q", rule)
+		}
+	}
+}
+
+func TestAddContentCSS(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	article := &model.Article{
+		Title:   "CSS Test",
+		Content: "<p>test</p>",
+	}
+
+	epubReader, err := pub.GenerateEPUB(article)
+	if err != nil {
+		t.Fatalf("GenerateEPUB() unexpected error = %v", err)
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
+	}
+
+	css := extractFileFromEPUB(t, data, "EPUB/css/content.css")
+
+	if !strings.Contains(css, "white-space: pre-wrap") {
+		t.Error("content.css should contain white-space: pre-wrap rule")
+	}
+
+	if !strings.Contains(css, "font-family: monospace") {
+		t.Error("content.css should contain font-family: monospace rule")
+	}
+
+	chapter := extractFileFromEPUB(t, data, "EPUB/xhtml/chapter1.xhtml")
+	if !strings.Contains(chapter, "content.css") {
+		t.Error("chapter xhtml should reference content.css stylesheet")
+	}
+}
+
+func TestGenerate_WithCodeSnippet(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	codeContent := `<pre><code>func main() {
+    fmt.Println("hello")
+    if true {
+        fmt.Println("indented")
+    }
+}</code></pre>`
+
+	article := &model.Article{
+		Title:   "Code Article",
+		Content: codeContent,
+	}
+
+	epubReader, err := pub.GenerateEPUB(article)
+	if err != nil {
+		t.Fatalf("GenerateEPUB() unexpected error = %v", err)
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
+	}
+
+	chapter := extractFileFromEPUB(t, data, "EPUB/xhtml/chapter1.xhtml")
+	if !strings.Contains(chapter, "func main()") {
+		t.Error("EPUB chapter should contain code content")
+	}
+
+	css := extractFileFromEPUB(t, data, "EPUB/css/content.css")
+	if !strings.Contains(css, "pre-wrap") {
+		t.Error("EPUB CSS should contain pre-wrap rule for code formatting")
+	}
+}
+
+func TestGenerate_WithInlineCode(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	article := &model.Article{
+		Title:   "Inline Code Article",
+		Content: "<p>Use the <code>fmt.Println</code> function to print.</p>",
+	}
+
+	epubReader, err := pub.GenerateEPUB(article)
+	if err != nil {
+		t.Fatalf("GenerateEPUB() unexpected error = %v", err)
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data = %v", err)
+	}
+
+	css := extractFileFromEPUB(t, data, "EPUB/css/content.css")
+	if !strings.Contains(css, "font-family: monospace") {
+		t.Error("EPUB CSS should contain monospace font-family for inline code")
+	}
+
+	chapter := extractFileFromEPUB(t, data, "EPUB/xhtml/chapter1.xhtml")
+	if !strings.Contains(chapter, "<code>fmt.Println</code>") {
+		t.Error("EPUB chapter should preserve inline code element")
 	}
 }
