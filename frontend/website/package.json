@@ -14,7 +14,7 @@
 	"dependencies": {
 		"@astrojs/sitemap": "3.7.2",
 		"@savetoink/shared": "workspace:*",
-		"@scalar/astro": "^0.2.13",
+		"@scalar/astro": "^0.2.14",
 		"astro": "^6.2.1"
 	},
 	"devDependencies": {
