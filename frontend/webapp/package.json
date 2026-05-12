@@ -42,7 +42,7 @@
 		"svelte-adapter-bun": "^1.0.1",
 		"svelte-check": "^4.4.8",
 		"typescript": "^6.0.3",
-		"typescript-eslint": "^8.59.2",
+		"typescript-eslint": "^8.59.3",
 		"vite": "^8.0.12",
 		"vitest": "^4.1.6",
 		"vitest-browser-svelte": "^2.1.1"
