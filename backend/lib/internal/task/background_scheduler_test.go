@@ -11,8 +11,12 @@ import (
 )
 
 const (
-	scheduleHourly   = "0 0 * * * *"
-	scheduleEveryMin = "*/1 * * * * *"
+	scheduleHourly     = "0 0 * * * *"
+	scheduleEveryMin   = "*/1 * * * * *"
+	testTask1          = "task1"
+	testTask2          = "task2"
+	testTask1Completed = "task1 completed"
+	testBackupName     = "test-backup"
 )
 
 func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
@@ -22,15 +26,15 @@ func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 
 	task1Count := 0
 	runner.Register(Task{
-		Name: "task1",
+		Name: testTask1,
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			task1Count++
-			return &RunResult{Results: []string{"task1 completed"}}
+			return &RunResult{Results: []string{testTask1Completed}}
 		},
 	})
 
 	runner.Register(Task{
-		Name: "task2",
+		Name: testTask2,
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			return &RunResult{Results: []string{"task2 completed"}}
 		},
@@ -38,15 +42,15 @@ func TestBackgroundScheduler_Start_DuplicateTasks_Ignored(t *testing.T) {
 
 	configs := []consts.TaskConfig{
 		{
-			Task:     "task1",
+			Task:     testTask1,
 			Schedule: scheduleHourly,
 		},
 		{
-			Task:     "task1",
-			Schedule: "0 */5 * * * *",
+			Task:     testTask1,
+			Schedule: testSchedule5min,
 		},
 		{
-			Task:     "task2",
+			Task:     testTask2,
 			Schedule: scheduleHourly,
 		},
 	}
@@ -67,20 +71,20 @@ func TestBackgroundScheduler_Start_ScheduledTasks(t *testing.T) {
 
 	taskExecuted := false
 	runner.Register(Task{
-		Name: "task1",
+		Name: testTask1,
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			taskExecuted = true
-			return &RunResult{Results: []string{"task1 completed"}}
+			return &RunResult{Results: []string{testTask1Completed}}
 		},
 	})
 
 	configs := []consts.TaskConfig{
 		{
-			Task:     "task1",
+			Task:     testTask1,
 			Schedule: scheduleEveryMin,
 		},
 		{
-			Task:     "task2",
+			Task:     testTask2,
 			Schedule: scheduleEveryMin,
 		},
 	}
@@ -100,15 +104,15 @@ func TestBackgroundScheduler_Start_InvalidSchedule(t *testing.T) {
 	runner := NewTaskRunner(getTestConfig(t))
 
 	runner.Register(Task{
-		Name: "task1",
+		Name: testTask1,
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
-			return &RunResult{Results: []string{"task1 completed"}}
+			return &RunResult{Results: []string{testTask1Completed}}
 		},
 	})
 
 	configs := []consts.TaskConfig{
 		{
-			Task:     "task1",
+			Task:     testTask1,
 			Schedule: "invalid schedule",
 		},
 	}
@@ -126,9 +130,9 @@ func TestBackgroundScheduler_Start_WithParams(t *testing.T) {
 
 	paramsExecuted := false
 	runner.Register(Task{
-		Name: "task1",
+		Name: testTask1,
 		Run: func(_ context.Context, cfg consts.TaskConfig) *RunResult {
-			if cfg.BackupName == "test-backup" {
+			if cfg.BackupName == testBackupName {
 				paramsExecuted = true
 			}
 			return &RunResult{Results: []string{"processed: " + cfg.BackupName}}
@@ -137,9 +141,9 @@ func TestBackgroundScheduler_Start_WithParams(t *testing.T) {
 
 	configs := []consts.TaskConfig{
 		{
-			Task:       "task1",
+			Task:       testTask1,
 			Schedule:   scheduleEveryMin,
-			BackupName: "test-backup",
+			BackupName: testBackupName,
 		},
 	}
 
@@ -158,15 +162,15 @@ func TestBackgroundScheduler_Stop(t *testing.T) {
 	runner := NewTaskRunner(getTestConfig(t))
 
 	runner.Register(Task{
-		Name: "task1",
+		Name: testTask1,
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
-			return &RunResult{Results: []string{"task1 completed"}}
+			return &RunResult{Results: []string{testTask1Completed}}
 		},
 	})
 
 	configs := []consts.TaskConfig{
 		{
-			Task:     "task1",
+			Task:     testTask1,
 			Schedule: scheduleHourly,
 		},
 	}

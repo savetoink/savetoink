@@ -10,6 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testSendTitle     = "Test Article"
+	testSendSender    = "sender@example.com"
+	testSendMsgID     = "msg-123"
+	testSendProvider  = "mailjet"
+	testSendBounced   = "email bounced: 550 5.7.1"
+	testArticleID     = "test-article-id"
+	testUserEmail     = "user@example.com"
+	testNameSuccSend  = "successful send"
+	testStatusSuccess = "success"
+	testStatusFailed  = "failed"
+)
+
 func TestSend_JSONSerialization(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -17,17 +30,17 @@ func TestSend_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "successful send",
+			name: testNameSuccSend,
 			send: Send{
-				Account:       "test-account",
-				ArticleID:     "test-article-id",
+				Account:       testAccount,
+				ArticleID:     testArticleID,
 				SentAt:        time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-				Title:         "Test Article",
-				DestEmail:     "user@example.com",
-				Status:        "success",
-				SenderEmail:   "sender@example.com",
-				MessageID:     "msg-123",
-				Provider:      "mailjet",
+				Title:         testSendTitle,
+				DestEmail:     testUserEmail,
+				Status:        testStatusSuccess,
+				SenderEmail:   testSendSender,
+				MessageID:     testSendMsgID,
+				Provider:      testSendProvider,
 				ErrorResponse: "",
 			},
 			wantJSON: `{"Account":"test-account","ArticleID":"test-article-id",` +
@@ -38,15 +51,15 @@ func TestSend_JSONSerialization(t *testing.T) {
 		{
 			name: "failed send",
 			send: Send{
-				Account:       "test-account",
-				ArticleID:     "test-article-id",
+				Account:       testAccount,
+				ArticleID:     testArticleID,
 				SentAt:        time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-				Title:         "Test Article",
-				DestEmail:     "user@example.com",
-				Status:        "failed",
-				SenderEmail:   "sender@example.com",
+				Title:         testSendTitle,
+				DestEmail:     testUserEmail,
+				Status:        testStatusFailed,
+				SenderEmail:   testSendSender,
 				MessageID:     "",
-				Provider:      "mailjet",
+				Provider:      testSendProvider,
 				ErrorResponse: "email bounced",
 			},
 			wantJSON: `{"Account":"test-account","ArticleID":"test-article-id",` +
@@ -57,8 +70,8 @@ func TestSend_JSONSerialization(t *testing.T) {
 		{
 			name: "minimal send",
 			send: Send{
-				Account:   "test-account",
-				ArticleID: "test-article-id",
+				Account:   testAccount,
+				ArticleID: testArticleID,
 				SentAt:    time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 			},
 			wantJSON: `{"Account":"test-account","ArticleID":"test-article-id",` +
@@ -89,33 +102,33 @@ func TestSend_DynamoDBAttributeMapping(t *testing.T) {
 		send Send
 	}{
 		{
-			name: "successful send",
+			name: testNameSuccSend,
 			send: Send{
-				Account:       "test-account",
-				ArticleID:     "test-article-id",
+				Account:       testAccount,
+				ArticleID:     testArticleID,
 				SentAt:        time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-				Title:         "Test Article",
-				DestEmail:     "user@example.com",
-				Status:        "success",
-				SenderEmail:   "sender@example.com",
-				MessageID:     "msg-123",
-				Provider:      "mailjet",
+				Title:         testSendTitle,
+				DestEmail:     testUserEmail,
+				Status:        testStatusSuccess,
+				SenderEmail:   testSendSender,
+				MessageID:     testSendMsgID,
+				Provider:      testSendProvider,
 				ErrorResponse: "",
 			},
 		},
 		{
 			name: "failed send with error",
 			send: Send{
-				Account:       "test-account",
-				ArticleID:     "test-article-id",
+				Account:       testAccount,
+				ArticleID:     testArticleID,
 				SentAt:        time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-				Title:         "Test Article",
-				DestEmail:     "user@example.com",
-				Status:        "failed",
-				SenderEmail:   "sender@example.com",
+				Title:         testSendTitle,
+				DestEmail:     testUserEmail,
+				Status:        testStatusFailed,
+				SenderEmail:   testSendSender,
 				MessageID:     "",
-				Provider:      "mailjet",
-				ErrorResponse: "email bounced: 550 5.7.1",
+				Provider:      testSendProvider,
+				ErrorResponse: testSendBounced,
 			},
 		},
 	}
@@ -145,8 +158,8 @@ func TestSend_DynamoDBAttributeMapping(t *testing.T) {
 
 func TestSend_EmptyFields(t *testing.T) {
 	send := Send{
-		Account:   "test-account",
-		ArticleID: "test-article-id",
+		Account:   testAccount,
+		ArticleID: testArticleID,
 		SentAt:    time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 	}
 

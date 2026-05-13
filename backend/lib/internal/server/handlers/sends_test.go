@@ -26,6 +26,10 @@ import (
 	"golang.org/x/net/html"
 )
 
+const (
+	sendsTestErrNotFound = "ErrNotFound"
+)
+
 type sendsMockService struct {
 	countSendsFunc func(ctx context.Context, accountID string, startDate, endDate time.Time) (int, error)
 }
@@ -145,7 +149,7 @@ func (m *sendsMockService) DeleteUserDeviceEmail(_ context.Context, _ string) er
 
 func (m *sendsMockService) GetUserProfile(_ context.Context, _ string) (*model.UserProfile, error) {
 	return &model.UserProfile{
-		Email: "user@example.com",
+		Email: testUserEmail,
 	}, nil
 }
 
@@ -273,12 +277,12 @@ func TestHandleGetSends_ServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           sendsTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "generic error",
+			name:           genericErrorMessage,
 			serviceErr:     errors.New("some error"),
 			expectedStatus: http.StatusInternalServerError,
 		},

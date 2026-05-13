@@ -18,6 +18,19 @@ import (
 	"golang.org/x/net/html"
 )
 
+const (
+	testHandlerLambdaRequestID = "lambda-req-123"
+	testHandlerRequestID       = "req-123"
+	testHandlerArticleID       = "article-123"
+	testHandlerAccountID       = "account-456"
+	testHandlerURL             = "https://example.com/article"
+	testHandlerTestArticle     = "Test Article"
+	testHandlerSourceAPI       = "api"
+	testHandlerSourceKey       = "source"
+	testHandlerUserID          = "user-123"
+	testUserIDKey              = "user_id"
+)
+
 type mockService struct {
 	mock.Mock
 }
@@ -89,7 +102,7 @@ func (m *mockService) GenerateEPUB(article *model.Article) (io.ReadCloser, error
 func TestHandleEvent_NilEvent(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 
 	err := handleEvent(ctx, nil, mockSvc)
@@ -101,12 +114,12 @@ func TestHandleEvent_NilEvent(t *testing.T) {
 func TestHandleEvent_MissingRequestID(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		URL:       testHandlerURL,
+		ArticleID: testHandlerArticleID,
+		AccountID: testHandlerAccountID,
 	}
 
 	err := handleEvent(ctx, event, mockSvc)
@@ -118,12 +131,12 @@ func TestHandleEvent_MissingRequestID(t *testing.T) {
 func TestHandleEvent_MissingURL(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		RequestID: testHandlerRequestID,
+		ArticleID: testHandlerArticleID,
+		AccountID: testHandlerAccountID,
 	}
 
 	err := handleEvent(ctx, event, mockSvc)
@@ -135,12 +148,12 @@ func TestHandleEvent_MissingURL(t *testing.T) {
 func TestHandleEvent_MissingArticleID(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		AccountID: "account-456",
+		RequestID: testHandlerRequestID,
+		URL:       testHandlerURL,
+		AccountID: testHandlerAccountID,
 	}
 
 	err := handleEvent(ctx, event, mockSvc)
@@ -152,12 +165,12 @@ func TestHandleEvent_MissingArticleID(t *testing.T) {
 func TestHandleEvent_MissingAccountID(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
+		RequestID: testHandlerRequestID,
+		URL:       testHandlerURL,
+		ArticleID: testHandlerArticleID,
 	}
 
 	err := handleEvent(ctx, event, mockSvc)
@@ -169,13 +182,13 @@ func TestHandleEvent_MissingAccountID(t *testing.T) {
 func TestHandleEvent_FetchError(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		RequestID: testHandlerRequestID,
+		URL:       testHandlerURL,
+		ArticleID: testHandlerArticleID,
+		AccountID: testHandlerAccountID,
 	}
 
 	eventURL, _ := url.Parse(event.URL)
@@ -194,13 +207,13 @@ func TestHandleEvent_FetchError(t *testing.T) {
 func TestHandleEvent_ParseHTMLError(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		RequestID: testHandlerRequestID,
+		URL:       testHandlerURL,
+		ArticleID: testHandlerArticleID,
+		AccountID: testHandlerAccountID,
 	}
 
 	eventURL, _ := url.Parse(event.URL)
@@ -228,18 +241,18 @@ func TestHandleEvent_ParseHTMLError(t *testing.T) {
 func TestHandleEvent_UpdateError(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		RequestID: testHandlerRequestID,
+		URL:       testHandlerURL,
+		ArticleID: testHandlerArticleID,
+		AccountID: testHandlerAccountID,
 	}
 
 	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
-	article := &model.Article{Title: "Test Article"}
+	article := &model.Article{Title: testHandlerTestArticle}
 	doc, _ := html.Parse(bytes.NewReader(htmlBytes))
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
 		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
@@ -264,18 +277,18 @@ func TestHandleEvent_UpdateError(t *testing.T) {
 func TestHandleEvent_Success(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		RequestID: testHandlerRequestID,
+		URL:       testHandlerURL,
+		ArticleID: testHandlerArticleID,
+		AccountID: testHandlerAccountID,
 	}
 
 	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
-	article := &model.Article{Title: "Test Article"}
+	article := &model.Article{Title: testHandlerTestArticle}
 	doc, _ := html.Parse(bytes.NewReader(htmlBytes))
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
 		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
@@ -298,19 +311,19 @@ func TestHandleEvent_Success(t *testing.T) {
 func TestHandleEvent_SendOnComplete_Success(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID:      "req-123",
-		URL:            "https://example.com/article",
-		ArticleID:      "article-123",
-		AccountID:      "account-456",
+		RequestID:      testHandlerRequestID,
+		URL:            testHandlerURL,
+		ArticleID:      testHandlerArticleID,
+		AccountID:      testHandlerAccountID,
 		SendOnComplete: true,
 	}
 
 	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
-	article := &model.Article{Title: "Test Article"}
+	article := &model.Article{Title: testHandlerTestArticle}
 	doc, _ := html.Parse(bytes.NewReader(htmlBytes))
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
 		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
@@ -325,7 +338,7 @@ func TestHandleEvent_SendOnComplete_Success(t *testing.T) {
 	mockSvc.On("GenerateEPUB", mock.AnythingOfType("*model.Article")).Return(
 		io.NopCloser(bytes.NewReader(htmlBytes)), nil)
 	mockSvc.On("SendArticle", mock.Anything, "device@example.com",
-		mock.Anything, "Test Article").Return(
+		mock.Anything, testHandlerTestArticle).Return(
 		&email.SendEmailResponse{MessageID: "msg-123"}, nil)
 
 	err := handleEvent(ctx, event, mockSvc)
@@ -334,25 +347,25 @@ func TestHandleEvent_SendOnComplete_Success(t *testing.T) {
 	mockSvc.AssertCalled(t, "GetUserDeviceEmailAndAutoSend", mock.Anything, event.AccountID)
 	mockSvc.AssertCalled(t, "GenerateEPUB", mock.AnythingOfType("*model.Article"))
 	mockSvc.AssertCalled(t, "SendArticle", mock.Anything, "device@example.com",
-		mock.Anything, "Test Article")
+		mock.Anything, testHandlerTestArticle)
 }
 
 func TestHandleEvent_SendOnComplete_NoDeviceEmail(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID:      "req-123",
-		URL:            "https://example.com/article",
-		ArticleID:      "article-123",
-		AccountID:      "account-456",
+		RequestID:      testHandlerRequestID,
+		URL:            testHandlerURL,
+		ArticleID:      testHandlerArticleID,
+		AccountID:      testHandlerAccountID,
 		SendOnComplete: true,
 	}
 
 	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
-	article := &model.Article{Title: "Test Article"}
+	article := &model.Article{Title: testHandlerTestArticle}
 	doc, _ := html.Parse(bytes.NewReader(htmlBytes))
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
 		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
@@ -374,19 +387,19 @@ func TestHandleEvent_SendOnComplete_NoDeviceEmail(t *testing.T) {
 func TestHandleEvent_SendOnComplete_SendError(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID:      "req-123",
-		URL:            "https://example.com/article",
-		ArticleID:      "article-123",
-		AccountID:      "account-456",
+		RequestID:      testHandlerRequestID,
+		URL:            testHandlerURL,
+		ArticleID:      testHandlerArticleID,
+		AccountID:      testHandlerAccountID,
 		SendOnComplete: true,
 	}
 
 	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
-	article := &model.Article{Title: "Test Article"}
+	article := &model.Article{Title: testHandlerTestArticle}
 	doc, _ := html.Parse(bytes.NewReader(htmlBytes))
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
 		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
@@ -401,7 +414,7 @@ func TestHandleEvent_SendOnComplete_SendError(t *testing.T) {
 	mockSvc.On("GenerateEPUB", mock.AnythingOfType("*model.Article")).Return(
 		io.NopCloser(bytes.NewReader(htmlBytes)), nil)
 	mockSvc.On("SendArticle", mock.Anything, "device@example.com",
-		mock.Anything, "Test Article").Return(nil,
+		mock.Anything, testHandlerTestArticle).Return(nil,
 		errors.New("send failed"))
 
 	err := handleEvent(ctx, event, mockSvc)
@@ -409,28 +422,28 @@ func TestHandleEvent_SendOnComplete_SendError(t *testing.T) {
 	assert.NoError(t, err)
 	mockSvc.AssertCalled(t, "GenerateEPUB", mock.AnythingOfType("*model.Article"))
 	mockSvc.AssertCalled(t, "SendArticle", mock.Anything, "device@example.com",
-		mock.Anything, "Test Article")
+		mock.Anything, testHandlerTestArticle)
 }
 
 func TestHandleEvent_InheritedAttrs(t *testing.T) {
 	mockSvc := new(mockService)
 	ctx := lambdacontext.NewContext(context.Background(), &lambdacontext.LambdaContext{
-		AwsRequestID: "lambda-req-123",
+		AwsRequestID: testHandlerLambdaRequestID,
 	})
 	event := &content.ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		RequestID: testHandlerRequestID,
+		URL:       testHandlerURL,
+		ArticleID: testHandlerArticleID,
+		AccountID: testHandlerAccountID,
 		InheritedAttrs: []map[string]any{
-			{"user_id": "user-123"},
-			{"source": "api"},
+			{testUserIDKey: testHandlerUserID},
+			{testHandlerSourceKey: testHandlerSourceAPI},
 		},
 	}
 
 	eventURL, _ := url.Parse(event.URL)
 	htmlBytes := []byte("<html><body>Test</body></html>")
-	article := &model.Article{Title: "Test Article"}
+	article := &model.Article{Title: testHandlerTestArticle}
 	doc, _ := html.Parse(bytes.NewReader(htmlBytes))
 	mockSvc.On("Fetch", mock.Anything, eventURL).Return(&content.FetchedContent{
 		HTML: io.NopCloser(bytes.NewReader(htmlBytes)),
@@ -446,9 +459,9 @@ func TestHandleEvent_InheritedAttrs(t *testing.T) {
 	err := handleEvent(ctx, event, mockSvc)
 
 	assert.NoError(t, err)
-	assert.Contains(t, event.InheritedAttrs, map[string]any{"orig_request_id": "req-123"})
-	assert.Contains(t, event.InheritedAttrs, map[string]any{"request_id": "lambda-req-123"})
-	assert.NotContains(t, event.InheritedAttrs, map[string]any{"source": "api"})
+	assert.Contains(t, event.InheritedAttrs, map[string]any{attrKeyOrigRequestID: testHandlerRequestID})
+	assert.Contains(t, event.InheritedAttrs, map[string]any{attrKeyRequestID: testHandlerLambdaRequestID})
+	assert.NotContains(t, event.InheritedAttrs, map[string]any{testHandlerSourceKey: testHandlerSourceAPI})
 }
 
 var _ processor.Service = (*mockService)(nil)

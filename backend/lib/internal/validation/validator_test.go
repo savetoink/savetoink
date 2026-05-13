@@ -13,6 +13,19 @@ const (
 	errInvalidEmailFormat     = "invalid email format"
 	errPrivateInternalNetwork = "private/internal network"
 	errValidEmailEndingWith   = "must be a valid email ending with"
+
+	testLocalhost        = "localhost"
+	testExceedsMaxLen    = "exceeds maximum length"
+	testTagTech          = "tech"
+	testTagEmpty         = "tag cannot be empty"
+	testTagInvalidChars  = "can only contain letters, numbers, spaces, hyphens, and underscores"
+	testTagProgramming   = "programming"
+	testErrMsgHTTPScheme = "must use http or https scheme"
+	testEmailUser        = "user@example.com"
+	testNameEmptyEmail   = "empty email"
+	testNameInvalidFmt   = "invalid format"
+	testTagTechUpper     = "TECH"
+	testTagTechMixed     = "Tech"
 )
 
 func TestValidateURL(t *testing.T) {
@@ -42,7 +55,7 @@ func TestValidateURL(t *testing.T) {
 			name:    "invalid scheme",
 			url:     "ftp://example.com",
 			wantErr: true,
-			errMsg:  "must use http or https scheme",
+			errMsg:  testErrMsgHTTPScheme,
 		},
 		{
 			name:    "missing host",
@@ -57,7 +70,7 @@ func TestValidateURL(t *testing.T) {
 			errMsg:  errPrivateInternalNetwork,
 		},
 		{
-			name:    "localhost",
+			name:    testLocalhost,
 			url:     "http://localhost",
 			wantErr: true,
 			errMsg:  errPrivateInternalNetwork,
@@ -72,7 +85,7 @@ func TestValidateURL(t *testing.T) {
 			name:    "URL too long",
 			url:     "https://example.com/" + strings.Repeat("a", maxURLLength+100),
 			wantErr: true,
-			errMsg:  "exceeds maximum length",
+			errMsg:  testExceedsMaxLen,
 		},
 	}
 
@@ -101,18 +114,18 @@ func TestValidateEmail(t *testing.T) {
 	}{
 		{
 			name:    "valid email",
-			email:   "user@example.com",
+			email:   testEmailUser,
 			wantErr: false,
 		},
 		{
-			name:    "empty email",
+			name:    testNameEmptyEmail,
 			email:   "",
 			wantErr: true,
 			errMsg:  errCannotBeEmpty,
 		},
 		{
-			name:    "invalid format",
-			email:   "not-an-email",
+			name:    testNameInvalidFmt,
+			email:   testNotAnEmail,
 			wantErr: true,
 			errMsg:  errInvalidEmailFormat,
 		},
@@ -120,7 +133,7 @@ func TestValidateEmail(t *testing.T) {
 			name:    "email too long",
 			email:   "user@" + strings.Repeat("a", 312) + ".com",
 			wantErr: true,
-			errMsg:  "exceeds maximum length",
+			errMsg:  testExceedsMaxLen,
 		},
 	}
 
@@ -159,19 +172,19 @@ func TestValidateDeviceEmail(t *testing.T) {
 		},
 		{
 			name:    "invalid domain",
-			email:   "user@example.com",
+			email:   testEmailUser,
 			wantErr: true,
 			errMsg:  errValidEmailEndingWith,
 		},
 		{
-			name:    "empty email",
+			name:    testNameEmptyEmail,
 			email:   "",
 			wantErr: true,
 			errMsg:  errCannotBeEmpty,
 		},
 		{
-			name:    "invalid format",
-			email:   "not-an-email",
+			name:    testNameInvalidFmt,
+			email:   testNotAnEmail,
 			wantErr: true,
 			errMsg:  errInvalidEmailFormat,
 		},
@@ -231,7 +244,7 @@ func TestValidateURL_AdditionalCases(t *testing.T) {
 			name:    "file scheme",
 			url:     "file:///path/to/file",
 			wantErr: true,
-			errMsg:  "must use http or https scheme",
+			errMsg:  testErrMsgHTTPScheme,
 		},
 		{
 			name:    "invalid URL format - malformed",
@@ -406,8 +419,8 @@ func TestIsPrivateHost(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "localhost",
-			host: "localhost",
+			name: testLocalhost,
+			host: testLocalhost,
 			want: true,
 		},
 		{
@@ -538,7 +551,7 @@ func TestValidateTag(t *testing.T) {
 	}{
 		{
 			name:    "valid single word tag",
-			tag:     "tech",
+			tag:     testTagTech,
 			wantErr: false,
 		},
 		{
@@ -575,19 +588,19 @@ func TestValidateTag(t *testing.T) {
 			name:    "empty tag after trim",
 			tag:     "   ",
 			wantErr: true,
-			errMsg:  "tag cannot be empty",
+			errMsg:  testTagEmpty,
 		},
 		{
 			name:    "empty tag",
 			tag:     "",
 			wantErr: true,
-			errMsg:  "tag cannot be empty",
+			errMsg:  testTagEmpty,
 		},
 		{
 			name:    "tag exceeds max length",
 			tag:     strings.Repeat("a", consts.MaxTagLength+1),
 			wantErr: true,
-			errMsg:  "exceeds maximum length",
+			errMsg:  testExceedsMaxLen,
 		},
 		{
 			name:    "tag at max length",
@@ -598,19 +611,19 @@ func TestValidateTag(t *testing.T) {
 			name:    "tag with special characters",
 			tag:     "tech@news",
 			wantErr: true,
-			errMsg:  "can only contain letters, numbers, spaces, hyphens, and underscores",
+			errMsg:  testTagInvalidChars,
 		},
 		{
 			name:    "tag with parentheses",
 			tag:     "tech(news)",
 			wantErr: true,
-			errMsg:  "can only contain letters, numbers, spaces, hyphens, and underscores",
+			errMsg:  testTagInvalidChars,
 		},
 		{
 			name:    "tag with slash",
 			tag:     "tech/news",
 			wantErr: true,
-			errMsg:  "can only contain letters, numbers, spaces, hyphens, and underscores",
+			errMsg:  testTagInvalidChars,
 		},
 	}
 
@@ -646,13 +659,13 @@ func TestValidateTags(t *testing.T) {
 	}{
 		{
 			name:    "valid single tag",
-			tags:    []string{"tech"},
+			tags:    []string{testTagTech},
 			wantErr: false,
 			wantLen: 1,
 		},
 		{
 			name:    "valid multiple tags",
-			tags:    []string{"tech", "programming", "golang"},
+			tags:    []string{testTagTech, testTagProgramming, "golang"},
 			wantErr: false,
 			wantLen: 3,
 		},
@@ -670,13 +683,13 @@ func TestValidateTags(t *testing.T) {
 		},
 		{
 			name:    "duplicate tags are removed",
-			tags:    []string{"tech", "tech", "programming"},
+			tags:    []string{testTagTech, testTagTech, testTagProgramming},
 			wantErr: false,
 			wantLen: 2,
 		},
 		{
 			name:    "case duplicates are removed",
-			tags:    []string{"Tech", "tech", "TECH"},
+			tags:    []string{testTagTechMixed, testTagTech, testTagTechUpper},
 			wantErr: false,
 			wantLen: 1,
 		},
@@ -701,15 +714,15 @@ func TestValidateTags(t *testing.T) {
 		},
 		{
 			name:    "one invalid tag in list",
-			tags:    []string{"tech", "invalid@tag", "programming"},
+			tags:    []string{testTagTech, "invalid@tag", testTagProgramming},
 			wantErr: true,
-			errMsg:  "can only contain letters, numbers, spaces, hyphens, and underscores",
+			errMsg:  testTagInvalidChars,
 		},
 		{
 			name:    "empty tag in list",
-			tags:    []string{"tech", "", "programming"},
+			tags:    []string{testTagTech, "", testTagProgramming},
 			wantErr: true,
-			errMsg:  "tag cannot be empty",
+			errMsg:  testTagEmpty,
 		},
 	}
 
@@ -741,11 +754,11 @@ func TestValidateTags(t *testing.T) {
 }
 
 func TestValidateTags_Deduplication(t *testing.T) {
-	tags := []string{"Tech", "tech", "TECH", "Programming", "programming", "Go"}
+	tags := []string{testTagTechMixed, testTagTech, testTagTechUpper, "Programming", testTagProgramming, "Go"}
 	result, err := ValidateTags(tags)
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
-	assert.ElementsMatch(t, []string{"tech", "programming", "go"}, result)
+	assert.ElementsMatch(t, []string{testTagTech, testTagProgramming, "go"}, result)
 }
 
 func TestValidateTags_MaxTagLength(t *testing.T) {
@@ -762,5 +775,5 @@ func TestValidateTags_MaxTagLength(t *testing.T) {
 	tags = []string{invalidTag}
 	_, err = ValidateTags(tags)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "exceeds maximum length")
+	assert.Contains(t, err.Error(), testExceedsMaxLen)
 }

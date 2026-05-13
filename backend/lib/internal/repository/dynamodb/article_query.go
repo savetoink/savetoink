@@ -17,28 +17,29 @@ import (
 const (
 	attrNameAccount         = "#account"
 	attrNameAccountFavorite = "#af = :accountFavorite"
+	attrNameAF              = "#af"
 )
 
 func (d *DynamoDB) getProjectionAttributeNames() map[string]string {
 	return map[string]string{
-		"#a":    "account",
-		"#i":    "id",
-		"#u":    "url",
-		"#c":    "createdAt",
-		"#t":    "title",
-		"#au":   "author",
-		"#sn":   "siteName",
-		"#sd":   "sourceDomain",
-		"#e":    "excerpt",
-		"#iurl": "imageUrl",
-		"#l":    "language",
-		"#err":  "error",
-		"#wc":   "wordCount",
-		"#rt":   "readingTimeMinutes",
-		"#p":    "publishedAt",
-		"#tg":   "tags",
-		"#ds":   "deliveryStatus",
-		"#af":   "accountFavorite",
+		"#a":       attributeNameAccount,
+		"#i":       attributeNameID,
+		"#u":       "url",
+		"#c":       "createdAt",
+		"#t":       "title",
+		"#au":      "author",
+		"#sn":      "siteName",
+		"#sd":      "sourceDomain",
+		"#e":       "excerpt",
+		"#iurl":    "imageUrl",
+		"#l":       "language",
+		"#err":     "error",
+		"#wc":      "wordCount",
+		"#rt":      "readingTimeMinutes",
+		"#p":       "publishedAt",
+		"#tg":      "tags",
+		"#ds":      "deliveryStatus",
+		attrNameAF: "accountFavorite",
 	}
 }
 
@@ -62,7 +63,7 @@ func (d *DynamoDB) totalCountByAccount(ctx context.Context, account string, favo
 
 	if favoriteFilter != nil && *favoriteFilter {
 		// Use sparse GSI for favorites
-		attrNames["#af"] = attributeNameAccountFavorite
+		attrNames[attrNameAF] = attributeNameAccountFavorite
 		attrValues[":accountFavorite"] = &types.AttributeValueMemberS{Value: account + "#favorite"}
 		indexName = consts.DynamoDBAccountFavoriteIndex
 		keyConditionExpression = attrNameAccountFavorite
@@ -222,7 +223,7 @@ func (d *DynamoDB) queryArticlesByAccount(
 	if favoriteFilter != nil && *favoriteFilter {
 		// Use sparse GSI for favorites
 		attrValues[":accountFavorite"] = &types.AttributeValueMemberS{Value: account + "#favorite"}
-		attrNames["#af"] = attributeNameAccountFavorite
+		attrNames[attrNameAF] = attributeNameAccountFavorite
 		indexName = consts.DynamoDBAccountFavoriteIndex
 		keyConditionExpression = attrNameAccountFavorite
 	} else {

@@ -7,6 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testDynamoDBGSIName                 = "DynamoDBGSIName"
+	testDynamoDBAccountFavoriteIndex    = "DynamoDBAccountFavoriteIndex"
+	testDynamoDBSendsArticleIDIndex     = "DynamoDBSendsArticleIDIndex"
+	testDynamoDBSendsAccountSentAtIndex = "DynamoDBSendsAccountSentAtIndex"
+	testDynamoDBDeviceEmailIndex        = "DynamoDBDeviceEmailIndex"
+)
+
 func TestDynamoDB_BatchSize(t *testing.T) {
 	assert.Greater(t, DynamoDBBatchSize, 0, "DynamoDBBatchSize should be positive")
 	assert.LessOrEqual(t, DynamoDBBatchSize, 25, "DynamoDBBatchSize should not exceed AWS limit")
@@ -19,11 +27,11 @@ func TestDynamoDB_GSI_Names(t *testing.T) {
 		value    string
 		expected string
 	}{
-		{"DynamoDBGSIName", DynamoDBGSIName, "AccountCreatedAtIndex"},
-		{"DynamoDBAccountFavoriteIndex", DynamoDBAccountFavoriteIndex, "AccountFavoriteIndex"},
-		{"DynamoDBSendsArticleIDIndex", DynamoDBSendsArticleIDIndex, "ArticleIdIndex"},
-		{"DynamoDBSendsAccountSentAtIndex", DynamoDBSendsAccountSentAtIndex, "AccountSentAtIndex"},
-		{"DynamoDBDeviceEmailIndex", DynamoDBDeviceEmailIndex, "DeviceEmailIndex"},
+		{testDynamoDBGSIName, DynamoDBGSIName, "AccountCreatedAtIndex"},
+		{testDynamoDBAccountFavoriteIndex, DynamoDBAccountFavoriteIndex, "AccountFavoriteIndex"},
+		{testDynamoDBSendsArticleIDIndex, DynamoDBSendsArticleIDIndex, "ArticleIdIndex"},
+		{testDynamoDBSendsAccountSentAtIndex, DynamoDBSendsAccountSentAtIndex, "AccountSentAtIndex"},
+		{testDynamoDBDeviceEmailIndex, DynamoDBDeviceEmailIndex, "DeviceEmailIndex"},
 	}
 
 	for _, tt := range tests {
@@ -39,11 +47,11 @@ func TestDynamoDB_GSI_NamingPattern(t *testing.T) {
 		name string
 		gsi  string
 	}{
-		{"DynamoDBGSIName", DynamoDBGSIName},
-		{"DynamoDBAccountFavoriteIndex", DynamoDBAccountFavoriteIndex},
-		{"DynamoDBSendsArticleIDIndex", DynamoDBSendsArticleIDIndex},
-		{"DynamoDBSendsAccountSentAtIndex", DynamoDBSendsAccountSentAtIndex},
-		{"DynamoDBDeviceEmailIndex", DynamoDBDeviceEmailIndex},
+		{testDynamoDBGSIName, DynamoDBGSIName},
+		{testDynamoDBAccountFavoriteIndex, DynamoDBAccountFavoriteIndex},
+		{testDynamoDBSendsArticleIDIndex, DynamoDBSendsArticleIDIndex},
+		{testDynamoDBSendsAccountSentAtIndex, DynamoDBSendsAccountSentAtIndex},
+		{testDynamoDBDeviceEmailIndex, DynamoDBDeviceEmailIndex},
 	}
 
 	for _, tt := range tests {
@@ -59,8 +67,8 @@ func TestStorageBackend_Constants(t *testing.T) {
 		constant StorageBackend
 		value    string
 	}{
-		{"DynamoDB", StorageBackendDynamoDB, "dynamodb"},
-		{"SQLite", StorageBackendSQLite, "sqlite"},
+		{"DynamoDB", StorageBackendDynamoDB, string(StorageBackendDynamoDB)},
+		{"SQLite", StorageBackendSQLite, string(StorageBackendSQLite)},
 	}
 
 	for _, tt := range tests {
@@ -77,8 +85,8 @@ func TestStorageBackend_String_Conversion(t *testing.T) {
 		env  string
 		want StorageBackend
 	}{
-		{"dynamodb", "dynamodb", StorageBackendDynamoDB},
-		{"sqlite", "sqlite", StorageBackendSQLite},
+		{string(StorageBackendDynamoDB), string(StorageBackendDynamoDB), StorageBackendDynamoDB},
+		{string(StorageBackendSQLite), string(StorageBackendSQLite), StorageBackendSQLite},
 	}
 
 	for _, tt := range tests {

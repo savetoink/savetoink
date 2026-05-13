@@ -14,6 +14,7 @@ const (
 	testMessage   = "test message"
 	debugMessage  = "debug message"
 	testSentryDSN = "https://test@sentry.io/123"
+	testSentryEnv = "test"
 )
 
 func TestSetupLogging_TextOnly(t *testing.T) {
@@ -69,7 +70,7 @@ func TestSetupLogging_SentryIntegration(t *testing.T) {
 		Debug:             false,
 		LoggingProvider:   consts.LoggingBackendSentry,
 		SentryDSN:         testSentryDSN,
-		SentryEnvironment: "test",
+		SentryEnvironment: testSentryEnv,
 		SentrySampleRate:  1.0,
 	}
 
@@ -93,7 +94,7 @@ func TestSetupLogging_SentryWithDebug(t *testing.T) {
 		Debug:             true,
 		LoggingProvider:   consts.LoggingBackendSentry,
 		SentryDSN:         testSentryDSN,
-		SentryEnvironment: "test",
+		SentryEnvironment: testSentryEnv,
 		SentrySampleRate:  1.0,
 	}
 
@@ -116,7 +117,7 @@ func TestSetupLogging_SentryFallback(t *testing.T) {
 		Debug:             false,
 		LoggingProvider:   consts.LoggingBackendSentry,
 		SentryDSN:         "invalid-dsn",
-		SentryEnvironment: "test",
+		SentryEnvironment: testSentryEnv,
 		SentrySampleRate:  1.0,
 	}
 
@@ -138,7 +139,7 @@ func TestSetupLogging_CustomSampleRate(t *testing.T) {
 		Debug:             false,
 		LoggingProvider:   consts.LoggingBackendSentry,
 		SentryDSN:         testSentryDSN,
-		SentryEnvironment: "test",
+		SentryEnvironment: testSentryEnv,
 		SentrySampleRate:  0.5,
 	}
 

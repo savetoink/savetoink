@@ -12,6 +12,11 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/processor"
 )
 
+const (
+	attrKeyOrigRequestID = "orig_request_id"
+	attrKeyRequestID     = "request_id"
+)
+
 // NewHandler returns the entry point for processing a single article event via AWS Lambda.
 func NewHandler(
 	cfg *config.Config,
@@ -57,15 +62,15 @@ func handleEvent(ctx context.Context, event *content.ProcessArticleEvent, svc pr
 
 	event.InheritedAttrs = make([]map[string]any, 0, len(event.InheritedAttrs))
 	for _, attr := range event.InheritedAttrs {
-		if _, exists := attr["request_id"]; !exists {
+		if _, exists := attr[attrKeyRequestID]; !exists {
 			event.InheritedAttrs = append(event.InheritedAttrs, attr)
 		}
 	}
 	event.InheritedAttrs = append(event.InheritedAttrs,
 		map[string]any{"account_id": event.AccountID},
 		map[string]any{"article_id": event.ArticleID},
-		map[string]any{"orig_request_id": event.RequestID},
-		map[string]any{"request_id": lambdaRequestID},
+		map[string]any{attrKeyOrigRequestID: event.RequestID},
+		map[string]any{attrKeyRequestID: lambdaRequestID},
 		map[string]any{"url": event.URL},
 		map[string]any{"version": *consts.Version()},
 	)

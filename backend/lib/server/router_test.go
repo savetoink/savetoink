@@ -45,6 +45,16 @@ const (
 	testSentryEnvironment    = "test"
 	testDeviceEmail          = "test@kindle.com"
 	testPasetoKey            = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="
+
+	testAuth0Audience     = "test-audience"
+	testAuth0ClientID     = "test-client-id"
+	testAuth0ClientSecret = "test-client-secret"
+	testAuthCode          = "test-code"
+	testRedirectURI       = "http://localhost/callback"
+	testBearer            = "Bearer"
+	testRouterArticleID   = "test-id"
+	testKeyVersion        = "v1"
+	testAccessToken       = "test-access-token"
 )
 
 type mockService struct{}
@@ -93,9 +103,9 @@ func (m *mockService) UpdateArticle(_ context.Context, _ *model.Article) error {
 }
 
 func (m *mockService) GetArticle(_ context.Context, _, articleID string) (*model.Article, error) {
-	if articleID == "test-id" {
+	if articleID == testRouterArticleID {
 		return &model.Article{
-			ID:    "test-id",
+			ID:    testRouterArticleID,
 			Title: "Test Article",
 			URL:   "https://example.com",
 		}, nil
@@ -215,12 +225,12 @@ func newTestRouter(t *testing.T, cfg *config.Config, client *http.Client) *chi.M
 
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "not_found"})
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: errTypeNotFound})
 	})
 
 	r.MethodNotAllowed(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "method_not_allowed"})
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: errTypeMethodNotAllowed})
 	})
 
 	setupRoutes(r, h, cfg, svc)
@@ -328,7 +338,7 @@ func TestNewRouterWithClient(t *testing.T) {
 		var resp model.ErrorResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
 		require.NoError(t, err)
-		assert.Equal(t, "not_found", resp.Error)
+		assert.Equal(t, errTypeNotFound, resp.Error)
 	})
 
 	t.Run("method not allowed handler is registered", func(t *testing.T) {
@@ -350,7 +360,7 @@ func TestNewRouterWithClient(t *testing.T) {
 		var resp model.ErrorResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
 		require.NoError(t, err)
-		assert.Equal(t, "method_not_allowed", resp.Error)
+		assert.Equal(t, errTypeMethodNotAllowed, resp.Error)
 	})
 }
 
@@ -629,7 +639,7 @@ func TestSetupRoutes_AuthRoute(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]string{
 				"access_token": "test-token",
-				"token_type":   "Bearer",
+				"token_type":   testBearer,
 				"expires_in":   "3600",
 			})
 		}))
@@ -644,11 +654,11 @@ func TestSetupRoutes_AuthRoute(t *testing.T) {
 		cfg := setupMinimalConfig(t)
 		cfg.AuthBackend = consts.AuthBackendAuth0
 		cfg.Auth0Domain = strings.TrimPrefix(parsedURL.Host, "https://")
-		cfg.Auth0Audience = "test-audience"
+		cfg.Auth0Audience = testAuth0Audience
 		cfg.PASETOSymmetricKey = testPasetoKey
-		cfg.PASETOKeyVersion = "v1"
-		cfg.Auth0ClientID = "test-client-id"
-		cfg.Auth0ClientSecret = "test-client-secret"
+		cfg.PASETOKeyVersion = testKeyVersion
+		cfg.Auth0ClientID = testAuth0ClientID
+		cfg.Auth0ClientSecret = testAuth0ClientSecret
 
 		router := newTestRouter(t, cfg, client)
 
@@ -891,8 +901,8 @@ func TestNewRouter_AuthTokenRoute(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken:     "test-access-token",
-			TokenType:       "Bearer",
+			AccessToken:     testAccessToken,
+			TokenType:       testBearer,
 			AccessExpiresIn: 3600,
 		})
 	}))
@@ -905,20 +915,20 @@ func TestNewRouter_AuthTokenRoute(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		APIKeySecret:       "test-key",
+		APIKeySecret:       testMailjetAPIKey,
 		AuthBackend:        consts.AuthBackendAuth0,
 		Auth0Domain:        strings.TrimPrefix(parsedURL.Host, "https://"),
-		Auth0ClientID:      "test-client-id",
-		Auth0ClientSecret:  "test-client-secret",
-		Auth0Audience:      "test-audience",
+		Auth0ClientID:      testAuth0ClientID,
+		Auth0ClientSecret:  testAuth0ClientSecret,
+		Auth0Audience:      testAuth0Audience,
 		PASETOSymmetricKey: testPasetoKey,
-		PASETOKeyVersion:   "v1",
+		PASETOKeyVersion:   testKeyVersion,
 	}
 	r := newRouterWithClient(cfg, client)
 
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
-		RedirectURI: "http://localhost/callback",
+		Code:        testAuthCode,
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -937,8 +947,8 @@ func TestAuthTokenRoute_Registered(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken:     "test-access-token",
-			TokenType:       "Bearer",
+			AccessToken:     testAccessToken,
+			TokenType:       testBearer,
 			AccessExpiresIn: 3600,
 		})
 	}))
@@ -951,20 +961,20 @@ func TestAuthTokenRoute_Registered(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		APIKeySecret:       "test-key",
+		APIKeySecret:       testMailjetAPIKey,
 		AuthBackend:        consts.AuthBackendAuth0,
 		Auth0Domain:        strings.TrimPrefix(parsedURL.Host, "https://"),
-		Auth0ClientID:      "test-client-id",
-		Auth0ClientSecret:  "test-client-secret",
-		Auth0Audience:      "test-audience",
+		Auth0ClientID:      testAuth0ClientID,
+		Auth0ClientSecret:  testAuth0ClientSecret,
+		Auth0Audience:      testAuth0Audience,
 		PASETOSymmetricKey: testPasetoKey,
-		PASETOKeyVersion:   "v1",
+		PASETOKeyVersion:   testKeyVersion,
 	}
 	r := newRouterWithClient(cfg, client)
 
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
-		RedirectURI: "http://localhost/callback",
+		Code:        testAuthCode,
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -988,7 +998,7 @@ func TestIntegration_PasetoRoundTrip(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
 			AccessToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
 			IDToken:         "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
-			TokenType:       "Bearer",
+			TokenType:       testBearer,
 			AccessExpiresIn: 3600,
 		})
 	}))
@@ -1001,21 +1011,21 @@ func TestIntegration_PasetoRoundTrip(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		APIKeySecret:       "test-key",
+		APIKeySecret:       testMailjetAPIKey,
 		AuthBackend:        consts.AuthBackendAuth0,
 		Auth0Domain:        strings.TrimPrefix(parsedURL.Host, "https://"),
-		Auth0ClientID:      "test-client-id",
-		Auth0ClientSecret:  "test-client-secret",
-		Auth0Audience:      "test-audience",
+		Auth0ClientID:      testAuth0ClientID,
+		Auth0ClientSecret:  testAuth0ClientSecret,
+		Auth0Audience:      testAuth0Audience,
 		PASETOSymmetricKey: testPasetoKey,
-		PASETOKeyVersion:   "v1",
+		PASETOKeyVersion:   testKeyVersion,
 	}
 	r := newTestRouter(t, cfg, client)
 
 	// Step 1: Exchange auth code → get PASETO tokens
 	body := types.AuthTokenExchangeRequest{
-		Code:        "test-code",
-		RedirectURI: "http://localhost/callback",
+		Code:        testAuthCode,
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -1035,7 +1045,7 @@ func TestIntegration_PasetoRoundTrip(t *testing.T) {
 		"access_token should be a PASETO v4.local token, got: %s", tokenResp.AccessToken[:20])
 	assert.True(t, strings.HasPrefix(tokenResp.RefreshToken, "v4.local."),
 		"refresh_token should be a PASETO v4.local token, got: %s", tokenResp.RefreshToken[:20])
-	assert.Equal(t, "Bearer", tokenResp.TokenType)
+	assert.Equal(t, testBearer, tokenResp.TokenType)
 	assert.Equal(t, int(consts.DefaultAccessTTL.Seconds()), tokenResp.AccessExpiresIn)
 	assert.Equal(t, int(consts.DefaultRefreshTTL.Seconds()), tokenResp.RefreshExpiresIn)
 	assert.Equal(t, "roundtrip@example.com", tokenResp.Email)

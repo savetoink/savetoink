@@ -19,6 +19,12 @@ const (
 	requestErrorKey contextKey = "request_error"
 	// requestIDKey is the context key for request IDs.
 	requestIDKey contextKey = "request_id"
+
+	excludeKeyClientIP  = "client_ip"
+	excludeKeyUserAgent = "user_agent"
+	excludeKeyPath      = "path"
+	excludeKeyMethod    = "method"
+	excludeKeyURL       = "url"
 )
 
 // LogRecord wraps a slog.Record for use in request context.
@@ -143,11 +149,11 @@ func ExtractInheritedLogAttrs(ctx context.Context) []slog.Attr {
 
 	var attrs []slog.Attr
 	excludeKeys := map[string]bool{
-		"client_ip":  true,
-		"user_agent": true,
-		"path":       true,
-		"method":     true,
-		"url":        true,
+		excludeKeyClientIP:  true,
+		excludeKeyUserAgent: true,
+		excludeKeyPath:      true,
+		excludeKeyMethod:    true,
+		excludeKeyURL:       true,
 	}
 	logRecord.Attrs(func(a slog.Attr) bool {
 		if !excludeKeys[a.Key] {

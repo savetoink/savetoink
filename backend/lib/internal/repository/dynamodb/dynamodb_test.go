@@ -92,36 +92,36 @@ func TestNewDynamoDB(t *testing.T) {
 	}{
 		{
 			name:              "valid table names",
-			articlesTableName: "articles",
-			profileTableName:  "profiles",
-			sendsTableName:    "sends",
-			articleTagsTable:  "article-tags",
+			articlesTableName: testArticlesTable,
+			profileTableName:  testProfilesTable,
+			sendsTableName:    testSendsTable,
+			articleTagsTable:  testArticleTagsTable,
 			shouldPanic:       false,
 		},
 		{
 			name:              "empty articles table name",
 			articlesTableName: "",
-			profileTableName:  "profiles",
-			sendsTableName:    "sends",
-			articleTagsTable:  "article-tags",
+			profileTableName:  testProfilesTable,
+			sendsTableName:    testSendsTable,
+			articleTagsTable:  testArticleTagsTable,
 			shouldPanic:       true,
-			expectedPanicMsg:  "articles table name is required",
+			expectedPanicMsg:  testArticlesRequired,
 		},
 		{
 			name:              "empty profile table name",
-			articlesTableName: "articles",
+			articlesTableName: testArticlesTable,
 			profileTableName:  "",
-			sendsTableName:    "sends",
-			articleTagsTable:  "article-tags",
+			sendsTableName:    testSendsTable,
+			articleTagsTable:  testArticleTagsTable,
 			shouldPanic:       true,
 			expectedPanicMsg:  "user profile table name is required",
 		},
 		{
 			name:              "empty sends table name",
-			articlesTableName: "articles",
-			profileTableName:  "profiles",
+			articlesTableName: testArticlesTable,
+			profileTableName:  testProfilesTable,
 			sendsTableName:    "",
-			articleTagsTable:  "article-tags",
+			articleTagsTable:  testArticleTagsTable,
 			shouldPanic:       true,
 			expectedPanicMsg:  "sends table name is required",
 		},
@@ -132,7 +132,7 @@ func TestNewDynamoDB(t *testing.T) {
 			sendsTableName:    "",
 			articleTagsTable:  "",
 			shouldPanic:       true,
-			expectedPanicMsg:  "articles table name is required",
+			expectedPanicMsg:  testArticlesRequired,
 		},
 	}
 
@@ -155,14 +155,19 @@ func TestNewDynamoDB(t *testing.T) {
 }
 
 const (
-	dynamoDBTestAccount = "test-account"
+	dynamoDBTestAccount  = "test-account"
+	testArticlesTable    = "articles"
+	testProfilesTable    = "profiles"
+	testSendsTable       = "sends"
+	testArticleTagsTable = "article-tags"
+	testArticlesRequired = "articles table name is required"
 )
 
 func TestUnmarshalItem(t *testing.T) {
 	t.Run("successful unmarshal", func(t *testing.T) {
 		item := map[string]types.AttributeValue{
-			"account": &types.AttributeValueMemberS{Value: dynamoDBTestAccount},
-			"id":      &types.AttributeValueMemberS{Value: "test-id"},
+			attributeNameAccount: &types.AttributeValueMemberS{Value: dynamoDBTestAccount},
+			attributeNameID:      &types.AttributeValueMemberS{Value: "test-id"},
 		}
 
 		var article model.Article
@@ -175,7 +180,7 @@ func TestUnmarshalItem(t *testing.T) {
 
 	t.Run("unmarshal error - nil target", func(t *testing.T) {
 		item := map[string]types.AttributeValue{
-			"account": &types.AttributeValueMemberS{Value: dynamoDBTestAccount},
+			attributeNameAccount: &types.AttributeValueMemberS{Value: dynamoDBTestAccount},
 		}
 
 		err := unmarshalItem(item, nil, "article")
@@ -186,7 +191,7 @@ func TestUnmarshalItem(t *testing.T) {
 
 	t.Run("unmarshal error - invalid binary data", func(t *testing.T) {
 		item := map[string]types.AttributeValue{
-			"account": &types.AttributeValueMemberB{Value: []byte{0xff, 0xfe, 0xfd}},
+			attributeNameAccount: &types.AttributeValueMemberB{Value: []byte{0xff, 0xfe, 0xfd}},
 		}
 
 		var article model.Article

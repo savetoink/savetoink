@@ -27,12 +27,13 @@ import (
 )
 
 const (
-	testUserEmail           = "user@example.com"
-	testAccountID           = "account-123"
-	testDevicesEndpoint     = "/v1/devices"
-	testUserProfileEndpoint = "/v1/user/profile"
-	genericErrorMessage     = "generic error"
-	someErrorMessage        = "some error"
+	testUserEmail              = "user@example.com"
+	userProfileTestErrNotFound = "ErrNotFound"
+	testAccountID              = "account-123"
+	testDevicesEndpoint        = "/v1/devices"
+	testUserProfileEndpoint    = "/v1/user/profile"
+	genericErrorMessage        = "generic error"
+	someErrorMessage           = "some error"
 )
 
 type userprofileMockService struct {
@@ -300,7 +301,7 @@ func TestHandleGetUserProfile_GetUserDeviceEmailError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           userProfileTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
@@ -339,7 +340,7 @@ func TestHandleGetUserProfile_GetUserProfileError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           userProfileTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
@@ -434,7 +435,7 @@ func TestHandleSetDevice_ServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           userProfileTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
@@ -508,7 +509,7 @@ func TestHandleDeleteDevice_ServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           userProfileTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},

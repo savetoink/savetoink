@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,7 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testCronScheduleHourly = "0 0 * * * *"
+const (
+	testCronScheduleHourly = "0 0 * * * *"
+	testSchedule5min       = "0 */5 * * * *"
+	testTaskName           = "test_task"
+	testTaskCompleted      = "task completed"
+)
 
 func getTestConfig(t *testing.T) *config.Config {
 	t.Helper()
@@ -43,7 +49,7 @@ func TestCalculateNextRun_Success(t *testing.T) {
 		},
 		{
 			name:            "every 5 minutes",
-			schedule:        "0 */5 * * * *",
+			schedule:        testSchedule5min,
 			wantWithinRange: true,
 		},
 		{
@@ -114,15 +120,15 @@ func TestRun_WithSchedule(t *testing.T) {
 	taskExecuted := false
 
 	runner.Register(Task{
-		Name: "test_task",
+		Name: testTaskName,
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			taskExecuted = true
-			return &RunResult{Results: []string{"task completed"}}
+			return &RunResult{Results: []string{testTaskCompleted}}
 		},
 	})
 
 	ctx := context.Background()
-	result := runner.Run(ctx, json.RawMessage(`{"task":"test_task","schedule":"0 0 * * * *"}`))
+	result := runner.Run(ctx, json.RawMessage(fmt.Sprintf(`{"task":%q,"schedule":"0 0 * * * *"}`, testTaskName)))
 	require.Empty(t, result.Errors)
 	assert.True(t, taskExecuted)
 }
@@ -131,15 +137,15 @@ func TestRun_WithInvalidSchedule(t *testing.T) {
 	runner := NewTaskRunner(getTestConfig(t))
 
 	runner.Register(Task{
-		Name: "test_task",
+		Name: testTaskName,
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
-			return &RunResult{Results: []string{"task completed"}}
+			return &RunResult{Results: []string{testTaskCompleted}}
 		},
 	})
 
 	ctx := context.Background()
 
-	result := runner.Run(ctx, json.RawMessage(`{"task":"test_task","schedule":"invalid schedule"}`))
+	result := runner.Run(ctx, json.RawMessage(fmt.Sprintf(`{"task":%q,"schedule":"invalid schedule"}`, testTaskName)))
 	require.Len(t, result.Errors, 1)
 	assert.Contains(t, result.Errors[0], "failed to calculate next run time")
 }
@@ -149,16 +155,16 @@ func TestRun_WithEmptySchedule(t *testing.T) {
 	taskExecuted := false
 
 	runner.Register(Task{
-		Name: "test_task",
+		Name: testTaskName,
 		Run: func(_ context.Context, _ consts.TaskConfig) *RunResult {
 			taskExecuted = true
-			return &RunResult{Results: []string{"task completed"}}
+			return &RunResult{Results: []string{testTaskCompleted}}
 		},
 	})
 
 	ctx := context.Background()
 
-	result := runner.Run(ctx, json.RawMessage(`{"task":"test_task","schedule":""}`))
+	result := runner.Run(ctx, json.RawMessage(fmt.Sprintf(`{"task":%q,"schedule":""}`, testTaskName)))
 	require.Empty(t, result.Errors)
 	assert.True(t, taskExecuted)
 }

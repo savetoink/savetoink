@@ -19,7 +19,14 @@ import (
 	"golang.org/x/net/html"
 )
 
-const testEmail = "test@kindle.com"
+const (
+	testEmail       = "test@kindle.com"
+	testArticleID   = "article-123"
+	testAccountID   = "account-456"
+	testTestArticle = "Test Article"
+	testURL         = "https://example.com/article"
+	testMessageID   = "msg-123"
+)
 
 type testCaptureHandler struct {
 	record *slog.Record
@@ -87,9 +94,9 @@ func (m *mockArticleService) Clean(ctx context.Context, doc *html.Node, u *url.U
 		return m.cleanFunc(ctx, doc, u)
 	}
 	return &model.Article{
-		ID:    "article-123",
+		ID:    testArticleID,
 		URL:   u.String(),
-		Title: "Test Article",
+		Title: testTestArticle,
 	}, nil
 }
 
@@ -106,8 +113,8 @@ func (m *mockArticleService) GetArticle(ctx context.Context, accountID, articleI
 	}
 	return &model.Article{
 		ID:    articleID,
-		URL:   "https://example.com/article",
-		Title: "Test Article",
+		URL:   testURL,
+		Title: testTestArticle,
 	}, nil
 }
 
@@ -129,7 +136,7 @@ func (m *mockArticleService) SendArticle(
 	if m.sendArticleFunc != nil {
 		return m.sendArticleFunc(ctx, destEmail, epubData, title)
 	}
-	return &email.SendEmailResponse{MessageID: "msg-123"}, nil
+	return &email.SendEmailResponse{MessageID: testMessageID}, nil
 }
 
 func (m *mockArticleService) GenerateEPUB(article *model.Article) (io.ReadCloser, error) {
@@ -154,9 +161,9 @@ func newDefaultMockArticleService(capturedArticle **model.Article) *mockArticleS
 		},
 		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
+				ID:    testArticleID,
 				URL:   u.String(),
-				Title: "Test Article",
+				Title: testTestArticle,
 			}, nil
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
@@ -181,9 +188,9 @@ func TestLocalProcessor_StartProcessing(_ *testing.T) {
 	processor := NewLocalProcessor(mockSvc)
 
 	event := &content.ProcessArticleEvent{
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	ctx := context.Background()
@@ -199,9 +206,9 @@ func TestProcessArticle_Success(t *testing.T) {
 	mockSvc := newDefaultMockArticleService(&capturedArticle)
 
 	event := &content.ProcessArticleEvent{
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	ctx := context.Background()
@@ -209,9 +216,9 @@ func TestProcessArticle_Success(t *testing.T) {
 	ProcessArticle(ctx, mockSvc, event)
 
 	require.NotNil(t, capturedArticle)
-	assert.Equal(t, "article-123", capturedArticle.ID)
-	assert.Equal(t, "https://example.com/article", capturedArticle.URL)
-	assert.Equal(t, "account-456", capturedArticle.Account)
+	assert.Equal(t, testArticleID, capturedArticle.ID)
+	assert.Equal(t, testURL, capturedArticle.URL)
+	assert.Equal(t, testAccountID, capturedArticle.Account)
 	assert.NotZero(t, capturedArticle.CreatedAt)
 }
 
@@ -225,8 +232,8 @@ func TestProcessArticle_FetchError(t *testing.T) {
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
 				ID:    articleID,
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				URL:   testURL,
+				Title: testTestArticle,
 			}, nil
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
@@ -237,9 +244,9 @@ func TestProcessArticle_FetchError(t *testing.T) {
 	}
 
 	event := &content.ProcessArticleEvent{
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	ctx := context.Background()
@@ -271,8 +278,8 @@ func TestProcessArticle_ParseHTMLError(t *testing.T) {
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
 				ID:    articleID,
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				URL:   testURL,
+				Title: testTestArticle,
 			}, nil
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
@@ -283,9 +290,9 @@ func TestProcessArticle_ParseHTMLError(t *testing.T) {
 	}
 
 	event := &content.ProcessArticleEvent{
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	ctx := context.Background()
@@ -321,8 +328,8 @@ func TestProcessArticle_NilCleanedArticle(t *testing.T) {
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
 				ID:    articleID,
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				URL:   testURL,
+				Title: testTestArticle,
 			}, nil
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
@@ -333,9 +340,9 @@ func TestProcessArticle_NilCleanedArticle(t *testing.T) {
 	}
 
 	event := &content.ProcessArticleEvent{
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	ctx := context.Background()
@@ -367,9 +374,9 @@ func TestProcessArticle_UpdateError(t *testing.T) {
 		},
 		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
+				ID:    testArticleID,
 				URL:   u.String(),
-				Title: "Test Article",
+				Title: testTestArticle,
 			}, nil
 		},
 		updateFunc: func(_ context.Context, _ *model.Article) error {
@@ -378,17 +385,17 @@ func TestProcessArticle_UpdateError(t *testing.T) {
 		getArticleFunc: func(_ context.Context, _, _ string) (*model.Article, error) {
 			getArticleCalled = true
 			return &model.Article{
-				ID:    "article-123",
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				ID:    testArticleID,
+				URL:   testURL,
+				Title: testTestArticle,
 			}, nil
 		},
 	}
 
 	event := &content.ProcessArticleEvent{
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	ctx := context.Background()
@@ -408,14 +415,14 @@ func TestProcessArticle_URLMismatch(t *testing.T) {
 		return &model.Article{
 			ID:    "different-id",
 			URL:   u.String(),
-			Title: "Test Article",
+			Title: testTestArticle,
 		}, nil
 	}
 
 	event := &content.ProcessArticleEvent{
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	ctx := context.Background()
@@ -425,8 +432,8 @@ func TestProcessArticle_URLMismatch(t *testing.T) {
 	ProcessArticle(ctx, mockSvc, event)
 
 	require.NotNil(t, capturedArticle)
-	assert.Equal(t, "https://example.com/article", capturedArticle.URL)
-	assert.Equal(t, "article-123", capturedArticle.ID)
+	assert.Equal(t, testURL, capturedArticle.URL)
+	assert.Equal(t, testArticleID, capturedArticle.ID)
 }
 
 func TestProcessArticle_Timeout(t *testing.T) {
@@ -446,9 +453,9 @@ func TestProcessArticle_Timeout(t *testing.T) {
 	}
 
 	event := &content.ProcessArticleEvent{
-		URL:       "https://example.com/article",
-		ArticleID: "article-123",
-		AccountID: "account-456",
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	ctx := context.Background()
@@ -469,8 +476,8 @@ func TestMarkArticleError_Success(t *testing.T) {
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
 				ID:    articleID,
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				URL:   testURL,
+				Title: testTestArticle,
 			}, nil
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
@@ -484,7 +491,7 @@ func TestMarkArticleError_Success(t *testing.T) {
 	ctx = logging.WithRequestError(ctx)
 
 	testErr := errors.New("test error")
-	markArticleError(ctx, mockSvc, "account-456", "article-123", "extract", testErr)
+	markArticleError(ctx, mockSvc, testAccountID, testArticleID, "extract", testErr)
 
 	require.NotNil(t, updatedArticle)
 	assert.Contains(t, updatedArticle.Error, "test error")
@@ -505,7 +512,7 @@ func TestMarkArticleError_GetArticleError(t *testing.T) {
 	ctx = logging.WithRequestError(ctx)
 
 	testErr := errors.New("test error")
-	markArticleError(ctx, mockSvc, "account-456", "article-123", "extract", testErr)
+	markArticleError(ctx, mockSvc, testAccountID, testArticleID, "extract", testErr)
 
 	err := logging.GetRequestError(ctx)
 	require.Error(t, err)
@@ -570,9 +577,9 @@ func TestProcessArticle_SendOnComplete_Success(t *testing.T) {
 		},
 		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
+				ID:    testArticleID,
 				URL:   u.String(),
-				Title: "Test Article",
+				Title: testTestArticle,
 			}, nil
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
@@ -581,14 +588,14 @@ func TestProcessArticle_SendOnComplete_Success(t *testing.T) {
 		},
 		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
 			sendCalled = true
-			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
+			return &email.SendEmailResponse{MessageID: testMessageID}, nil
 		},
 	}
 
 	event := &content.ProcessArticleEvent{
-		URL:            "https://example.com/article",
-		ArticleID:      "article-123",
-		AccountID:      "account-456",
+		URL:            testURL,
+		ArticleID:      testArticleID,
+		AccountID:      testAccountID,
 		SendOnComplete: true,
 	}
 
@@ -600,7 +607,7 @@ func TestProcessArticle_SendOnComplete_Success(t *testing.T) {
 
 	require.NotNil(t, capturedArticle)
 	assert.True(t, sendCalled)
-	assert.Equal(t, "article-123", capturedArticle.ID)
+	assert.Equal(t, testArticleID, capturedArticle.ID)
 }
 
 func TestProcessArticle_SendOnComplete_DeviceEmailNotSet(t *testing.T) {
@@ -623,9 +630,9 @@ func TestProcessArticle_SendOnComplete_DeviceEmailNotSet(t *testing.T) {
 		},
 		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
+				ID:    testArticleID,
 				URL:   u.String(),
-				Title: "Test Article",
+				Title: testTestArticle,
 			}, nil
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
@@ -638,9 +645,9 @@ func TestProcessArticle_SendOnComplete_DeviceEmailNotSet(t *testing.T) {
 	}
 
 	event := &content.ProcessArticleEvent{
-		URL:            "https://example.com/article",
-		ArticleID:      "article-123",
-		AccountID:      "account-456",
+		URL:            testURL,
+		ArticleID:      testArticleID,
+		AccountID:      testAccountID,
 		SendOnComplete: true,
 	}
 
@@ -649,7 +656,7 @@ func TestProcessArticle_SendOnComplete_DeviceEmailNotSet(t *testing.T) {
 	ProcessArticle(ctx, mockSvc, event)
 
 	require.NotNil(t, capturedArticle)
-	assert.Equal(t, "article-123", capturedArticle.ID)
+	assert.Equal(t, testArticleID, capturedArticle.ID)
 	assert.Empty(t, capturedArticle.Error)
 }
 
@@ -673,9 +680,9 @@ func TestProcessArticle_SendOnComplete_SendError(t *testing.T) {
 		},
 		cleanFunc: func(_ context.Context, _ *html.Node, u *url.URL) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
+				ID:    testArticleID,
 				URL:   u.String(),
-				Title: "Test Article",
+				Title: testTestArticle,
 			}, nil
 		},
 		updateFunc: func(_ context.Context, article *model.Article) error {
@@ -688,9 +695,9 @@ func TestProcessArticle_SendOnComplete_SendError(t *testing.T) {
 	}
 
 	event := &content.ProcessArticleEvent{
-		URL:            "https://example.com/article",
-		ArticleID:      "article-123",
-		AccountID:      "account-456",
+		URL:            testURL,
+		ArticleID:      testArticleID,
+		AccountID:      testAccountID,
 		SendOnComplete: true,
 	}
 
@@ -699,7 +706,7 @@ func TestProcessArticle_SendOnComplete_SendError(t *testing.T) {
 	ProcessArticle(ctx, mockSvc, event)
 
 	require.NotNil(t, capturedArticle)
-	assert.Equal(t, "article-123", capturedArticle.ID)
+	assert.Equal(t, testArticleID, capturedArticle.ID)
 	assert.Empty(t, capturedArticle.Error)
 }
 
@@ -711,8 +718,8 @@ func TestSendArticle_GetDeviceEmailError(t *testing.T) {
 	}
 
 	article := &model.Article{
-		ID:      "article-123",
-		Account: "account-456",
+		ID:      testArticleID,
+		Account: testAccountID,
 	}
 
 	ctx := context.Background()
@@ -731,14 +738,14 @@ func TestSendArticle_EmailRespWithMessageID(t *testing.T) {
 			return "test@kindle.com", true, nil
 		},
 		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
-			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
+			return &email.SendEmailResponse{MessageID: testMessageID}, nil
 		},
 	}
 
 	article := &model.Article{
-		ID:      "article-123",
-		Account: "account-456",
-		Title:   "Test Article",
+		ID:      testArticleID,
+		Account: testAccountID,
+		Title:   testTestArticle,
 	}
 
 	ctx := context.Background()

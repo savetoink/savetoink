@@ -22,7 +22,9 @@ import (
 )
 
 const (
-	jwtPartsCount = 3
+	grantTypeAuthCode = "authorization_code"
+	tokenTypeBearer   = "Bearer"
+	jwtPartsCount     = 3
 
 	// OauthTokenPath is the OAuth token endpoint path.
 	OauthTokenPath = "/oauth/token" //nolint:gosec // this is an API endpoint path, not a credential
@@ -48,7 +50,7 @@ func (h *Handlers) HandleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 	}
 
 	if req.GrantType == "" {
-		req.GrantType = "authorization_code"
+		req.GrantType = grantTypeAuthCode
 	}
 
 	logging.AddLogAttr(r.Context(), slog.String("redirect_uri", req.RedirectURI))
@@ -59,7 +61,7 @@ func (h *Handlers) HandleAuthTokenExchange(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	logging.AddLogAttr(r.Context(), slog.String("token_type", "Bearer"))
+	logging.AddLogAttr(r.Context(), slog.String("token_type", tokenTypeBearer))
 	logging.AddLogAttr(r.Context(), slog.Int("access_expires_in", response.AccessExpiresIn))
 
 	w.WriteHeader(http.StatusOK)
@@ -101,7 +103,7 @@ func (h *Handlers) exchangeAndGenerateTokens(
 	return &types.AuthTokenExchangeResponse{
 		AccessToken:      pasetoPair.AccessToken,
 		RefreshToken:     pasetoPair.RefreshToken,
-		TokenType:        "Bearer",
+		TokenType:        tokenTypeBearer,
 		AccessExpiresIn:  int(pasetoPair.AccessExpiresIn),
 		RefreshExpiresIn: int(pasetoPair.RefreshExpiresIn),
 		Email:            email,
@@ -175,7 +177,7 @@ func (h *Handlers) HandleAuthRefresh(w http.ResponseWriter, r *http.Request) {
 	response := &types.AuthTokenExchangeResponse{
 		AccessToken:      pair.AccessToken,
 		RefreshToken:     pair.RefreshToken,
-		TokenType:        "Bearer",
+		TokenType:        tokenTypeBearer,
 		AccessExpiresIn:  int(pair.AccessExpiresIn),
 		RefreshExpiresIn: int(pair.RefreshExpiresIn),
 	}
@@ -218,7 +220,7 @@ func (h *Handlers) buildTokenRequest(req types.AuthTokenExchangeRequest) *http.R
 }
 
 func (h *Handlers) executeTokenExchange(httpReq *http.Request) (*http.Response, []byte, error) {
-	resp, err := h.client.Do(httpReq) //nolint:gosec // HTTP request to Auth0 is from config, not user input
+	resp, err := h.client.Do(httpReq)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to execute token exchange: %w", err)
 	}

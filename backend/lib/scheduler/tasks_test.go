@@ -16,6 +16,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testTable1     = "table1"
+	testTable2     = "table2"
+	testBackupKey1 = "backup/key1"
+	testTable      = "test-table"
+	testBackupName = "test-backup"
+	testTask       = "st-task"
+	testSchedule   = "0 0 0 * * *"
+)
+
 func getTestConfig() *config.Config {
 	return &config.Config{
 		AWSConfig:        &aws.Config{},
@@ -34,14 +44,14 @@ func getTestConfig() *config.Config {
 func TestFormatBackupResults_AllSuccess(t *testing.T) {
 	results := []*repo.BackupResult{
 		{
-			TableName:  "table1",
+			TableName:  testTable1,
 			ItemsCount: 100,
-			Key:        "backup/key1",
+			Key:        testBackupKey1,
 			Latency:    100 * time.Millisecond,
 			Error:      nil,
 		},
 		{
-			TableName:  "table2",
+			TableName:  testTable2,
 			ItemsCount: 200,
 			Key:        "backup/key2",
 			Latency:    200 * time.Millisecond,
@@ -53,19 +63,19 @@ func TestFormatBackupResults_AllSuccess(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Len(t, out, 3)
-	assert.Contains(t, out[0], "table1")
-	assert.Contains(t, out[1], "table2")
+	assert.Contains(t, out[0], testTable1)
+	assert.Contains(t, out[1], testTable2)
 	assert.Contains(t, out[2], "backup summary: 2 succeeded, 0 failed")
 }
 
 func TestFormatBackupResults_AllFailed(t *testing.T) {
 	results := []*repo.BackupResult{
 		{
-			TableName: "table1",
+			TableName: testTable1,
 			Error:     errors.New("failed to backup"),
 		},
 		{
-			TableName: "table2",
+			TableName: testTable2,
 			Error:     errors.New("failed to backup"),
 		},
 	}
@@ -82,14 +92,14 @@ func TestFormatBackupResults_AllFailed(t *testing.T) {
 func TestFormatBackupResults_MixedSuccessAndFailure(t *testing.T) {
 	results := []*repo.BackupResult{
 		{
-			TableName:  "table1",
+			TableName:  testTable1,
 			ItemsCount: 100,
-			Key:        "backup/key1",
+			Key:        testBackupKey1,
 			Latency:    100 * time.Millisecond,
 			Error:      nil,
 		},
 		{
-			TableName: "table2",
+			TableName: testTable2,
 			Error:     errors.New("failed to backup"),
 		},
 	}
@@ -98,7 +108,7 @@ func TestFormatBackupResults_MixedSuccessAndFailure(t *testing.T) {
 
 	require.Error(t, err)
 	require.Len(t, out, 2)
-	assert.Contains(t, out[0], "table1")
+	assert.Contains(t, out[0], testTable1)
 	assert.Contains(t, out[1], "backup summary: 1 succeeded, 1 failed")
 }
 
@@ -114,8 +124,8 @@ func TestFormatBackupResults_EmptyResults(t *testing.T) {
 
 func TestFormatRestoreResult_Error(t *testing.T) {
 	result := &repo.RestoreResult{
-		TableName:  "test-table",
-		BackupName: "test-backup",
+		TableName:  testTable,
+		BackupName: testBackupName,
 		Error:      errors.New("restore failed"),
 	}
 
@@ -129,8 +139,8 @@ func TestFormatRestoreResult_Error(t *testing.T) {
 
 func TestFormatRestoreResult_Success_NoOverwrite(t *testing.T) {
 	result := &repo.RestoreResult{
-		TableName:     "test-table",
-		BackupName:    "test-backup",
+		TableName:     testTable,
+		BackupName:    testBackupName,
 		ItemsRestored: 100,
 		ItemsSkipped:  50,
 		Overwrite:     false,
@@ -150,8 +160,8 @@ func TestFormatRestoreResult_Success_NoOverwrite(t *testing.T) {
 
 func TestFormatRestoreResult_Success_Overwrite(t *testing.T) {
 	result := &repo.RestoreResult{
-		TableName:     "test-table",
-		BackupName:    "test-backup",
+		TableName:     testTable,
+		BackupName:    testBackupName,
 		ItemsRestored: 100,
 		ItemsDeleted:  20,
 		Overwrite:     true,
@@ -175,10 +185,10 @@ func TestRegisterTasks(t *testing.T) {
 
 	RegisterTasks(runner, getTestConfig())
 
-	result := runner.Run(context.Background(), json.RawMessage(`{"task":"backup","schedule":"0 0 0 * * *"}`))
+	result := runner.Run(context.Background(), json.RawMessage(`{"task":"backup","schedule":testSchedule}`))
 	require.NotNil(t, result)
 
-	restoreEvent := json.RawMessage(`{"task":"restore","schedule":"0 0 0 * * *","params":{"backup_name":"test"}}`)
+	restoreEvent := json.RawMessage(`{"task":"restore","schedule":testSchedule,"params":{"backup_name":"test"}}`)
 	resultRestore := runner.Run(context.Background(), restoreEvent)
 	require.NotNil(t, resultRestore)
 }
@@ -247,8 +257,8 @@ func TestNewBackgroundScheduler_WithTasks(t *testing.T) {
 	cfg := getTestConfig()
 	cfg.Tasks = []consts.TaskConfig{
 		{
-			Task:     "st-task",
-			Schedule: "0 0 0 * * *",
+			Task:     testTask,
+			Schedule: testSchedule,
 		},
 	}
 
@@ -262,8 +272,8 @@ func TestNewBackgroundScheduler_NilRunner(t *testing.T) {
 		AWSConfig: nil,
 		Tasks: []consts.TaskConfig{
 			{
-				Task:     "st-task",
-				Schedule: "0 0 0 * * *",
+				Task:     testTask,
+				Schedule: testSchedule,
 			},
 		},
 	}

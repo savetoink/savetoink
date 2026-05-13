@@ -13,9 +13,18 @@ const (
 	articleURLWithQuery         = "https://example.com/article/123?source=twitter&utm=test"
 	articleURLWithSource        = "https://example.com/article/123?source=twitter"
 	articleURLWithTrailingSlash = "https://example.com/article/123/"
+	articleURLWithFragment      = "https://example.com/article/123?ref=news#intro"
 	httpArticleURL              = "http://example.com/article"
 	baseURL                     = "https://example.com/"
+	testURLEmpty                = "https://example.com"
+	testURLComplex              = "https://example.com/blog/2023/12/post?id=456&category=tech"
 	schemeError                 = "must use http or https scheme"
+	errMsgCannotBeEmpty         = "cannot be empty"
+	testNameInvalidURL          = "invalid URL"
+	testNameURLWithoutScheme    = "URL without scheme"
+	testNameEmptyURL            = "empty URL"
+	testURLNotAURL              = "not-a-url"
+	testURLWithoutScheme        = "example.com/article"
 )
 
 func TestArticleIDFromURL(t *testing.T) {
@@ -42,7 +51,7 @@ func TestArticleIDFromURL(t *testing.T) {
 		},
 		{
 			name:    "valid URL with both query and fragment",
-			url:     "https://example.com/article/123?ref=news#intro",
+			url:     articleURLWithFragment,
 			wantErr: false,
 		},
 		{
@@ -56,22 +65,22 @@ func TestArticleIDFromURL(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:        "invalid URL",
-			url:         "not-a-url",
+			name:        testNameInvalidURL,
+			url:         testURLNotAURL,
 			wantErr:     true,
 			errContains: schemeError,
 		},
 		{
-			name:        "URL without scheme",
-			url:         "example.com/article",
+			name:        testNameURLWithoutScheme,
+			url:         testURLWithoutScheme,
 			wantErr:     true,
 			errContains: schemeError,
 		},
 		{
-			name:        "empty URL",
+			name:        testNameEmptyURL,
 			url:         "",
 			wantErr:     true,
-			errContains: "cannot be empty",
+			errContains: errMsgCannotBeEmpty,
 		},
 	}
 
@@ -175,7 +184,7 @@ func TestCleanURL(t *testing.T) {
 		},
 		{
 			name:        "strips fragment but preserves query",
-			inputURL:    "https://example.com/article/123?ref=news#intro",
+			inputURL:    articleURLWithFragment,
 			expectedURL: "https://example.com/article/123?ref=news",
 			wantErr:     false,
 		},
@@ -199,7 +208,7 @@ func TestCleanURL(t *testing.T) {
 		},
 		{
 			name:        "handles no path",
-			inputURL:    "https://example.com",
+			inputURL:    testURLEmpty,
 			expectedURL: baseURL,
 			wantErr:     false,
 		},
@@ -211,30 +220,30 @@ func TestCleanURL(t *testing.T) {
 		},
 		{
 			name:        "complex path with query",
-			inputURL:    "https://example.com/blog/2023/12/post?id=456&category=tech",
-			expectedURL: "https://example.com/blog/2023/12/post?id=456&category=tech",
+			inputURL:    testURLComplex,
+			expectedURL: testURLComplex,
 			wantErr:     false,
 		},
 		{
-			name:        "invalid URL",
-			inputURL:    "not-a-url",
+			name:        testNameInvalidURL,
+			inputURL:    testURLNotAURL,
 			expectedURL: "",
 			wantErr:     true,
 			errContains: schemeError,
 		},
 		{
-			name:        "URL without scheme",
-			inputURL:    "example.com/article",
+			name:        testNameURLWithoutScheme,
+			inputURL:    testURLWithoutScheme,
 			expectedURL: "",
 			wantErr:     true,
 			errContains: schemeError,
 		},
 		{
-			name:        "empty URL",
+			name:        testNameEmptyURL,
 			inputURL:    "",
 			expectedURL: "",
 			wantErr:     true,
-			errContains: "cannot be empty",
+			errContains: errMsgCannotBeEmpty,
 		},
 	}
 

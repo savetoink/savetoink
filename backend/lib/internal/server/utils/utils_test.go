@@ -17,6 +17,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testNameNotFound      = "not found error"
+	testNameInvalid       = "invalid error"
+	testNameUnauthorized  = "unauthorized error"
+	testNameConflict      = "conflict error"
+	testNameQuotaExceeded = "quota exceeded error"
+	testNameGeneric       = "generic error"
+	testParamNameID       = "id"
+	testUUIDArticleID     = "550e8400-e29b-41d4-a716-446655440000"
+)
+
 func TestWriteJSONError(t *testing.T) {
 	w := httptest.NewRecorder()
 	testErr := errors.New("test error")
@@ -40,32 +51,32 @@ func TestStatusCodeForError(t *testing.T) {
 		expected int
 	}{
 		{
-			name:     "not found error",
+			name:     testNameNotFound,
 			err:      apperrors.ErrNotFound,
 			expected: http.StatusNotFound,
 		},
 		{
-			name:     "invalid error",
+			name:     testNameInvalid,
 			err:      apperrors.ErrInvalid,
 			expected: http.StatusBadRequest,
 		},
 		{
-			name:     "unauthorized error",
+			name:     testNameUnauthorized,
 			err:      apperrors.ErrUnauthorized,
 			expected: http.StatusUnauthorized,
 		},
 		{
-			name:     "conflict error",
+			name:     testNameConflict,
 			err:      apperrors.ErrConflict,
 			expected: http.StatusConflict,
 		},
 		{
-			name:     "quota exceeded error",
+			name:     testNameQuotaExceeded,
 			err:      apperrors.ErrQuotaExceeded,
 			expected: http.StatusTooManyRequests,
 		},
 		{
-			name:     "generic error",
+			name:     testNameGeneric,
 			err:      errors.New("generic error"),
 			expected: http.StatusInternalServerError,
 		},
@@ -170,37 +181,37 @@ func TestHandleServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "not found error",
+			name:           testNameNotFound,
 			err:            apperrors.ErrNotFound,
 			contextStr:     "get article",
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "invalid error",
+			name:           testNameInvalid,
 			err:            apperrors.ErrInvalid,
 			contextStr:     "validate input",
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "unauthorized error",
+			name:           testNameUnauthorized,
 			err:            apperrors.ErrUnauthorized,
 			contextStr:     "check auth",
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
-			name:           "conflict error",
+			name:           testNameConflict,
 			err:            apperrors.ErrConflict,
 			contextStr:     "create resource",
 			expectedStatus: http.StatusConflict,
 		},
 		{
-			name:           "quota exceeded error",
+			name:           testNameQuotaExceeded,
 			err:            apperrors.ErrQuotaExceeded,
 			contextStr:     "check quota",
 			expectedStatus: http.StatusTooManyRequests,
 		},
 		{
-			name:           "generic error",
+			name:           testNameGeneric,
 			err:            errors.New("database connection failed"),
 			contextStr:     "fetch data",
 			expectedStatus: http.StatusInternalServerError,
@@ -235,23 +246,23 @@ func TestGetArticleID(t *testing.T) {
 		{
 			name:      "valid article ID in URL",
 			url:       "/articles/12345",
-			paramName: "id",
+			paramName: testParamNameID,
 			paramVal:  "12345",
 			expected:  "12345",
 		},
 		{
 			name:      "empty article ID",
 			url:       "/articles/",
-			paramName: "id",
+			paramName: testParamNameID,
 			paramVal:  "",
 			expected:  "",
 		},
 		{
 			name:      "UUID article ID",
 			url:       "/articles/550e8400-e29b-41d4-a716-446655440000",
-			paramName: "id",
-			paramVal:  "550e8400-e29b-41d4-a716-446655440000",
-			expected:  "550e8400-e29b-41d4-a716-446655440000",
+			paramName: testParamNameID,
+			paramVal:  testUUIDArticleID,
+			expected:  testUUIDArticleID,
 		},
 		{
 			name:      "missing parameter",

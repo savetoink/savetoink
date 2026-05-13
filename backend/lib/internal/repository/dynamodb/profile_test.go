@@ -10,7 +10,10 @@ import (
 )
 
 const (
-	profileTestEmail = "test@example.com"
+	profileTestEmail         = "test@example.com"
+	profileTestDeviceEmail   = "device@example.com"
+	profileTestUpdateAccount = "test-account-update"
+	profileTestUpdateDevice  = "update-device@example.com"
 )
 
 func (s *DynamoDBRepositoryTestSuite) TestPutAndGetUserProfile() {
@@ -20,7 +23,7 @@ func (s *DynamoDBRepositoryTestSuite) TestPutAndGetUserProfile() {
 	profile := &model.UserProfile{
 		Account:     "test-account",
 		Email:       profileTestEmail,
-		DeviceEmail: "device@example.com",
+		DeviceEmail: profileTestDeviceEmail,
 		AutoSend:    true,
 		BouncedEmails: map[string]model.BounceInfo{
 			"bounced@example.com": {
@@ -132,9 +135,9 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateUserProfile() {
 	t := s.T()
 
 	profile := &model.UserProfile{
-		Account:     "test-account-update",
+		Account:     profileTestUpdateAccount,
 		Email:       "update@example.com",
-		DeviceEmail: "update-device@example.com",
+		DeviceEmail: profileTestUpdateDevice,
 		AutoSend:    false,
 	}
 
@@ -142,9 +145,9 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateUserProfile() {
 	require.NoError(t, err)
 
 	updatedProfile := &model.UserProfile{
-		Account:     "test-account-update",
+		Account:     profileTestUpdateAccount,
 		Email:       "updated@example.com",
-		DeviceEmail: "update-device@example.com",
+		DeviceEmail: profileTestUpdateDevice,
 		AutoSend:    true,
 	}
 
@@ -165,7 +168,7 @@ func (s *DynamoDBRepositoryTestSuite) TestPutUserProfileEmptyAccount() {
 
 	profile := &model.UserProfile{
 		Email:       "test@example.com",
-		DeviceEmail: "device@example.com",
+		DeviceEmail: profileTestDeviceEmail,
 		AutoSend:    true,
 	}
 

@@ -12,6 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testAccountIDKey = "account_id"
+
+const testRequestIDKey = "request_id"
+
 func TestGetRequestError_NoError(t *testing.T) {
 	ctx := context.Background()
 	err := GetRequestError(ctx)
@@ -315,39 +319,39 @@ func TestExtractInheritedLogAttrs(t *testing.T) {
 		{
 			name: "excludes client_ip, user_agent, path, method, url",
 			recordAttrs: []slog.Attr{
-				slog.String("client_ip", "192.168.1.1"),
-				slog.String("user_agent", "test-agent"),
-				slog.String("path", "/test"),
-				slog.String("method", "GET"),
+				slog.String(excludeKeyClientIP, "192.168.1.1"),
+				slog.String(excludeKeyUserAgent, "test-agent"),
+				slog.String(excludeKeyPath, "/test"),
+				slog.String(excludeKeyMethod, "GET"),
 				slog.String("request_id", "req-123"),
 				slog.String("version", "1.0.0"),
-				slog.String("account_id", "acc-456"),
-				slog.String("url", "https://example.com"),
+				slog.String(testAccountIDKey, "acc-456"),
+				slog.String(excludeKeyURL, "https://example.com"),
 				slog.String("article_id", "art-789"),
 			},
-			expectedKeys: []string{"request_id", "version", "account_id", "article_id"},
-			excludedKeys: []string{"client_ip", "user_agent", "path", "method", "url"},
+			expectedKeys: []string{testRequestIDKey, "version", testAccountIDKey, "article_id"},
+			excludedKeys: []string{excludeKeyClientIP, excludeKeyUserAgent, excludeKeyPath, excludeKeyMethod, excludeKeyURL},
 		},
 		{
 			name: "empty record returns nil",
 			recordAttrs: []slog.Attr{
-				slog.String("client_ip", "192.168.1.1"),
-				slog.String("user_agent", "test-agent"),
-				slog.String("path", "/test"),
-				slog.String("method", "GET"),
+				slog.String(excludeKeyClientIP, "192.168.1.1"),
+				slog.String(excludeKeyUserAgent, "test-agent"),
+				slog.String(excludeKeyPath, "/test"),
+				slog.String(excludeKeyMethod, "GET"),
 			},
 			expectedKeys: []string{},
-			excludedKeys: []string{"client_ip", "user_agent", "path", "method"},
+			excludedKeys: []string{excludeKeyClientIP, excludeKeyUserAgent, excludeKeyPath, excludeKeyMethod},
 		},
 		{
 			name: "partial attrs with url excluded",
 			recordAttrs: []slog.Attr{
 				slog.String("request_id", "req-123"),
-				slog.String("url", "https://example.com"),
-				slog.String("account_id", "acc-456"),
+				slog.String(excludeKeyURL, "https://example.com"),
+				slog.String(testAccountIDKey, "acc-456"),
 			},
-			expectedKeys: []string{"request_id", "account_id"},
-			excludedKeys: []string{"url"},
+			expectedKeys: []string{testRequestIDKey, testAccountIDKey},
+			excludedKeys: []string{excludeKeyURL},
 		},
 	}
 
@@ -424,7 +428,7 @@ func TestLogArticleProcessing_Success(t *testing.T) {
 
 	inheritedAttrs := []slog.Attr{
 		slog.String("request_id", "req-123"),
-		slog.String("account_id", "acc-456"),
+		slog.String(testAccountIDKey, "acc-456"),
 	}
 
 	ctx := context.Background()
@@ -449,7 +453,7 @@ func TestLogArticleProcessing_Success(t *testing.T) {
 	}
 
 	assert.Equal(t, "req-123", attrMap["request_id"])
-	assert.Equal(t, "acc-456", attrMap["account_id"])
+	assert.Equal(t, "acc-456", attrMap[testAccountIDKey])
 	assert.Equal(t, int64(http.StatusOK), attrMap["status"])
 	assert.NotContains(t, attrMap, "error")
 }

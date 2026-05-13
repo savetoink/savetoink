@@ -26,6 +26,12 @@ import (
 	"golang.org/x/net/html"
 )
 
+const (
+	testKeyVersion      = "v1"
+	testNameEmptyErrMsg = "empty error message"
+	testNameInvalidKey  = "invalid API key"
+)
+
 const testPasetoKey = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="
 
 type MockService struct {
@@ -158,7 +164,7 @@ func testKeyStore(t *testing.T) *localPaseto.KeyStore {
 	t.Helper()
 	ks, err := localPaseto.NewKeyStore(localPaseto.KeyStoreConfig{
 		SymmetricKey: testPasetoKey,
-		KeyVersion:   "v1",
+		KeyVersion:   testKeyVersion,
 	})
 	require.NoError(t, err)
 	return ks
@@ -199,7 +205,7 @@ func TestHandleAuthError(t *testing.T) {
 		errorMsg string
 	}{
 		{name: "error added to context", errorMsg: "test error message"},
-		{name: "empty error message", errorMsg: ""},
+		{name: testNameEmptyErrMsg, errorMsg: ""},
 	}
 
 	for _, tt := range tests {
@@ -322,7 +328,7 @@ func TestAddAuthErrorToCtx(t *testing.T) {
 		errorMsg string
 	}{
 		{name: "add error message", errorMsg: "invalid credentials"},
-		{name: "empty error message", errorMsg: ""},
+		{name: testNameEmptyErrMsg, errorMsg: ""},
 		{name: "long error message", errorMsg: strings.Repeat("error ", 100)},
 		{name: "error with special characters", errorMsg: "error: authentication failed (code: 401)"},
 	}
@@ -372,7 +378,7 @@ func TestNewAccountIDMiddleware(t *testing.T) {
 			name:        "auth0 backend with paseto",
 			authBackend: consts.AuthBackendAuth0,
 			pasetoKey:   testPasetoKey,
-			pasetoVer:   "v1",
+			pasetoVer:   testKeyVersion,
 		},
 		{
 			name:        "default backend (empty) falls back to shared API key",
@@ -441,7 +447,7 @@ func TestSharedAPIKeyMiddleware(t *testing.T) {
 			authHeaderVal: "secret-key",
 			expectedError: "malformed auth header",
 		},
-		{name: "invalid API key", authHeaderVal: "Bearer wrong-key", expectedError: "invalid API key"},
+		{name: testNameInvalidKey, authHeaderVal: "Bearer wrong-key", expectedError: "invalid API key"},
 	}
 
 	for _, tt := range tests {

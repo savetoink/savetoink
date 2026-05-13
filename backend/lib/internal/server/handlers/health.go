@@ -8,8 +8,10 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/internal/server/types"
 )
 
+const statusOK = "ok"
+
 // HandleHealth handles the health check endpoint.
 func (h *Handlers) HandleHealth(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(types.HealthResponse{Status: "ok"})
+	_ = json.NewEncoder(w).Encode(types.HealthResponse{Status: statusOK})
 }

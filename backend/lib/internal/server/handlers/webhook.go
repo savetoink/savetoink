@@ -164,7 +164,7 @@ func (h *Handlers) extractErrorMessage(event *mailjetEvent) string {
 		errorMessage = event.Comment
 	}
 	if errorMessage == "" {
-		errorMessage = "bounce"
+		errorMessage = mailjetEventBounce
 	}
 	return errorMessage
 }

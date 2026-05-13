@@ -18,6 +18,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testItem1    = "item1"
+	testItem2    = "item2"
+	testBucket   = "test-bucket"
+	testTable1   = "table1"
+	testTable2   = "table2"
+	testTable3   = "table3"
+	testAccount1 = "account1"
+)
+
 type mockDynamoDBScanner struct {
 	scanFunc func(
 		ctx context.Context,
@@ -108,8 +118,8 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 			) (*dynamodb.ScanOutput, error) {
 				return &dynamodb.ScanOutput{
 					Items: []map[string]types.AttributeValue{
-						{"id": &types.AttributeValueMemberS{Value: "item1"}},
-						{"id": &types.AttributeValueMemberS{Value: "item2"}},
+						{attributeNameID: &types.AttributeValueMemberS{Value: testItem1}},
+						{attributeNameID: &types.AttributeValueMemberS{Value: testItem2}},
 					},
 				}, nil
 			},
@@ -124,8 +134,8 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 				return &dynamodb.DescribeTableOutput{
 					Table: &types.TableDescription{
 						KeySchema: []types.KeySchemaElement{
-							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
-							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+							{AttributeName: aws.String(attributeNameAccount), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String(attributeNameID), KeyType: types.KeyTypeRange},
 						},
 					},
 				}, nil
@@ -147,7 +157,7 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 			dynamoClient: mockDDB,
 			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
-			bucket:       "test-bucket",
+			bucket:       testBucket,
 			logger:       logger,
 		}
 
@@ -192,7 +202,7 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 		br := &BackupRepository{
 			dynamoClient: mockDDB,
 			s3Client:     mockS3,
-			bucket:       "test-bucket",
+			bucket:       testBucket,
 			logger:       logger,
 		}
 
@@ -211,7 +221,7 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 			) (*dynamodb.ScanOutput, error) {
 				return &dynamodb.ScanOutput{
 					Items: []map[string]types.AttributeValue{
-						{"id": &types.AttributeValueMemberS{Value: "item1"}},
+						{attributeNameID: &types.AttributeValueMemberS{Value: testItem1}},
 					},
 				}, nil
 			},
@@ -226,8 +236,8 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 				return &dynamodb.DescribeTableOutput{
 					Table: &types.TableDescription{
 						KeySchema: []types.KeySchemaElement{
-							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
-							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+							{AttributeName: aws.String(attributeNameAccount), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String(attributeNameID), KeyType: types.KeyTypeRange},
 						},
 					},
 				}, nil
@@ -249,7 +259,7 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 			dynamoClient: mockDDB,
 			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
-			bucket:       "test-bucket",
+			bucket:       testBucket,
 			logger:       logger,
 		}
 
@@ -271,16 +281,16 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 				if callCount == 1 {
 					return &dynamodb.ScanOutput{
 						Items: []map[string]types.AttributeValue{
-							{"id": &types.AttributeValueMemberS{Value: "item1"}},
+							{attributeNameID: &types.AttributeValueMemberS{Value: testItem1}},
 						},
 						LastEvaluatedKey: map[string]types.AttributeValue{
-							"id": &types.AttributeValueMemberS{Value: "key1"},
+							attributeNameID: &types.AttributeValueMemberS{Value: "key1"},
 						},
 					}, nil
 				}
 				return &dynamodb.ScanOutput{
 					Items: []map[string]types.AttributeValue{
-						{"id": &types.AttributeValueMemberS{Value: "item2"}},
+						{attributeNameID: &types.AttributeValueMemberS{Value: testItem2}},
 					},
 				}, nil
 			},
@@ -295,8 +305,8 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 				return &dynamodb.DescribeTableOutput{
 					Table: &types.TableDescription{
 						KeySchema: []types.KeySchemaElement{
-							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
-							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+							{AttributeName: aws.String(attributeNameAccount), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String(attributeNameID), KeyType: types.KeyTypeRange},
 						},
 					},
 				}, nil
@@ -318,7 +328,7 @@ func TestBackupRepository_BackupTable(t *testing.T) {
 			dynamoClient: mockDDB,
 			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
-			bucket:       "test-bucket",
+			bucket:       testBucket,
 			logger:       logger,
 		}
 
@@ -340,7 +350,7 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 			) (*dynamodb.ScanOutput, error) {
 				return &dynamodb.ScanOutput{
 					Items: []map[string]types.AttributeValue{
-						{"id": &types.AttributeValueMemberS{Value: "item1"}},
+						{attributeNameID: &types.AttributeValueMemberS{Value: testItem1}},
 					},
 				}, nil
 			},
@@ -355,8 +365,8 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 				return &dynamodb.DescribeTableOutput{
 					Table: &types.TableDescription{
 						KeySchema: []types.KeySchemaElement{
-							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
-							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+							{AttributeName: aws.String(attributeNameAccount), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String(attributeNameID), KeyType: types.KeyTypeRange},
 						},
 					},
 				}, nil
@@ -378,11 +388,11 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 			dynamoClient: mockDDB,
 			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
-			bucket:       "test-bucket",
+			bucket:       testBucket,
 			logger:       logger,
 		}
 
-		tables := []string{"table1", "table2", "table3"}
+		tables := []string{testTable1, testTable2, testTable3}
 		results := br.BackupAllTables(context.Background(), tables)
 
 		assert.Len(t, results, 3)
@@ -399,12 +409,12 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 				params *dynamodb.ScanInput,
 				_ ...func(*dynamodb.Options),
 			) (*dynamodb.ScanOutput, error) {
-				if *params.TableName == "table2" {
+				if *params.TableName == testTable2 {
 					return nil, errors.New("scan error")
 				}
 				return &dynamodb.ScanOutput{
 					Items: []map[string]types.AttributeValue{
-						{"id": &types.AttributeValueMemberS{Value: "item1"}},
+						{attributeNameID: &types.AttributeValueMemberS{Value: testItem1}},
 					},
 				}, nil
 			},
@@ -419,8 +429,8 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 				return &dynamodb.DescribeTableOutput{
 					Table: &types.TableDescription{
 						KeySchema: []types.KeySchemaElement{
-							{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
-							{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+							{AttributeName: aws.String(attributeNameAccount), KeyType: types.KeyTypeHash},
+							{AttributeName: aws.String(attributeNameID), KeyType: types.KeyTypeRange},
 						},
 					},
 				}, nil
@@ -442,11 +452,11 @@ func TestBackupRepository_BackupAllTables(t *testing.T) {
 			dynamoClient: mockDDB,
 			ddbDescriber: mockDescriber,
 			s3Client:     mockS3,
-			bucket:       "test-bucket",
+			bucket:       testBucket,
 			logger:       logger,
 		}
 
-		tables := []string{"table1", "table2", "table3"}
+		tables := []string{testTable1, testTable2, testTable3}
 		results := br.BackupAllTables(context.Background(), tables)
 
 		assert.Len(t, results, 3)
@@ -497,7 +507,7 @@ func TestBackupRepository_ScanTable(t *testing.T) {
 				items := make([]map[string]types.AttributeValue, itemsPerScan)
 				for i := range itemsPerScan {
 					items[i] = map[string]types.AttributeValue{
-						"id": &types.AttributeValueMemberS{Value: "item"},
+						attributeNameID: &types.AttributeValueMemberS{Value: "item"},
 					}
 				}
 
@@ -510,7 +520,7 @@ func TestBackupRepository_ScanTable(t *testing.T) {
 				return &dynamodb.ScanOutput{
 					Items: items,
 					LastEvaluatedKey: map[string]types.AttributeValue{
-						"id": &types.AttributeValueMemberS{Value: "key"},
+						attributeNameID: &types.AttributeValueMemberS{Value: "key"},
 					},
 				}, nil
 			},
@@ -538,7 +548,7 @@ func TestBackupRepository_KeyGeneration(t *testing.T) {
 		) (*dynamodb.ScanOutput, error) {
 			return &dynamodb.ScanOutput{
 				Items: []map[string]types.AttributeValue{
-					{"id": &types.AttributeValueMemberS{Value: "item1"}},
+					{attributeNameID: &types.AttributeValueMemberS{Value: testItem1}},
 				},
 			}, nil
 		},
@@ -553,8 +563,8 @@ func TestBackupRepository_KeyGeneration(t *testing.T) {
 			return &dynamodb.DescribeTableOutput{
 				Table: &types.TableDescription{
 					KeySchema: []types.KeySchemaElement{
-						{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
-						{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+						{AttributeName: aws.String(attributeNameAccount), KeyType: types.KeyTypeHash},
+						{AttributeName: aws.String(attributeNameID), KeyType: types.KeyTypeRange},
 					},
 				},
 			}, nil
@@ -576,7 +586,7 @@ func TestBackupRepository_KeyGeneration(t *testing.T) {
 		dynamoClient: mockDDB,
 		ddbDescriber: mockDescriber,
 		s3Client:     mockS3,
-		bucket:       "test-bucket",
+		bucket:       testBucket,
 		logger:       logger,
 	}
 
@@ -596,7 +606,7 @@ func TestBackupRepository_TimestampValidation(t *testing.T) {
 		) (*dynamodb.ScanOutput, error) {
 			return &dynamodb.ScanOutput{
 				Items: []map[string]types.AttributeValue{
-					{"id": &types.AttributeValueMemberS{Value: "item1"}},
+					{attributeNameID: &types.AttributeValueMemberS{Value: testItem1}},
 				},
 			}, nil
 		},
@@ -611,8 +621,8 @@ func TestBackupRepository_TimestampValidation(t *testing.T) {
 			return &dynamodb.DescribeTableOutput{
 				Table: &types.TableDescription{
 					KeySchema: []types.KeySchemaElement{
-						{AttributeName: aws.String("account"), KeyType: types.KeyTypeHash},
-						{AttributeName: aws.String("id"), KeyType: types.KeyTypeRange},
+						{AttributeName: aws.String(attributeNameAccount), KeyType: types.KeyTypeHash},
+						{AttributeName: aws.String(attributeNameID), KeyType: types.KeyTypeRange},
 					},
 				},
 			}, nil
@@ -634,7 +644,7 @@ func TestBackupRepository_TimestampValidation(t *testing.T) {
 		dynamoClient: mockDDB,
 		ddbDescriber: mockDescriber,
 		s3Client:     mockS3,
-		bucket:       "test-bucket",
+		bucket:       testBucket,
 		logger:       logger,
 	}
 
@@ -688,8 +698,8 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 				return &dynamodb.ScanOutput{
 					Items: []map[string]types.AttributeValue{
 						{
-							"account": &types.AttributeValueMemberS{Value: "account1"},
-							"id":      &types.AttributeValueMemberS{Value: "old-id"},
+							attributeNameAccount: &types.AttributeValueMemberS{Value: testAccount1},
+							attributeNameID:      &types.AttributeValueMemberS{Value: "old-id"},
 						},
 					},
 				}, nil
@@ -737,7 +747,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 			dynamoClient: mockDDB,
 			s3Getter:     mockS3Getter,
 			ddbWriter:    mockDDBWriter,
-			bucket:       "test-bucket",
+			bucket:       testBucket,
 			logger:       logger,
 		}
 
@@ -764,8 +774,8 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 				return &dynamodb.ScanOutput{
 					Items: []map[string]types.AttributeValue{
 						{
-							"account": &types.AttributeValueMemberS{Value: "account1"},
-							"id":      &types.AttributeValueMemberS{Value: "id1"},
+							attributeNameAccount: &types.AttributeValueMemberS{Value: testAccount1},
+							attributeNameID:      &types.AttributeValueMemberS{Value: "id1"},
 						},
 					},
 				}, nil
@@ -810,7 +820,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 			dynamoClient: mockDDB,
 			s3Getter:     mockS3Getter,
 			ddbWriter:    mockDDBWriter,
-			bucket:       "test-bucket",
+			bucket:       testBucket,
 			logger:       logger,
 		}
 
@@ -833,7 +843,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -860,7 +870,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -898,7 +908,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -954,7 +964,7 @@ func TestBackupRepository_RestoreTable_Overwrite(t *testing.T) {
 			dynamoClient: mockDDB,
 			s3Getter:     mockS3Getter,
 			ddbWriter:    mockDDBWriter,
-			bucket:       "test-bucket",
+			bucket:       testBucket,
 			logger:       logger,
 		}
 
@@ -974,7 +984,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -991,7 +1001,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1008,7 +1018,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1025,7 +1035,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1042,7 +1052,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1059,7 +1069,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1076,7 +1086,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1093,7 +1103,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1110,7 +1120,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1127,7 +1137,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1144,7 +1154,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 
@@ -1161,7 +1171,7 @@ func TestBackupRepository_ExtractTableName(t *testing.T) {
 		br := &BackupRepository{
 			s3Getter:  mockS3Getter,
 			ddbWriter: mockDDBWriter,
-			bucket:    "test-bucket",
+			bucket:    testBucket,
 			logger:    logger,
 		}
 

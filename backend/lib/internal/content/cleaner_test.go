@@ -12,6 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testHelloWorldContent = "Hello world"
+
+const (
+	testHelloWorld = " Hello  world "
+
+	testBrowserlessKey = "test-key"
+	testContentType    = "Content-Type"
+	testTextHTML       = "text/html"
+)
+
 func TestTrafilaturaCleaner_Clean(t *testing.T) {
 	cleaner := NewTrafilaturaCleaner()
 	testURL, _ := url.Parse("https://example.com/article")
@@ -121,22 +131,22 @@ func TestStripHTML(t *testing.T) {
 		{
 			name:     "multiple tags",
 			input:    "<p>Hello</p><p>world</p>",
-			expected: " Hello  world ",
+			expected: testHelloWorld,
 		},
 		{
 			name:     "divs",
 			input:    "<div>Hello</div><div>world</div>",
-			expected: " Hello  world ",
+			expected: testHelloWorld,
 		},
 		{
 			name:     "br tags",
 			input:    "Hello<br>world",
-			expected: "Hello world",
+			expected: testHelloWorldContent,
 		},
 		{
 			name:     "self-closing br",
 			input:    "Hello<br />world",
-			expected: "Hello world",
+			expected: testHelloWorldContent,
 		},
 		{
 			name:     "mixed tags",
@@ -166,7 +176,7 @@ func TestCountWords(t *testing.T) {
 	}{
 		{
 			name:     "simple sentence",
-			input:    "Hello world",
+			input:    testHelloWorldContent,
 			expected: 2,
 		},
 		{

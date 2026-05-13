@@ -11,6 +11,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	tagArticleURL    = "https://example.com/article"
+	tagArticleURL2   = "https://example.com/article2"
+	tagArticleTitle  = "Test Article"
+	tagTech          = "tech"
+	tagProgramming   = "programming"
+	tagGolang        = "golang"
+	tagDatabase      = "database"
+	tagArticle1      = "tag-article-1"
+	tagArticle2      = "tag-article-2"
+	tagArticle3      = "tag-article-3"
+	tagArticleURL1   = "https://example.com/article1"
+	tagArticle2Title = "Test Article 2"
+	tagTest          = "test"
+	tagShared        = "shared-tag"
+)
+
 func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticle() {
 	ctx := context.Background()
 	t := s.T()
@@ -19,8 +36,8 @@ func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticle() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-1",
-		URL:       "https://example.com/article",
-		Title:     "Test Article",
+		URL:       tagArticleURL,
+		Title:     tagArticleTitle,
 		CreatedAt: now,
 	}
 
@@ -29,7 +46,7 @@ func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticle() {
 	require.NoError(t, err)
 
 	// Add tags
-	tags := []string{"tech", "programming", "golang"}
+	tags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repositories.AddTagsToArticle(ctx, article.Account, article.ID, tags, nil)
 	require.NoError(t, err)
 
@@ -49,15 +66,15 @@ func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticleWithCreatedAt() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-with-created",
-		URL:       "https://example.com/article",
-		Title:     "Test Article",
+		URL:       tagArticleURL,
+		Title:     tagArticleTitle,
 		CreatedAt: now,
 	}
 	err := s.repositories.Store(ctx, article)
 	require.NoError(t, err)
 
 	// Add tags using the createdAt directly (no extra DB query)
-	tags := []string{"tech", "programming", "golang"}
+	tags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repositories.AddTagsToArticle(ctx, article.Account, article.ID, tags, &article.CreatedAt)
 	require.NoError(t, err)
 
@@ -77,15 +94,15 @@ func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticle_BothMethodsSameResult
 	article1 := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-compare-1",
-		URL:       "https://example.com/article1",
+		URL:       tagArticleURL1,
 		Title:     "Test Article 1",
 		CreatedAt: now,
 	}
 	article2 := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-compare-2",
-		URL:       "https://example.com/article2",
-		Title:     "Test Article 2",
+		URL:       tagArticleURL2,
+		Title:     tagArticle2Title,
 		CreatedAt: now,
 	}
 	err := s.repositories.Store(ctx, article1)
@@ -94,7 +111,7 @@ func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticle_BothMethodsSameResult
 	require.NoError(t, err)
 
 	// Add tags using both methods with the same createdAt
-	tags := []string{"tech", "programming", "golang"}
+	tags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repositories.AddTagsToArticle(ctx, article1.Account, article1.ID, tags, nil)
 	require.NoError(t, err)
 	err = s.repositories.AddTagsToArticle(ctx, article2.Account, article2.ID, tags, &article2.CreatedAt)
@@ -117,7 +134,7 @@ func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticle_EmptyTags() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-empty",
-		URL:       "https://example.com/article",
+		URL:       tagArticleURL,
 		CreatedAt: now,
 	}
 
@@ -137,7 +154,7 @@ func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticle_NonExistentArticle() 
 	ctx := context.Background()
 	t := s.T()
 
-	tags := []string{"tech", "programming"}
+	tags := []string{tagTech, tagProgramming}
 	err := s.repositories.AddTagsToArticle(ctx, dynamoDBTestAccount, "nonexistent-article", tags, nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "article not found")
@@ -151,7 +168,7 @@ func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticle_DuplicateTags() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-duplicate",
-		URL:       "https://example.com/article",
+		URL:       tagArticleURL,
 		CreatedAt: now,
 	}
 
@@ -159,7 +176,7 @@ func (s *DynamoDBRepositoryTestSuite) TestAddTagsToArticle_DuplicateTags() {
 	require.NoError(t, err)
 
 	// Add tags
-	tags := []string{"tech", "programming"}
+	tags := []string{tagTech, tagProgramming}
 	err = s.repositories.AddTagsToArticle(ctx, article.Account, article.ID, tags, nil)
 	require.NoError(t, err)
 
@@ -183,7 +200,7 @@ func (s *DynamoDBRepositoryTestSuite) TestRemoveTagsFromArticle() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-remove",
-		URL:       "https://example.com/article",
+		URL:       tagArticleURL,
 		CreatedAt: now,
 	}
 
@@ -191,19 +208,19 @@ func (s *DynamoDBRepositoryTestSuite) TestRemoveTagsFromArticle() {
 	require.NoError(t, err)
 
 	// Add tags
-	tags := []string{"tech", "programming", "golang", "test"}
+	tags := []string{tagTech, tagProgramming, tagGolang, tagTest}
 	err = s.repositories.AddTagsToArticle(ctx, article.Account, article.ID, tags, nil)
 	require.NoError(t, err)
 
 	// Remove some tags
-	removeTags := []string{"tech", "test"}
+	removeTags := []string{tagTech, tagTest}
 	err = s.repositories.RemoveTagsFromArticle(ctx, article.Account, article.ID, removeTags)
 	require.NoError(t, err)
 
 	// Verify tags were removed
 	retrievedTags, err := s.repositories.GetArticleTags(ctx, article.Account, article.ID)
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"programming", "golang"}, retrievedTags)
+	assert.ElementsMatch(t, []string{tagProgramming, tagGolang}, retrievedTags)
 	assert.Len(t, retrievedTags, 2)
 }
 
@@ -215,7 +232,7 @@ func (s *DynamoDBRepositoryTestSuite) TestRemoveTagsFromArticle_EmptyTags() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-remove-empty",
-		URL:       "https://example.com/article",
+		URL:       tagArticleURL,
 		CreatedAt: now,
 	}
 
@@ -231,7 +248,7 @@ func (s *DynamoDBRepositoryTestSuite) TestRemoveTagsFromArticle_NonExistentArtic
 	ctx := context.Background()
 	t := s.T()
 
-	tags := []string{"tech"}
+	tags := []string{tagTech}
 	err := s.repositories.RemoveTagsFromArticle(ctx, dynamoDBTestAccount, "nonexistent-article", tags)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "article not found")
@@ -245,7 +262,7 @@ func (s *DynamoDBRepositoryTestSuite) TestSetArticleTags() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-set",
-		URL:       "https://example.com/article",
+		URL:       tagArticleURL,
 		CreatedAt: now,
 	}
 
@@ -253,7 +270,7 @@ func (s *DynamoDBRepositoryTestSuite) TestSetArticleTags() {
 	require.NoError(t, err)
 
 	// Set initial tags
-	tags1 := []string{"tech", "programming"}
+	tags1 := []string{tagTech, tagProgramming}
 	err = s.repositories.SetArticleTags(ctx, article.Account, article.ID, tags1)
 	require.NoError(t, err)
 
@@ -262,7 +279,7 @@ func (s *DynamoDBRepositoryTestSuite) TestSetArticleTags() {
 	assert.ElementsMatch(t, tags1, retrievedTags)
 
 	// Replace with new tags
-	tags2 := []string{"golang", "database", "aws"}
+	tags2 := []string{tagGolang, tagDatabase, "aws"}
 	err = s.repositories.SetArticleTags(ctx, article.Account, article.ID, tags2)
 	require.NoError(t, err)
 
@@ -280,7 +297,7 @@ func (s *DynamoDBRepositoryTestSuite) TestSetArticleTags_EmptyTags() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-set-empty",
-		URL:       "https://example.com/article",
+		URL:       tagArticleURL,
 		CreatedAt: now,
 	}
 
@@ -288,7 +305,7 @@ func (s *DynamoDBRepositoryTestSuite) TestSetArticleTags_EmptyTags() {
 	require.NoError(t, err)
 
 	// Set initial tags
-	tags := []string{"tech", "programming"}
+	tags := []string{tagTech, tagProgramming}
 	err = s.repositories.SetArticleTags(ctx, article.Account, article.ID, tags)
 	require.NoError(t, err)
 
@@ -309,7 +326,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetArticleTags() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-get",
-		URL:       "https://example.com/article",
+		URL:       tagArticleURL,
 		CreatedAt: now,
 	}
 
@@ -322,7 +339,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetArticleTags() {
 	assert.Empty(t, tags)
 
 	// Add tags
-	expectedTags := []string{"tech", "programming", "golang"}
+	expectedTags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repositories.AddTagsToArticle(ctx, article.Account, article.ID, expectedTags, nil)
 	require.NoError(t, err)
 
@@ -343,9 +360,9 @@ func (s *DynamoDBRepositoryTestSuite) TestGetArticlesByTag() {
 		id   string
 		tags []string
 	}{
-		{"tag-article-1", []string{"tech", "programming"}},
-		{"tag-article-2", []string{"tech", "golang"}},
-		{"tag-article-3", []string{"programming", "database"}},
+		{tagArticle1, []string{tagTech, tagProgramming}},
+		{tagArticle2, []string{tagTech, tagGolang}},
+		{tagArticle3, []string{tagProgramming, tagDatabase}},
 	}
 
 	for _, art := range articles {
@@ -361,17 +378,17 @@ func (s *DynamoDBRepositoryTestSuite) TestGetArticlesByTag() {
 		require.NoError(t, err)
 	}
 
-	// Get articles by "tech" tag
-	articleIDs, total, err := s.repositories.GetArticlesByTag(ctx, dynamoDBTestAccount, "tech", 1, 10)
+	// Get articles by tagTech tag
+	articleIDs, total, err := s.repositories.GetArticlesByTag(ctx, dynamoDBTestAccount, tagTech, 1, 10)
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
-	assert.ElementsMatch(t, []string{"tag-article-1", "tag-article-2"}, articleIDs)
+	assert.ElementsMatch(t, []string{tagArticle1, tagArticle2}, articleIDs)
 
-	// Get articles by "programming" tag
-	articleIDs, total, err = s.repositories.GetArticlesByTag(ctx, dynamoDBTestAccount, "programming", 1, 10)
+	// Get articles by tagProgramming tag
+	articleIDs, total, err = s.repositories.GetArticlesByTag(ctx, dynamoDBTestAccount, tagProgramming, 1, 10)
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
-	assert.ElementsMatch(t, []string{"tag-article-1", "tag-article-3"}, articleIDs)
+	assert.ElementsMatch(t, []string{tagArticle1, tagArticle3}, articleIDs)
 }
 
 func (s *DynamoDBRepositoryTestSuite) TestGetArticlesByTag_Pagination() {
@@ -428,9 +445,9 @@ func (s *DynamoDBRepositoryTestSuite) TestGetAllTagsForAccount() {
 		id   string
 		tags []string
 	}{
-		{"tag-all-1", []string{"tech", "programming"}},
-		{"tag-all-2", []string{"tech", "golang"}},
-		{"tag-all-3", []string{"database", "sql"}},
+		{"tag-all-1", []string{tagTech, tagProgramming}},
+		{"tag-all-2", []string{tagTech, tagGolang}},
+		{"tag-all-3", []string{tagDatabase, "sql"}},
 	}
 
 	for _, art := range articles {
@@ -449,10 +466,10 @@ func (s *DynamoDBRepositoryTestSuite) TestGetAllTagsForAccount() {
 	// Get all tags for account
 	tags, err := s.repositories.GetAllTagsForAccount(ctx, dynamoDBTestAccount)
 	require.NoError(t, err)
-	assert.Contains(t, tags, "tech")
-	assert.Contains(t, tags, "programming")
-	assert.Contains(t, tags, "golang")
-	assert.Contains(t, tags, "database")
+	assert.Contains(t, tags, tagTech)
+	assert.Contains(t, tags, tagProgramming)
+	assert.Contains(t, tags, tagGolang)
+	assert.Contains(t, tags, tagDatabase)
 	assert.Contains(t, tags, "sql")
 }
 
@@ -464,7 +481,7 @@ func (s *DynamoDBRepositoryTestSuite) TestDeleteTagsForArticle() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-delete",
-		URL:       "https://example.com/article",
+		URL:       tagArticleURL,
 		CreatedAt: now,
 	}
 
@@ -472,7 +489,7 @@ func (s *DynamoDBRepositoryTestSuite) TestDeleteTagsForArticle() {
 	require.NoError(t, err)
 
 	// Add tags
-	tags := []string{"tech", "programming", "golang"}
+	tags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repositories.AddTagsToArticle(ctx, article.Account, article.ID, tags, nil)
 	require.NoError(t, err)
 
@@ -499,7 +516,7 @@ func (s *DynamoDBRepositoryTestSuite) TestDeleteTagsForArticle_NoTags() {
 	article := &model.Article{
 		Account:   dynamoDBTestAccount,
 		ID:        "tag-test-delete-no-tags",
-		URL:       "https://example.com/article",
+		URL:       tagArticleURL,
 		CreatedAt: now,
 	}
 
@@ -521,13 +538,13 @@ func (s *DynamoDBRepositoryTestSuite) TestTagIsolation() {
 	article1 := &model.Article{
 		Account:   "account-1",
 		ID:        "isolation-1",
-		URL:       "https://example.com/article1",
+		URL:       tagArticleURL1,
 		CreatedAt: now,
 	}
 	article2 := &model.Article{
 		Account:   "account-2",
 		ID:        "isolation-2",
-		URL:       "https://example.com/article2",
+		URL:       tagArticleURL2,
 		CreatedAt: now,
 	}
 
@@ -537,28 +554,28 @@ func (s *DynamoDBRepositoryTestSuite) TestTagIsolation() {
 	require.NoError(t, err)
 
 	// Add tags to both articles with same tag name
-	err = s.repositories.AddTagsToArticle(ctx, article1.Account, article1.ID, []string{"shared-tag"}, nil)
+	err = s.repositories.AddTagsToArticle(ctx, article1.Account, article1.ID, []string{tagShared}, nil)
 	require.NoError(t, err)
-	err = s.repositories.AddTagsToArticle(ctx, article2.Account, article2.ID, []string{"shared-tag"}, nil)
+	err = s.repositories.AddTagsToArticle(ctx, article2.Account, article2.ID, []string{tagShared}, nil)
 	require.NoError(t, err)
 
 	// Verify both accounts can have the same tag independently
 	tags1, err := s.repositories.GetArticleTags(ctx, article1.Account, article1.ID)
 	require.NoError(t, err)
-	assert.Contains(t, tags1, "shared-tag")
+	assert.Contains(t, tags1, tagShared)
 
 	tags2, err := s.repositories.GetArticleTags(ctx, article2.Account, article2.ID)
 	require.NoError(t, err)
-	assert.Contains(t, tags2, "shared-tag")
+	assert.Contains(t, tags2, tagShared)
 
 	// Get all tags for each account - should only see their own articles
 	allTags1, err := s.repositories.GetAllTagsForAccount(ctx, article1.Account)
 	require.NoError(t, err)
-	assert.Contains(t, allTags1, "shared-tag")
+	assert.Contains(t, allTags1, tagShared)
 	assert.Equal(t, 1, len(allTags1))
 
 	allTags2, err := s.repositories.GetAllTagsForAccount(ctx, article2.Account)
 	require.NoError(t, err)
-	assert.Contains(t, allTags2, "shared-tag")
+	assert.Contains(t, allTags2, tagShared)
 	assert.Equal(t, 1, len(allTags2))
 }

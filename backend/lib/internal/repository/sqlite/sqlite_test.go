@@ -12,7 +12,33 @@ import (
 )
 
 const (
-	testArticleID = "article-1"
+	testArticleID   = "article-1"
+	testAccount     = "test-account"
+	testURL         = "https://example.com/article"
+	testTitle       = "Test Article"
+	testDomain      = "example.com"
+	testImageURL    = "https://example.com/image.jpg"
+	testDestEmail   = "device@kindle.com"
+	testSenderEmail = "sender@example.com"
+	testProvider    = "mailjet"
+	testUserEmail   = "user@example.com"
+	testAuthor      = "Author"
+	testExcerpt     = "Excerpt"
+	testSiteName    = "Example Site"
+	tagTech         = "tech"
+	tagProgramming  = "programming"
+	tagGolang       = "golang"
+	tagDatabase     = "database"
+	tagArticle1     = "tag-article-1"
+	articleTag2     = "article-tag-2"
+	testURL1        = "https://example.com/article1"
+	testURL2        = "https://example.com/article2"
+	testLang        = "en"
+	testMsgID       = "msg-123"
+	testStatus      = "sent"
+	testArticleTag1 = "article-tag-1"
+	testArticleTag3 = "article-tag-3"
+	testArticleTag4 = "article-tag-4"
 )
 
 type SQLiteRepositoryTestSuite struct {
@@ -93,19 +119,19 @@ func (s *SQLiteRepositoryTestSuite) TestNewSQLite_InvalidPath() {
 func (s *SQLiteRepositoryTestSuite) TestStoreArticle() {
 	publishedAt := time.Now().UTC()
 	article := &model.Article{
-		Account:            "test-account",
+		Account:            testAccount,
 		ID:                 testArticleID,
-		URL:                "https://example.com/article",
+		URL:                testURL,
 		CreatedAt:          time.Now().UTC(),
-		Title:              "Test Article",
+		Title:              testTitle,
 		Content:            "Test Content",
 		Author:             "Test Author",
 		SiteName:           "Test Site",
-		SourceDomain:       "example.com",
+		SourceDomain:       testDomain,
 		Excerpt:            "Test excerpt",
-		ImageURL:           "https://example.com/image.jpg",
+		ImageURL:           testImageURL,
 		ContentType:        "text/html",
-		Language:           "en",
+		Language:           testLang,
 		WordCount:          100,
 		ReadingTimeMinutes: 1,
 		PublishedAt:        &publishedAt,
@@ -115,20 +141,20 @@ func (s *SQLiteRepositoryTestSuite) TestStoreArticle() {
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", testArticleID)
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, testAccount, testArticleID)
 	s.NoError(err)
-	s.Equal("test-account", retrieved.Account)
+	s.Equal(testAccount, retrieved.Account)
 	s.Equal(testArticleID, retrieved.ID)
-	s.Equal("https://example.com/article", retrieved.URL)
-	s.Equal("Test Article", retrieved.Title)
+	s.Equal(testURL, retrieved.URL)
+	s.Equal(testTitle, retrieved.Title)
 	s.Equal("Test Content", retrieved.Content)
 	s.Equal("Test Author", retrieved.Author)
 	s.Equal("Test Site", retrieved.SiteName)
-	s.Equal("example.com", retrieved.SourceDomain)
+	s.Equal(testDomain, retrieved.SourceDomain)
 	s.Equal("Test excerpt", retrieved.Excerpt)
-	s.Equal("https://example.com/image.jpg", retrieved.ImageURL)
+	s.Equal(testImageURL, retrieved.ImageURL)
 	s.Equal("text/html", retrieved.ContentType)
-	s.Equal("en", retrieved.Language)
+	s.Equal(testLang, retrieved.Language)
 	s.Equal(100, retrieved.WordCount)
 	s.Equal(1, retrieved.ReadingTimeMinutes)
 	s.True(retrieved.Favorite)
@@ -138,7 +164,7 @@ func (s *SQLiteRepositoryTestSuite) TestStoreArticle() {
 func (s *SQLiteRepositoryTestSuite) TestStoreArticle_WithoutAccount() {
 	article := &model.Article{
 		ID:        testArticleID,
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: time.Now().UTC(),
 	}
 
@@ -150,9 +176,9 @@ func (s *SQLiteRepositoryTestSuite) TestStoreArticle_WithoutAccount() {
 func (s *SQLiteRepositoryTestSuite) TestStoreArticle_UpdateExisting() {
 	now := time.Now().UTC()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        testArticleID,
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 		Title:     "Original Title",
 	}
@@ -165,7 +191,7 @@ func (s *SQLiteRepositoryTestSuite) TestStoreArticle_UpdateExisting() {
 	err = s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", testArticleID)
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, testAccount, testArticleID)
 	s.NoError(err)
 	s.Equal("Updated Title", retrieved.Title)
 	s.Equal("Updated Content", retrieved.Content)
@@ -179,19 +205,19 @@ func (s *SQLiteRepositoryTestSuite) TestGetByAccountAndID_NotFound() {
 
 func (s *SQLiteRepositoryTestSuite) TestDeleteByAccountAndID() {
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        testArticleID,
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: time.Now().UTC(),
 	}
 
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	err = s.repository.DeleteByAccountAndID(s.ctx, "test-account", testArticleID)
+	err = s.repository.DeleteByAccountAndID(s.ctx, testAccount, testArticleID)
 	s.NoError(err)
 
-	_, err = s.repository.GetByAccountAndID(s.ctx, "test-account", testArticleID)
+	_, err = s.repository.GetByAccountAndID(s.ctx, testAccount, testArticleID)
 	s.Error(err)
 	s.Equal(ErrNotFound, err)
 }
@@ -204,9 +230,9 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteByAccountAndID_NotFound() {
 
 func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite() {
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        testArticleID,
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: time.Now().UTC(),
 		Favorite:  false,
 	}
@@ -214,10 +240,10 @@ func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite() {
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	err = s.repository.UpdateFavorite(s.ctx, "test-account", testArticleID, true)
+	err = s.repository.UpdateFavorite(s.ctx, testAccount, testArticleID, true)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", testArticleID)
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, testAccount, testArticleID)
 	s.NoError(err)
 	s.True(retrieved.Favorite)
 }
@@ -232,9 +258,9 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount() {
 	now := time.Now().UTC()
 	for i := range 5 {
 		article := &model.Article{
-			Account:   "test-account",
+			Account:   testAccount,
 			ID:        "article-" + string(rune('a'+i)),
-			URL:       "https://example.com/article",
+			URL:       testURL,
 			CreatedAt: now.Add(-time.Duration(i) * time.Hour),
 			Favorite:  i%2 == 0,
 		}
@@ -242,7 +268,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount() {
 		s.NoError(err)
 	}
 
-	articles, total, err := s.repository.GetMetadataByAccount(s.ctx, "test-account", 1, 2, nil)
+	articles, total, err := s.repository.GetMetadataByAccount(s.ctx, testAccount, 1, 2, nil)
 	s.NoError(err)
 	s.Len(articles, 2)
 	s.Equal(5, total)
@@ -252,9 +278,9 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithFavoriteFilter(
 	now := time.Now().UTC()
 	for i := range 5 {
 		article := &model.Article{
-			Account:   "test-account",
+			Account:   testAccount,
 			ID:        "article-" + string(rune('a'+i)),
-			URL:       "https://example.com/article",
+			URL:       testURL,
 			CreatedAt: now.Add(-time.Duration(i) * time.Hour),
 			Favorite:  i%2 == 0,
 		}
@@ -264,7 +290,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithFavoriteFilter(
 
 	favorite := true
 	articles, total, err := s.repository.GetMetadataByAccount(
-		s.ctx, "test-account", 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
+		s.ctx, testAccount, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite})
 	s.NoError(err)
 	s.Len(articles, 3)
 	s.Equal(3, total)
@@ -282,7 +308,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_PageOutOfBounds() {
 	article := &model.Article{
 		Account:   "pageout-account",
 		ID:        "pageout-article-1",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 	err := s.repository.Store(s.ctx, article)
@@ -302,13 +328,13 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_InvalidPageSize() {
 
 func (s *SQLiteRepositoryTestSuite) TestCreateSendRecord() {
 	send := &model.Send{
-		Account:     "test-account",
+		Account:     testAccount,
 		ArticleID:   "create-send-article",
-		Title:       "Test Article",
-		DestEmail:   "device@kindle.com",
-		SenderEmail: "sender@example.com",
-		MessageID:   "msg-123",
-		Provider:    "mailjet",
+		Title:       testTitle,
+		DestEmail:   testDestEmail,
+		SenderEmail: testSenderEmail,
+		MessageID:   testMsgID,
+		Provider:    testProvider,
 	}
 
 	err := s.repository.CreateSendRecord(s.ctx, send)
@@ -317,46 +343,46 @@ func (s *SQLiteRepositoryTestSuite) TestCreateSendRecord() {
 	sends, err := s.repository.GetSendsByArticleID(s.ctx, "create-send-article")
 	s.NoError(err)
 	s.Len(sends, 1)
-	s.Equal("test-account", sends[0].Account)
+	s.Equal(testAccount, sends[0].Account)
 	s.Equal("create-send-article", sends[0].ArticleID)
-	s.Equal("Test Article", sends[0].Title)
-	s.Equal("device@kindle.com", sends[0].DestEmail)
-	s.Equal("sender@example.com", sends[0].SenderEmail)
-	s.Equal("msg-123", sends[0].MessageID)
-	s.Equal("mailjet", sends[0].Provider)
+	s.Equal(testTitle, sends[0].Title)
+	s.Equal(testDestEmail, sends[0].DestEmail)
+	s.Equal(testSenderEmail, sends[0].SenderEmail)
+	s.Equal(testMsgID, sends[0].MessageID)
+	s.Equal(testProvider, sends[0].Provider)
 	s.Equal("pending", sends[0].Status)
 }
 
 func (s *SQLiteRepositoryTestSuite) TestUpdateSendRecord() {
 	send := &model.Send{
-		Account:     "test-account",
+		Account:     testAccount,
 		ArticleID:   "update-send-article",
-		Title:       "Test Article",
-		DestEmail:   "device@kindle.com",
-		SenderEmail: "sender@example.com",
-		Provider:    "mailjet",
+		Title:       testTitle,
+		DestEmail:   testDestEmail,
+		SenderEmail: testSenderEmail,
+		Provider:    testProvider,
 	}
 
 	err := s.repository.CreateSendRecord(s.ctx, send)
 	s.NoError(err)
 
-	send.Status = "sent"
-	send.MessageID = "msg-123"
+	send.Status = testStatus
+	send.MessageID = testMsgID
 	err = s.repository.UpdateSendRecord(s.ctx, send)
 	s.NoError(err)
 
 	sends, err := s.repository.GetSendsByArticleID(s.ctx, "update-send-article")
 	s.NoError(err)
 	s.Len(sends, 1)
-	s.Equal("sent", sends[0].Status)
-	s.Equal("msg-123", sends[0].MessageID)
+	s.Equal(testStatus, sends[0].Status)
+	s.Equal(testMsgID, sends[0].MessageID)
 }
 
 func (s *SQLiteRepositoryTestSuite) TestUpdateSendRecord_NotFound() {
 	send := &model.Send{
-		Account:   "test-account",
+		Account:   testAccount,
 		ArticleID: "notfound-article",
-		Status:    "sent",
+		Status:    testStatus,
 	}
 
 	err := s.repository.UpdateSendRecord(s.ctx, send)
@@ -366,12 +392,12 @@ func (s *SQLiteRepositoryTestSuite) TestUpdateSendRecord_NotFound() {
 
 func (s *SQLiteRepositoryTestSuite) TestUpdateSendRecord_WithError() {
 	send := &model.Send{
-		Account:     "test-account",
+		Account:     testAccount,
 		ArticleID:   "error-send-article",
-		Title:       "Test Article",
-		DestEmail:   "device@kindle.com",
-		SenderEmail: "sender@example.com",
-		Provider:    "mailjet",
+		Title:       testTitle,
+		DestEmail:   testDestEmail,
+		SenderEmail: testSenderEmail,
+		Provider:    testProvider,
 	}
 
 	err := s.repository.CreateSendRecord(s.ctx, send)
@@ -399,10 +425,10 @@ func (s *SQLiteRepositoryTestSuite) TestGetSendsByAccountDateRange() {
 	for i := range 3 {
 		articleID := "daterange-article-" + string(rune('a'+i))
 		send := &model.Send{
-			Account:     "test-account",
+			Account:     testAccount,
 			ArticleID:   articleID,
-			Title:       "Test Article",
-			SenderEmail: "sender@example.com",
+			Title:       testTitle,
+			SenderEmail: testSenderEmail,
 			SentAt:      now.Add(-time.Duration(i) * time.Hour),
 		}
 		err := s.repository.CreateSendRecord(s.ctx, send)
@@ -412,7 +438,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetSendsByAccountDateRange() {
 	startDate := now.Add(-3 * time.Hour)
 	endDate := now
 
-	sends, err := s.repository.GetSendsByAccountDateRange(s.ctx, "test-account", startDate, endDate)
+	sends, err := s.repository.GetSendsByAccountDateRange(s.ctx, testAccount, startDate, endDate)
 	s.NoError(err)
 	s.Len(sends, 3)
 }
@@ -432,10 +458,10 @@ func (s *SQLiteRepositoryTestSuite) TestCountSendsByAccountDateRange() {
 	for i := range 3 {
 		articleID := "count-article-" + string(rune('a'+i))
 		send := &model.Send{
-			Account:     "test-account",
+			Account:     testAccount,
 			ArticleID:   articleID,
-			Title:       "Test Article",
-			SenderEmail: "sender@example.com",
+			Title:       testTitle,
+			SenderEmail: testSenderEmail,
 			SentAt:      now.Add(-time.Duration(i) * time.Hour),
 		}
 		err := s.repository.CreateSendRecord(s.ctx, send)
@@ -445,7 +471,7 @@ func (s *SQLiteRepositoryTestSuite) TestCountSendsByAccountDateRange() {
 	startDate := now.Add(-3 * time.Hour)
 	endDate := now
 
-	count, err := s.repository.CountSendsByAccountDateRange(s.ctx, "test-account", startDate, endDate)
+	count, err := s.repository.CountSendsByAccountDateRange(s.ctx, testAccount, startDate, endDate)
 	s.NoError(err)
 	s.Equal(3, count)
 }
@@ -462,9 +488,9 @@ func (s *SQLiteRepositoryTestSuite) TestCountSendsByAccountDateRange_Empty() {
 
 func (s *SQLiteRepositoryTestSuite) TestGetUserProfile() {
 	profile := &model.UserProfile{
-		Account:     "test-account",
-		Email:       "user@example.com",
-		DeviceEmail: "device@kindle.com",
+		Account:     testAccount,
+		Email:       testUserEmail,
+		DeviceEmail: testDestEmail,
 		AutoSend:    true,
 		BouncedEmails: map[string]model.BounceInfo{
 			"bounce@example.com": {Timestamp: time.Now(), Error: "bounce"},
@@ -474,11 +500,11 @@ func (s *SQLiteRepositoryTestSuite) TestGetUserProfile() {
 	err := s.repository.PutUserProfile(s.ctx, profile)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetUserProfile(s.ctx, "test-account")
+	retrieved, err := s.repository.GetUserProfile(s.ctx, testAccount)
 	s.NoError(err)
-	s.Equal("test-account", retrieved.Account)
-	s.Equal("user@example.com", retrieved.Email)
-	s.Equal("device@kindle.com", retrieved.DeviceEmail)
+	s.Equal(testAccount, retrieved.Account)
+	s.Equal(testUserEmail, retrieved.Email)
+	s.Equal(testDestEmail, retrieved.DeviceEmail)
 	s.True(retrieved.AutoSend)
 	s.Len(retrieved.BouncedEmails, 1)
 }
@@ -491,16 +517,16 @@ func (s *SQLiteRepositoryTestSuite) TestGetUserProfile_NotFound() {
 
 func (s *SQLiteRepositoryTestSuite) TestGetAccountIDByDeviceEmail() {
 	profile := &model.UserProfile{
-		Account:     "test-account",
-		DeviceEmail: "device@kindle.com",
+		Account:     testAccount,
+		DeviceEmail: testDestEmail,
 	}
 
 	err := s.repository.PutUserProfile(s.ctx, profile)
 	s.NoError(err)
 
-	account, err := s.repository.GetAccountIDByDeviceEmail(s.ctx, "device@kindle.com")
+	account, err := s.repository.GetAccountIDByDeviceEmail(s.ctx, testDestEmail)
 	s.NoError(err)
-	s.Equal("test-account", account)
+	s.Equal(testAccount, account)
 }
 
 func (s *SQLiteRepositoryTestSuite) TestGetAccountIDByDeviceEmail_NotFound() {
@@ -511,7 +537,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetAccountIDByDeviceEmail_NotFound() {
 
 func (s *SQLiteRepositoryTestSuite) TestPutUserProfile_WithoutAccount() {
 	profile := &model.UserProfile{
-		Email: "user@example.com",
+		Email: testUserEmail,
 	}
 
 	err := s.repository.PutUserProfile(s.ctx, profile)
@@ -521,8 +547,8 @@ func (s *SQLiteRepositoryTestSuite) TestPutUserProfile_WithoutAccount() {
 
 func (s *SQLiteRepositoryTestSuite) TestPutUserProfile_UpdateExisting() {
 	profile := &model.UserProfile{
-		Account:  "test-account",
-		Email:    "user@example.com",
+		Account:  testAccount,
+		Email:    testUserEmail,
 		AutoSend: false,
 	}
 
@@ -534,7 +560,7 @@ func (s *SQLiteRepositoryTestSuite) TestPutUserProfile_UpdateExisting() {
 	err = s.repository.PutUserProfile(s.ctx, profile)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetUserProfile(s.ctx, "test-account")
+	retrieved, err := s.repository.GetUserProfile(s.ctx, testAccount)
 	s.NoError(err)
 	s.Equal("newuser@example.com", retrieved.Email)
 	s.True(retrieved.AutoSend)
@@ -542,16 +568,16 @@ func (s *SQLiteRepositoryTestSuite) TestPutUserProfile_UpdateExisting() {
 
 func (s *SQLiteRepositoryTestSuite) TestDeleteUserProfile() {
 	profile := &model.UserProfile{
-		Account: "test-account",
+		Account: testAccount,
 	}
 
 	err := s.repository.PutUserProfile(s.ctx, profile)
 	s.NoError(err)
 
-	err = s.repository.DeleteUserProfile(s.ctx, "test-account")
+	err = s.repository.DeleteUserProfile(s.ctx, testAccount)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetUserProfile(s.ctx, "test-account")
+	retrieved, err := s.repository.GetUserProfile(s.ctx, testAccount)
 	s.NoError(err)
 	s.Nil(retrieved)
 }
@@ -564,18 +590,18 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteUserProfile_NotFound() {
 
 func (s *SQLiteRepositoryTestSuite) TestDeleteUserDeviceEmail() {
 	profile := &model.UserProfile{
-		Account:     "test-account",
-		DeviceEmail: "device@kindle.com",
+		Account:     testAccount,
+		DeviceEmail: testDestEmail,
 		AutoSend:    true,
 	}
 
 	err := s.repository.PutUserProfile(s.ctx, profile)
 	s.NoError(err)
 
-	err = s.repository.DeleteUserDeviceEmail(s.ctx, "test-account")
+	err = s.repository.DeleteUserDeviceEmail(s.ctx, testAccount)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetUserProfile(s.ctx, "test-account")
+	retrieved, err := s.repository.GetUserProfile(s.ctx, testAccount)
 	s.NoError(err)
 	s.Empty(retrieved.DeviceEmail)
 	s.False(retrieved.AutoSend)
@@ -592,7 +618,7 @@ func (s *SQLiteRepositoryTestSuite) TestToArticle_InvalidCreatedAt() {
 	_, err := s.repository.db.ExecContext(
 		s.ctx,
 		query,
-		"test-account",
+		testAccount,
 		"error-article-1",
 		"https://example.com",
 		"invalid-timestamp",
@@ -603,7 +629,7 @@ func (s *SQLiteRepositoryTestSuite) TestToArticle_InvalidCreatedAt() {
 		source_domain, excerpt, image_url, content_type, language, error,
 		word_count, reading_time_minutes, published_at, favorite
 		FROM articles WHERE account = ? AND id = ?`
-	row := s.repository.db.QueryRowContext(s.ctx, selectQuery, "test-account", "error-article-1")
+	row := s.repository.db.QueryRowContext(s.ctx, selectQuery, testAccount, "error-article-1")
 
 	var a articleRow
 	err = row.Scan(
@@ -623,19 +649,19 @@ func (s *SQLiteRepositoryTestSuite) TestToArticle_InvalidCreatedAt() {
 func (s *SQLiteRepositoryTestSuite) TestToArticle_InvalidPublishedAt() {
 	now := time.Now().UTC()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "error-article-2",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
 	query := `UPDATE articles SET published_at = 'invalid-date' WHERE account = ? AND id = ?`
-	_, err = s.repository.db.ExecContext(s.ctx, query, "test-account", "error-article-2")
+	_, err = s.repository.db.ExecContext(s.ctx, query, testAccount, "error-article-2")
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", "error-article-2")
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, testAccount, "error-article-2")
 	s.Error(err)
 	s.Contains(err.Error(), "failed to parse published_at")
 	s.Nil(retrieved)
@@ -643,12 +669,12 @@ func (s *SQLiteRepositoryTestSuite) TestToArticle_InvalidPublishedAt() {
 
 func (s *SQLiteRepositoryTestSuite) TestToUserProfile_InvalidBouncedEmailsJSON() {
 	const query = `INSERT INTO user_profiles (account, bounced_emails) VALUES (?, ?)`
-	_, err := s.repository.db.ExecContext(s.ctx, query, "test-account", "invalid-json{")
+	_, err := s.repository.db.ExecContext(s.ctx, query, testAccount, "invalid-json{")
 	s.NoError(err)
 
 	const selectQuery = `SELECT account, email, device_email, auto_send, bounced_emails
 		FROM user_profiles WHERE account = ?`
-	row := s.repository.db.QueryRowContext(s.ctx, selectQuery, "test-account")
+	row := s.repository.db.QueryRowContext(s.ctx, selectQuery, testAccount)
 
 	var p profileRow
 	err = row.Scan(&p.Account, &p.Email, &p.DeviceEmail, &p.AutoSend, &p.BouncedEmails)
@@ -661,7 +687,7 @@ func (s *SQLiteRepositoryTestSuite) TestToUserProfile_InvalidBouncedEmailsJSON()
 
 func (s *SQLiteRepositoryTestSuite) TestProfileToRow_MarshalError() {
 	profile := &model.UserProfile{
-		Account: "test-account",
+		Account: testAccount,
 		BouncedEmails: map[string]model.BounceInfo{
 			"test@example.com": {},
 		},
@@ -676,7 +702,7 @@ func (s *SQLiteRepositoryTestSuite) TestToSend_InvalidSentAt() {
 	_, err := s.repository.db.ExecContext(
 		s.ctx,
 		query,
-		"test-account",
+		testAccount,
 		"error-send-article",
 		"invalid-timestamp",
 	)
@@ -708,15 +734,15 @@ func (s *SQLiteRepositoryTestSuite) TestGetByAccountAndID_DatabaseError() {
 	cancel()
 
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "ctx-cancel-article",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: time.Now().UTC(),
 	}
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	_, err = s.repository.GetByAccountAndID(ctx, "test-account", "ctx-cancel-article")
+	_, err = s.repository.GetByAccountAndID(ctx, testAccount, "ctx-cancel-article")
 	s.Error(err)
 }
 
@@ -725,15 +751,15 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteByAccountAndID_DatabaseError() {
 	cancel()
 
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "ctx-del-article",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: time.Now().UTC(),
 	}
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	err = s.repository.DeleteByAccountAndID(ctx, "test-account", "ctx-del-article")
+	err = s.repository.DeleteByAccountAndID(ctx, testAccount, "ctx-del-article")
 	s.Error(err)
 }
 
@@ -742,15 +768,15 @@ func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite_DatabaseError() {
 	cancel()
 
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "ctx-fav-article",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: time.Now().UTC(),
 	}
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	err = s.repository.UpdateFavorite(ctx, "test-account", "ctx-fav-article", true)
+	err = s.repository.UpdateFavorite(ctx, testAccount, "ctx-fav-article", true)
 	s.Error(err)
 }
 
@@ -759,15 +785,15 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_DatabaseError() {
 	cancel()
 
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "ctx-meta-article",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: time.Now().UTC(),
 	}
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	articles, total, err := s.repository.GetMetadataByAccount(ctx, "test-account", 1, 10, nil)
+	articles, total, err := s.repository.GetMetadataByAccount(ctx, testAccount, 1, 10, nil)
 	_ = articles
 	_ = total
 	s.Error(err)
@@ -778,12 +804,12 @@ func (s *SQLiteRepositoryTestSuite) TestGetUserProfile_DatabaseError() {
 	cancel()
 
 	profile := &model.UserProfile{
-		Account: "test-account",
+		Account: testAccount,
 	}
 	err := s.repository.PutUserProfile(s.ctx, profile)
 	s.NoError(err)
 
-	_, err = s.repository.GetUserProfile(ctx, "test-account")
+	_, err = s.repository.GetUserProfile(ctx, testAccount)
 	s.Error(err)
 }
 
@@ -792,13 +818,13 @@ func (s *SQLiteRepositoryTestSuite) TestGetAccountIDByDeviceEmail_DatabaseError(
 	cancel()
 
 	profile := &model.UserProfile{
-		Account:     "test-account",
-		DeviceEmail: "device@kindle.com",
+		Account:     testAccount,
+		DeviceEmail: testDestEmail,
 	}
 	err := s.repository.PutUserProfile(s.ctx, profile)
 	s.NoError(err)
 
-	_, err = s.repository.GetAccountIDByDeviceEmail(ctx, "device@kindle.com")
+	_, err = s.repository.GetAccountIDByDeviceEmail(ctx, testDestEmail)
 	s.Error(err)
 }
 
@@ -807,7 +833,7 @@ func (s *SQLiteRepositoryTestSuite) TestPutUserProfile_DatabaseError() {
 	cancel()
 
 	profile := &model.UserProfile{
-		Account: "test-account",
+		Account: testAccount,
 	}
 
 	err := s.repository.PutUserProfile(ctx, profile)
@@ -819,12 +845,12 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteUserProfile_DatabaseError() {
 	cancel()
 
 	profile := &model.UserProfile{
-		Account: "test-account",
+		Account: testAccount,
 	}
 	err := s.repository.PutUserProfile(s.ctx, profile)
 	s.NoError(err)
 
-	err = s.repository.DeleteUserProfile(ctx, "test-account")
+	err = s.repository.DeleteUserProfile(ctx, testAccount)
 	s.Error(err)
 }
 
@@ -833,13 +859,13 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteUserDeviceEmail_DatabaseError() {
 	cancel()
 
 	profile := &model.UserProfile{
-		Account:     "test-account",
-		DeviceEmail: "device@kindle.com",
+		Account:     testAccount,
+		DeviceEmail: testDestEmail,
 	}
 	err := s.repository.PutUserProfile(s.ctx, profile)
 	s.NoError(err)
 
-	err = s.repository.DeleteUserDeviceEmail(ctx, "test-account")
+	err = s.repository.DeleteUserDeviceEmail(ctx, testAccount)
 	s.Error(err)
 }
 
@@ -848,7 +874,7 @@ func (s *SQLiteRepositoryTestSuite) TestCreateSendRecord_DatabaseError() {
 	cancel()
 
 	send := &model.Send{
-		Account:   "test-account",
+		Account:   testAccount,
 		ArticleID: "ctx-create-send",
 	}
 
@@ -861,7 +887,7 @@ func (s *SQLiteRepositoryTestSuite) TestUpdateSendRecord_DatabaseError() {
 	cancel()
 
 	send := &model.Send{
-		Account:   "test-account",
+		Account:   testAccount,
 		ArticleID: "ctx-update-send",
 	}
 
@@ -874,7 +900,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetSendsByArticleID_DatabaseError() {
 	cancel()
 
 	send := &model.Send{
-		Account:   "test-account",
+		Account:   testAccount,
 		ArticleID: "ctx-get-send",
 	}
 	err := s.repository.CreateSendRecord(s.ctx, send)
@@ -888,7 +914,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetSendsByAccountDateRange_DatabaseError
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	_, err := s.repository.GetSendsByAccountDateRange(ctx, "test-account", time.Now().Add(-time.Hour), time.Now())
+	_, err := s.repository.GetSendsByAccountDateRange(ctx, testAccount, time.Now().Add(-time.Hour), time.Now())
 	s.Error(err)
 }
 
@@ -896,7 +922,7 @@ func (s *SQLiteRepositoryTestSuite) TestCountSendsByAccountDateRange_DatabaseErr
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	_, err := s.repository.CountSendsByAccountDateRange(ctx, "test-account", time.Now().Add(-time.Hour), time.Now())
+	_, err := s.repository.CountSendsByAccountDateRange(ctx, testAccount, time.Now().Add(-time.Hour), time.Now())
 	s.Error(err)
 }
 
@@ -905,22 +931,22 @@ func (s *SQLiteRepositoryTestSuite) TestQueryArticlesByAccount_ScanError() {
 	_, err := s.repository.db.ExecContext(
 		s.ctx,
 		insertQuery,
-		"test-account",
+		testAccount,
 		"scan-error-article",
-		"https://example.com/article",
+		testURL,
 		time.Now().UTC().Format(time.RFC3339),
 	)
 	s.NoError(err)
 
 	const updateQuery = `UPDATE articles SET created_at = 'invalid-timestamp'
 		WHERE account = ? AND id = ?`
-	_, err = s.repository.db.ExecContext(s.ctx, updateQuery, "test-account", "scan-error-article")
+	_, err = s.repository.db.ExecContext(s.ctx, updateQuery, testAccount, "scan-error-article")
 	s.NoError(err)
 
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	articles, total, err := s.repository.GetMetadataByAccount(ctx, "test-account", 1, 10, nil)
+	articles, total, err := s.repository.GetMetadataByAccount(ctx, testAccount, 1, 10, nil)
 	_ = articles
 	_ = total
 	s.Error(err)
@@ -928,9 +954,9 @@ func (s *SQLiteRepositoryTestSuite) TestQueryArticlesByAccount_ScanError() {
 
 func (s *SQLiteRepositoryTestSuite) TestQuerySends_ScanError() {
 	send := &model.Send{
-		Account:   "test-account",
+		Account:   testAccount,
 		ArticleID: "scan-error-send",
-		Title:     "Test Article",
+		Title:     testTitle,
 	}
 	err := s.repository.CreateSendRecord(s.ctx, send)
 	s.NoError(err)
@@ -1012,9 +1038,9 @@ func (s *SQLiteRepositoryTestSuite) TestStore_DatabaseError() {
 	cancel()
 
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "store-error-article",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: time.Now().UTC(),
 	}
 
@@ -1026,9 +1052,9 @@ func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite_ToggleOnThenOff() {
 	now := time.Now().UTC()
 
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "toggle-fav-article",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 		Favorite:  false,
 	}
@@ -1036,21 +1062,21 @@ func (s *SQLiteRepositoryTestSuite) TestUpdateFavorite_ToggleOnThenOff() {
 	err := s.repository.Store(s.ctx, article)
 	s.NoError(err)
 
-	retrieved, err := s.repository.GetByAccountAndID(s.ctx, "test-account", "toggle-fav-article")
+	retrieved, err := s.repository.GetByAccountAndID(s.ctx, testAccount, "toggle-fav-article")
 	s.NoError(err)
 	s.False(retrieved.Favorite)
 
-	err = s.repository.UpdateFavorite(s.ctx, "test-account", "toggle-fav-article", true)
+	err = s.repository.UpdateFavorite(s.ctx, testAccount, "toggle-fav-article", true)
 	s.NoError(err)
 
-	retrieved, err = s.repository.GetByAccountAndID(s.ctx, "test-account", "toggle-fav-article")
+	retrieved, err = s.repository.GetByAccountAndID(s.ctx, testAccount, "toggle-fav-article")
 	s.NoError(err)
 	s.True(retrieved.Favorite)
 
-	err = s.repository.UpdateFavorite(s.ctx, "test-account", "toggle-fav-article", false)
+	err = s.repository.UpdateFavorite(s.ctx, testAccount, "toggle-fav-article", false)
 	s.NoError(err)
 
-	retrieved, err = s.repository.GetByAccountAndID(s.ctx, "test-account", "toggle-fav-article")
+	retrieved, err = s.repository.GetByAccountAndID(s.ctx, testAccount, "toggle-fav-article")
 	s.NoError(err)
 	s.False(retrieved.Favorite)
 }
@@ -1063,7 +1089,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPagination
 		article := &model.Article{
 			Account:   account,
 			ID:        "article-" + string(rune('a'+(i%26))),
-			URL:       "https://example.com/article",
+			URL:       testURL,
 			CreatedAt: now.Add(-time.Duration(i) * time.Hour),
 			Favorite:  true,
 		}
@@ -1104,7 +1130,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_NonFavoritesFilter(
 		article := &model.Article{
 			Account:   account,
 			ID:        "article-" + string(rune('a'+i)),
-			URL:       "https://example.com/article",
+			URL:       testURL,
 			CreatedAt: now.Add(-time.Duration(i) * time.Hour),
 			Favorite:  i%2 == 0,
 		}
@@ -1128,8 +1154,8 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithTagFilter() {
 	ctx := context.Background()
 
 	const (
-		tagTech        = "tech"
-		tagProgramming = "programming"
+		tagTech        = tagTech
+		tagProgramming = tagProgramming
 		tagNonexistent = "nonexistent"
 	)
 
@@ -1141,10 +1167,10 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithTagFilter() {
 		tags []string
 		fav  bool
 	}{
-		{"article-tag-1", []string{tagTech}, false},
-		{"article-tag-2", []string{tagTech, tagProgramming}, true},
-		{"article-tag-3", []string{tagProgramming}, false},
-		{"article-tag-4", []string{tagTech}, true},
+		{testArticleTag1, []string{tagTech}, false},
+		{articleTag2, []string{tagTech, tagProgramming}, true},
+		{testArticleTag3, []string{tagProgramming}, false},
+		{testArticleTag4, []string{tagTech}, true},
 		{"article-tag-5", []string{}, false},
 	}
 
@@ -1160,15 +1186,15 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithTagFilter() {
 			Content:            "Content " + tc.id,
 			CreatedAt:          now,
 			Favorite:           tc.fav,
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           testLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testDomain,
 		}
 
 		err := s.repository.Store(ctx, article)
@@ -1179,7 +1205,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithTagFilter() {
 		s.NoError(err)
 	}
 
-	// Test filtering by "tech" tag
+	// Test filtering by tagTech tag
 	tag := tagTech
 	articles, total, err := s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
@@ -1188,10 +1214,10 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithTagFilter() {
 	s.Len(articles, 3)
 
 	for _, article := range articles {
-		s.Contains([]string{"article-tag-1", "article-tag-2", "article-tag-4"}, article.ID)
+		s.Contains([]string{testArticleTag1, articleTag2, testArticleTag4}, article.ID)
 	}
 
-	// Test filtering by "programming" tag
+	// Test filtering by tagProgramming tag
 	tag = tagProgramming
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
@@ -1200,7 +1226,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithTagFilter() {
 	s.Len(articles, 2)
 
 	for _, article := range articles {
-		s.Contains([]string{"article-tag-2", "article-tag-3"}, article.ID)
+		s.Contains([]string{articleTag2, testArticleTag3}, article.ID)
 	}
 
 	// Test filtering by non-existent tag
@@ -1216,8 +1242,8 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters
 	ctx := context.Background()
 
 	const (
-		tagTech        = "tech"
-		tagProgramming = "programming"
+		tagTech        = tagTech
+		tagProgramming = tagProgramming
 	)
 
 	account := "test-account-combined"
@@ -1250,15 +1276,15 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters
 			Content:            "Content " + tc.id,
 			CreatedAt:          now,
 			Favorite:           tc.fav,
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           testLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testDomain,
 		}
 
 		err := s.repository.Store(ctx, article)
@@ -1269,7 +1295,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters
 		s.NoError(err)
 	}
 
-	// Test: favorite=true AND tag="tech"
+	// Test: favorite=true AND tag=tagTech
 	tag := tagTech
 	favorite := true
 	articles, total, err := s.repository.GetMetadataByAccount(
@@ -1286,7 +1312,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters
 	s.Contains(ids, "article-1")
 	s.Contains(ids, "article-7")
 
-	// Test: favorite=true AND tag="programming"
+	// Test: favorite=true AND tag=tagProgramming
 	tag = tagProgramming
 	articles, total, err = s.repository.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
@@ -1302,7 +1328,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters
 	s.Contains(ids, "article-3")
 	s.Contains(ids, "article-7")
 
-	// Test: favorite=false AND tag="tech"
+	// Test: favorite=false AND tag=tagTech
 	favorite = false
 	tag = tagTech
 	articles, total, err = s.repository.GetMetadataByAccount(
@@ -1340,11 +1366,11 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilters
 func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPagination() {
 	ctx := context.Background()
 
-	const tagTech = "tech"
+	const tagTech = tagTech
 
 	account := "test-account-tag-pag"
 
-	// Create 25 articles with "tech" tag
+	// Create 25 articles with tagTech tag
 	for i := 1; i <= 25; i++ {
 		now := time.Now().Add(-time.Duration(i) * time.Hour)
 		publishedAt := now
@@ -1357,21 +1383,21 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPagination
 			Content:            "Tech Content " + string(rune('a'+(i-1)%26)),
 			CreatedAt:          now,
 			Favorite:           i%2 == 0, // Half are favorites
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           testLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testDomain,
 		}
 
 		err := s.repository.Store(ctx, article)
 		s.NoError(err)
 
-		err = s.repository.AddTagsToArticle(ctx, account, article.ID, []string{"tech"}, &article.CreatedAt)
+		err = s.repository.AddTagsToArticle(ctx, account, article.ID, []string{tagTech}, &article.CreatedAt)
 		s.NoError(err)
 	}
 
@@ -1388,15 +1414,15 @@ func (s *SQLiteRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPagination
 			Content:            "Other Content " + string(rune('a'+i-1)),
 			CreatedAt:          now,
 			Favorite:           false,
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           testLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testDomain,
 		}
 
 		err := s.repository.Store(ctx, article)

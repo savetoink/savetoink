@@ -11,6 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testKeyVersion = "v1"
+	testSubject    = "auth0|123456"
+	testEmail      = "user@example.com"
+)
+
 func testKeyStore(t *testing.T) *KeyStore {
 	t.Helper()
 	key := paseto.NewV4SymmetricKey()
@@ -18,7 +24,7 @@ func testKeyStore(t *testing.T) *KeyStore {
 
 	ks, err := NewKeyStore(KeyStoreConfig{
 		SymmetricKey: encoded,
-		KeyVersion:   "v1",
+		KeyVersion:   testKeyVersion,
 		AccessTTL:    consts.DefaultAccessTTL,
 		RefreshTTL:   consts.DefaultRefreshTTL,
 	})
@@ -33,11 +39,11 @@ func TestNewKeyStore(t *testing.T) {
 	t.Run("valid configuration", func(t *testing.T) {
 		ks, err := NewKeyStore(KeyStoreConfig{
 			SymmetricKey: encoded,
-			KeyVersion:   "v1",
+			KeyVersion:   testKeyVersion,
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, ks)
-		assert.Equal(t, "v1", ks.currentVersion)
+		assert.Equal(t, testKeyVersion, ks.currentVersion)
 		assert.Equal(t, consts.DefaultAccessTTL, ks.accessTTL)
 		assert.Equal(t, consts.DefaultRefreshTTL, ks.refreshTTL)
 	})
@@ -45,7 +51,7 @@ func TestNewKeyStore(t *testing.T) {
 	t.Run("custom TTL", func(t *testing.T) {
 		ks, err := NewKeyStore(KeyStoreConfig{
 			SymmetricKey: encoded,
-			KeyVersion:   "v1",
+			KeyVersion:   testKeyVersion,
 			AccessTTL:    30 * time.Minute,
 			RefreshTTL:   24 * time.Hour,
 		})
@@ -56,7 +62,7 @@ func TestNewKeyStore(t *testing.T) {
 
 	t.Run("missing symmetric key", func(t *testing.T) {
 		_, err := NewKeyStore(KeyStoreConfig{
-			KeyVersion: "v1",
+			KeyVersion: testKeyVersion,
 		})
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "symmetric key is required")
@@ -73,7 +79,7 @@ func TestNewKeyStore(t *testing.T) {
 	t.Run("invalid base64 key", func(t *testing.T) {
 		_, err := NewKeyStore(KeyStoreConfig{
 			SymmetricKey: "not-valid-base64!!!",
-			KeyVersion:   "v1",
+			KeyVersion:   testKeyVersion,
 		})
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to decode paseto key")
@@ -83,7 +89,7 @@ func TestNewKeyStore(t *testing.T) {
 		shortKey := base64.StdEncoding.EncodeToString([]byte("tooshort"))
 		_, err := NewKeyStore(KeyStoreConfig{
 			SymmetricKey: shortKey,
-			KeyVersion:   "v1",
+			KeyVersion:   testKeyVersion,
 		})
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "paseto key must be 32 bytes")
@@ -93,9 +99,9 @@ func TestNewKeyStore(t *testing.T) {
 func TestGenerateTokenPair(t *testing.T) {
 	ks := testKeyStore(t)
 	claims := TokenClaims{
-		Subject:    "auth0|123456",
-		Email:      "user@example.com",
-		KeyVersion: "v1",
+		Subject:    testSubject,
+		Email:      testEmail,
+		KeyVersion: testKeyVersion,
 	}
 
 	t.Run("generates valid token pair", func(t *testing.T) {
@@ -120,7 +126,7 @@ func TestGenerateTokenPair(t *testing.T) {
 
 		assert.Equal(t, claims.Subject, validated.Subject)
 		assert.Equal(t, claims.Email, validated.Email)
-		assert.Equal(t, "v1", validated.KeyVersion)
+		assert.Equal(t, testKeyVersion, validated.KeyVersion)
 		assert.Equal(t, "access", validated.TokenType)
 	})
 
@@ -133,7 +139,7 @@ func TestGenerateTokenPair(t *testing.T) {
 
 		assert.Equal(t, claims.Subject, validated.Subject)
 		assert.Equal(t, claims.Email, validated.Email)
-		assert.Equal(t, "v1", validated.KeyVersion)
+		assert.Equal(t, testKeyVersion, validated.KeyVersion)
 		assert.Equal(t, "refresh", validated.TokenType)
 	})
 
@@ -155,8 +161,8 @@ func TestGenerateTokenPair(t *testing.T) {
 func TestValidateToken(t *testing.T) {
 	ks := testKeyStore(t)
 	claims := TokenClaims{
-		Subject: "auth0|123456",
-		Email:   "user@example.com",
+		Subject: testSubject,
+		Email:   testEmail,
 	}
 
 	t.Run("valid access token", func(t *testing.T) {
@@ -215,8 +221,8 @@ func TestTokenExpiration(t *testing.T) {
 	ks := testKeyStore(t)
 
 	claims := TokenClaims{
-		Subject: "auth0|123456",
-		Email:   "user@example.com",
+		Subject: testSubject,
+		Email:   testEmail,
 	}
 
 	t.Run("freshly generated token is valid", func(t *testing.T) {
@@ -276,13 +282,13 @@ func TestKeyRotation(t *testing.T) {
 
 	oldKS, err := NewKeyStore(KeyStoreConfig{
 		SymmetricKey: oldEncoded,
-		KeyVersion:   "v1",
+		KeyVersion:   testKeyVersion,
 	})
 	require.NoError(t, err)
 
 	claims := TokenClaims{
-		Subject: "auth0|123456",
-		Email:   "user@example.com",
+		Subject: testSubject,
+		Email:   testEmail,
 	}
 
 	// Generate tokens with old key
@@ -305,13 +311,13 @@ func TestKeyRotation(t *testing.T) {
 	})
 
 	t.Run("old tokens validate after adding previous key", func(t *testing.T) {
-		addErr := newKS.AddPreviousKey("v1", oldEncoded)
+		addErr := newKS.AddPreviousKey(testKeyVersion, oldEncoded)
 		require.NoError(t, addErr)
 
 		validated, validateErr := newKS.ValidateToken(pair.AccessToken)
 		require.NoError(t, validateErr)
 		assert.Equal(t, claims.Subject, validated.Subject)
-		assert.Equal(t, "v1", validated.KeyVersion)
+		assert.Equal(t, testKeyVersion, validated.KeyVersion)
 	})
 
 	t.Run("new tokens validate with current key", func(t *testing.T) {
@@ -412,7 +418,7 @@ func TestKeyStore_SubjectPreservation(t *testing.T) {
 		{
 			name:    "standard Auth0 subject",
 			subject: "auth0|123456789",
-			email:   "user@example.com",
+			email:   testEmail,
 		},
 		{
 			name:    "google OAuth subject",
@@ -453,8 +459,8 @@ func TestKeyStore_SubjectPreservation(t *testing.T) {
 func TestValidateRefreshToken(t *testing.T) {
 	ks := testKeyStore(t)
 	claims := TokenClaims{
-		Subject: "auth0|123456",
-		Email:   "user@example.com",
+		Subject: testSubject,
+		Email:   testEmail,
 	}
 
 	t.Run("valid refresh token", func(t *testing.T) {
@@ -485,8 +491,8 @@ func TestValidateRefreshToken(t *testing.T) {
 func TestRefreshTokens(t *testing.T) {
 	ks := testKeyStore(t)
 	claims := TokenClaims{
-		Subject: "auth0|123456",
-		Email:   "user@example.com",
+		Subject: testSubject,
+		Email:   testEmail,
 	}
 
 	t.Run("valid refresh returns new token pair", func(t *testing.T) {

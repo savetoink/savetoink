@@ -13,6 +13,76 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Environment variable names.
+const (
+	envAPIKeySecret         = "SAVETOINK_API_KEY" //nolint:gosec // env var name, not a credential
+	envArticleTableName     = "SAVETOINK_ARTICLE_TABLE_NAME"
+	envArticleTagsTableName = "SAVETOINK_ARTICLE_TAGS_TABLE_NAME"
+	envAuth0Audience        = "SAVETOINK_AUTH0_AUDIENCE"
+	envAuth0ClientID        = "SAVETOINK_AUTH0_CLIENT_ID"
+	envAuth0ClientSecret    = "SAVETOINK_AUTH0_CLIENT_SECRET" //nolint:gosec // env var name, not a credential
+	envAuth0Domain          = "SAVETOINK_AUTH0_DOMAIN"
+	envAuthBackend          = "SAVETOINK_AUTH_BACKEND"
+	envBackupBucketName     = "SAVETOINK_BACKUP_BUCKET_NAME"
+	envBrowserlessKey       = "SAVETOINK_BROWSERLESS_KEY"
+	envCorsAllowOrigin      = "SAVETOINK_CORS_ALLOW_ORIGIN"
+	envDebug                = "SAVETOINK_DEBUG"
+	envDisableQuotaCheck    = "SAVETOINK_DISABLE_QUOTA_CHECK"
+	envEmailBackend         = "SAVETOINK_EMAIL_BACKEND"
+	envHTTPPort             = "SAVETOINK_HTTP_PORT"
+	envLoggingProvider      = "SAVETOINK_LOGGING_PROVIDER"
+	envMailjetAPIKey        = "SAVETOINK_MAILJET_API_KEY"        //nolint:gosec // env var name, not a credential
+	envMailjetAPISecret     = "SAVETOINK_MAILJET_API_SECRET"     //nolint:gosec // env var name, not a credential
+	envMailjetWebhookSecret = "SAVETOINK_MAILJET_WEBHOOK_SECRET" //nolint:gosec // env var name, not a credential
+	envPasetoKey            = "SAVETOINK_PASETO_KEY"
+	envPasetoKeyVersion     = "SAVETOINK_PASETO_KEY_VERSION"
+	envProcessArticleLambda = "SAVETOINK_PROCESS_ARTICLE_LAMBDA"
+	envSenderEmail          = "SAVETOINK_SENDER_EMAIL"
+	envSendsTableName       = "SAVETOINK_SENDS_TABLE_NAME"
+	envSentryDSN            = "SAVETOINK_SENTRY_DSN"
+	envSentryEnvironment    = "SAVETOINK_SENTRY_ENVIRONMENT"
+	envSentrySampleRate     = "SAVETOINK_SENTRY_SAMPLE_RATE"
+	envSQLitePath           = "SAVETOINK_SQLITE_PATH"
+	envStorageBackend       = "SAVETOINK_STORAGE_BACKEND"
+	envTasks                = "SAVETOINK_TASKS"
+	envUserProfileTableName = "SAVETOINK_USER_PROFILE_TABLE_NAME"
+)
+
+// Viper config keys.
+const (
+	viperAPIKey               = "api-key"
+	viperAPIKeySecret         = "api-key-secret"
+	viperAPISecret            = "api-secret"
+	viperAPIWebhookSecret     = "api-webhook-secret" //nolint:gosec // viper key name, not a credential
+	viperArticleTagsTable     = "article-tags-table"
+	viperArticlesTable        = "articles-table"
+	viperAuth0Audience        = "auth0-audience"
+	viperAuth0ClientID        = "auth0-client-id"
+	viperAuth0ClientSecret    = "auth0-client-secret" //nolint:gosec // viper key name, not a credential
+	viperAuth0Domain          = "auth0-domain"
+	viperAuthBackend          = "auth-backend"
+	viperBackupBucketName     = "backup-bucket-name"
+	viperBrowserlessKey       = "browserless-key"
+	viperCorsAllowOrigin      = "cors-allow-origin"
+	viperDebug                = "debug"
+	viperDisableQuotaCheck    = "disable-quota-check"
+	viperEmailBackend         = "email-backend"
+	viperHTTPPort             = "http-port"
+	viperLoggingProvider      = "logging-provider"
+	viperPasetoKey            = "paseto-key"
+	viperPasetoKeyVersion     = "paseto-key-version"
+	viperProcessArticleLambda = "process-article-lambda"
+	viperSenderEmail          = "sender-email"
+	viperSendsTable           = "sends-table"
+	viperSentryDSN            = "sentry-dsn"
+	viperSentryEnvironment    = "sentry-environment"
+	viperSentrySampleRate     = "sentry-sample-rate"
+	viperSQLitePath           = "sqlite-path"
+	viperStorageBackend       = "storage-backend"
+	viperTasks                = "tasks"
+	viperUserProfileTable     = "user-profile-table"
+)
+
 // Config holds configuration settings for application.
 type Config struct {
 	Debug            bool
@@ -109,37 +179,37 @@ func bindEnvVars() error {
 		key    string
 		envVar string
 	}{
-		{"api-key", "SAVETOINK_MAILJET_API_KEY"},
-		{"api-key-secret", "SAVETOINK_API_KEY"},
-		{"api-secret", "SAVETOINK_MAILJET_API_SECRET"},
-		{"api-webhook-secret", "SAVETOINK_MAILJET_WEBHOOK_SECRET"},
-		{"article-tags-table", "SAVETOINK_ARTICLE_TAGS_TABLE_NAME"},
-		{"articles-table", "SAVETOINK_ARTICLE_TABLE_NAME"},
-		{"auth-backend", "SAVETOINK_AUTH_BACKEND"},
-		{"backup-bucket-name", "SAVETOINK_BACKUP_BUCKET_NAME"},
-		{"auth0-audience", "SAVETOINK_AUTH0_AUDIENCE"},
-		{"auth0-client-id", "SAVETOINK_AUTH0_CLIENT_ID"},
-		{"auth0-client-secret", "SAVETOINK_AUTH0_CLIENT_SECRET"},
-		{"auth0-domain", "SAVETOINK_AUTH0_DOMAIN"},
-		{"browserless-key", "SAVETOINK_BROWSERLESS_KEY"},
-		{"cors-allow-origin", "SAVETOINK_CORS_ALLOW_ORIGIN"},
-		{"debug", "SAVETOINK_DEBUG"},
-		{"disable-quota-check", "SAVETOINK_DISABLE_QUOTA_CHECK"},
-		{"email-backend", "SAVETOINK_EMAIL_BACKEND"},
-		{"http-port", "SAVETOINK_HTTP_PORT"},
-		{"logging-provider", "SAVETOINK_LOGGING_PROVIDER"},
-		{"paseto-key", "SAVETOINK_PASETO_KEY"},
-		{"paseto-key-version", "SAVETOINK_PASETO_KEY_VERSION"},
-		{"process-article-lambda", "SAVETOINK_PROCESS_ARTICLE_LAMBDA"},
-		{"sender-email", "SAVETOINK_SENDER_EMAIL"},
-		{"sends-table", "SAVETOINK_SENDS_TABLE_NAME"},
-		{"sentry-dsn", "SAVETOINK_SENTRY_DSN"},
-		{"sentry-environment", "SAVETOINK_SENTRY_ENVIRONMENT"},
-		{"sentry-sample-rate", "SAVETOINK_SENTRY_SAMPLE_RATE"},
-		{"sqlite-path", "SAVETOINK_SQLITE_PATH"},
-		{"storage-backend", "SAVETOINK_STORAGE_BACKEND"},
-		{"tasks", "SAVETOINK_TASKS"},
-		{"user-profile-table", "SAVETOINK_USER_PROFILE_TABLE_NAME"},
+		{viperAPIKey, envMailjetAPIKey},
+		{viperAPIKeySecret, envAPIKeySecret},
+		{viperAPISecret, envMailjetAPISecret},
+		{viperAPIWebhookSecret, envMailjetWebhookSecret},
+		{viperArticleTagsTable, envArticleTagsTableName},
+		{viperArticlesTable, envArticleTableName},
+		{viperAuthBackend, envAuthBackend},
+		{viperBackupBucketName, envBackupBucketName},
+		{viperAuth0Audience, envAuth0Audience},
+		{viperAuth0ClientID, envAuth0ClientID},
+		{viperAuth0ClientSecret, envAuth0ClientSecret},
+		{viperAuth0Domain, envAuth0Domain},
+		{viperBrowserlessKey, envBrowserlessKey},
+		{viperCorsAllowOrigin, envCorsAllowOrigin},
+		{viperDebug, envDebug},
+		{viperDisableQuotaCheck, envDisableQuotaCheck},
+		{viperEmailBackend, envEmailBackend},
+		{viperHTTPPort, envHTTPPort},
+		{viperLoggingProvider, envLoggingProvider},
+		{viperPasetoKey, envPasetoKey},
+		{viperPasetoKeyVersion, envPasetoKeyVersion},
+		{viperProcessArticleLambda, envProcessArticleLambda},
+		{viperSenderEmail, envSenderEmail},
+		{viperSendsTable, envSendsTableName},
+		{viperSentryDSN, envSentryDSN},
+		{viperSentryEnvironment, envSentryEnvironment},
+		{viperSentrySampleRate, envSentrySampleRate},
+		{viperSQLitePath, envSQLitePath},
+		{viperStorageBackend, envStorageBackend},
+		{viperTasks, envTasks},
+		{viperUserProfileTable, envUserProfileTableName},
 	}
 
 	for _, ev := range envVars {
@@ -152,45 +222,45 @@ func bindEnvVars() error {
 
 func loadConfig(mode consts.RunMode) *Config {
 	cfg := &Config{
-		APIKeySecret:         viper.GetString("api-key-secret"),
-		ArticleTagsTable:     viper.GetString("article-tags-table"),
-		ArticlesTable:        viper.GetString("articles-table"),
-		Auth0Audience:        viper.GetString("auth0-audience"),
-		Auth0ClientID:        viper.GetString("auth0-client-id"),
-		Auth0ClientSecret:    viper.GetString("auth0-client-secret"),
-		Auth0Domain:          viper.GetString("auth0-domain"),
-		AuthBackend:          consts.AuthBackend(viper.GetString("auth-backend")),
-		BackupBucketName:     viper.GetString("backup-bucket-name"),
-		BrowserlessKey:       viper.GetString("browserless-key"),
-		CorsAllowOrigin:      viper.GetString("cors-allow-origin"),
-		Debug:                viper.GetBool("debug"),
-		DisableQuotaCheck:    viper.GetBool("disable-quota-check"),
-		EmailProvider:        consts.EmailProvider(viper.GetString("email-backend")),
-		LoggingProvider:      consts.LoggingProvider(viper.GetString("logging-provider")),
-		MailjetAPIKey:        viper.GetString("api-key"),
-		MailjetAPISecret:     viper.GetString("api-secret"),
-		Port:                 viper.GetInt("http-port"),
-		MailjetWebhookSecret: viper.GetString("api-webhook-secret"),
+		APIKeySecret:         viper.GetString(viperAPIKeySecret),
+		ArticleTagsTable:     viper.GetString(viperArticleTagsTable),
+		ArticlesTable:        viper.GetString(viperArticlesTable),
+		Auth0Audience:        viper.GetString(viperAuth0Audience),
+		Auth0ClientID:        viper.GetString(viperAuth0ClientID),
+		Auth0ClientSecret:    viper.GetString(viperAuth0ClientSecret),
+		Auth0Domain:          viper.GetString(viperAuth0Domain),
+		AuthBackend:          consts.AuthBackend(viper.GetString(viperAuthBackend)),
+		BackupBucketName:     viper.GetString(viperBackupBucketName),
+		BrowserlessKey:       viper.GetString(viperBrowserlessKey),
+		CorsAllowOrigin:      viper.GetString(viperCorsAllowOrigin),
+		Debug:                viper.GetBool(viperDebug),
+		DisableQuotaCheck:    viper.GetBool(viperDisableQuotaCheck),
+		EmailProvider:        consts.EmailProvider(viper.GetString(viperEmailBackend)),
+		LoggingProvider:      consts.LoggingProvider(viper.GetString(viperLoggingProvider)),
+		MailjetAPIKey:        viper.GetString(viperAPIKey),
+		MailjetAPISecret:     viper.GetString(viperAPISecret),
+		Port:                 viper.GetInt(viperHTTPPort),
+		MailjetWebhookSecret: viper.GetString(viperAPIWebhookSecret),
 		Mode:                 mode,
-		PASETOSymmetricKey:   viper.GetString("paseto-key"),
-		PASETOKeyVersion:     viper.GetString("paseto-key-version"),
-		ProcessArticleLambda: viper.GetString("process-article-lambda"),
-		SQLitePath:           viper.GetString("sqlite-path"),
-		SenderEmail:          viper.GetString("sender-email"),
-		SendsTable:           viper.GetString("sends-table"),
-		SentryDSN:            viper.GetString("sentry-dsn"),
-		SentryEnvironment:    viper.GetString("sentry-environment"),
-		SentrySampleRate:     viper.GetFloat64("sentry-sample-rate"),
-		StorageBackend:       consts.StorageBackend(viper.GetString("storage-backend")),
+		PASETOSymmetricKey:   viper.GetString(viperPasetoKey),
+		PASETOKeyVersion:     viper.GetString(viperPasetoKeyVersion),
+		ProcessArticleLambda: viper.GetString(viperProcessArticleLambda),
+		SQLitePath:           viper.GetString(viperSQLitePath),
+		SenderEmail:          viper.GetString(viperSenderEmail),
+		SendsTable:           viper.GetString(viperSendsTable),
+		SentryDSN:            viper.GetString(viperSentryDSN),
+		SentryEnvironment:    viper.GetString(viperSentryEnvironment),
+		SentrySampleRate:     viper.GetFloat64(viperSentrySampleRate),
+		StorageBackend:       consts.StorageBackend(viper.GetString(viperStorageBackend)),
 		Tasks:                loadTasksConfig(),
-		UserProfileTable:     viper.GetString("user-profile-table"),
+		UserProfileTable:     viper.GetString(viperUserProfileTable),
 	}
 
 	return cfg
 }
 
 func loadTasksConfig() []consts.TaskConfig {
-	tasksJSON := viper.GetString("tasks")
+	tasksJSON := viper.GetString(viperTasks)
 	if tasksJSON == "" {
 		return nil
 	}
@@ -264,13 +334,13 @@ func (c *Config) validateStorageBackendConfig(missing *[]string, awsLoader AWSCo
 
 func (c *Config) validateDynamoDBConfig(missing *[]string, awsLoader AWSConfigLoader) error {
 	if c.ArticlesTable == "" {
-		*missing = append(*missing, "SAVETOINK_ARTICLE_TABLE_NAME")
+		*missing = append(*missing, envArticleTableName)
 	}
 	if c.UserProfileTable == "" {
-		*missing = append(*missing, "SAVETOINK_USER_PROFILE_TABLE_NAME")
+		*missing = append(*missing, envUserProfileTableName)
 	}
 	if c.SendsTable == "" {
-		*missing = append(*missing, "SAVETOINK_SENDS_TABLE_NAME")
+		*missing = append(*missing, envSendsTableName)
 	}
 	return c.validateAWSLoaderConfig(awsLoader)
 }
@@ -289,7 +359,7 @@ func (c *Config) validateAWSLoaderConfig(awsLoader AWSConfigLoader) error {
 
 func (c *Config) validateSQLiteConfig(missing *[]string) error {
 	if c.SQLitePath == "" {
-		*missing = append(*missing, "SAVETOINK_SQLITE_PATH")
+		*missing = append(*missing, envSQLitePath)
 	}
 	return nil
 }
@@ -298,26 +368,26 @@ func (c *Config) validateAuthBackendConfig(missing *[]string) error {
 	switch c.AuthBackend {
 	case consts.AuthBackendSharedAPIKey:
 		if c.APIKeySecret == "" {
-			*missing = append(*missing, "SAVETOINK_API_KEY")
+			*missing = append(*missing, envAPIKeySecret)
 		}
 	case consts.AuthBackendAuth0:
 		if c.Auth0Domain == "" {
-			*missing = append(*missing, "SAVETOINK_AUTH0_DOMAIN")
+			*missing = append(*missing, envAuth0Domain)
 		}
 		if c.Auth0Audience == "" {
-			*missing = append(*missing, "SAVETOINK_AUTH0_AUDIENCE")
+			*missing = append(*missing, envAuth0Audience)
 		}
 		if c.Auth0ClientID == "" {
-			*missing = append(*missing, "SAVETOINK_AUTH0_CLIENT_ID")
+			*missing = append(*missing, envAuth0ClientID)
 		}
 		if c.Auth0ClientSecret == "" {
-			*missing = append(*missing, "SAVETOINK_AUTH0_CLIENT_SECRET")
+			*missing = append(*missing, envAuth0ClientSecret)
 		}
 		if c.PASETOSymmetricKey == "" {
-			*missing = append(*missing, "SAVETOINK_PASETO_KEY")
+			*missing = append(*missing, envPasetoKey)
 		}
 		if c.PASETOKeyVersion == "" {
-			*missing = append(*missing, "SAVETOINK_PASETO_KEY_VERSION")
+			*missing = append(*missing, envPasetoKeyVersion)
 		}
 	default:
 		return fmt.Errorf("unsupported auth backend: %s", c.AuthBackend)
@@ -329,7 +399,7 @@ func (c *Config) validateEmailProviderConfig(missing *[]string) error {
 	c.ValidateEmailProviderConfigCli(missing)
 	if c.EmailProvider == consts.EmailBackendMailjet {
 		if c.MailjetWebhookSecret == "" {
-			*missing = append(*missing, "SAVETOINK_MAILJET_WEBHOOK_SECRET")
+			*missing = append(*missing, envMailjetWebhookSecret)
 		}
 	}
 	return nil
@@ -338,13 +408,13 @@ func (c *Config) validateEmailProviderConfig(missing *[]string) error {
 func (c *Config) validateLoggingProviderConfig(missing *[]string) error {
 	if c.LoggingProvider == consts.LoggingBackendSentry {
 		if c.SentryDSN == "" {
-			*missing = append(*missing, "SAVETOINK_SENTRY_DSN")
+			*missing = append(*missing, envSentryDSN)
 		}
 		if c.SentryEnvironment == "" {
-			*missing = append(*missing, "SAVETOINK_SENTRY_ENVIRONMENT")
+			*missing = append(*missing, envSentryEnvironment)
 		}
 		if c.SentrySampleRate == 0 {
-			*missing = append(*missing, "SAVETOINK_SENTRY_SAMPLE_RATE")
+			*missing = append(*missing, envSentrySampleRate)
 		}
 	}
 	return nil
@@ -354,13 +424,13 @@ func (c *Config) validateLoggingProviderConfig(missing *[]string) error {
 func (c *Config) ValidateEmailProviderConfigCli(missing *[]string) {
 	if c.EmailProvider == consts.EmailBackendMailjet {
 		if c.MailjetAPIKey == "" {
-			*missing = append(*missing, "SAVETOINK_MAILJET_API_KEY")
+			*missing = append(*missing, envMailjetAPIKey)
 		}
 		if c.MailjetAPISecret == "" {
-			*missing = append(*missing, "SAVETOINK_MAILJET_API_SECRET")
+			*missing = append(*missing, envMailjetAPISecret)
 		}
 		if c.SenderEmail == "" {
-			*missing = append(*missing, "SAVETOINK_SENDER_EMAIL")
+			*missing = append(*missing, envSenderEmail)
 		}
 	}
 }

@@ -23,6 +23,10 @@ const (
 	testUserKindleEmail   = "user@kindle.com"
 	testArticle           = "Test Article"
 	testMsgID             = "msg-12345"
+	testAPIKey            = "key"
+	testAPISecret         = "secret"
+	testBody              = "body"
+	testArticleEpub       = "Test Article.epub"
 )
 
 func TestNewSender(t *testing.T) {
@@ -53,29 +57,29 @@ func TestValidateConfig(t *testing.T) {
 	}{
 		{
 			name:        "valid config",
-			apiKey:      "key",
-			apiSecret:   "secret",
+			apiKey:      testAPIKey,
+			apiSecret:   testAPISecret,
 			senderEmail: testSenderEmail,
 			wantErr:     false,
 		},
 		{
 			name:        "missing api key",
 			apiKey:      "",
-			apiSecret:   "secret",
+			apiSecret:   testAPISecret,
 			senderEmail: testSenderEmail,
 			wantErr:     true,
 		},
 		{
 			name:        "missing api secret",
-			apiKey:      "key",
+			apiKey:      testAPIKey,
 			apiSecret:   "",
 			senderEmail: testSenderEmail,
 			wantErr:     true,
 		},
 		{
 			name:        "missing sender email",
-			apiKey:      "key",
-			apiSecret:   "secret",
+			apiKey:      testAPIKey,
+			apiSecret:   testAPISecret,
 			senderEmail: "",
 			wantErr:     true,
 		},
@@ -174,7 +178,7 @@ func TestSendEmailValidation(t *testing.T) {
 		{
 			name:        "missing api key in config",
 			apiKey:      "",
-			apiSecret:   "secret",
+			apiSecret:   testAPISecret,
 			senderEmail: testSenderEmail,
 			req: &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
@@ -187,7 +191,7 @@ func TestSendEmailValidation(t *testing.T) {
 		},
 		{
 			name:        "missing api secret in config",
-			apiKey:      "key",
+			apiKey:      testAPIKey,
 			apiSecret:   "",
 			senderEmail: testSenderEmail,
 			req: &email.Request{
@@ -201,8 +205,8 @@ func TestSendEmailValidation(t *testing.T) {
 		},
 		{
 			name:        "missing sender email in config",
-			apiKey:      "key",
-			apiSecret:   "secret",
+			apiKey:      testAPIKey,
+			apiSecret:   testAPISecret,
 			senderEmail: "",
 			req: &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
@@ -215,8 +219,8 @@ func TestSendEmailValidation(t *testing.T) {
 		},
 		{
 			name:        "missing device email in request",
-			apiKey:      "key",
-			apiSecret:   "secret",
+			apiKey:      testAPIKey,
+			apiSecret:   testAPISecret,
 			senderEmail: testSenderEmail,
 			req: &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
@@ -229,8 +233,8 @@ func TestSendEmailValidation(t *testing.T) {
 		},
 		{
 			name:        "missing epub data in request",
-			apiKey:      "key",
-			apiSecret:   "secret",
+			apiKey:      testAPIKey,
+			apiSecret:   testAPISecret,
 			senderEmail: testSenderEmail,
 			req: &email.Request{
 				EPUBData:  nil,
@@ -243,8 +247,8 @@ func TestSendEmailValidation(t *testing.T) {
 		},
 		{
 			name:        "missing body in request",
-			apiKey:      "key",
-			apiSecret:   "secret",
+			apiKey:      testAPIKey,
+			apiSecret:   testAPISecret,
 			senderEmail: testSenderEmail,
 			req: &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
@@ -306,14 +310,14 @@ func TestBuildMessageInfo(t *testing.T) {
 				Subject:   testArticle,
 			},
 			senderEmail:    testSenderEmail,
-			expectFilename: "Test Article.epub",
+			expectFilename: testArticleEpub,
 		},
 		{
 			name: "request with empty subject",
 			req: &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: testUserKindleEmail,
-				Body:      "body",
+				Body:      testBody,
 				Subject:   "",
 			},
 			senderEmail:    testSenderEmail,
@@ -323,7 +327,7 @@ func TestBuildMessageInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sender := NewSender("key", "secret", tt.senderEmail)
+			sender := NewSender(testAPIKey, testAPISecret, tt.senderEmail)
 			messages, err := sender.buildMessageInfo(tt.req)
 			if err != nil {
 				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
@@ -390,10 +394,10 @@ func TestBuildMessageInfo_LongTitle(t *testing.T) {
 	req := &email.Request{
 		EPUBData:  io.NopCloser(strings.NewReader("data")),
 		DestEmail: testUserKindleEmail,
-		Body:      "body",
+		Body:      testBody,
 		Subject:   longTitle,
 	}
-	sender := NewSender("key", "secret", testSenderEmail)
+	sender := NewSender(testAPIKey, testAPISecret, testSenderEmail)
 	messages, err := sender.buildMessageInfo(req)
 	if err != nil {
 		t.Fatalf("buildMessageInfo() unexpected error = %v", err)
@@ -414,10 +418,10 @@ func TestBuildMessageInfo_UnicodeTitle(t *testing.T) {
 	req := &email.Request{
 		EPUBData:  io.NopCloser(strings.NewReader("data")),
 		DestEmail: testUserKindleEmail,
-		Body:      "body",
+		Body:      testBody,
 		Subject:   title,
 	}
-	sender := NewSender("key", "secret", testSenderEmail)
+	sender := NewSender(testAPIKey, testAPISecret, testSenderEmail)
 	messages, err := sender.buildMessageInfo(req)
 	if err != nil {
 		t.Fatalf("buildMessageInfo() unexpected error = %v", err)
@@ -466,10 +470,10 @@ func TestBuildMessageInfo_VaryingEPUBSizes(t *testing.T) {
 			req := &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader(string(epubData))),
 				DestEmail: testUserKindleEmail,
-				Body:      "body",
+				Body:      testBody,
 				Subject:   testArticle,
 			}
-			sender := NewSender("key", "secret", testSenderEmail)
+			sender := NewSender(testAPIKey, testAPISecret, testSenderEmail)
 			messages, err := sender.buildMessageInfo(req)
 			if err != nil {
 				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
@@ -510,7 +514,7 @@ func TestBuildMessageInfo_BodyWithNewlines(t *testing.T) {
 		Body:      "Line 1\nLine 2\nLine 3",
 		Subject:   testArticle,
 	}
-	sender := NewSender("key", "secret", testSenderEmail)
+	sender := NewSender(testAPIKey, testAPISecret, testSenderEmail)
 	messages, err := sender.buildMessageInfo(req)
 	if err != nil {
 		t.Fatalf("buildMessageInfo() unexpected error = %v", err)
@@ -542,10 +546,10 @@ func TestBuildMessageInfo_SenderEmailVariations(t *testing.T) {
 			req := &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: testUserKindleEmail,
-				Body:      "body",
+				Body:      testBody,
 				Subject:   testArticle,
 			}
-			sender := NewSender("key", "secret", tt.senderEmail)
+			sender := NewSender(testAPIKey, testAPISecret, tt.senderEmail)
 			messages, err := sender.buildMessageInfo(req)
 			if err != nil {
 				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
@@ -568,7 +572,7 @@ func TestBuildMessageInfo_DestEmailVariations(t *testing.T) {
 		name      string
 		destEmail string
 	}{
-		{"kindle email", "user@kindle.com"},
+		{"kindle email", testUserKindleEmail},
 		{"free kindle email", "user@free.kindle.com"},
 		{"kobo email", "user@send.kobo.com"},
 		{"tolino email", "user@mytolino.com"},
@@ -579,10 +583,10 @@ func TestBuildMessageInfo_DestEmailVariations(t *testing.T) {
 			req := &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
 				DestEmail: tt.destEmail,
-				Body:      "body",
+				Body:      testBody,
 				Subject:   testArticle,
 			}
-			sender := NewSender("key", "secret", testSenderEmail)
+			sender := NewSender(testAPIKey, testAPISecret, testSenderEmail)
 			messages, err := sender.buildMessageInfo(req)
 			if err != nil {
 				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
@@ -611,13 +615,13 @@ func TestBuildMessageInfo_SubjectEdgeCases(t *testing.T) {
 		subject        string
 		expectFilename string
 	}{
-		{"subject with colon", "Test: Article", "Test Article.epub"},
-		{"subject with slash", "Test/Article", "Test Article.epub"},
-		{"subject with backslash", "Test\\Article", "Test Article.epub"},
-		{"subject with leading spaces", "   Test Article", "Test Article.epub"},
-		{"subject with trailing spaces", "Test Article   ", "Test Article.epub"},
-		{"subject with quotes", "\"Test Article\"", "Test Article.epub"},
-		{"subject with multiple dots", "Test...Article", "Test Article.epub"},
+		{"subject with colon", "Test: Article", testArticleEpub},
+		{"subject with slash", "Test/Article", testArticleEpub},
+		{"subject with backslash", "Test\\Article", testArticleEpub},
+		{"subject with leading spaces", "   Test Article", testArticleEpub},
+		{"subject with trailing spaces", "Test Article   ", testArticleEpub},
+		{"subject with quotes", "\"Test Article\"", testArticleEpub},
+		{"subject with multiple dots", "Test...Article", testArticleEpub},
 		{"subject with unicode and emoji", "Test 中文 😊", "Test.epub"},
 		{"subject with mixed case", "TeSt ArTiClE", "TeSt ArTiClE.epub"},
 		{"subject with numbers", "Test Article 2024", "Test Article 2024.epub"},
@@ -628,11 +632,11 @@ func TestBuildMessageInfo_SubjectEdgeCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
-				DestEmail: "user@kindle.com",
-				Body:      "body",
+				DestEmail: testUserKindleEmail,
+				Body:      testBody,
 				Subject:   tt.subject,
 			}
-			sender := NewSender("key", "secret", "test@example.com")
+			sender := NewSender(testAPIKey, testAPISecret, "test@example.com")
 			messages, err := sender.buildMessageInfo(req)
 			if err != nil {
 				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
@@ -679,11 +683,11 @@ func TestBuildMessageInfo_BodySpecialCharacters(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := &email.Request{
 				EPUBData:  io.NopCloser(strings.NewReader("data")),
-				DestEmail: "user@kindle.com",
+				DestEmail: testUserKindleEmail,
 				Body:      tt.body,
 				Subject:   "Test",
 			}
-			sender := NewSender("key", "secret", "test@example.com")
+			sender := NewSender(testAPIKey, testAPISecret, "test@example.com")
 			messages, err := sender.buildMessageInfo(req)
 			if err != nil {
 				t.Fatalf("buildMessageInfo() unexpected error = %v", err)
@@ -714,24 +718,24 @@ func TestParseResponse(t *testing.T) {
 			resp: &mailjetLib.ResultsV31{
 				ResultsV31: []mailjetLib.ResultV31{
 					{
-						Status: "success",
+						Status: statusSuccess,
 						To: []mailjetLib.GeneratedMessageV31{
 							{
-								MessageUUID: "msg-12345",
+								MessageUUID: testMsgID,
 							},
 						},
 					},
 				},
 			},
 			wantErr:   false,
-			wantMsgID: "msg-12345",
+			wantMsgID: testMsgID,
 		},
 		{
 			name: "successful response without message ID",
 			resp: &mailjetLib.ResultsV31{
 				ResultsV31: []mailjetLib.ResultV31{
 					{
-						Status: "success",
+						Status: statusSuccess,
 						To:     []mailjetLib.GeneratedMessageV31{},
 					},
 				},
@@ -747,7 +751,7 @@ func TestParseResponse(t *testing.T) {
 						Status: "error",
 						To: []mailjetLib.GeneratedMessageV31{
 							{
-								MessageUUID: "msg-12345",
+								MessageUUID: testMsgID,
 							},
 						},
 					},
@@ -764,7 +768,7 @@ func TestParseResponse(t *testing.T) {
 						Status: "failed",
 						To: []mailjetLib.GeneratedMessageV31{
 							{
-								MessageUUID: "msg-12345",
+								MessageUUID: testMsgID,
 							},
 						},
 					},
@@ -783,7 +787,7 @@ func TestParseResponse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sender := NewSender("key", "secret", "test@example.com")
+			sender := NewSender(testAPIKey, testAPISecret, "test@example.com")
 
 			resp, err := sender.parseResponse(tt.resp)
 
@@ -804,7 +808,7 @@ func TestParseResponse(t *testing.T) {
 				return
 			}
 
-			if resp.Status != "success" {
+			if resp.Status != statusSuccess {
 				t.Errorf("parseResponse() Status = %v, want 'success'", resp.Status)
 			}
 			if resp.Message != "Email sent successfully" {

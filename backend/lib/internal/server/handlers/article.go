@@ -26,6 +26,8 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
 
+const statusSent = "sent"
+
 // Handlers manages HTTP handlers for the savetoink application.
 type Handlers struct {
 	cfg            *config.Config
@@ -297,14 +299,14 @@ func (h *Handlers) HandleSendArticle(w http.ResponseWriter, r *http.Request) {
 
 	if h.cfg.AuthBackend == consts.AuthBackendAuth0 {
 		_ = json.NewEncoder(w).Encode(types.SendArticleResponseWithCount{
-			Status:     "sent",
+			Status:     statusSent,
 			SendsCount: sendsCount + 1,
 		})
 		return
 	}
 
 	_ = json.NewEncoder(w).Encode(types.SendArticleResponse{
-		Status: "sent",
+		Status: statusSent,
 	})
 }
 

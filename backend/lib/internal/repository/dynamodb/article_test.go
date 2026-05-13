@@ -12,6 +12,21 @@ import (
 
 const (
 	articleTestAccount = "test-account"
+	article1           = "article-1"
+	testImageURL       = "https://example.com/image.jpg"
+	testSiteName       = "Example Site"
+	testSourceDomain   = "example.com"
+	testAuthor         = "Author"
+	testExcerpt        = "Excerpt"
+	testContent        = "Content"
+	articleTag2        = "article-tag-2"
+	articleTestLang    = "en"
+	article2ID         = "article-2"
+	article3ID         = "article-3"
+	article2Title      = "Test Article 2"
+	articleTag1        = "article-tag-1"
+	articleTag3        = "article-tag-3"
+	articleTag4        = "article-tag-4"
 )
 
 func (s *DynamoDBRepositoryTestSuite) TestStoreAndGetArticle() {
@@ -23,19 +38,19 @@ func (s *DynamoDBRepositoryTestSuite) TestStoreAndGetArticle() {
 
 	article := &model.Article{
 		Account:            articleTestAccount,
-		ID:                 "article-1",
-		URL:                "https://example.com/article",
-		Title:              "Test Article",
+		ID:                 article1,
+		URL:                tagArticleURL,
+		Title:              tagArticleTitle,
 		Content:            "This is test content",
 		Author:             "Test Author",
 		Excerpt:            "Test excerpt",
-		ImageURL:           "https://example.com/image.jpg",
-		Language:           "en",
+		ImageURL:           testImageURL,
+		Language:           articleTestLang,
 		PublishedAt:        &publishedAt,
 		WordCount:          100,
 		ReadingTimeMinutes: 1,
-		SiteName:           "Example Site",
-		SourceDomain:       "example.com",
+		SiteName:           testSiteName,
+		SourceDomain:       testSourceDomain,
 		Favorite:           false,
 		CreatedAt:          now,
 	}
@@ -80,9 +95,9 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateFavorite() {
 
 	article := &model.Article{
 		Account:   articleTestAccount,
-		ID:        "article-2",
+		ID:        article2ID,
 		URL:       "https://example.com/article2",
-		Title:     "Test Article 2",
+		Title:     article2Title,
 		Content:   "Content 2",
 		CreatedAt: now,
 	}
@@ -106,7 +121,7 @@ func (s *DynamoDBRepositoryTestSuite) TestDeleteArticle() {
 
 	article := &model.Article{
 		Account:   articleTestAccount,
-		ID:        "article-3",
+		ID:        article3ID,
 		URL:       "https://example.com/article3",
 		Title:     "Test Article 3",
 		Content:   "Content 3",
@@ -136,20 +151,20 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount() {
 		article := &model.Article{
 			Account:            account,
 			ID:                 "article-" + string(rune('0'+i)),
-			URL:                "https://example.com/article" + string(rune('0'+i)),
+			URL:                tagArticleURL + string(rune('0'+i)),
 			Title:              "Test Article " + string(rune('0'+i)),
 			Content:            "Content " + string(rune('0'+i)),
 			CreatedAt:          now,
 			Favorite:           i%2 == 0,
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           articleTestLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testSourceDomain,
 		}
 
 		err := s.repositories.Store(ctx, article)
@@ -180,15 +195,15 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithFavoriteFilter
 			Content:            "Fav Content " + string(rune('0'+i)),
 			CreatedAt:          now,
 			Favorite:           false, // Start as non-favorite
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           articleTestLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testSourceDomain,
 		}
 
 		err := s.repositories.Store(ctx, article)
@@ -231,15 +246,15 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountPagination() {
 			Content:            "Pag Content " + string(rune('0'+i)),
 			CreatedAt:          now,
 			Favorite:           false,
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           articleTestLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testSourceDomain,
 		}
 
 		err := s.repositories.Store(ctx, article)
@@ -288,18 +303,18 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountOffsetOutOfBounds(
 		ID:                 "article-offset",
 		URL:                "https://example.com/offset",
 		Title:              "Offset Article",
-		Content:            "Content",
+		Content:            testContent,
 		CreatedAt:          now,
 		Favorite:           false,
-		Author:             "Author",
-		Excerpt:            "Excerpt",
-		ImageURL:           "https://example.com/image.jpg",
-		Language:           "en",
+		Author:             testAuthor,
+		Excerpt:            testExcerpt,
+		ImageURL:           testImageURL,
+		Language:           articleTestLang,
 		PublishedAt:        &publishedAt,
 		WordCount:          100,
 		ReadingTimeMinutes: 1,
-		SiteName:           "Example Site",
-		SourceDomain:       "example.com",
+		SiteName:           testSiteName,
+		SourceDomain:       testSourceDomain,
 	}
 
 	err := s.repositories.Store(ctx, article)
@@ -319,9 +334,9 @@ func (s *DynamoDBRepositoryTestSuite) TestStoreArticleEmptyAccount() {
 
 	article := &model.Article{
 		ID:        "article-empty-account",
-		URL:       "https://example.com/article",
-		Title:     "Test Article",
-		Content:   "Content",
+		URL:       tagArticleURL,
+		Title:     tagArticleTitle,
+		Content:   testContent,
 		CreatedAt: now,
 	}
 
@@ -339,9 +354,9 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateFavorite_SetsAccountFavorite() {
 	article := &model.Article{
 		Account:   articleTestAccount,
 		ID:        "article-fav-on",
-		URL:       "https://example.com/article",
-		Title:     "Test Article",
-		Content:   "Content",
+		URL:       tagArticleURL,
+		Title:     tagArticleTitle,
+		Content:   testContent,
 		CreatedAt: now,
 		Favorite:  false,
 	}
@@ -366,9 +381,9 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateFavorite_RemovesAccountFavorite(
 	article := &model.Article{
 		Account:   articleTestAccount,
 		ID:        "article-fav-off",
-		URL:       "https://example.com/article",
-		Title:     "Test Article",
-		Content:   "Content",
+		URL:       tagArticleURL,
+		Title:     tagArticleTitle,
+		Content:   testContent,
 		CreatedAt: now,
 		Favorite:  true,
 	}
@@ -399,8 +414,8 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesPaginati
 		article := &model.Article{
 			Account:   account,
 			ID:        "article-" + string(rune('a'+(i%26))),
-			URL:       "https://example.com/article",
-			Title:     "Test Article",
+			URL:       tagArticleURL,
+			Title:     tagArticleTitle,
 			CreatedAt: time.Now().Add(-time.Duration(i) * time.Hour),
 			Favorite:  false, // Start as non-favorite
 		}
@@ -458,8 +473,8 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_FavoritesEmptyRes
 		article := &model.Article{
 			Account:   account,
 			ID:        "article-" + string(rune('a'+i)),
-			URL:       "https://example.com/article",
-			Title:     "Test Article",
+			URL:       tagArticleURL,
+			Title:     tagArticleTitle,
 			CreatedAt: time.Now().Add(-time.Duration(i) * time.Hour),
 			Favorite:  false,
 		}
@@ -480,11 +495,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 	ctx := context.Background()
 	t := s.T()
 
-	const (
-		tagTech        = "tech"
-		tagProgramming = "programming"
-		tagNonexistent = "nonexistent"
-	)
+	const tagNonexistent = "nonexistent"
 
 	account := "test-account-tag"
 
@@ -494,10 +505,10 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 		tags []string
 		fav  bool
 	}{
-		{"article-tag-1", []string{tagTech}, false},
-		{"article-tag-2", []string{tagTech, tagProgramming}, true},
-		{"article-tag-3", []string{tagProgramming}, false},
-		{"article-tag-4", []string{tagTech}, true},
+		{articleTag1, []string{tagTech}, false},
+		{articleTag2, []string{tagTech, tagProgramming}, true},
+		{articleTag3, []string{tagProgramming}, false},
+		{articleTag4, []string{tagTech}, true},
 		{"article-tag-5", []string{}, false},
 	}
 
@@ -513,15 +524,15 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 			Content:            "Content " + tc.id,
 			CreatedAt:          now,
 			Favorite:           tc.fav,
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           articleTestLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testSourceDomain,
 		}
 
 		err := s.repositories.Store(ctx, article)
@@ -534,7 +545,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 		}
 	}
 
-	// Test filtering by "tech" tag
+	// Test filtering by tagTech tag
 	tag := tagTech
 	articles, total, err := s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
@@ -543,10 +554,10 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 	assert.Len(t, articles, 3)
 
 	for _, article := range articles {
-		assert.Contains(t, []string{"article-tag-1", "article-tag-2", "article-tag-4"}, article.ID)
+		assert.Contains(t, []string{articleTag1, articleTag2, articleTag4}, article.ID)
 	}
 
-	// Test filtering by "programming" tag
+	// Test filtering by tagProgramming tag
 	tag = tagProgramming
 	articles, total, err = s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Tag: &tag})
@@ -555,7 +566,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccountWithTagFilter() {
 	assert.Len(t, articles, 2)
 
 	for _, article := range articles {
-		assert.Contains(t, []string{"article-tag-2", "article-tag-3"}, article.ID)
+		assert.Contains(t, []string{articleTag2, articleTag3}, article.ID)
 	}
 
 	// Test filtering by non-existent tag
@@ -571,11 +582,6 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 	ctx := context.Background()
 	t := s.T()
 
-	const (
-		tagTech        = "tech"
-		tagProgramming = "programming"
-	)
-
 	account := "test-account-combined"
 
 	// Create articles with different tag and favorite combinations
@@ -584,9 +590,9 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 		tags []string
 		fav  bool
 	}{
-		{"article-1", []string{tagTech}, true},                  // tech AND favorite
-		{"article-2", []string{tagTech}, false},                 // tech only
-		{"article-3", []string{tagProgramming}, true},           // programming AND favorite
+		{article1, []string{tagTech}, true},                     // tech AND favorite
+		{article2ID, []string{tagTech}, false},                  // tech only
+		{article3ID, []string{tagProgramming}, true},            // programming AND favorite
 		{"article-4", []string{tagProgramming}, false},          // programming only
 		{"article-5", []string{}, true},                         // favorite only
 		{"article-6", []string{}, false},                        // neither
@@ -606,15 +612,15 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 			Content:            "Content " + tc.id,
 			CreatedAt:          now,
 			Favorite:           tc.fav,
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           articleTestLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testSourceDomain,
 		}
 
 		err := s.repositories.Store(ctx, article)
@@ -627,7 +633,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 		}
 	}
 
-	// Test: favorite=true AND tag="tech"
+	// Test: favorite=true AND tag=tagTech
 	tag := tagTech
 	favorite := true
 	articles, total, err := s.repositories.GetMetadataByAccount(
@@ -641,10 +647,10 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 		ids[i] = a.ID
 		assert.True(t, a.Favorite)
 	}
-	assert.Contains(t, ids, "article-1")
+	assert.Contains(t, ids, article1)
 	assert.Contains(t, ids, "article-7")
 
-	// Test: favorite=true AND tag="programming"
+	// Test: favorite=true AND tag=tagProgramming
 	tag = tagProgramming
 	articles, total, err = s.repositories.GetMetadataByAccount(
 		ctx, account, 1, 10, &internaltypes.ArticleFilter{Favorite: &favorite, Tag: &tag})
@@ -657,10 +663,10 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 		ids[i] = a.ID
 		assert.True(t, a.Favorite)
 	}
-	assert.Contains(t, ids, "article-3")
+	assert.Contains(t, ids, article3ID)
 	assert.Contains(t, ids, "article-7")
 
-	// Test: favorite=false AND tag="tech"
+	// Test: favorite=false AND tag=tagTech
 	favorite = false
 	tag = tagTech
 	articles, total, err = s.repositories.GetMetadataByAccount(
@@ -674,7 +680,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_WithCombinedFilte
 		ids[i] = a.ID
 		assert.False(t, a.Favorite)
 	}
-	assert.Contains(t, ids, "article-2")
+	assert.Contains(t, ids, article2ID)
 	assert.Contains(t, ids, "article-8")
 
 	// Test: favorite=true AND non-existent tag
@@ -699,11 +705,9 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPaginati
 	ctx := context.Background()
 	t := s.T()
 
-	const tagTech = "tech"
-
 	account := "test-account-tag-pag"
 
-	// Create 25 articles with "tech" tag
+	// Create 25 articles with tagTech tag
 	for i := 1; i <= 25; i++ {
 		now := time.Now().Add(-time.Duration(i) * time.Hour)
 		publishedAt := now
@@ -716,21 +720,21 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPaginati
 			Content:            "Tech Content " + string(rune('a'+(i-1)%26)),
 			CreatedAt:          now,
 			Favorite:           i%2 == 0, // Half are favorites
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           articleTestLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testSourceDomain,
 		}
 
 		err := s.repositories.Store(ctx, article)
 		require.NoError(t, err)
 
-		err = s.repositories.AddTagsToArticle(ctx, account, article.ID, []string{"tech"}, nil)
+		err = s.repositories.AddTagsToArticle(ctx, account, article.ID, []string{tagTech}, nil)
 		require.NoError(t, err)
 	}
 
@@ -747,15 +751,15 @@ func (s *DynamoDBRepositoryTestSuite) TestGetMetadataByAccount_TagFilterPaginati
 			Content:            "Other Content " + string(rune('a'+i-1)),
 			CreatedAt:          now,
 			Favorite:           false,
-			Author:             "Author",
-			Excerpt:            "Excerpt",
-			ImageURL:           "https://example.com/image.jpg",
-			Language:           "en",
+			Author:             testAuthor,
+			Excerpt:            testExcerpt,
+			ImageURL:           testImageURL,
+			Language:           articleTestLang,
 			PublishedAt:        &publishedAt,
 			WordCount:          100,
 			ReadingTimeMinutes: 1,
-			SiteName:           "Example Site",
-			SourceDomain:       "example.com",
+			SiteName:           testSiteName,
+			SourceDomain:       testSourceDomain,
 		}
 
 		err := s.repositories.Store(ctx, article)

@@ -15,11 +15,13 @@ import (
 )
 
 const (
-	testFunctionName = "test-function"
-	testRequestID    = "req-123"
-	testURL          = "https://example.com/article"
-	testArticleID    = "article-456"
-	testAccountID    = "account-789"
+	testFunctionName    = "test-function"
+	testRequestID       = "req-123"
+	testURL             = "https://example.com/article"
+	testArticleID       = "article-456"
+	testAccountID       = "account-789"
+	testSourceKey       = "source"
+	testProcessorUserID = "user-123"
 )
 
 type mockLambdaInvoker struct {
@@ -152,8 +154,8 @@ func TestStartProcessing_WithInheritedAttrs(t *testing.T) {
 		ArticleID: testArticleID,
 		AccountID: testAccountID,
 		InheritedAttrs: []map[string]any{
-			{"user_id": "user-123"},
-			{"source": "api"},
+			{testUserIDKey: testProcessorUserID},
+			{testSourceKey: "api"},
 		},
 		SendOnComplete: false,
 	}

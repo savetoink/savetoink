@@ -16,6 +16,11 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/service"
 )
 
+const (
+	errTypeNotFound         = "not_found"
+	errTypeMethodNotAllowed = "method_not_allowed"
+)
+
 // NewRouter creates and configures a new chi router with all middleware and routes.
 func NewRouter(cfg *config.Config) *chi.Mux {
 	return newRouterWithClient(cfg, &http.Client{
@@ -50,12 +55,12 @@ func newRouterWithClient(cfg *config.Config, client *http.Client) *chi.Mux {
 
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "not_found"})
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: errTypeNotFound})
 	})
 
 	r.MethodNotAllowed(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "method_not_allowed"})
+		_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: errTypeMethodNotAllowed})
 	})
 
 	r.Get("/robots.txt", handlers.RobotsTXTHandler)

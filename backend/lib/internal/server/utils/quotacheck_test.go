@@ -23,6 +23,8 @@ import (
 
 const testDeviceEmail = "test@kindle.com"
 
+const testErrEmailBackendNotConfigured = "email backend not configured: invalid input"
+
 type quotaCheckMockService struct {
 	countSendsFunc      func(ctx context.Context, accountID string, startDate, endDate time.Time) (int, error)
 	getDeviceEmailFunc  func(ctx context.Context, accountID string) (string, bool, error)
@@ -201,13 +203,13 @@ func TestCheckEmailBackendEnabled(t *testing.T) {
 			name:           "empty email provider",
 			emailProvider:  "",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "email backend not configured: invalid input",
+			expectedError:  testErrEmailBackendNotConfigured,
 		},
 		{
 			name:           "different provider configured",
 			emailProvider:  "other-provider",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "email backend not configured: invalid input",
+			expectedError:  testErrEmailBackendNotConfigured,
 		},
 	}
 

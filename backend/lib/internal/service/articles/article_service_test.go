@@ -17,6 +17,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testUser1          = "user1"
+	testID             = "test-id"
+	testURL            = "https://example.com/test"
+	testUpdatedTitle   = "Updated Title"
+	testUpdatedContent = "<p>Updated content</p>"
+	testUpdatedAuthor  = "Updated Author"
+	testAccount123     = "account-123"
+	testArticle456     = "article-456"
+	testArticle1       = "article-1"
+	testArticle2       = "article-2"
+	testToDeleteTitle  = "To Delete"
+	testTagProgramming = "programming"
+	testTagGolang      = "golang"
+	testTagTech        = "tech"
+
+	testTitleArticle  = "Test Article"
+	testTitleArticle1 = "Article 1"
+	testTitleArticle2 = "Article 2"
+	testTitleArticle3 = "Article 3"
+	testTagRust       = "rust"
+	testArticle3      = "article-3"
+)
+
 type MockRepository struct {
 	articles     []*model.Article
 	storeErr     error
@@ -390,9 +414,9 @@ func TestUpdateArticle_Success(t *testing.T) {
 	ctx := context.Background()
 
 	initialArticle := &model.Article{
-		Account:   "user1",
-		ID:        "test-id",
-		URL:       "https://example.com/test",
+		Account:   testUser1,
+		ID:        testID,
+		URL:       testURL,
 		CreatedAt: time.Now(),
 	}
 
@@ -401,12 +425,12 @@ func TestUpdateArticle_Success(t *testing.T) {
 	}
 
 	updatedArticle := &model.Article{
-		Account:   "user1",
-		ID:        "test-id",
-		URL:       "https://example.com/test",
-		Title:     "Updated Title",
-		Content:   "<p>Updated content</p>",
-		Author:    "Updated Author",
+		Account:   testUser1,
+		ID:        testID,
+		URL:       testURL,
+		Title:     testUpdatedTitle,
+		Content:   testUpdatedContent,
+		Author:    testUpdatedAuthor,
 		CreatedAt: time.Now(),
 	}
 
@@ -414,20 +438,20 @@ func TestUpdateArticle_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	retrieved, err := mockRepo.GetByAccountAndID(ctx, "user1", "test-id")
+	retrieved, err := mockRepo.GetByAccountAndID(ctx, testUser1, testID)
 	if err != nil {
 		t.Fatalf("failed to retrieve updated article: %v", err)
 	}
 
-	if retrieved.Title != "Updated Title" {
+	if retrieved.Title != testUpdatedTitle {
 		t.Errorf("expected title 'Updated Title', got '%s'", retrieved.Title)
 	}
 
-	if retrieved.Content != "<p>Updated content</p>" {
+	if retrieved.Content != testUpdatedContent {
 		t.Errorf("expected content update, got %s", retrieved.Content)
 	}
 
-	if retrieved.Author != "Updated Author" {
+	if retrieved.Author != testUpdatedAuthor {
 		t.Errorf("expected author 'Updated Author', got '%s'", retrieved.Author)
 	}
 }
@@ -436,8 +460,8 @@ func TestUpdateArticle_NilRepo(t *testing.T) {
 	svc := New(nil, nil, epub.NewPublisher(), nil)
 
 	article := &model.Article{
-		Account: "user1",
-		ID:      "test-id",
+		Account: testUser1,
+		ID:      testID,
 	}
 
 	assert.Panics(t, func() {
@@ -459,11 +483,11 @@ func TestUpdateArticle_MissingFields(t *testing.T) {
 	}{
 		{
 			name:    "missing account",
-			article: &model.Article{ID: "test-id"},
+			article: &model.Article{ID: testID},
 		},
 		{
 			name:    "missing id",
-			article: &model.Article{Account: "user1"},
+			article: &model.Article{Account: testUser1},
 		},
 	}
 
@@ -485,7 +509,7 @@ func TestCreateArticle_Success(t *testing.T) {
 	ctx := context.Background()
 
 	testURL, _ := url.Parse("https://example.com/test-article")
-	accountID := "account-123"
+	accountID := testAccount123
 
 	article, err := svc.CreateArticle(ctx, testURL, accountID)
 	if err != nil {
@@ -518,9 +542,9 @@ func TestCreateArticle_StoreError(t *testing.T) {
 
 	ctx := context.Background()
 
-	testURL, _ := url.Parse("https://example.com/test")
+	testURL, _ := url.Parse(testURL)
 
-	_, err := svc.CreateArticle(ctx, testURL, "account-123")
+	_, err := svc.CreateArticle(ctx, testURL, testAccount123)
 	if err == nil {
 		t.Error("expected error when store fails")
 	}
@@ -530,9 +554,9 @@ func TestGetArticle_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
 			{
-				Account:   "account-123",
-				ID:        "article-456",
-				Title:     "Test Article",
+				Account:   testAccount123,
+				ID:        testArticle456,
+				Title:     testTitleArticle,
 				CreatedAt: time.Now(),
 			},
 		},
@@ -541,16 +565,16 @@ func TestGetArticle_Success(t *testing.T) {
 
 	ctx := context.Background()
 
-	article, err := svc.GetArticle(ctx, "account-123", "article-456")
+	article, err := svc.GetArticle(ctx, testAccount123, testArticle456)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if article.ID != "article-456" {
+	if article.ID != testArticle456 {
 		t.Errorf("expected article ID 'article-456', got '%s'", article.ID)
 	}
 
-	if article.Title != "Test Article" {
+	if article.Title != testTitleArticle {
 		t.Errorf("expected title 'Test Article', got '%s'", article.Title)
 	}
 }
@@ -563,7 +587,7 @@ func TestGetArticle_EmptyID(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.GetArticle(ctx, "account-123", "")
+	_, err := svc.GetArticle(ctx, testAccount123, "")
 	if err == nil {
 		t.Error("expected error for empty article ID")
 	}
@@ -577,7 +601,7 @@ func TestGetArticle_NotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.GetArticle(ctx, "account-123", "nonexistent-article")
+	_, err := svc.GetArticle(ctx, testAccount123, "nonexistent-article")
 	if err == nil {
 		t.Error("expected not found error")
 	}
@@ -586,16 +610,16 @@ func TestGetArticle_NotFound(t *testing.T) {
 func TestGetArticlesMetadata_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-1", Title: "Article 1", CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-2", Title: "Article 2", CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-3", Title: "Article 3", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle1, Title: testTitleArticle1, CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle2, Title: testTitleArticle2, CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle3, Title: testTitleArticle3, CreatedAt: time.Now()},
 		},
 	}
 	svc := New(mockRepo, nil, epub.NewPublisher(), nil)
 
 	ctx := context.Background()
 
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 2, nil)
+	result, err := svc.GetArticlesMetadata(ctx, testAccount123, 1, 2, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -625,9 +649,9 @@ func TestGetArticlesMetadata_Success(t *testing.T) {
 func TestGetArticlesMetadata_WithFavoriteFilter(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-1", Title: "Article 1", Favorite: true, CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-2", Title: "Article 2", Favorite: false, CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-3", Title: "Article 3", Favorite: true, CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle1, Title: "Article 1", Favorite: true, CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle2, Title: "Article 2", Favorite: false, CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle3, Title: "Article 3", Favorite: true, CreatedAt: time.Now()},
 		},
 	}
 	svc := New(mockRepo, nil, epub.NewPublisher(), nil)
@@ -635,7 +659,7 @@ func TestGetArticlesMetadata_WithFavoriteFilter(t *testing.T) {
 	ctx := context.Background()
 
 	favorite := true
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, &types.ArticleFilter{Favorite: &favorite})
+	result, err := svc.GetArticlesMetadata(ctx, testAccount123, 1, 10, &types.ArticleFilter{Favorite: &favorite})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -659,7 +683,7 @@ func TestGetArticlesMetadata_EmptyResults(t *testing.T) {
 
 	ctx := context.Background()
 
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, nil)
+	result, err := svc.GetArticlesMetadata(ctx, testAccount123, 1, 10, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -680,7 +704,7 @@ func TestGetArticlesMetadata_EmptyResults(t *testing.T) {
 func TestDeleteArticle_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", Title: "To Delete", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, Title: testToDeleteTitle, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -688,7 +712,7 @@ func TestDeleteArticle_Success(t *testing.T) {
 
 	ctx := context.Background()
 
-	result, err := svc.DeleteArticle(ctx, "account-123", "article-456")
+	result, err := svc.DeleteArticle(ctx, testAccount123, testArticle456)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -710,7 +734,7 @@ func TestDeleteArticle_EmptyID(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.DeleteArticle(ctx, "account-123", "")
+	_, err := svc.DeleteArticle(ctx, testAccount123, "")
 	if err == nil {
 		t.Error("expected error for empty article ID")
 	}
@@ -724,7 +748,7 @@ func TestDeleteArticle_NotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	result, err := svc.DeleteArticle(ctx, "account-123", "nonexistent-article")
+	result, err := svc.DeleteArticle(ctx, testAccount123, "nonexistent-article")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -737,14 +761,14 @@ func TestDeleteArticle_NotFound(t *testing.T) {
 func TestToggleFavorite_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", Favorite: false, CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, Favorite: false, CreatedAt: time.Now()},
 		},
 	}
 	svc := New(mockRepo, nil, epub.NewPublisher(), nil)
 
 	ctx := context.Background()
 
-	newStatus, err := svc.ToggleFavorite(ctx, "account-123", "article-456")
+	newStatus, err := svc.ToggleFavorite(ctx, testAccount123, testArticle456)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -753,7 +777,7 @@ func TestToggleFavorite_Success(t *testing.T) {
 		t.Error("expected favorite status to be toggled to true")
 	}
 
-	updated, err := mockRepo.GetByAccountAndID(ctx, "account-123", "article-456")
+	updated, err := mockRepo.GetByAccountAndID(ctx, testAccount123, testArticle456)
 	if err != nil {
 		t.Fatalf("failed to get updated article: %v", err)
 	}
@@ -771,7 +795,7 @@ func TestToggleFavorite_NotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.ToggleFavorite(ctx, "account-123", "nonexistent-article")
+	_, err := svc.ToggleFavorite(ctx, testAccount123, "nonexistent-article")
 	if err == nil {
 		t.Error("expected not found error")
 	}
@@ -780,7 +804,7 @@ func TestToggleFavorite_NotFound(t *testing.T) {
 func TestToggleFavorite_UpdateError(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", Favorite: false, CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, Favorite: false, CreatedAt: time.Now()},
 		},
 		updateFavErr: errors.New("update error"),
 	}
@@ -788,7 +812,7 @@ func TestToggleFavorite_UpdateError(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.ToggleFavorite(ctx, "account-123", "article-456")
+	_, err := svc.ToggleFavorite(ctx, testAccount123, testArticle456)
 	if err == nil {
 		t.Error("expected update error")
 	}
@@ -797,7 +821,7 @@ func TestToggleFavorite_UpdateError(t *testing.T) {
 func TestDeleteArticle_GetError(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", Title: "To Delete", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, Title: testToDeleteTitle, CreatedAt: time.Now()},
 		},
 		getErr: errors.New("get error"),
 	}
@@ -805,7 +829,7 @@ func TestDeleteArticle_GetError(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.DeleteArticle(ctx, "account-123", "article-456")
+	_, err := svc.DeleteArticle(ctx, testAccount123, testArticle456)
 	if err == nil {
 		t.Error("expected get error")
 	}
@@ -814,7 +838,7 @@ func TestDeleteArticle_GetError(t *testing.T) {
 func TestDeleteArticle_DeleteError(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", Title: "To Delete", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, Title: testToDeleteTitle, CreatedAt: time.Now()},
 		},
 		deleteErr: errors.New("delete error"),
 	}
@@ -822,7 +846,7 @@ func TestDeleteArticle_DeleteError(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.DeleteArticle(ctx, "account-123", "article-456")
+	_, err := svc.DeleteArticle(ctx, testAccount123, testArticle456)
 	if err == nil {
 		t.Error("expected delete error")
 	}
@@ -837,7 +861,7 @@ func TestGetArticlesMetadata_Error(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, nil)
+	_, err := svc.GetArticlesMetadata(ctx, testAccount123, 1, 10, nil)
 	if err == nil {
 		t.Error("expected metadata error")
 	}
@@ -852,7 +876,7 @@ func TestGetArticle_RepoError(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.GetArticle(ctx, "account-123", "article-456")
+	_, err := svc.GetArticle(ctx, testAccount123, testArticle456)
 	if err == nil {
 		t.Error("expected repository error")
 	}
@@ -868,12 +892,12 @@ func TestUpdateArticle_RepoError(t *testing.T) {
 	ctx := context.Background()
 
 	article := &model.Article{
-		Account:   "user1",
-		ID:        "test-id",
-		URL:       "https://example.com/test",
-		Title:     "Updated Title",
-		Content:   "<p>Updated content</p>",
-		Author:    "Updated Author",
+		Account:   testUser1,
+		ID:        testID,
+		URL:       testURL,
+		Title:     testUpdatedTitle,
+		Content:   testUpdatedContent,
+		Author:    testUpdatedAuthor,
 		CreatedAt: time.Now(),
 	}
 
@@ -887,7 +911,7 @@ func TestGetArticlesMetadata_HasMore_FirstPageWithMore(t *testing.T) { //nolint:
 	articles := make([]*model.Article, 22)
 	for i := range 22 {
 		articles[i] = &model.Article{
-			Account:   "account-123",
+			Account:   testAccount123,
 			ID:        "article-" + string(rune(i)),
 			Title:     "Article " + string(rune(i)),
 			CreatedAt: time.Now(),
@@ -900,7 +924,7 @@ func TestGetArticlesMetadata_HasMore_FirstPageWithMore(t *testing.T) { //nolint:
 
 	ctx := context.Background()
 
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 20, nil)
+	result, err := svc.GetArticlesMetadata(ctx, testAccount123, 1, 20, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -926,7 +950,7 @@ func TestGetArticlesMetadata_HasMore_SecondPageWithMore(t *testing.T) { //nolint
 	articles := make([]*model.Article, 22)
 	for i := range 22 {
 		articles[i] = &model.Article{
-			Account:   "account-123",
+			Account:   testAccount123,
 			ID:        "article-" + string(rune(i)),
 			Title:     "Article " + string(rune(i)),
 			CreatedAt: time.Now(),
@@ -939,7 +963,7 @@ func TestGetArticlesMetadata_HasMore_SecondPageWithMore(t *testing.T) { //nolint
 
 	ctx := context.Background()
 
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 2, 10, nil)
+	result, err := svc.GetArticlesMetadata(ctx, testAccount123, 2, 10, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -965,7 +989,7 @@ func TestGetArticlesMetadata_HasMore_LastPage(t *testing.T) {
 	articles := make([]*model.Article, 22)
 	for i := range 22 {
 		articles[i] = &model.Article{
-			Account:   "account-123",
+			Account:   testAccount123,
 			ID:        "article-" + string(rune(i)),
 			Title:     "Article " + string(rune(i)),
 			CreatedAt: time.Now(),
@@ -978,7 +1002,7 @@ func TestGetArticlesMetadata_HasMore_LastPage(t *testing.T) {
 
 	ctx := context.Background()
 
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 3, 10, nil)
+	result, err := svc.GetArticlesMetadata(ctx, testAccount123, 3, 10, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1004,7 +1028,7 @@ func TestGetArticlesMetadata_HasMore_ExactPageBoundary(t *testing.T) {
 	articles := make([]*model.Article, 20)
 	for i := range 20 {
 		articles[i] = &model.Article{
-			Account:   "account-123",
+			Account:   testAccount123,
 			ID:        "article-" + string(rune(i)),
 			Title:     "Article " + string(rune(i)),
 			CreatedAt: time.Now(),
@@ -1017,7 +1041,7 @@ func TestGetArticlesMetadata_HasMore_ExactPageBoundary(t *testing.T) {
 
 	ctx := context.Background()
 
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 20, nil)
+	result, err := svc.GetArticlesMetadata(ctx, testAccount123, 1, 20, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1039,7 +1063,7 @@ func TestGetArticlesMetadata_HasMore_EmptyResults(t *testing.T) {
 
 	ctx := context.Background()
 
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, nil)
+	result, err := svc.GetArticlesMetadata(ctx, testAccount123, 1, 10, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1053,7 +1077,7 @@ func TestGetArticlesMetadata_HasMore_WithFavoriteFilter(t *testing.T) {
 	articles := make([]*model.Article, 25)
 	for i := range 25 {
 		articles[i] = &model.Article{
-			Account:   "account-123",
+			Account:   testAccount123,
 			ID:        "article-" + string(rune(i)),
 			Title:     "Article " + string(rune(i)),
 			CreatedAt: time.Now(),
@@ -1070,7 +1094,7 @@ func TestGetArticlesMetadata_HasMore_WithFavoriteFilter(t *testing.T) {
 	ctx := context.Background()
 
 	favorite := true
-	result, err := svc.GetArticlesMetadata(ctx, "account-123", 1, 10, &types.ArticleFilter{Favorite: &favorite})
+	result, err := svc.GetArticlesMetadata(ctx, testAccount123, 1, 10, &types.ArticleFilter{Favorite: &favorite})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1089,7 +1113,7 @@ func TestGetArticlesMetadata_HasMore_WithFavoriteFilter(t *testing.T) {
 func TestAddArticleTags_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1097,14 +1121,14 @@ func TestAddArticleTags_Success(t *testing.T) {
 
 	ctx := context.Background()
 
-	tags := []string{"tech", "programming"}
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", tags)
+	tags := []string{testTagTech, testTagProgramming}
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, tags)
 	require.NoError(t, err)
 
 	// Verify tags were added
-	retrievedTags, err := svc.GetArticleTags(ctx, "account-123", "article-456")
+	retrievedTags, err := svc.GetArticleTags(ctx, testAccount123, testArticle456)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"programming", "tech"}, retrievedTags)
+	assert.Equal(t, []string{testTagProgramming, testTagTech}, retrievedTags)
 }
 
 func TestAddArticleTags_ArticleNotFound(t *testing.T) {
@@ -1116,7 +1140,7 @@ func TestAddArticleTags_ArticleNotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", []string{"tech"})
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, []string{testTagTech})
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, apperrors.ErrNotFound))
 }
@@ -1124,7 +1148,7 @@ func TestAddArticleTags_ArticleNotFound(t *testing.T) {
 func TestAddArticleTags_EmptyTags(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1132,14 +1156,14 @@ func TestAddArticleTags_EmptyTags(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", []string{})
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, []string{})
 	assert.Error(t, err)
 }
 
 func TestAddArticleTags_TooManyTags(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1152,14 +1176,14 @@ func TestAddArticleTags_TooManyTags(t *testing.T) {
 		tags[i] = "tag" + string(rune('a'+i))
 	}
 
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", tags)
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, tags)
 	assert.Error(t, err)
 }
 
 func TestAddArticleTags_InvalidTagCharacters(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1167,14 +1191,14 @@ func TestAddArticleTags_InvalidTagCharacters(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", []string{"tag@with#special"})
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, []string{"tag@with#special"})
 	assert.Error(t, err)
 }
 
 func TestAddArticleTags_TagTooLong(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1183,14 +1207,14 @@ func TestAddArticleTags_TagTooLong(t *testing.T) {
 	ctx := context.Background()
 
 	longTag := string(make([]byte, 51)) // 51 characters, exceeds maxTagLength
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", []string{longTag})
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, []string{longTag})
 	assert.Error(t, err)
 }
 
 func TestAddArticleTags_DuplicateTags(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1198,19 +1222,19 @@ func TestAddArticleTags_DuplicateTags(t *testing.T) {
 
 	ctx := context.Background()
 
-	tags := []string{"tech", "tech", "programming"}
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", tags)
+	tags := []string{testTagTech, testTagTech, testTagProgramming}
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, tags)
 	require.NoError(t, err)
 
-	retrievedTags, err := svc.GetArticleTags(ctx, "account-123", "article-456")
+	retrievedTags, err := svc.GetArticleTags(ctx, testAccount123, testArticle456)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"programming", "tech"}, retrievedTags)
+	assert.Equal(t, []string{testTagProgramming, testTagTech}, retrievedTags)
 }
 
 func TestAddArticleTags_TagNormalization(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1219,18 +1243,18 @@ func TestAddArticleTags_TagNormalization(t *testing.T) {
 	ctx := context.Background()
 
 	tags := []string{"  TECH  ", "Programming", "golang "}
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", tags)
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, tags)
 	require.NoError(t, err)
 
-	retrievedTags, err := svc.GetArticleTags(ctx, "account-123", "article-456")
+	retrievedTags, err := svc.GetArticleTags(ctx, testAccount123, testArticle456)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"golang", "programming", "tech"}, retrievedTags)
+	assert.Equal(t, []string{testTagGolang, testTagProgramming, testTagTech}, retrievedTags)
 }
 
 func TestRemoveArticleTags_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1239,18 +1263,18 @@ func TestRemoveArticleTags_Success(t *testing.T) {
 	ctx := context.Background()
 
 	// First add some tags
-	initialTags := []string{"tech", "programming", "golang"}
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", initialTags)
+	initialTags := []string{testTagTech, testTagProgramming, testTagGolang}
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, initialTags)
 	require.NoError(t, err)
 
 	// Remove one tag
-	err = svc.RemoveArticleTags(ctx, "account-123", "article-456", []string{"programming"})
+	err = svc.RemoveArticleTags(ctx, testAccount123, testArticle456, []string{testTagProgramming})
 	require.NoError(t, err)
 
 	// Verify tag was removed
-	retrievedTags, err := svc.GetArticleTags(ctx, "account-123", "article-456")
+	retrievedTags, err := svc.GetArticleTags(ctx, testAccount123, testArticle456)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"golang", "tech"}, retrievedTags)
+	assert.Equal(t, []string{testTagGolang, testTagTech}, retrievedTags)
 }
 
 func TestRemoveArticleTags_ArticleNotFound(t *testing.T) {
@@ -1262,7 +1286,7 @@ func TestRemoveArticleTags_ArticleNotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := svc.RemoveArticleTags(ctx, "account-123", "article-456", []string{"tech"})
+	err := svc.RemoveArticleTags(ctx, testAccount123, testArticle456, []string{testTagTech})
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, apperrors.ErrNotFound))
 }
@@ -1270,7 +1294,7 @@ func TestRemoveArticleTags_ArticleNotFound(t *testing.T) {
 func TestSetArticleTags_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1279,24 +1303,24 @@ func TestSetArticleTags_Success(t *testing.T) {
 	ctx := context.Background()
 
 	// First add some tags
-	initialTags := []string{"tech", "programming"}
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", initialTags)
+	initialTags := []string{testTagTech, testTagProgramming}
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, initialTags)
 	require.NoError(t, err)
 
 	// Replace all tags
-	newTags := []string{"golang", "rust"}
-	err = svc.SetArticleTags(ctx, "account-123", "article-456", newTags)
+	newTags := []string{testTagGolang, testTagRust}
+	err = svc.SetArticleTags(ctx, testAccount123, testArticle456, newTags)
 	require.NoError(t, err)
 
-	retrievedTags, err := svc.GetArticleTags(ctx, "account-123", "article-456")
+	retrievedTags, err := svc.GetArticleTags(ctx, testAccount123, testArticle456)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"golang", "rust"}, retrievedTags)
+	assert.Equal(t, []string{testTagGolang, testTagRust}, retrievedTags)
 }
 
 func TestSetArticleTags_ClearAllTags(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1305,15 +1329,15 @@ func TestSetArticleTags_ClearAllTags(t *testing.T) {
 	ctx := context.Background()
 
 	// First add some tags
-	initialTags := []string{"tech", "programming"}
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", initialTags)
+	initialTags := []string{testTagTech, testTagProgramming}
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, initialTags)
 	require.NoError(t, err)
 
 	// Clear all tags
-	err = svc.SetArticleTags(ctx, "account-123", "article-456", []string{})
+	err = svc.SetArticleTags(ctx, testAccount123, testArticle456, []string{})
 	require.NoError(t, err)
 
-	retrievedTags, err := svc.GetArticleTags(ctx, "account-123", "article-456")
+	retrievedTags, err := svc.GetArticleTags(ctx, testAccount123, testArticle456)
 	require.NoError(t, err)
 	assert.Equal(t, []string{}, retrievedTags)
 }
@@ -1327,7 +1351,7 @@ func TestSetArticleTags_ArticleNotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := svc.SetArticleTags(ctx, "account-123", "article-456", []string{"tech"})
+	err := svc.SetArticleTags(ctx, testAccount123, testArticle456, []string{testTagTech})
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, apperrors.ErrNotFound))
 }
@@ -1335,7 +1359,7 @@ func TestSetArticleTags_ArticleNotFound(t *testing.T) {
 func TestGetArticleTags_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1343,13 +1367,13 @@ func TestGetArticleTags_Success(t *testing.T) {
 
 	ctx := context.Background()
 
-	tags := []string{"tech", "programming", "golang"}
-	err := svc.AddArticleTags(ctx, "account-123", "article-456", tags)
+	tags := []string{testTagTech, testTagProgramming, testTagGolang}
+	err := svc.AddArticleTags(ctx, testAccount123, testArticle456, tags)
 	require.NoError(t, err)
 
-	retrievedTags, err := svc.GetArticleTags(ctx, "account-123", "article-456")
+	retrievedTags, err := svc.GetArticleTags(ctx, testAccount123, testArticle456)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"golang", "programming", "tech"}, retrievedTags)
+	assert.Equal(t, []string{testTagGolang, testTagProgramming, testTagTech}, retrievedTags)
 }
 
 func TestGetArticleTags_ArticleNotFound(t *testing.T) {
@@ -1361,7 +1385,7 @@ func TestGetArticleTags_ArticleNotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := svc.GetArticleTags(ctx, "account-123", "article-456")
+	_, err := svc.GetArticleTags(ctx, testAccount123, testArticle456)
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, apperrors.ErrNotFound))
 }
@@ -1369,8 +1393,8 @@ func TestGetArticleTags_ArticleNotFound(t *testing.T) {
 func TestGetAllTagsForAccount_Success(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-1", CreatedAt: time.Now()},
-			{Account: "account-123", ID: "article-2", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle1, CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle2, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1378,12 +1402,12 @@ func TestGetAllTagsForAccount_Success(t *testing.T) {
 
 	ctx := context.Background()
 
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-1", []string{"tech", "programming"}, nil)
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-2", []string{"tech", "golang"}, nil)
+	_ = mockTagsRepo.AddTagsToArticle(ctx, testAccount123, testArticle1, []string{testTagTech, testTagProgramming}, nil)
+	_ = mockTagsRepo.AddTagsToArticle(ctx, testAccount123, testArticle2, []string{testTagTech, testTagGolang}, nil)
 
-	tags, err := svc.GetAllTagsForAccount(ctx, "account-123")
+	tags, err := svc.GetAllTagsForAccount(ctx, testAccount123)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"golang", "programming", "tech"}, tags)
+	assert.Equal(t, []string{testTagGolang, testTagProgramming, testTagTech}, tags)
 }
 
 func TestGetAllTagsForAccount_Empty(t *testing.T) {
@@ -1395,7 +1419,7 @@ func TestGetAllTagsForAccount_Empty(t *testing.T) {
 
 	ctx := context.Background()
 
-	tags, err := svc.GetAllTagsForAccount(ctx, "account-123")
+	tags, err := svc.GetAllTagsForAccount(ctx, testAccount123)
 	require.NoError(t, err)
 	assert.Equal(t, []string{}, tags)
 }
@@ -1403,7 +1427,7 @@ func TestGetAllTagsForAccount_Empty(t *testing.T) {
 func TestDeleteArticle_CascadesToTags(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", Title: "To Delete", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, Title: testToDeleteTitle, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1412,15 +1436,15 @@ func TestDeleteArticle_CascadesToTags(t *testing.T) {
 	ctx := context.Background()
 
 	// Add tags to the article
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-456", []string{"tech", "programming"}, nil)
+	_ = mockTagsRepo.AddTagsToArticle(ctx, testAccount123, testArticle456, []string{testTagTech, testTagProgramming}, nil)
 
 	// Delete the article
-	result, err := svc.DeleteArticle(ctx, "account-123", "article-456")
+	result, err := svc.DeleteArticle(ctx, testAccount123, testArticle456)
 	require.NoError(t, err)
 	assert.Equal(t, 1, result.Deleted)
 
 	// Verify tags were deleted
-	retrievedTags, err := mockTagsRepo.GetArticleTags(ctx, "account-123", "article-456")
+	retrievedTags, err := mockTagsRepo.GetArticleTags(ctx, testAccount123, testArticle456)
 	require.NoError(t, err)
 	assert.Equal(t, []string{}, retrievedTags)
 }
@@ -1428,7 +1452,7 @@ func TestDeleteArticle_CascadesToTags(t *testing.T) {
 func TestDeleteArticle_TagsErrorFailsDelete(t *testing.T) {
 	mockRepo := &MockRepository{
 		articles: []*model.Article{
-			{Account: "account-123", ID: "article-456", Title: "To Delete", CreatedAt: time.Now()},
+			{Account: testAccount123, ID: testArticle456, Title: testToDeleteTitle, CreatedAt: time.Now()},
 		},
 	}
 	mockTagsRepo := NewMockArticleTagsRepository()
@@ -1438,10 +1462,10 @@ func TestDeleteArticle_TagsErrorFailsDelete(t *testing.T) {
 	ctx := context.Background()
 
 	// Add tags to the article
-	_ = mockTagsRepo.AddTagsToArticle(ctx, "account-123", "article-456", []string{"tech"}, nil)
+	_ = mockTagsRepo.AddTagsToArticle(ctx, testAccount123, testArticle456, []string{testTagTech}, nil)
 
 	// Delete the article - should fail if tag deletion fails
-	_, err := svc.DeleteArticle(ctx, "account-123", "article-456")
+	_, err := svc.DeleteArticle(ctx, testAccount123, testArticle456)
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "failed to delete tags for article")
 }

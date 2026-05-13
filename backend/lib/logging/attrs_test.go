@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testTask1, testTask2, testTask3 = "task1", "task2", "task3"
+
 func TestString(t *testing.T) {
 	attr := String("key", "value")
 	assert.Equal(t, "key", attr.Key)
@@ -256,7 +258,7 @@ func TestTaskExecution(t *testing.T) {
 }
 
 func TestSchedulerStarted(t *testing.T) {
-	tasks := []string{"task1", "task2", "task3"}
+	tasks := []string{testTask1, testTask2, testTask3}
 	attrs := SchedulerStarted(tasks)
 	assert.Len(t, attrs, 1)
 	assert.Equal(t, "tasks", attrs[0].Key)

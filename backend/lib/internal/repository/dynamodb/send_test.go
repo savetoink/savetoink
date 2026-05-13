@@ -12,10 +12,18 @@ import (
 )
 
 const (
-	testAccount     = "test-account"
-	testDestEmail   = "dest@example.com"
-	testSenderEmail = "sender@example.com"
-	testMessageID   = "message-id-123"
+	testAccount          = "test-account"
+	testDestEmail        = "dest@example.com"
+	testSenderEmail      = "sender@example.com"
+	testMessageID        = "message-id-123"
+	testArticle1         = "article-1"
+	testProvider         = "mailjet"
+	testStatusSent       = "sent"
+	testArticleMismatch  = "article-mismatch"
+	testTitleToday       = "Today Article"
+	testTitleYesterday   = "Yesterday Article"
+	testTitleTwoDaysAgo  = "Two Days Ago Article"
+	testTitleFiveDaysAgo = "Five Days Ago Article"
 )
 
 func (s *DynamoDBRepositoryTestSuite) TestCreateAndGetSendRecord() {
@@ -26,12 +34,12 @@ func (s *DynamoDBRepositoryTestSuite) TestCreateAndGetSendRecord() {
 
 	send := &model.Send{
 		Account:     testAccount,
-		ArticleID:   "article-1",
+		ArticleID:   testArticle1,
 		SentAt:      now,
-		Title:       "Test Article",
+		Title:       tagArticleTitle,
 		DestEmail:   testDestEmail,
 		SenderEmail: testSenderEmail,
-		Provider:    "mailjet",
+		Provider:    testProvider,
 	}
 
 	err := s.repositories.CreateSendRecord(ctx, send)
@@ -56,7 +64,7 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecord() {
 	t := s.T()
 
 	s.updateSendRecordAndVerify(ctx, t, testAccount, "article-update", "Test Article Update",
-		"sent", testMessageID, "")
+		testStatusSent, testMessageID, "")
 }
 
 func (s *DynamoDBRepositoryTestSuite) updateSendRecordAndVerify(
@@ -74,7 +82,7 @@ func (s *DynamoDBRepositoryTestSuite) updateSendRecordAndVerify(
 		Title:       title,
 		DestEmail:   testDestEmail,
 		SenderEmail: testSenderEmail,
-		Provider:    "mailjet",
+		Provider:    testProvider,
 	}
 
 	err := s.repositories.CreateSendRecord(ctx, send)
@@ -116,7 +124,7 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordNotFound() {
 	updateSend := &model.Send{
 		Account:       testAccount,
 		ArticleID:     "nonexistent-article",
-		Status:        "sent",
+		Status:        testStatusSent,
 		MessageID:     testMessageID,
 		ErrorResponse: "",
 	}
@@ -134,12 +142,12 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordAccountMismatch() {
 
 	send := &model.Send{
 		Account:     "test-account-original",
-		ArticleID:   "article-mismatch",
+		ArticleID:   testArticleMismatch,
 		SentAt:      now,
-		Title:       "Test Article",
+		Title:       tagArticleTitle,
 		DestEmail:   testDestEmail,
 		SenderEmail: testSenderEmail,
-		Provider:    "mailjet",
+		Provider:    testProvider,
 	}
 
 	err := s.repositories.CreateSendRecord(ctx, send)
@@ -147,8 +155,8 @@ func (s *DynamoDBRepositoryTestSuite) TestUpdateSendRecordAccountMismatch() {
 
 	updateSend := &model.Send{
 		Account:   "different-account",
-		ArticleID: "article-mismatch",
-		Status:    "sent",
+		ArticleID: testArticleMismatch,
+		Status:    testStatusSent,
 		MessageID: testMessageID,
 	}
 
@@ -169,7 +177,7 @@ func (s *DynamoDBRepositoryTestSuite) TestCreateSendRecordWithTimestamp() {
 		Title:       "Test Timestamp Article",
 		DestEmail:   testDestEmail,
 		SenderEmail: testSenderEmail,
-		Provider:    "mailjet",
+		Provider:    testProvider,
 	}
 
 	err := s.repositories.CreateSendRecord(ctx, send)
@@ -199,7 +207,7 @@ func (s *DynamoDBRepositoryTestSuite) TestCreateSendRecordTimestampNotZero() {
 		Title:       "Test Not Zero Article",
 		DestEmail:   testDestEmail,
 		SenderEmail: testSenderEmail,
-		Provider:    "mailjet",
+		Provider:    testProvider,
 	}
 
 	err := s.repositories.CreateSendRecord(ctx, send)
@@ -225,10 +233,10 @@ func (s *DynamoDBRepositoryTestSuite) TestGetSendsByAccountDateRangeRespectsTime
 		daysAgo int
 		title   string
 	}{
-		{0, "Today Article"},
-		{1, "Yesterday Article"},
-		{2, "Two Days Ago Article"},
-		{5, "Five Days Ago Article"},
+		{0, testTitleToday},
+		{1, testTitleYesterday},
+		{2, testTitleTwoDaysAgo},
+		{5, testTitleFiveDaysAgo},
 		{10, "Ten Days Ago Article"},
 	}
 
@@ -240,7 +248,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetSendsByAccountDateRangeRespectsTime
 			Title:       item.title,
 			DestEmail:   testDestEmail,
 			SenderEmail: testSenderEmail,
-			Provider:    "mailjet",
+			Provider:    testProvider,
 		}
 
 		err := s.repositories.CreateSendRecord(ctx, send)
@@ -260,7 +268,7 @@ func (s *DynamoDBRepositoryTestSuite) TestGetSendsByAccountDateRangeRespectsTime
 		titles[i] = send.Title
 	}
 
-	expectedTitles := []string{"Five Days Ago Article", "Two Days Ago Article", "Yesterday Article", "Today Article"}
+	expectedTitles := []string{testTitleFiveDaysAgo, testTitleTwoDaysAgo, testTitleYesterday, testTitleToday}
 	for _, expected := range expectedTitles {
 		assert.Contains(t, titles, expected, "should include expected send")
 	}
@@ -281,7 +289,7 @@ func (s *DynamoDBRepositoryTestSuite) TestCountSendsByAccountDateRangeRespectsTi
 			Title:       fmt.Sprintf("Count TS Article %d", i),
 			DestEmail:   "countts@example.com",
 			SenderEmail: testSenderEmail,
-			Provider:    "mailjet",
+			Provider:    testProvider,
 		}
 
 		err := s.repositories.CreateSendRecord(ctx, send)

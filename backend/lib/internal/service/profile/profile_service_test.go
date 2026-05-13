@@ -12,7 +12,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testAccountID = "account1"
+const (
+	testAccountID        = "account1"
+	testDeviceEmail      = "test@kindle.com"
+	testKindleDomain     = "@kindle.com"
+	testOldDeviceEmail   = "old@kindle.com"
+	testFreeKindleDomain = "@free.kindle.com"
+	testBounceError      = "bounce error"
+	testTolinoDomain     = "@mytolino.com"
+	testPBSyncDomain     = "@pbsync.com"
+	testKoboDomain       = "@send.kobo.com"
+)
 
 type mockUserProfileRepository struct {
 	profiles               map[string]*model.UserProfile
@@ -94,7 +104,7 @@ func TestGetUserDeviceEmailAndAutoSend(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 			AutoSend:    true,
 		}
 		svc := New(mockRepo)
@@ -102,7 +112,7 @@ func TestGetUserDeviceEmailAndAutoSend(t *testing.T) {
 		deviceEmail, autoSend, err := svc.GetUserDeviceEmailAndAutoSend(context.Background(), testAccountID)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test@kindle.com", deviceEmail)
+		assert.Equal(t, testDeviceEmail, deviceEmail)
 		assert.True(t, autoSend)
 	})
 
@@ -147,7 +157,7 @@ func TestSetUserDeviceEmail(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "old@kindle.com",
+			DeviceEmail: testOldDeviceEmail,
 			AutoSend:    true,
 		}
 		svc := New(mockRepo)
@@ -165,7 +175,7 @@ func TestSetUserDeviceEmail(t *testing.T) {
 		mockRepo.getErr = errors.New("database error")
 		svc := New(mockRepo)
 
-		err := svc.SetUserDeviceEmail(context.Background(), testAccountID, "test@kindle.com")
+		err := svc.SetUserDeviceEmail(context.Background(), testAccountID, testDeviceEmail)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get user profile")
@@ -176,7 +186,7 @@ func TestSetUserDeviceEmail(t *testing.T) {
 		mockRepo.putErr = errors.New("put error")
 		svc := New(mockRepo)
 
-		err := svc.SetUserDeviceEmail(context.Background(), testAccountID, "test@kindle.com")
+		err := svc.SetUserDeviceEmail(context.Background(), testAccountID, testDeviceEmail)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to set user profile")
@@ -188,17 +198,17 @@ func TestSetUserDeviceEmailWithAutoSend(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		svc := New(mockRepo)
 
-		err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), testAccountID, "test@kindle.com", true)
+		err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), testAccountID, testDeviceEmail, true)
 
 		assert.NoError(t, err)
 		profile := mockRepo.profiles[testAccountID]
 		assert.NotNil(t, profile)
-		assert.Equal(t, "test@kindle.com", profile.DeviceEmail)
+		assert.Equal(t, testDeviceEmail, profile.DeviceEmail)
 		assert.True(t, profile.AutoSend)
 	})
 
 	t.Run("creates new profile with all valid device domains", func(t *testing.T) {
-		domains := []string{"@kindle.com", "@free.kindle.com", "@send.kobo.com", "@pbsync.com", "@mytolino.com"}
+		domains := []string{testKindleDomain, testFreeKindleDomain, testKoboDomain, testPBSyncDomain, testTolinoDomain}
 
 		for _, domain := range domains {
 			mockRepo := newMockUserProfileRepository()
@@ -267,7 +277,7 @@ func TestSetUserDeviceEmailWithAutoSend(t *testing.T) {
 		mockRepo.getErr = errors.New("database error")
 		svc := New(mockRepo)
 
-		err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), testAccountID, "test@kindle.com", true)
+		err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), testAccountID, testDeviceEmail, true)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get user profile")
@@ -278,7 +288,7 @@ func TestSetUserDeviceEmailWithAutoSend(t *testing.T) {
 		mockRepo.putErr = errors.New("put error")
 		svc := New(mockRepo)
 
-		err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), testAccountID, "test@kindle.com", true)
+		err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), testAccountID, testDeviceEmail, true)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to set user profile")
@@ -290,10 +300,10 @@ func TestDeleteUserDeviceEmail(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 			AutoSend:    true,
 		}
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		svc := New(mockRepo)
 
 		err := svc.DeleteUserDeviceEmail(context.Background(), testAccountID)
@@ -301,7 +311,7 @@ func TestDeleteUserDeviceEmail(t *testing.T) {
 		assert.NoError(t, err)
 		profile := mockRepo.profiles[testAccountID]
 		assert.Equal(t, "", profile.DeviceEmail)
-		_, exists := mockRepo.accountIDByDeviceEmail["test@kindle.com"]
+		_, exists := mockRepo.accountIDByDeviceEmail[testDeviceEmail]
 		assert.False(t, exists)
 	})
 
@@ -346,7 +356,7 @@ func TestGetUserProfile(t *testing.T) {
 		expectedProfile := &model.UserProfile{
 			Account:     testAccountID,
 			Email:       "user@example.com",
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 			AutoSend:    true,
 		}
 		mockRepo.profiles[testAccountID] = expectedProfile
@@ -466,9 +476,9 @@ func TestDeleteUserProfile(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 		}
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		svc := New(mockRepo)
 
 		err := svc.DeleteUserProfile(context.Background(), testAccountID)
@@ -476,7 +486,7 @@ func TestDeleteUserProfile(t *testing.T) {
 		assert.NoError(t, err)
 		_, exists := mockRepo.profiles[testAccountID]
 		assert.False(t, exists)
-		_, emailExists := mockRepo.accountIDByDeviceEmail["test@kindle.com"]
+		_, emailExists := mockRepo.accountIDByDeviceEmail[testDeviceEmail]
 		assert.False(t, emailExists)
 	})
 
@@ -504,19 +514,19 @@ func TestDeleteUserProfile(t *testing.T) {
 func TestHandleBounce(t *testing.T) {
 	t.Run("records first bounce as hard bounce", func(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 		}
 		svc := New(mockRepo)
 
-		err := svc.HandleBounce(context.Background(), "test@kindle.com", "bounce error message")
+		err := svc.HandleBounce(context.Background(), testDeviceEmail, "bounce error message")
 
 		assert.NoError(t, err)
 		profile := mockRepo.profiles[testAccountID]
 		assert.NotNil(t, profile.BouncedEmails)
-		bounceInfo, exists := profile.BouncedEmails["test@kindle.com"]
+		bounceInfo, exists := profile.BouncedEmails[testDeviceEmail]
 		assert.True(t, exists)
 		assert.Equal(t, "bounce error message", bounceInfo.Error)
 		assert.False(t, bounceInfo.Timestamp.IsZero())
@@ -524,12 +534,12 @@ func TestHandleBounce(t *testing.T) {
 
 	t.Run("updates existing bounce info for repeated bounce", func(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 			BouncedEmails: map[string]model.BounceInfo{
-				"test@kindle.com": {
+				testDeviceEmail: {
 					Timestamp: time.Now().UTC().Add(-1 * time.Hour),
 					Error:     "old error",
 				},
@@ -537,25 +547,25 @@ func TestHandleBounce(t *testing.T) {
 		}
 		svc := New(mockRepo)
 
-		err := svc.HandleBounce(context.Background(), "test@kindle.com", "new error message")
+		err := svc.HandleBounce(context.Background(), testDeviceEmail, "new error message")
 
 		assert.NoError(t, err)
 		profile := mockRepo.profiles[testAccountID]
-		bounceInfo := profile.BouncedEmails["test@kindle.com"]
+		bounceInfo := profile.BouncedEmails[testDeviceEmail]
 		assert.Equal(t, "new error message", bounceInfo.Error)
 	})
 
 	t.Run("initializes bounced emails map when nil", func(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:       testAccountID,
-			DeviceEmail:   "test@kindle.com",
+			DeviceEmail:   testDeviceEmail,
 			BouncedEmails: nil,
 		}
 		svc := New(mockRepo)
 
-		err := svc.HandleBounce(context.Background(), "test@kindle.com", "bounce error")
+		err := svc.HandleBounce(context.Background(), testDeviceEmail, testBounceError)
 
 		assert.NoError(t, err)
 		profile := mockRepo.profiles[testAccountID]
@@ -567,7 +577,7 @@ func TestHandleBounce(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		svc := New(mockRepo)
 
-		err := svc.HandleBounce(context.Background(), "unknown@kindle.com", "bounce error")
+		err := svc.HandleBounce(context.Background(), "unknown@kindle.com", testBounceError)
 
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, apperrors.ErrNotFound)
@@ -575,10 +585,10 @@ func TestHandleBounce(t *testing.T) {
 
 	t.Run("returns not found error when profile does not exist", func(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		svc := New(mockRepo)
 
-		err := svc.HandleBounce(context.Background(), "test@kindle.com", "bounce error")
+		err := svc.HandleBounce(context.Background(), testDeviceEmail, testBounceError)
 
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, apperrors.ErrNotFound)
@@ -589,7 +599,7 @@ func TestHandleBounce(t *testing.T) {
 		mockRepo.getAccountIDErr = errors.New("database error")
 		svc := New(mockRepo)
 
-		err := svc.HandleBounce(context.Background(), "test@kindle.com", "bounce error")
+		err := svc.HandleBounce(context.Background(), testDeviceEmail, testBounceError)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to find account")
@@ -597,11 +607,11 @@ func TestHandleBounce(t *testing.T) {
 
 	t.Run("returns error when getting profile fails", func(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		mockRepo.getErr = errors.New("database error")
 		svc := New(mockRepo)
 
-		err := svc.HandleBounce(context.Background(), "test@kindle.com", "bounce error")
+		err := svc.HandleBounce(context.Background(), testDeviceEmail, testBounceError)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get user profile")
@@ -609,15 +619,15 @@ func TestHandleBounce(t *testing.T) {
 
 	t.Run("returns error when updating profile fails", func(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 		}
 		mockRepo.putErr = errors.New("put error")
 		svc := New(mockRepo)
 
-		err := svc.HandleBounce(context.Background(), "test@kindle.com", "bounce error")
+		err := svc.HandleBounce(context.Background(), testDeviceEmail, testBounceError)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to update user profile")
@@ -629,17 +639,17 @@ func TestIsEmailBouncing(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 			BouncedEmails: map[string]model.BounceInfo{
-				"test@kindle.com": {
+				testDeviceEmail: {
 					Timestamp: time.Now().UTC(),
-					Error:     "bounce error",
+					Error:     testBounceError,
 				},
 			},
 		}
 		svc := New(mockRepo)
 
-		isBouncing, err := svc.IsEmailBouncing(context.Background(), testAccountID, "test@kindle.com")
+		isBouncing, err := svc.IsEmailBouncing(context.Background(), testAccountID, testDeviceEmail)
 
 		assert.NoError(t, err)
 		assert.True(t, isBouncing)
@@ -649,17 +659,17 @@ func TestIsEmailBouncing(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 			BouncedEmails: map[string]model.BounceInfo{
 				"other@kindle.com": {
 					Timestamp: time.Now().UTC(),
-					Error:     "bounce error",
+					Error:     testBounceError,
 				},
 			},
 		}
 		svc := New(mockRepo)
 
-		isBouncing, err := svc.IsEmailBouncing(context.Background(), testAccountID, "test@kindle.com")
+		isBouncing, err := svc.IsEmailBouncing(context.Background(), testAccountID, testDeviceEmail)
 
 		assert.NoError(t, err)
 		assert.False(t, isBouncing)
@@ -669,12 +679,12 @@ func TestIsEmailBouncing(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:       testAccountID,
-			DeviceEmail:   "test@kindle.com",
+			DeviceEmail:   testDeviceEmail,
 			BouncedEmails: nil,
 		}
 		svc := New(mockRepo)
 
-		isBouncing, err := svc.IsEmailBouncing(context.Background(), testAccountID, "test@kindle.com")
+		isBouncing, err := svc.IsEmailBouncing(context.Background(), testAccountID, testDeviceEmail)
 
 		assert.NoError(t, err)
 		assert.False(t, isBouncing)
@@ -684,7 +694,7 @@ func TestIsEmailBouncing(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
 		svc := New(mockRepo)
 
-		isBouncing, err := svc.IsEmailBouncing(context.Background(), "nonexistent", "test@kindle.com")
+		isBouncing, err := svc.IsEmailBouncing(context.Background(), "nonexistent", testDeviceEmail)
 
 		assert.NoError(t, err)
 		assert.False(t, isBouncing)
@@ -695,7 +705,7 @@ func TestIsEmailBouncing(t *testing.T) {
 		mockRepo.getErr = errors.New("database error")
 		svc := New(mockRepo)
 
-		_, err := svc.IsEmailBouncing(context.Background(), testAccountID, "test@kindle.com")
+		_, err := svc.IsEmailBouncing(context.Background(), testAccountID, testDeviceEmail)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get user profile")
@@ -705,10 +715,10 @@ func TestIsEmailBouncing(t *testing.T) {
 func TestGetAccountIDByDeviceEmail(t *testing.T) {
 	t.Run("returns account ID for existing device email", func(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		svc := New(mockRepo)
 
-		accountID, err := svc.GetAccountIDByDeviceEmail(context.Background(), "test@kindle.com")
+		accountID, err := svc.GetAccountIDByDeviceEmail(context.Background(), testDeviceEmail)
 
 		assert.NoError(t, err)
 		assert.Equal(t, testAccountID, accountID)
@@ -729,7 +739,7 @@ func TestGetAccountIDByDeviceEmail(t *testing.T) {
 		mockRepo.getAccountIDErr = errors.New("database error")
 		svc := New(mockRepo)
 
-		_, err := svc.GetAccountIDByDeviceEmail(context.Background(), "test@kindle.com")
+		_, err := svc.GetAccountIDByDeviceEmail(context.Background(), testDeviceEmail)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get account ID by device email")
@@ -742,7 +752,7 @@ func TestValidateDeviceEmail(t *testing.T) {
 		svc := New(mockRepo)
 		ctx := context.Background()
 
-		domains := []string{"@kindle.com", "@free.kindle.com", "@send.kobo.com", "@pbsync.com", "@mytolino.com"}
+		domains := []string{testKindleDomain, testFreeKindleDomain, testKoboDomain, testPBSyncDomain, testTolinoDomain}
 
 		for _, domain := range domains {
 			email := "user" + domain
@@ -776,7 +786,7 @@ func TestValidateDeviceEmail(t *testing.T) {
 
 		invalidEmails := []string{
 			"not-an-email",
-			"@kindle.com",
+			testKindleDomain,
 			"user@",
 			"",
 		}
@@ -795,13 +805,13 @@ func TestIntegration_SetUserDeviceEmailWithAutoSendAndGet(t *testing.T) {
 		svc := New(mockRepo)
 		ctx := context.Background()
 
-		err := svc.SetUserDeviceEmailWithAutoSend(ctx, testAccountID, "test@kindle.com", true)
+		err := svc.SetUserDeviceEmailWithAutoSend(ctx, testAccountID, testDeviceEmail, true)
 		require.NoError(t, err)
 
 		deviceEmail, autoSend, err := svc.GetUserDeviceEmailAndAutoSend(ctx, testAccountID)
 		require.NoError(t, err)
 
-		assert.Equal(t, "test@kindle.com", deviceEmail)
+		assert.Equal(t, testDeviceEmail, deviceEmail)
 		assert.True(t, autoSend)
 	})
 }
@@ -825,18 +835,18 @@ func TestIntegration_SetUserEmailAndGet(t *testing.T) {
 func TestIntegration_HandleBounceAndCheck(t *testing.T) {
 	t.Run("round trip: handle bounce and check if bouncing", func(t *testing.T) {
 		mockRepo := newMockUserProfileRepository()
-		mockRepo.accountIDByDeviceEmail["test@kindle.com"] = testAccountID
+		mockRepo.accountIDByDeviceEmail[testDeviceEmail] = testAccountID
 		mockRepo.profiles[testAccountID] = &model.UserProfile{
 			Account:     testAccountID,
-			DeviceEmail: "test@kindle.com",
+			DeviceEmail: testDeviceEmail,
 		}
 		svc := New(mockRepo)
 		ctx := context.Background()
 
-		err := svc.HandleBounce(ctx, "test@kindle.com", "bounce error")
+		err := svc.HandleBounce(ctx, testDeviceEmail, testBounceError)
 		require.NoError(t, err)
 
-		isBouncing, err := svc.IsEmailBouncing(ctx, testAccountID, "test@kindle.com")
+		isBouncing, err := svc.IsEmailBouncing(ctx, testAccountID, testDeviceEmail)
 		require.NoError(t, err)
 
 		assert.True(t, isBouncing)

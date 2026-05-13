@@ -25,14 +25,20 @@ const (
 	FetcherTypeBrowserless
 )
 
+const (
+	fetcherTypeGoStr          = "go"
+	fetcherTypeBrowserlessStr = "browserless"
+	fetcherTypeUnknownStr     = "unknown"
+)
+
 func (t FetcherType) String() string {
 	switch t {
 	case FetcherTypeGo:
-		return "go"
+		return fetcherTypeGoStr
 	case FetcherTypeBrowserless:
-		return "browserless"
+		return fetcherTypeBrowserlessStr
 	default:
-		return "unknown"
+		return fetcherTypeUnknownStr
 	}
 }
 

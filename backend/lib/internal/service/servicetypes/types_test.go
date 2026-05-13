@@ -11,6 +11,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testAccount       = "test-account"
+	testArticleID1    = "article-1"
+	testArticleURL1   = "https://example.com/article1"
+	testID            = "test-id"
+	testArticleURL    = "https://example.com/article"
+	testArticleTitle  = "Test Article"
+	testDeviceEmail   = "device@example.com"
+	testStatusSuccess = "success"
+	testMsgSuccess    = "Email sent successfully"
+	testMsgID         = "msg-123"
+)
+
 func TestGetArticlesResult_JSONSerialization(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -22,14 +35,14 @@ func TestGetArticlesResult_JSONSerialization(t *testing.T) {
 			result: GetArticlesResult{
 				Articles: []*model.Article{
 					{
-						Account:   "test-account",
-						ID:        "article-1",
-						URL:       "https://example.com/article1",
+						Account:   testAccount,
+						ID:        testArticleID1,
+						URL:       testArticleURL1,
 						Title:     "Article 1",
 						CreatedAt: time.Time{},
 					},
 					{
-						Account:   "test-account",
+						Account:   testAccount,
 						ID:        "article-2",
 						URL:       "https://example.com/article2",
 						Title:     "Article 2",
@@ -76,9 +89,9 @@ func TestGetArticlesResult_JSONSerialization(t *testing.T) {
 			result: GetArticlesResult{
 				Articles: []*model.Article{
 					{
-						Account:   "test-account",
-						ID:        "article-1",
-						URL:       "https://example.com/article1",
+						Account:   testAccount,
+						ID:        testArticleID1,
+						URL:       testArticleURL1,
 						CreatedAt: time.Time{},
 					},
 				},
@@ -196,17 +209,17 @@ func TestSendArticleResult_JSONSerialization(t *testing.T) {
 			name: "full result",
 			result: SendArticleResult{
 				Article: &model.Article{
-					Account:   "test-account",
-					ID:        "test-id",
-					URL:       "https://example.com/article",
-					Title:     "Test Article",
+					Account:   testAccount,
+					ID:        testID,
+					URL:       testArticleURL,
+					Title:     testArticleTitle,
 					CreatedAt: time.Time{},
 				},
-				DeviceEmail: "device@example.com",
+				DeviceEmail: testDeviceEmail,
 				EmailResp: &email.SendEmailResponse{
-					Status:    "success",
-					Message:   "Email sent successfully",
-					MessageID: "msg-123",
+					Status:    testStatusSuccess,
+					Message:   testMsgSuccess,
+					MessageID: testMsgID,
 				},
 			},
 			wantJSON: `{"Article":{"account":"test-account","id":"test-id",` +
@@ -219,12 +232,12 @@ func TestSendArticleResult_JSONSerialization(t *testing.T) {
 			name: "minimal result",
 			result: SendArticleResult{
 				Article: &model.Article{
-					Account:   "test-account",
-					ID:        "test-id",
-					URL:       "https://example.com/article",
+					Account:   testAccount,
+					ID:        testID,
+					URL:       testArticleURL,
 					CreatedAt: time.Time{},
 				},
-				DeviceEmail: "device@example.com",
+				DeviceEmail: testDeviceEmail,
 			},
 			wantJSON: `{"Article":{"account":"test-account","id":"test-id",` +
 				`"url":"https://example.com/article","createdAt":"0001-01-01T00:00:00Z"},` +
@@ -234,12 +247,12 @@ func TestSendArticleResult_JSONSerialization(t *testing.T) {
 			name: "result with nil email response",
 			result: SendArticleResult{
 				Article: &model.Article{
-					Account:   "test-account",
-					ID:        "test-id",
-					URL:       "https://example.com/article",
+					Account:   testAccount,
+					ID:        testID,
+					URL:       testArticleURL,
 					CreatedAt: time.Time{},
 				},
-				DeviceEmail: "device@example.com",
+				DeviceEmail: testDeviceEmail,
 				EmailResp:   nil,
 			},
 			wantJSON: `{"Article":{"account":"test-account","id":"test-id",` +
@@ -303,11 +316,11 @@ func TestSendArticleResult_NilFields(t *testing.T) {
 func TestSendArticleResult_FullArticle(t *testing.T) {
 	result := SendArticleResult{
 		Article: &model.Article{
-			Account:            "test-account",
-			ID:                 "test-id",
-			URL:                "https://example.com/article",
+			Account:            testAccount,
+			ID:                 testID,
+			URL:                testArticleURL,
 			CreatedAt:          time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-			Title:              "Test Article",
+			Title:              testArticleTitle,
 			Content:            "Test content",
 			Author:             "Test Author",
 			SiteName:           "Test Site",
@@ -322,11 +335,11 @@ func TestSendArticleResult_FullArticle(t *testing.T) {
 			PublishedAt:        func() *time.Time { t := time.Date(2024, 3, 14, 10, 0, 0, 0, time.UTC); return &t }(),
 			Favorite:           true,
 		},
-		DeviceEmail: "device@example.com",
+		DeviceEmail: testDeviceEmail,
 		EmailResp: &email.SendEmailResponse{
-			Status:    "success",
-			Message:   "Email sent successfully",
-			MessageID: "msg-123",
+			Status:    testStatusSuccess,
+			Message:   testMsgSuccess,
+			MessageID: testMsgID,
 		},
 	}
 

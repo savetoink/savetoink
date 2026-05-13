@@ -171,9 +171,9 @@ func (d *DynamoDB) GetSendsByAccountDateRange(
 		IndexName:              aws.String(consts.DynamoDBSendsAccountSentAtIndex),
 		KeyConditionExpression: aws.String("account = :account AND sentAt BETWEEN :start AND :end"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":account": &types.AttributeValueMemberS{Value: account},
-			":start":   &types.AttributeValueMemberS{Value: startDate.UTC().Format(time.RFC3339)},
-			":end":     &types.AttributeValueMemberS{Value: endDate.UTC().Format(time.RFC3339)},
+			exprValAccount: &types.AttributeValueMemberS{Value: account},
+			exprValStart:   &types.AttributeValueMemberS{Value: startDate.UTC().Format(time.RFC3339)},
+			exprValEnd:     &types.AttributeValueMemberS{Value: endDate.UTC().Format(time.RFC3339)},
 		},
 	})
 	if err != nil {
@@ -208,9 +208,9 @@ func (d *DynamoDB) CountSendsByAccountDateRange(
 		Select:                 types.SelectCount,
 		KeyConditionExpression: aws.String("account = :account AND sentAt BETWEEN :start AND :end"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":account": &types.AttributeValueMemberS{Value: account},
-			":start":   &types.AttributeValueMemberS{Value: startDate.UTC().Format(time.RFC3339)},
-			":end":     &types.AttributeValueMemberS{Value: endDate.UTC().Format(time.RFC3339)},
+			exprValAccount: &types.AttributeValueMemberS{Value: account},
+			exprValStart:   &types.AttributeValueMemberS{Value: startDate.UTC().Format(time.RFC3339)},
+			exprValEnd:     &types.AttributeValueMemberS{Value: endDate.UTC().Format(time.RFC3339)},
 		},
 	})
 	if err != nil {

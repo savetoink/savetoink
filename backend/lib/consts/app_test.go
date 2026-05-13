@@ -17,6 +17,8 @@ import (
 //nolint:lll // just a very long regexp, isn't it?
 const regexPattern = `^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`
 
+const testLoggingBackendNone = "LoggingBackendNone"
+
 func TestVersion(t *testing.T) {
 	got := Version()
 
@@ -88,13 +90,13 @@ func TestLoggingProvider_Constants(t *testing.T) {
 		name  string
 		value LoggingProvider
 	}{
-		{"LoggingBackendNone", LoggingBackendNone},
+		{testLoggingBackendNone, LoggingBackendNone},
 		{"LoggingBackendSentry", LoggingBackendSentry},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.name == "LoggingBackendNone" {
+			if tt.name == testLoggingBackendNone {
 				assert.Empty(t, string(tt.value), "LoggingBackendNone should be empty")
 			} else {
 				assert.NotEmpty(t, string(tt.value), "LoggingProvider constant should not be empty")

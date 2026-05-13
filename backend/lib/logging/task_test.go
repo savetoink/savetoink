@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	testRunID = "run-123"
+	testRunID      = "run-123"
+	testTaskOutput = "task output completed"
 )
 
 func TestGenerateRunID(t *testing.T) {
@@ -34,7 +35,7 @@ func TestLogTaskExecution_Success(t *testing.T) {
 	ctx := context.Background()
 	start := time.Now()
 
-	LogTaskExecution(ctx, "test_task", testRunID, start, []string{}, []string{"task output completed"}, nil)
+	LogTaskExecution(ctx, "test_task", testRunID, start, []string{}, []string{testTaskOutput}, nil)
 
 	require.Len(t, capture.records, 1)
 	record := capture.records[0]
@@ -252,7 +253,7 @@ func TestLogSchedulerStarted(t *testing.T) {
 	defer slog.SetDefault(defaultLogger)
 
 	ctx := context.Background()
-	tasks := map[string]struct{}{"task1": {}, "task2": {}, "task3": {}}
+	tasks := map[string]struct{}{testTask1: {}, testTask2: {}, testTask3: {}}
 
 	LogSchedulerStarted(ctx, tasks)
 
@@ -273,7 +274,7 @@ func TestLogSchedulerStarted(t *testing.T) {
 		attrMap[attr.Key] = attr.Value.Any()
 	}
 
-	assert.Equal(t, []string{"task1", "task2", "task3"}, attrMap["tasks"])
+	assert.Equal(t, []string{testTask1, testTask2, testTask3}, attrMap["tasks"])
 }
 
 func TestLogSchedulerStarted_EmptyTasks(t *testing.T) {

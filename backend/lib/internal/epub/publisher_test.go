@@ -9,6 +9,15 @@ import (
 	"github.com/shaftoe/savetoink/backend/lib/model"
 )
 
+const (
+	testArticleTitle   = "Test Article"
+	testArticleContent = "<p>This is test content</p>"
+	testArticleAuthor  = "Test Author"
+	testExampleSite    = "Example Site"
+	testExampleDomain  = "example.com"
+	testTitle          = "Test Title"
+)
+
 func TestNewPublisher(t *testing.T) {
 	pub := NewPublisher()
 	if pub == nil {
@@ -30,9 +39,9 @@ func TestNewPublisher_WithMemoryStorage(t *testing.T) {
 func TestGenerate_WithMemoryStorage(t *testing.T) {
 	pub := NewPublisher(WithMemoryStorage())
 	article := &model.Article{
-		Title:   "Test Article",
-		Content: "<p>This is test content</p>",
-		Author:  "Test Author",
+		Title:   testArticleTitle,
+		Content: testArticleContent,
+		Author:  testArticleAuthor,
 	}
 
 	epubReader, err := pub.GenerateEPUB(article)
@@ -59,9 +68,9 @@ func TestGenerate_WithMemoryStorage(t *testing.T) {
 func TestGenerate_Success(t *testing.T) {
 	pub := NewPublisher()
 	article := &model.Article{
-		Title:   "Test Article",
-		Content: "<p>This is test content</p>",
-		Author:  "Test Author",
+		Title:   testArticleTitle,
+		Content: testArticleContent,
+		Author:  testArticleAuthor,
 	}
 
 	epubReader, err := pub.GenerateEPUB(article)
@@ -89,11 +98,11 @@ func TestGenerate_WithMetadata(t *testing.T) {
 	pub := NewPublisher()
 	publishedAt := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 	article := &model.Article{
-		Title:              "Test Article",
-		Content:            "<p>This is test content</p>",
-		Author:             "Test Author",
-		SiteName:           "Example Site",
-		SourceDomain:       "example.com",
+		Title:              testArticleTitle,
+		Content:            testArticleContent,
+		Author:             testArticleAuthor,
+		SiteName:           testExampleSite,
+		SourceDomain:       testExampleDomain,
 		ReadingTimeMinutes: 5,
 		PublishedAt:        &publishedAt,
 		ContentType:        "article",
@@ -125,7 +134,7 @@ func TestGenerate_EmptyTitle(t *testing.T) {
 	pub := NewPublisher()
 	article := &model.Article{
 		Title:   "",
-		Content: "<p>This is test content</p>",
+		Content: testArticleContent,
 	}
 
 	epubReader, err := pub.GenerateEPUB(article)
@@ -148,7 +157,7 @@ func TestGenerate_EmptyTitle(t *testing.T) {
 func TestGenerate_EmptyContent(t *testing.T) {
 	pub := NewPublisher()
 	article := &model.Article{
-		Title:   "Test Article",
+		Title:   testArticleTitle,
 		Content: "",
 	}
 
@@ -172,8 +181,8 @@ func TestGenerate_EmptyContent(t *testing.T) {
 func TestGenerate_WithLanguage(t *testing.T) {
 	pub := NewPublisher()
 	article := &model.Article{
-		Title:    "Test Article",
-		Content:  "<p>This is test content</p>",
+		Title:    testArticleTitle,
+		Content:  testArticleContent,
 		Language: "en",
 	}
 
@@ -197,8 +206,8 @@ func TestGenerate_WithLanguage(t *testing.T) {
 func TestGenerate_WithExcerpt(t *testing.T) {
 	pub := NewPublisher()
 	article := &model.Article{
-		Title:   "Test Article",
-		Content: "<p>This is test content</p>",
+		Title:   testArticleTitle,
+		Content: testArticleContent,
 		Excerpt: "This is a test excerpt",
 	}
 
@@ -222,8 +231,8 @@ func TestGenerate_WithExcerpt(t *testing.T) {
 func TestGenerate_WithImage(t *testing.T) {
 	pub := NewPublisher()
 	article := &model.Article{
-		Title:    "Test Article",
-		Content:  "<p>This is test content</p>",
+		Title:    testArticleTitle,
+		Content:  testArticleContent,
 		ImageURL: "https://example.com/image.jpg",
 	}
 
@@ -247,8 +256,8 @@ func TestGenerate_WithImage(t *testing.T) {
 func TestGenerate_ZeroReadingTime(t *testing.T) {
 	pub := NewPublisher()
 	article := &model.Article{
-		Title:              "Test Article",
-		Content:            "<p>This is test content</p>",
+		Title:              testArticleTitle,
+		Content:            testArticleContent,
 		ReadingTimeMinutes: 0,
 	}
 
@@ -272,8 +281,8 @@ func TestGenerate_ZeroReadingTime(t *testing.T) {
 func TestGenerate_NilPublishedAt(t *testing.T) {
 	pub := NewPublisher()
 	article := &model.Article{
-		Title:       "Test Article",
-		Content:     "<p>This is test content</p>",
+		Title:       testArticleTitle,
+		Content:     testArticleContent,
 		PublishedAt: nil,
 	}
 
@@ -304,7 +313,7 @@ func TestBuildMetadataHeader_EmptyArticle(t *testing.T) {
 }
 
 func TestBuildMetadataHeader_OnlyTitle(t *testing.T) {
-	article := &model.Article{Title: "Test Title"}
+	article := &model.Article{Title: testTitle}
 	result := buildMetadataHeader(article)
 
 	if result == "" {
@@ -325,7 +334,7 @@ func TestBuildMetadataHeader_OnlyTitle(t *testing.T) {
 }
 
 func TestBuildMetadataHeader_OnlyAuthor(t *testing.T) {
-	article := &model.Article{Author: "Test Author"}
+	article := &model.Article{Author: testArticleAuthor}
 	result := buildMetadataHeader(article)
 
 	if result == "" {
@@ -342,7 +351,7 @@ func TestBuildMetadataHeader_OnlyAuthor(t *testing.T) {
 }
 
 func TestBuildMetadataHeader_OnlySiteName(t *testing.T) {
-	article := &model.Article{SiteName: "Example Site"}
+	article := &model.Article{SiteName: testExampleSite}
 	result := buildMetadataHeader(article)
 
 	if result == "" {
@@ -355,7 +364,7 @@ func TestBuildMetadataHeader_OnlySiteName(t *testing.T) {
 }
 
 func TestBuildMetadataHeader_OnlySourceDomain(t *testing.T) {
-	article := &model.Article{SourceDomain: "example.com"}
+	article := &model.Article{SourceDomain: testExampleDomain}
 	result := buildMetadataHeader(article)
 
 	if result == "" {
@@ -368,7 +377,7 @@ func TestBuildMetadataHeader_OnlySourceDomain(t *testing.T) {
 }
 
 func TestBuildMetadataHeader_SourceWithBothSiteNameAndDomain(t *testing.T) {
-	article := &model.Article{SiteName: "Example Site", SourceDomain: "example.com"}
+	article := &model.Article{SiteName: testExampleSite, SourceDomain: testExampleDomain}
 	result := buildMetadataHeader(article)
 
 	if result == "" {
@@ -434,10 +443,10 @@ func TestBuildMetadataHeader_AllFieldsPopulated(t *testing.T) {
 	publishedAt := time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC)
 	createdAt := time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC)
 	article := &model.Article{
-		Title:              "Test Title",
-		Author:             "Test Author",
-		SiteName:           "Example Site",
-		SourceDomain:       "example.com",
+		Title:              testTitle,
+		Author:             testArticleAuthor,
+		SiteName:           testExampleSite,
+		SourceDomain:       testExampleDomain,
 		ReadingTimeMinutes: 5,
 		PublishedAt:        &publishedAt,
 		CreatedAt:          createdAt,
@@ -474,7 +483,7 @@ func TestBuildMetadataHeader_AllFieldsPopulated(t *testing.T) {
 
 func TestBuildMetadataHeader_ZeroReadingTimeNotShown(t *testing.T) {
 	article := &model.Article{
-		Title:              "Test Title",
+		Title:              testTitle,
 		ReadingTimeMinutes: 0,
 	}
 	result := buildMetadataHeader(article)
@@ -494,7 +503,7 @@ func TestBuildMetadataHeader_ZeroReadingTimeNotShown(t *testing.T) {
 
 func TestBuildMetadataHeader_NilPublishedAtNotShown(t *testing.T) {
 	article := &model.Article{
-		Title:       "Test Title",
+		Title:       testTitle,
 		PublishedAt: nil,
 	}
 	result := buildMetadataHeader(article)
@@ -511,7 +520,7 @@ func TestBuildMetadataHeader_NilPublishedAtNotShown(t *testing.T) {
 func TestBuildMetadataHeader_ZeroPublishedAtNotShown(t *testing.T) {
 	zeroTime := time.Time{}
 	article := &model.Article{
-		Title:       "Test Title",
+		Title:       testTitle,
 		PublishedAt: &zeroTime,
 	}
 	result := buildMetadataHeader(article)
@@ -527,7 +536,7 @@ func TestBuildMetadataHeader_ZeroPublishedAtNotShown(t *testing.T) {
 
 func TestBuildMetadataHeader_ZeroCreatedAtNotShown(t *testing.T) {
 	article := &model.Article{
-		Title:     "Test Title",
+		Title:     testTitle,
 		CreatedAt: time.Time{},
 	}
 	result := buildMetadataHeader(article)
@@ -544,7 +553,7 @@ func TestBuildMetadataHeader_ZeroCreatedAtNotShown(t *testing.T) {
 func TestBuildMetadataHeader_EmptyTitleNotShown(t *testing.T) {
 	article := &model.Article{
 		Title:  "",
-		Author: "Test Author",
+		Author: testArticleAuthor,
 	}
 	result := buildMetadataHeader(article)
 
@@ -563,7 +572,7 @@ func TestBuildMetadataHeader_EmptyTitleNotShown(t *testing.T) {
 
 func TestBuildMetadataHeader_EmptyAuthorNotShown(t *testing.T) {
 	article := &model.Article{
-		Title:  "Test Title",
+		Title:  testTitle,
 		Author: "",
 	}
 	result := buildMetadataHeader(article)
@@ -582,7 +591,7 @@ func TestBuildMetadataHeader_EmptyAuthorNotShown(t *testing.T) {
 }
 
 func TestBuildMetadataHeader_HtmlStructure(t *testing.T) {
-	article := &model.Article{Title: "Test Title"}
+	article := &model.Article{Title: testTitle}
 	result := buildMetadataHeader(article)
 
 	expectedTags := []string{

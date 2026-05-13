@@ -13,6 +13,10 @@ const (
 	attributeNameID              = "id"
 	attributeNameFavorite        = "favorite"
 	attributeNameAccountFavorite = "accountFavorite"
+
+	exprValAccount = ":account"
+	exprValStart   = ":start"
+	exprValEnd     = ":end"
 )
 
 // DynamoDB implements Repository interface using AWS DynamoDB.

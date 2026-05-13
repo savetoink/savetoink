@@ -10,6 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testProfileDeviceEmail = "device@example.com"
+	testProfileBounced     = "email bounced: 550 5.7.1"
+	testNameWithErr        = "with error"
+	testNameWithoutErr     = "without error"
+	testNameFullProfile    = "full profile with bounced emails"
+	testNameMinProfile     = "minimal profile"
+)
+
 func TestBounceInfo_JSONSerialization(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -17,15 +26,15 @@ func TestBounceInfo_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "with error",
+			name: testNameWithErr,
 			bounce: BounceInfo{
 				Timestamp: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-				Error:     "email bounced: 550 5.7.1",
+				Error:     testProfileBounced,
 			},
 			wantJSON: `{"timestamp":"2024-03-15T10:30:00Z","error":"email bounced: 550 5.7.1"}`,
 		},
 		{
-			name: "without error",
+			name: testNameWithoutErr,
 			bounce: BounceInfo{
 				Timestamp: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 				Error:     "",
@@ -55,14 +64,14 @@ func TestBounceInfo_DynamoDBAttributeMapping(t *testing.T) {
 		bounce BounceInfo
 	}{
 		{
-			name: "with error",
+			name: testNameWithErr,
 			bounce: BounceInfo{
 				Timestamp: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-				Error:     "email bounced: 550 5.7.1",
+				Error:     testProfileBounced,
 			},
 		},
 		{
-			name: "without error",
+			name: testNameWithoutErr,
 			bounce: BounceInfo{
 				Timestamp: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 				Error:     "",
@@ -92,16 +101,16 @@ func TestUserProfile_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "full profile with bounced emails",
+			name: testNameFullProfile,
 			profile: UserProfile{
-				Account:     "test-account",
-				Email:       "user@example.com",
-				DeviceEmail: "device@example.com",
+				Account:     testAccount,
+				Email:       testUserEmail,
+				DeviceEmail: testProfileDeviceEmail,
 				AutoSend:    true,
 				BouncedEmails: map[string]BounceInfo{
-					"device@example.com": {
+					testProfileDeviceEmail: {
 						Timestamp: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-						Error:     "email bounced: 550 5.7.1",
+						Error:     testProfileBounced,
 					},
 				},
 			},
@@ -113,19 +122,19 @@ func TestUserProfile_JSONSerialization(t *testing.T) {
 		{
 			name: "profile without bounced emails (nil)",
 			profile: UserProfile{
-				Account:     "test-account",
-				Email:       "user@example.com",
-				DeviceEmail: "device@example.com",
+				Account:     testAccount,
+				Email:       testUserEmail,
+				DeviceEmail: testProfileDeviceEmail,
 				AutoSend:    false,
 			},
 			wantJSON: `{"account":"test-account","email":"user@example.com",` +
 				`"device_email":"device@example.com","auto_send":false,"bounced_emails":null}`,
 		},
 		{
-			name: "minimal profile",
+			name: testNameMinProfile,
 			profile: UserProfile{
-				Account: "test-account",
-				Email:   "user@example.com",
+				Account: testAccount,
+				Email:   testUserEmail,
 			},
 			wantJSON: `{"account":"test-account","email":"user@example.com",` +
 				`"device_email":"","auto_send":false,"bounced_emails":null}`,
@@ -133,9 +142,9 @@ func TestUserProfile_JSONSerialization(t *testing.T) {
 		{
 			name: "profile with empty bounced emails map",
 			profile: UserProfile{
-				Account:       "test-account",
-				Email:         "user@example.com",
-				DeviceEmail:   "device@example.com",
+				Account:       testAccount,
+				Email:         testUserEmail,
+				DeviceEmail:   testProfileDeviceEmail,
 				AutoSend:      true,
 				BouncedEmails: map[string]BounceInfo{},
 			},
@@ -168,16 +177,16 @@ func TestUserProfile_DynamoDBAttributeMapping(t *testing.T) {
 		profile UserProfile
 	}{
 		{
-			name: "full profile with bounced emails",
+			name: testNameFullProfile,
 			profile: UserProfile{
-				Account:     "test-account",
-				Email:       "user@example.com",
-				DeviceEmail: "device@example.com",
+				Account:     testAccount,
+				Email:       testUserEmail,
+				DeviceEmail: testProfileDeviceEmail,
 				AutoSend:    true,
 				BouncedEmails: map[string]BounceInfo{
-					"device@example.com": {
+					testProfileDeviceEmail: {
 						Timestamp: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-						Error:     "email bounced: 550 5.7.1",
+						Error:     testProfileBounced,
 					},
 					"another@example.com": {
 						Timestamp: time.Date(2024, 3, 16, 11, 30, 0, 0, time.UTC),
@@ -189,17 +198,17 @@ func TestUserProfile_DynamoDBAttributeMapping(t *testing.T) {
 		{
 			name: "profile without bounced emails",
 			profile: UserProfile{
-				Account:     "test-account",
-				Email:       "user@example.com",
-				DeviceEmail: "device@example.com",
+				Account:     testAccount,
+				Email:       testUserEmail,
+				DeviceEmail: testProfileDeviceEmail,
 				AutoSend:    false,
 			},
 		},
 		{
-			name: "minimal profile",
+			name: testNameMinProfile,
 			profile: UserProfile{
-				Account: "test-account",
-				Email:   "user@example.com",
+				Account: testAccount,
+				Email:   testUserEmail,
 			},
 		},
 	}
@@ -231,8 +240,8 @@ func TestUserProfile_DynamoDBAttributeMapping(t *testing.T) {
 
 func TestUserProfile_EmptyFields(t *testing.T) {
 	profile := UserProfile{
-		Account: "test-account",
-		Email:   "user@example.com",
+		Account: testAccount,
+		Email:   testUserEmail,
 	}
 
 	data, err := json.Marshal(profile)
@@ -249,8 +258,8 @@ func TestUserProfile_EmptyFields(t *testing.T) {
 
 func TestUserProfile_NilBouncedEmails(t *testing.T) {
 	profile := UserProfile{
-		Account:       "test-account",
-		Email:         "user@example.com",
+		Account:       testAccount,
+		Email:         testUserEmail,
 		BouncedEmails: nil,
 	}
 
@@ -266,8 +275,8 @@ func TestUserProfile_NilBouncedEmails(t *testing.T) {
 
 func TestUserProfile_BouncedEmailsEmptyMap(t *testing.T) {
 	profile := UserProfile{
-		Account:       "test-account",
-		Email:         "user@example.com",
+		Account:       testAccount,
+		Email:         testUserEmail,
 		BouncedEmails: map[string]BounceInfo{},
 	}
 

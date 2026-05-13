@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+const testNotAnEmail = "not-an-email"
+
 func TestValidationIntegration(t *testing.T) {
 	t.Run("URL validation prevents SSRF", func(t *testing.T) {
 		badURLs := []string{
@@ -27,7 +29,7 @@ func TestValidationIntegration(t *testing.T) {
 	t.Run("email validation prevents invalid emails", func(t *testing.T) {
 		badEmails := []string{
 			"",
-			"not-an-email",
+			testNotAnEmail,
 			"@example.com",
 			"user@",
 		}

@@ -27,6 +27,9 @@ const (
 
 	batchSize   = 25
 	maxPageSize = 100
+
+	exprValArticleID  = ":articleId"
+	exprValAccountTag = ":accountTag"
 )
 
 // AddTagsToArticle adds tags to an article. If createdAt is nil, it fetches the article
@@ -176,9 +179,9 @@ func (d *DynamoDB) GetArticleTags(ctx context.Context, _ string, articleID strin
 	input := &dynamodb.QueryInput{
 		TableName:              aws.String(d.articleTagsTableName),
 		IndexName:              aws.String(indexNameArticleIdCreatedAtIndex),
-		KeyConditionExpression: aws.String(attributeNameArticleID + " = :articleId"),
+		KeyConditionExpression: aws.String(attributeNameArticleID + " = " + exprValArticleID),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":articleId": &types.AttributeValueMemberS{Value: articleID},
+			exprValArticleID: &types.AttributeValueMemberS{Value: articleID},
 		},
 	}
 
@@ -217,9 +220,9 @@ func (d *DynamoDB) GetArticlesByTag(
 
 	input := &dynamodb.QueryInput{
 		TableName:              aws.String(d.articleTagsTableName),
-		KeyConditionExpression: aws.String(attributeNameAccountTag + " = :accountTag"),
+		KeyConditionExpression: aws.String(attributeNameAccountTag + " = " + exprValAccountTag),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":accountTag": &types.AttributeValueMemberS{Value: buildAccountTagKey(accountID, tag)},
+			exprValAccountTag: &types.AttributeValueMemberS{Value: buildAccountTagKey(accountID, tag)},
 		},
 		ScanIndexForward: aws.Bool(false), // Sort by createdAt descending
 		Limit:            aws.Int32(int32(pageSize)),
@@ -284,9 +287,9 @@ func (d *DynamoDB) GetArticlesByTag(
 func (d *DynamoDB) getTotalCountForTag(ctx context.Context, accountID, tag string) (int, error) {
 	input := &dynamodb.QueryInput{
 		TableName:              aws.String(d.articleTagsTableName),
-		KeyConditionExpression: aws.String(attributeNameAccountTag + " = :accountTag"),
+		KeyConditionExpression: aws.String(attributeNameAccountTag + " = " + exprValAccountTag),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":accountTag": &types.AttributeValueMemberS{Value: buildAccountTagKey(accountID, tag)},
+			exprValAccountTag: &types.AttributeValueMemberS{Value: buildAccountTagKey(accountID, tag)},
 		},
 		Select: types.SelectCount,
 	}
@@ -306,7 +309,7 @@ func (d *DynamoDB) GetAllTagsForAccount(ctx context.Context, accountID string) (
 		IndexName:              aws.String(indexNameAccountTagIndex),
 		KeyConditionExpression: aws.String(attributeNameAccount + " = :account"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":account": &types.AttributeValueMemberS{Value: accountID},
+			exprValAccount: &types.AttributeValueMemberS{Value: accountID},
 		},
 	}
 

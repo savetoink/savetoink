@@ -12,6 +12,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testAppJSON                 = "application/json"
+	testURLHTTPS                = "https://example.com"
+	testURLHTTP                 = "http://example.com"
+	testURLFTP                  = "ftp://example.com"
+	testURLFile                 = "file://example.com"
+	testURLEmptyHost            = "http://"
+	testURLNoHost               = "http:"
+	errMsgURLMustUseHTTPOrHTTPS = "url must use http or https scheme"
+	errMsgURLMustHaveHost       = "url must have host"
+	errMsgContentNotValidHTML   = "content does not appear to be valid HTML"
+	errMsgContentErrorPage      = "content appears to be an error page"
+)
+
 type mockRoundTripper struct {
 	firstResp  *http.Response
 	firstErr   error
@@ -44,9 +58,9 @@ func TestFetcherType_String(t *testing.T) {
 		fetcher  FetcherType
 		expected string
 	}{
-		{"go", FetcherTypeGo, "go"},
-		{"browserless", FetcherTypeBrowserless, "browserless"},
-		{"unknown", FetcherType(999), "unknown"},
+		{fetcherTypeGoStr, FetcherTypeGo, fetcherTypeGoStr},
+		{fetcherTypeBrowserlessStr, FetcherTypeBrowserless, fetcherTypeBrowserlessStr},
+		{fetcherTypeUnknownStr, FetcherType(999), fetcherTypeUnknownStr},
 	}
 
 	for _, tt := range tests {
@@ -63,12 +77,12 @@ func TestValidateParsedURL(t *testing.T) {
 		wantErr   bool
 		errString string
 	}{
-		{"valid https", "https://example.com", false, ""},
-		{"valid http", "http://example.com", false, ""},
-		{"invalid scheme ftp", "ftp://example.com", true, "url must use http or https scheme"},
-		{"invalid scheme file", "file://example.com", true, "url must use http or https scheme"},
-		{"empty host", "http://", true, "url must have host"},
-		{"no host", "http:", true, "url must have host"},
+		{"valid https", testURLHTTPS, false, ""},
+		{"valid http", testURLHTTP, false, ""},
+		{"invalid scheme ftp", testURLFTP, true, errMsgURLMustUseHTTPOrHTTPS},
+		{"invalid scheme file", testURLFile, true, errMsgURLMustUseHTTPOrHTTPS},
+		{"empty host", testURLEmptyHost, true, errMsgURLMustHaveHost},
+		{"no host", testURLNoHost, true, errMsgURLMustHaveHost},
 	}
 
 	for _, tt := range tests {
@@ -118,7 +132,7 @@ func TestValidateHTMLContent(t *testing.T) {
 			name:      "not html",
 			content:   "just some plain text",
 			wantErr:   true,
-			errString: "content does not appear to be valid HTML",
+			errString: errMsgContentNotValidHTML,
 		},
 		{
 			name: "error page pattern",
@@ -126,7 +140,7 @@ func TestValidateHTMLContent(t *testing.T) {
 				"itself from online attacks. The action you just performed triggered " +
 				"the security solution.</body></html>",
 			wantErr:   true,
-			errString: "content appears to be an error page",
+			errString: errMsgContentErrorPage,
 		},
 		{
 			name: "error page pattern case insensitive",
@@ -134,13 +148,13 @@ func TestValidateHTMLContent(t *testing.T) {
 				"PROTECT ITSELF FROM ONLINE ATTACKS. THE ACTION YOU JUST PERFORMED " +
 				"TRIGGERED THE SECURITY SOLUTION.</body></html>",
 			wantErr:   true,
-			errString: "content appears to be an error page",
+			errString: errMsgContentErrorPage,
 		},
 		{
 			name:      "empty content",
 			content:   "",
 			wantErr:   true,
-			errString: "content does not appear to be valid HTML",
+			errString: errMsgContentNotValidHTML,
 		},
 	}
 
@@ -220,7 +234,7 @@ func TestFetcher_Fetch(t *testing.T) {
 				Transport: &mockRoundTripper{
 					firstResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"application/json"}},
+						Header:     http.Header{testContentType: []string{testAppJSON}},
 						Body:       io.NopCloser(strings.NewReader("{}")),
 					},
 				},
@@ -239,7 +253,7 @@ func TestFetcher_Fetch(t *testing.T) {
 				Transport: &mockRoundTripper{
 					firstResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"text/html"}},
+						Header:     http.Header{testContentType: []string{testTextHTML}},
 						Body:       io.NopCloser(strings.NewReader(validHTML)),
 					},
 				},
@@ -264,12 +278,12 @@ func TestFetcher_Fetch(t *testing.T) {
 					firstErr: assert.AnError,
 					secondResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"text/html"}},
+						Header:     http.Header{testContentType: []string{testTextHTML}},
 						Body:       io.NopCloser(strings.NewReader(validHTML)),
 					},
 				},
 			},
-			browserlessKey: "test-key",
+			browserlessKey: testBrowserlessKey,
 		}
 
 		content, err := fetcher.Fetch(context.Background(), validURL)
@@ -287,12 +301,12 @@ func TestFetcher_Fetch(t *testing.T) {
 					},
 					secondResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"text/html"}},
+						Header:     http.Header{testContentType: []string{testTextHTML}},
 						Body:       io.NopCloser(strings.NewReader(validHTML)),
 					},
 				},
 			},
-			browserlessKey: "test-key",
+			browserlessKey: testBrowserlessKey,
 		}
 
 		content, err := fetcher.Fetch(context.Background(), validURL)
@@ -306,17 +320,17 @@ func TestFetcher_Fetch(t *testing.T) {
 				Transport: &mockRoundTripper{
 					firstResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"application/json"}},
+						Header:     http.Header{testContentType: []string{testAppJSON}},
 						Body:       io.NopCloser(strings.NewReader("{}")),
 					},
 					secondResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"text/html"}},
+						Header:     http.Header{testContentType: []string{testTextHTML}},
 						Body:       io.NopCloser(strings.NewReader(validHTML)),
 					},
 				},
 			},
-			browserlessKey: "test-key",
+			browserlessKey: testBrowserlessKey,
 		}
 
 		content, err := fetcher.Fetch(context.Background(), validURL)
@@ -330,18 +344,18 @@ func TestFetcher_Fetch(t *testing.T) {
 				Transport: &mockRoundTripper{
 					firstResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"application/json"}},
+						Header:     http.Header{testContentType: []string{testAppJSON}},
 						Body:       io.NopCloser(strings.NewReader("{}")),
 					},
 					secondErr: assert.AnError,
 					secondResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"text/html"}},
+						Header:     http.Header{testContentType: []string{testTextHTML}},
 						Body:       io.NopCloser(strings.NewReader(validHTML)),
 					},
 				},
 			},
-			browserlessKey: "test-key",
+			browserlessKey: testBrowserlessKey,
 		}
 
 		_, err := fetcher.Fetch(context.Background(), validURL)
@@ -355,7 +369,7 @@ func TestFetcher_Fetch(t *testing.T) {
 				Transport: &mockRoundTripper{
 					firstResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"application/json"}},
+						Header:     http.Header{testContentType: []string{testAppJSON}},
 						Body:       io.NopCloser(strings.NewReader("{}")),
 					},
 					secondResp: &http.Response{
@@ -364,7 +378,7 @@ func TestFetcher_Fetch(t *testing.T) {
 					},
 				},
 			},
-			browserlessKey: "test-key",
+			browserlessKey: testBrowserlessKey,
 		}
 
 		_, err := fetcher.Fetch(context.Background(), validURL)
@@ -380,17 +394,17 @@ func TestFetcher_Fetch(t *testing.T) {
 				Transport: &mockRoundTripper{
 					firstResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"application/json"}},
+						Header:     http.Header{testContentType: []string{testAppJSON}},
 						Body:       io.NopCloser(strings.NewReader("{}")),
 					},
 					secondResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"text/html"}},
+						Header:     http.Header{testContentType: []string{testTextHTML}},
 						Body:       io.NopCloser(strings.NewReader(invalidHTML)),
 					},
 				},
 			},
-			browserlessKey: "test-key",
+			browserlessKey: testBrowserlessKey,
 		}
 
 		_, err := fetcher.Fetch(context.Background(), validURL)
@@ -404,17 +418,17 @@ func TestFetcher_Fetch(t *testing.T) {
 				Transport: &mockRoundTripper{
 					firstResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"application/json"}},
+						Header:     http.Header{testContentType: []string{testAppJSON}},
 						Body:       io.NopCloser(strings.NewReader("{}")),
 					},
 					secondResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"text/html"}},
+						Header:     http.Header{testContentType: []string{testTextHTML}},
 						Body:       io.NopCloser(strings.NewReader(validHTML)),
 					},
 				},
 			},
-			browserlessKey: "test-key",
+			browserlessKey: testBrowserlessKey,
 		}
 
 		content, err := fetcher.Fetch(context.Background(), validURL)
@@ -442,13 +456,13 @@ func TestFetcher_Fetch(t *testing.T) {
 				Transport: &mockRoundTripper{
 					firstResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"application/json"}},
+						Header:     http.Header{testContentType: []string{testAppJSON}},
 						Body:       io.NopCloser(strings.NewReader("{}")),
 					},
 					secondErr: context.Canceled,
 				},
 			},
-			browserlessKey: "test-key",
+			browserlessKey: testBrowserlessKey,
 		}
 
 		_, err := fetcher.Fetch(context.Background(), validURL)
@@ -462,17 +476,17 @@ func TestFetcher_Fetch(t *testing.T) {
 				Transport: &mockRoundTripper{
 					firstResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"application/json"}},
+						Header:     http.Header{testContentType: []string{testAppJSON}},
 						Body:       io.NopCloser(strings.NewReader("{}")),
 					},
 					secondResp: &http.Response{
 						StatusCode: http.StatusOK,
-						Header:     http.Header{"Content-Type": []string{"text/html"}},
+						Header:     http.Header{testContentType: []string{testTextHTML}},
 						Body:       &errorReader{},
 					},
 				},
 			},
-			browserlessKey: "test-key",
+			browserlessKey: testBrowserlessKey,
 		}
 
 		_, err := fetcher.Fetch(context.Background(), validURL)
@@ -490,9 +504,9 @@ func TestFetcher_NewFetcher(t *testing.T) {
 	})
 
 	t.Run("creates fetcher with browserless key", func(t *testing.T) {
-		fetcher := NewFetcher("test-key")
+		fetcher := NewFetcher(testBrowserlessKey)
 		assert.NotNil(t, fetcher)
 		assert.NotNil(t, fetcher.client)
-		assert.Equal(t, "test-key", fetcher.browserlessKey)
+		assert.Equal(t, testBrowserlessKey, fetcher.browserlessKey)
 	})
 }

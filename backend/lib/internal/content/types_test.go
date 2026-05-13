@@ -8,6 +8,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testReqID     = "req-123"
+	testURL       = "https://example.com/article"
+	testArticleID = "article-456"
+	testAccountID = "account-789"
+)
+
 func TestProcessArticleEvent_JSONSerialization(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -17,10 +24,10 @@ func TestProcessArticleEvent_JSONSerialization(t *testing.T) {
 		{
 			name: "full event with all fields",
 			event: ProcessArticleEvent{
-				RequestID:      "req-123",
-				URL:            "https://example.com/article",
-				ArticleID:      "article-456",
-				AccountID:      "account-789",
+				RequestID:      testReqID,
+				URL:            testURL,
+				ArticleID:      testArticleID,
+				AccountID:      testAccountID,
 				InheritedAttrs: []map[string]any{{"key1": "value1"}, {"key2": "value2"}},
 				SendOnComplete: true,
 			},
@@ -31,10 +38,10 @@ func TestProcessArticleEvent_JSONSerialization(t *testing.T) {
 		{
 			name: "minimal event",
 			event: ProcessArticleEvent{
-				RequestID: "req-123",
-				URL:       "https://example.com/article",
-				ArticleID: "article-456",
-				AccountID: "account-789",
+				RequestID: testReqID,
+				URL:       testURL,
+				ArticleID: testArticleID,
+				AccountID: testAccountID,
 			},
 			wantJSON: `{"request_id":"req-123","url":"https://example.com/article",` +
 				`"article_id":"article-456","account_id":"account-789",` +
@@ -43,10 +50,10 @@ func TestProcessArticleEvent_JSONSerialization(t *testing.T) {
 		{
 			name: "event with empty inherited attrs",
 			event: ProcessArticleEvent{
-				RequestID:      "req-123",
-				URL:            "https://example.com/article",
-				ArticleID:      "article-456",
-				AccountID:      "account-789",
+				RequestID:      testReqID,
+				URL:            testURL,
+				ArticleID:      testArticleID,
+				AccountID:      testAccountID,
 				InheritedAttrs: []map[string]any{},
 				SendOnComplete: false,
 			},
@@ -57,10 +64,10 @@ func TestProcessArticleEvent_JSONSerialization(t *testing.T) {
 		{
 			name: "event with complex inherited attrs",
 			event: ProcessArticleEvent{
-				RequestID: "req-123",
-				URL:       "https://example.com/article",
-				ArticleID: "article-456",
-				AccountID: "account-789",
+				RequestID: testReqID,
+				URL:       testURL,
+				ArticleID: testArticleID,
+				AccountID: testAccountID,
 				InheritedAttrs: []map[string]any{
 					{
 						"string_key": "string_value",
@@ -99,10 +106,10 @@ func TestProcessArticleEvent_JSONSerialization(t *testing.T) {
 
 func TestProcessArticleEvent_NilInheritedAttrs(t *testing.T) {
 	event := ProcessArticleEvent{
-		RequestID:      "req-123",
-		URL:            "https://example.com/article",
-		ArticleID:      "article-456",
-		AccountID:      "account-789",
+		RequestID:      testReqID,
+		URL:            testURL,
+		ArticleID:      testArticleID,
+		AccountID:      testAccountID,
 		InheritedAttrs: nil,
 		SendOnComplete: false,
 	}
@@ -124,10 +131,10 @@ func TestProcessArticleEvent_NilInheritedAttrs(t *testing.T) {
 
 func TestProcessArticleEvent_EmptyInheritedAttrs(t *testing.T) {
 	event := ProcessArticleEvent{
-		RequestID:      "req-123",
-		URL:            "https://example.com/article",
-		ArticleID:      "article-456",
-		AccountID:      "account-789",
+		RequestID:      testReqID,
+		URL:            testURL,
+		ArticleID:      testArticleID,
+		AccountID:      testAccountID,
 		InheritedAttrs: []map[string]any{},
 		SendOnComplete: false,
 	}
@@ -150,17 +157,17 @@ func TestProcessArticleEvent_EmptyInheritedAttrs(t *testing.T) {
 
 func TestProcessArticleEvent_InheritedAttrsComplex(t *testing.T) {
 	event := ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-456",
-		AccountID: "account-789",
+		RequestID: testReqID,
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 		InheritedAttrs: []map[string]any{
 			{
 				"trace_id":    "trace-123",
 				"user_agent":  "Mozilla/5.0",
 				"request_ts":  "2024-03-15T10:30:00Z",
 				"client_ip":   "192.168.1.1",
-				"request_id":  "req-123",
+				"request_id":  testReqID,
 				"correlation": "corr-456",
 			},
 		},
@@ -184,15 +191,15 @@ func TestProcessArticleEvent_InheritedAttrsComplex(t *testing.T) {
 	assert.Equal(t, "trace-123", unmarshaled.InheritedAttrs[0]["trace_id"])
 	assert.Equal(t, "Mozilla/5.0", unmarshaled.InheritedAttrs[0]["user_agent"])
 	assert.Equal(t, "192.168.1.1", unmarshaled.InheritedAttrs[0]["client_ip"])
-	assert.Equal(t, "req-123", unmarshaled.InheritedAttrs[0]["request_id"])
+	assert.Equal(t, testReqID, unmarshaled.InheritedAttrs[0]["request_id"])
 }
 
 func TestProcessArticleEvent_EmptyFields(t *testing.T) {
 	event := ProcessArticleEvent{
-		RequestID: "req-123",
-		URL:       "https://example.com/article",
-		ArticleID: "article-456",
-		AccountID: "account-789",
+		RequestID: testReqID,
+		URL:       testURL,
+		ArticleID: testArticleID,
+		AccountID: testAccountID,
 	}
 
 	data, err := json.Marshal(event)

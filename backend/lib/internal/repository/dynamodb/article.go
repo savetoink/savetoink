@@ -91,7 +91,7 @@ func (d *DynamoDB) DeleteByAccountAndID(ctx context.Context, account, id string)
 // UpdateFavorite updates the favorite status of an article.
 func (d *DynamoDB) UpdateFavorite(ctx context.Context, account, id string, favorite bool) error {
 	attrNames := map[string]string{
-		"#af": attributeNameAccountFavorite,
+		attrNameAF: attributeNameAccountFavorite,
 	}
 
 	var updateExpr string

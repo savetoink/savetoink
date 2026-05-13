@@ -11,15 +11,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testTagStr      = "test"
+	testTagArticle2 = "tag-article-2"
+	testTagArticle3 = "tag-article-3"
+	testSharedTag   = "shared-tag"
+)
+
 func (s *SQLiteRepositoryTestSuite) TestAddTagsToArticle() {
 	ctx := context.Background()
 	t := s.T()
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-1",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -28,7 +35,7 @@ func (s *SQLiteRepositoryTestSuite) TestAddTagsToArticle() {
 	require.NoError(t, err)
 
 	// Add tags
-	tags := []string{"tech", "programming", "golang"}
+	tags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repository.AddTagsToArticle(ctx, article.Account, article.ID, tags, nil)
 	require.NoError(t, err)
 
@@ -46,16 +53,16 @@ func (s *SQLiteRepositoryTestSuite) TestAddTagsToArticleWithCreatedAt() {
 
 	// Create the article first
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-with-created",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 	err := s.repository.Store(ctx, article)
 	require.NoError(t, err)
 
 	// Add tags using the createdAt directly (no extra DB query)
-	tags := []string{"tech", "programming", "golang"}
+	tags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repository.AddTagsToArticle(ctx, article.Account, article.ID, tags, &article.CreatedAt)
 	require.NoError(t, err)
 
@@ -73,15 +80,15 @@ func (s *SQLiteRepositoryTestSuite) TestAddTagsToArticle_BothMethodsSameResult()
 
 	// Create two articles
 	article1 := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-compare-1",
-		URL:       "https://example.com/article1",
+		URL:       testURL1,
 		CreatedAt: now,
 	}
 	article2 := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-compare-2",
-		URL:       "https://example.com/article2",
+		URL:       testURL2,
 		CreatedAt: now,
 	}
 	err := s.repository.Store(ctx, article1)
@@ -90,7 +97,7 @@ func (s *SQLiteRepositoryTestSuite) TestAddTagsToArticle_BothMethodsSameResult()
 	require.NoError(t, err)
 
 	// Add tags using both methods with the same createdAt
-	tags := []string{"tech", "programming", "golang"}
+	tags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repository.AddTagsToArticle(ctx, article1.Account, article1.ID, tags, nil)
 	require.NoError(t, err)
 	err = s.repository.AddTagsToArticle(ctx, article2.Account, article2.ID, tags, &article2.CreatedAt)
@@ -111,9 +118,9 @@ func (s *SQLiteRepositoryTestSuite) TestAddTagsToArticle_EmptyTags() {
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-empty",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -133,8 +140,8 @@ func (s *SQLiteRepositoryTestSuite) TestAddTagsToArticle_NonExistentArticle() {
 	ctx := context.Background()
 	t := s.T()
 
-	tags := []string{"tech", "programming"}
-	err := s.repository.AddTagsToArticle(ctx, "test-account", "nonexistent-article", tags, nil)
+	tags := []string{tagTech, tagProgramming}
+	err := s.repository.AddTagsToArticle(ctx, testAccount, "nonexistent-article", tags, nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "article not found")
 }
@@ -145,9 +152,9 @@ func (s *SQLiteRepositoryTestSuite) TestAddTagsToArticle_DuplicateTags() {
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-duplicate",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -155,7 +162,7 @@ func (s *SQLiteRepositoryTestSuite) TestAddTagsToArticle_DuplicateTags() {
 	require.NoError(t, err)
 
 	// Add tags
-	tags := []string{"tech", "programming"}
+	tags := []string{tagTech, tagProgramming}
 	err = s.repository.AddTagsToArticle(ctx, article.Account, article.ID, tags, nil)
 	require.NoError(t, err)
 
@@ -176,9 +183,9 @@ func (s *SQLiteRepositoryTestSuite) TestRemoveTagsFromArticle() {
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-remove",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -186,19 +193,19 @@ func (s *SQLiteRepositoryTestSuite) TestRemoveTagsFromArticle() {
 	require.NoError(t, err)
 
 	// Add tags
-	tags := []string{"tech", "programming", "golang", "test"}
+	tags := []string{tagTech, tagProgramming, tagGolang, testTagStr}
 	err = s.repository.AddTagsToArticle(ctx, article.Account, article.ID, tags, nil)
 	require.NoError(t, err)
 
 	// Remove some tags
-	removeTags := []string{"tech", "test"}
+	removeTags := []string{tagTech, testTagStr}
 	err = s.repository.RemoveTagsFromArticle(ctx, article.Account, article.ID, removeTags)
 	require.NoError(t, err)
 
 	// Verify tags were removed
 	retrievedTags, err := s.repository.GetArticleTags(ctx, article.Account, article.ID)
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"programming", "golang"}, retrievedTags)
+	assert.ElementsMatch(t, []string{tagProgramming, tagGolang}, retrievedTags)
 	assert.Len(t, retrievedTags, 2)
 }
 
@@ -208,9 +215,9 @@ func (s *SQLiteRepositoryTestSuite) TestRemoveTagsFromArticle_EmptyTags() {
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-remove-empty",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -226,8 +233,8 @@ func (s *SQLiteRepositoryTestSuite) TestRemoveTagsFromArticle_NonExistentArticle
 	ctx := context.Background()
 	t := s.T()
 
-	tags := []string{"tech"}
-	err := s.repository.RemoveTagsFromArticle(ctx, "test-account", "nonexistent-article", tags)
+	tags := []string{tagTech}
+	err := s.repository.RemoveTagsFromArticle(ctx, testAccount, "nonexistent-article", tags)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "article not found")
 }
@@ -238,9 +245,9 @@ func (s *SQLiteRepositoryTestSuite) TestSetArticleTags() {
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-set",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -248,7 +255,7 @@ func (s *SQLiteRepositoryTestSuite) TestSetArticleTags() {
 	require.NoError(t, err)
 
 	// Set initial tags
-	tags1 := []string{"tech", "programming"}
+	tags1 := []string{tagTech, tagProgramming}
 	err = s.repository.SetArticleTags(ctx, article.Account, article.ID, tags1)
 	require.NoError(t, err)
 
@@ -257,7 +264,7 @@ func (s *SQLiteRepositoryTestSuite) TestSetArticleTags() {
 	assert.ElementsMatch(t, tags1, retrievedTags)
 
 	// Replace with new tags
-	tags2 := []string{"golang", "database", "aws"}
+	tags2 := []string{tagGolang, tagDatabase, "aws"}
 	err = s.repository.SetArticleTags(ctx, article.Account, article.ID, tags2)
 	require.NoError(t, err)
 
@@ -273,9 +280,9 @@ func (s *SQLiteRepositoryTestSuite) TestSetArticleTags_EmptyTags() {
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-set-empty",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -283,7 +290,7 @@ func (s *SQLiteRepositoryTestSuite) TestSetArticleTags_EmptyTags() {
 	require.NoError(t, err)
 
 	// Set initial tags
-	tags := []string{"tech", "programming"}
+	tags := []string{tagTech, tagProgramming}
 	err = s.repository.SetArticleTags(ctx, article.Account, article.ID, tags)
 	require.NoError(t, err)
 
@@ -302,9 +309,9 @@ func (s *SQLiteRepositoryTestSuite) TestGetArticleTags() {
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-get",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -317,7 +324,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetArticleTags() {
 	assert.Empty(t, tags)
 
 	// Add tags
-	expectedTags := []string{"tech", "programming", "golang"}
+	expectedTags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repository.AddTagsToArticle(ctx, article.Account, article.ID, expectedTags, nil)
 	require.NoError(t, err)
 
@@ -338,14 +345,14 @@ func (s *SQLiteRepositoryTestSuite) TestGetArticlesByTag() {
 		id   string
 		tags []string
 	}{
-		{"tag-article-1", []string{"tech", "programming"}},
-		{"tag-article-2", []string{"tech", "golang"}},
-		{"tag-article-3", []string{"programming", "database"}},
+		{tagArticle1, []string{tagTech, tagProgramming}},
+		{testTagArticle2, []string{tagTech, tagGolang}},
+		{testTagArticle3, []string{tagProgramming, tagDatabase}},
 	}
 
 	for _, art := range articles {
 		article := &model.Article{
-			Account:   "test-account",
+			Account:   testAccount,
 			ID:        art.id,
 			URL:       "https://example.com/" + art.id,
 			CreatedAt: now,
@@ -356,17 +363,17 @@ func (s *SQLiteRepositoryTestSuite) TestGetArticlesByTag() {
 		require.NoError(t, err)
 	}
 
-	// Get articles by "tech" tag
-	articleIDs, total, err := s.repository.GetArticlesByTag(ctx, "test-account", "tech", 1, 10)
+	// Get articles by tagTech tag
+	articleIDs, total, err := s.repository.GetArticlesByTag(ctx, testAccount, tagTech, 1, 10)
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
-	assert.ElementsMatch(t, []string{"tag-article-1", "tag-article-2"}, articleIDs)
+	assert.ElementsMatch(t, []string{tagArticle1, testTagArticle2}, articleIDs)
 
-	// Get articles by "programming" tag
-	articleIDs, total, err = s.repository.GetArticlesByTag(ctx, "test-account", "programming", 1, 10)
+	// Get articles by tagProgramming tag
+	articleIDs, total, err = s.repository.GetArticlesByTag(ctx, testAccount, tagProgramming, 1, 10)
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
-	assert.ElementsMatch(t, []string{"tag-article-1", "tag-article-3"}, articleIDs)
+	assert.ElementsMatch(t, []string{tagArticle1, testTagArticle3}, articleIDs)
 }
 
 func (s *SQLiteRepositoryTestSuite) TestGetArticlesByTag_Pagination() {
@@ -382,7 +389,7 @@ func (s *SQLiteRepositoryTestSuite) TestGetArticlesByTag_Pagination() {
 		id := fmt.Sprintf("tag-page-%d", i)
 		articleIDs[i] = id
 		article := &model.Article{
-			Account:   "test-account",
+			Account:   testAccount,
 			ID:        id,
 			URL:       "https://example.com/" + id,
 			CreatedAt: now.Add(time.Duration(i) * time.Minute),
@@ -394,19 +401,19 @@ func (s *SQLiteRepositoryTestSuite) TestGetArticlesByTag_Pagination() {
 	}
 
 	// First page
-	ids, total, err := s.repository.GetArticlesByTag(ctx, "test-account", "pagetag", 1, 2)
+	ids, total, err := s.repository.GetArticlesByTag(ctx, testAccount, "pagetag", 1, 2)
 	require.NoError(t, err)
 	assert.Equal(t, articleCount, total)
 	assert.Len(t, ids, 2)
 
 	// Second page
-	ids, total, err = s.repository.GetArticlesByTag(ctx, "test-account", "pagetag", 2, 2)
+	ids, total, err = s.repository.GetArticlesByTag(ctx, testAccount, "pagetag", 2, 2)
 	require.NoError(t, err)
 	assert.Equal(t, articleCount, total)
 	assert.Len(t, ids, 2)
 
 	// Third page (last page)
-	ids, total, err = s.repository.GetArticlesByTag(ctx, "test-account", "pagetag", 3, 2)
+	ids, total, err = s.repository.GetArticlesByTag(ctx, testAccount, "pagetag", 3, 2)
 	require.NoError(t, err)
 	assert.Equal(t, articleCount, total)
 	assert.Len(t, ids, 1)
@@ -423,14 +430,14 @@ func (s *SQLiteRepositoryTestSuite) TestGetAllTagsForAccount() {
 		id   string
 		tags []string
 	}{
-		{"tag-all-1", []string{"tech", "programming"}},
-		{"tag-all-2", []string{"tech", "golang"}},
-		{"tag-all-3", []string{"database", "sql"}},
+		{"tag-all-1", []string{tagTech, tagProgramming}},
+		{"tag-all-2", []string{tagTech, tagGolang}},
+		{"tag-all-3", []string{tagDatabase, "sql"}},
 	}
 
 	for _, art := range articles {
 		article := &model.Article{
-			Account:   "test-account",
+			Account:   testAccount,
 			ID:        art.id,
 			URL:       "https://example.com/" + art.id,
 			CreatedAt: now,
@@ -442,12 +449,12 @@ func (s *SQLiteRepositoryTestSuite) TestGetAllTagsForAccount() {
 	}
 
 	// Get all tags for account
-	tags, err := s.repository.GetAllTagsForAccount(ctx, "test-account")
+	tags, err := s.repository.GetAllTagsForAccount(ctx, testAccount)
 	require.NoError(t, err)
-	assert.Contains(t, tags, "tech")
-	assert.Contains(t, tags, "programming")
-	assert.Contains(t, tags, "golang")
-	assert.Contains(t, tags, "database")
+	assert.Contains(t, tags, tagTech)
+	assert.Contains(t, tags, tagProgramming)
+	assert.Contains(t, tags, tagGolang)
+	assert.Contains(t, tags, tagDatabase)
 	assert.Contains(t, tags, "sql")
 }
 
@@ -457,9 +464,9 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteTagsForArticle() {
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-delete",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -467,7 +474,7 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteTagsForArticle() {
 	require.NoError(t, err)
 
 	// Add tags
-	tags := []string{"tech", "programming", "golang"}
+	tags := []string{tagTech, tagProgramming, tagGolang}
 	err = s.repository.AddTagsToArticle(ctx, article.Account, article.ID, tags, nil)
 	require.NoError(t, err)
 
@@ -492,9 +499,9 @@ func (s *SQLiteRepositoryTestSuite) TestDeleteTagsForArticle_NoTags() {
 
 	now := time.Now()
 	article := &model.Article{
-		Account:   "test-account",
+		Account:   testAccount,
 		ID:        "tag-test-delete-no-tags",
-		URL:       "https://example.com/article",
+		URL:       testURL,
 		CreatedAt: now,
 	}
 
@@ -516,13 +523,13 @@ func (s *SQLiteRepositoryTestSuite) TestTagIsolation() {
 	article1 := &model.Article{
 		Account:   "account-1",
 		ID:        "isolation-1",
-		URL:       "https://example.com/article1",
+		URL:       testURL1,
 		CreatedAt: now,
 	}
 	article2 := &model.Article{
 		Account:   "account-2",
 		ID:        "isolation-2",
-		URL:       "https://example.com/article2",
+		URL:       testURL2,
 		CreatedAt: now,
 	}
 
@@ -532,28 +539,28 @@ func (s *SQLiteRepositoryTestSuite) TestTagIsolation() {
 	require.NoError(t, err)
 
 	// Add tags to both articles with same tag name
-	err = s.repository.AddTagsToArticle(ctx, article1.Account, article1.ID, []string{"shared-tag"}, nil)
+	err = s.repository.AddTagsToArticle(ctx, article1.Account, article1.ID, []string{testSharedTag}, nil)
 	require.NoError(t, err)
-	err = s.repository.AddTagsToArticle(ctx, article2.Account, article2.ID, []string{"shared-tag"}, nil)
+	err = s.repository.AddTagsToArticle(ctx, article2.Account, article2.ID, []string{testSharedTag}, nil)
 	require.NoError(t, err)
 
 	// Verify both accounts can have the same tag independently
 	tags1, err := s.repository.GetArticleTags(ctx, article1.Account, article1.ID)
 	require.NoError(t, err)
-	assert.Contains(t, tags1, "shared-tag")
+	assert.Contains(t, tags1, testSharedTag)
 
 	tags2, err := s.repository.GetArticleTags(ctx, article2.Account, article2.ID)
 	require.NoError(t, err)
-	assert.Contains(t, tags2, "shared-tag")
+	assert.Contains(t, tags2, testSharedTag)
 
 	// Get all tags for each account - should only see their own articles
 	allTags1, err := s.repository.GetAllTagsForAccount(ctx, article1.Account)
 	require.NoError(t, err)
-	assert.Contains(t, allTags1, "shared-tag")
+	assert.Contains(t, allTags1, testSharedTag)
 	assert.Equal(t, 1, len(allTags1))
 
 	allTags2, err := s.repository.GetAllTagsForAccount(ctx, article2.Account)
 	require.NoError(t, err)
-	assert.Contains(t, allTags2, "shared-tag")
+	assert.Contains(t, allTags2, testSharedTag)
 	assert.Equal(t, 1, len(allTags2))
 }

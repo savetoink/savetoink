@@ -26,9 +26,23 @@ import (
 )
 
 const (
-	testAccountID = "account-1"
-	testEmail     = "device@example.com"
-	testMessageID = "msg-123"
+	testAccountID    = "account-1"
+	testEmail        = "device@example.com"
+	testMessageID    = "msg-123"
+	testArticle1ID   = "article-1"
+	testArticleTitle = "Test Article"
+	testSenderEmail  = "sender@example.com"
+	testBrowserless  = "browserless-key"
+	testSenderCom    = "test@example.com"
+	testExampleHost  = "example.com"
+	testSchemeHTTPS  = "https"
+	testKindleDevice = "device@free.kindle.com"
+	testMailjetKey   = "test-api-key"
+	testMailjetSec   = "test-secret"
+	testArticlesTbl  = "articles-table"
+	testProfilesTbl  = "profiles-table"
+	testSendsTbl     = "sends-table"
+	testHTMLData     = "html"
 )
 
 type testArticlesRepo struct {
@@ -235,7 +249,8 @@ func TestCreateArticle_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	article, err := svc.CreateArticle(context.Background(), &url.URL{Scheme: "https", Host: "example.com"}, "account-1")
+	testURL := &url.URL{Scheme: testSchemeHTTPS, Host: testExampleHost}
+	article, err := svc.CreateArticle(context.Background(), testURL, testAccountID)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -262,7 +277,8 @@ func TestCreateArticle_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	_, err := svc.CreateArticle(context.Background(), &url.URL{Scheme: "https", Host: "example.com"}, "account-1")
+	testURL := &url.URL{Scheme: testSchemeHTTPS, Host: testExampleHost}
+	_, err := svc.CreateArticle(context.Background(), testURL, testAccountID)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -271,7 +287,7 @@ func TestCreateArticle_Error(t *testing.T) {
 
 func TestUpdateArticle_Success(t *testing.T) {
 	repo := &testArticlesRepo{articles: []*model.Article{
-		{Account: "account-1", ID: "1", Title: "Original"},
+		{Account: testAccountID, ID: "1", Title: "Original"},
 	}}
 	profileRepo := &testUserProfileRepo{}
 	sendsRepo := &testSendsRepo{}
@@ -287,7 +303,7 @@ func TestUpdateArticle_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.UpdateArticle(context.Background(), &model.Article{ID: "1", Account: "account-1", Title: "Updated"})
+	err := svc.UpdateArticle(context.Background(), &model.Article{ID: "1", Account: testAccountID, Title: "Updated"})
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -320,7 +336,7 @@ func TestUpdateArticle_Error(t *testing.T) {
 
 func TestToggleFavorite_Success(t *testing.T) {
 	repo := &testArticlesRepo{articles: []*model.Article{
-		{Account: "account-1", ID: "article-1", Favorite: false},
+		{Account: testAccountID, ID: testArticle1ID, Favorite: false},
 	}}
 	profileRepo := &testUserProfileRepo{}
 	sendsRepo := &testSendsRepo{}
@@ -336,7 +352,7 @@ func TestToggleFavorite_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	_, err := svc.ToggleFavorite(context.Background(), "account-1", "article-1")
+	_, err := svc.ToggleFavorite(context.Background(), testAccountID, testArticle1ID)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -359,7 +375,7 @@ func TestToggleFavorite_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	_, err := svc.ToggleFavorite(context.Background(), "account-1", "article-1")
+	_, err := svc.ToggleFavorite(context.Background(), testAccountID, testArticle1ID)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -384,7 +400,7 @@ func TestCountSendsByAccountDateRange_Success(t *testing.T) {
 
 	count, err := svc.CountSendsByAccountDateRange(
 		context.Background(),
-		"account-1",
+		testAccountID,
 		time.Now().Add(-24*time.Hour),
 		time.Now(),
 	)
@@ -415,7 +431,7 @@ func TestCountSendsByAccountDateRange_NoSendsRepo(t *testing.T) {
 
 	count, err := svc.CountSendsByAccountDateRange(
 		context.Background(),
-		"account-1",
+		testAccountID,
 		time.Now().Add(-24*time.Hour),
 		time.Now(),
 	)
@@ -447,7 +463,7 @@ func TestCountSendsByAccountDateRange_Error(t *testing.T) {
 
 	_, err := svc.CountSendsByAccountDateRange(
 		context.Background(),
-		"account-1",
+		testAccountID,
 		time.Now().Add(-24*time.Hour),
 		time.Now(),
 	)
@@ -461,7 +477,7 @@ func TestGetUserDeviceEmail_Success(t *testing.T) {
 	repo := &testArticlesRepo{}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account:     "account-1",
+			Account:     testAccountID,
 			DeviceEmail: testEmail,
 			AutoSend:    true,
 		},
@@ -479,7 +495,7 @@ func TestGetUserDeviceEmail_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	eml, autoSend, sendErr := svc.GetUserDeviceEmailAndAutoSend(context.Background(), "account-1")
+	eml, autoSend, sendErr := svc.GetUserDeviceEmailAndAutoSend(context.Background(), testAccountID)
 
 	if sendErr != nil {
 		t.Fatalf("unexpected error: %v", sendErr)
@@ -510,7 +526,7 @@ func TestSetUserDeviceEmail_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.SetUserDeviceEmail(context.Background(), "account-1", testEmail)
+	err := svc.SetUserDeviceEmail(context.Background(), testAccountID, testEmail)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -533,7 +549,7 @@ func TestSetUserDeviceEmail_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.SetUserDeviceEmail(context.Background(), "account-1", testEmail)
+	err := svc.SetUserDeviceEmail(context.Background(), testAccountID, testEmail)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -556,7 +572,7 @@ func TestSetUserDeviceEmailWithAutoSend_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), "account-1", "device@free.kindle.com", true)
+	err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), testAccountID, testKindleDevice, true)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -579,7 +595,7 @@ func TestSetUserDeviceEmailWithAutoSend_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), "account-1", testEmail, true)
+	err := svc.SetUserDeviceEmailWithAutoSend(context.Background(), testAccountID, testEmail, true)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -602,7 +618,7 @@ func TestDeleteUserDeviceEmail_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.DeleteUserDeviceEmail(context.Background(), "account-1")
+	err := svc.DeleteUserDeviceEmail(context.Background(), testAccountID)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -625,7 +641,7 @@ func TestDeleteUserDeviceEmail_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.DeleteUserDeviceEmail(context.Background(), "account-1")
+	err := svc.DeleteUserDeviceEmail(context.Background(), testAccountID)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -636,7 +652,7 @@ func TestGetUserProfile_Success(t *testing.T) {
 	repo := &testArticlesRepo{}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account:     "account-1",
+			Account:     testAccountID,
 			DeviceEmail: testEmail,
 		},
 	}
@@ -652,7 +668,7 @@ func TestGetUserProfile_Success(t *testing.T) {
 		SendsRepo:       &testSendsRepo{},
 	})
 
-	profile, err := svc.GetUserProfile(context.Background(), "account-1")
+	profile, err := svc.GetUserProfile(context.Background(), testAccountID)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -680,7 +696,7 @@ func TestSendArticle_Success(t *testing.T) {
 	})
 
 	reader := &testReadCloser{data: []byte("epub content")}
-	resp, err := svc.SendArticle(context.Background(), "test@example.com", reader, "Test Article")
+	resp, err := svc.SendArticle(context.Background(), testSenderCom, reader, testArticleTitle)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -709,7 +725,7 @@ func TestSendArticle_Error(t *testing.T) {
 	})
 
 	reader := &testReadCloser{data: []byte("epub content")}
-	_, err := svc.SendArticle(context.Background(), "test@example.com", reader, "Test Article")
+	_, err := svc.SendArticle(context.Background(), testSenderCom, reader, testArticleTitle)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -719,12 +735,12 @@ func TestSendArticle_Error(t *testing.T) {
 func TestSendArticleByID_Success(t *testing.T) {
 	repo := &testArticlesRepo{
 		articles: []*model.Article{
-			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+			{Account: testAccountID, ID: testArticle1ID, Title: testArticleTitle},
 		},
 	}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account:     "account-1",
+			Account:     testAccountID,
 			DeviceEmail: testEmail,
 			AutoSend:    true,
 		},
@@ -740,16 +756,16 @@ func TestSendArticleByID_Success(t *testing.T) {
 		ArticlesRepo:    repo,
 		UserProfileRepo: profileRepo,
 		SendsRepo:       sendsRepo,
-		Config:          &config.Config{SenderEmail: "sender@example.com", EmailProvider: consts.EmailBackendMailjet},
+		Config:          &config.Config{SenderEmail: testSenderEmail, EmailProvider: consts.EmailBackendMailjet},
 	})
 
-	result, err := svc.SendArticleByID(context.Background(), "account-1", "article-1")
+	result, err := svc.SendArticleByID(context.Background(), testAccountID, testArticle1ID)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.Article.ID != "article-1" {
+	if result.Article.ID != testArticle1ID {
 		t.Errorf("expected article ID 'article-1', got '%s'", result.Article.ID)
 	}
 
@@ -765,12 +781,12 @@ func TestSendArticleByID_Success(t *testing.T) {
 func TestSendArticleByID_NoDeviceEmail(t *testing.T) {
 	repo := &testArticlesRepo{
 		articles: []*model.Article{
-			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+			{Account: testAccountID, ID: testArticle1ID, Title: testArticleTitle},
 		},
 	}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account:  "account-1",
+			Account:  testAccountID,
 			AutoSend: true,
 		},
 	}
@@ -785,10 +801,10 @@ func TestSendArticleByID_NoDeviceEmail(t *testing.T) {
 		ArticlesRepo:    repo,
 		UserProfileRepo: profileRepo,
 		SendsRepo:       sendsRepo,
-		Config:          &config.Config{SenderEmail: "sender@example.com", EmailProvider: consts.EmailBackendMailjet},
+		Config:          &config.Config{SenderEmail: testSenderEmail, EmailProvider: consts.EmailBackendMailjet},
 	})
 
-	_, err := svc.SendArticleByID(context.Background(), "account-1", "article-1")
+	_, err := svc.SendArticleByID(context.Background(), testAccountID, testArticle1ID)
 
 	if err == nil {
 		t.Fatal("expected error for missing device email")
@@ -841,7 +857,7 @@ func TestGenerateEPUB_Success(t *testing.T) {
 	})
 
 	article := &model.Article{
-		Title:   "Test Article",
+		Title:   testArticleTitle,
 		Content: "<p>Test content</p>",
 	}
 
@@ -898,7 +914,7 @@ func TestGetUserProfile_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	_, err := svc.GetUserProfile(context.Background(), "account-1")
+	_, err := svc.GetUserProfile(context.Background(), testAccountID)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -921,7 +937,7 @@ func TestSetUserEmail_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.SetUserEmail(context.Background(), "account-1", "user@example.com")
+	err := svc.SetUserEmail(context.Background(), testAccountID, "user@example.com")
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -944,7 +960,7 @@ func TestSetUserEmail_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.SetUserEmail(context.Background(), "account-1", "user@example.com")
+	err := svc.SetUserEmail(context.Background(), testAccountID, "user@example.com")
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -967,7 +983,7 @@ func TestDeleteUserProfile_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.DeleteUserProfile(context.Background(), "account-1")
+	err := svc.DeleteUserProfile(context.Background(), testAccountID)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -990,7 +1006,7 @@ func TestDeleteUserProfile_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.DeleteUserProfile(context.Background(), "account-1")
+	err := svc.DeleteUserProfile(context.Background(), testAccountID)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -1001,8 +1017,8 @@ func TestHandleBounce_Success(t *testing.T) {
 	repo := &testArticlesRepo{}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account:     "account-1",
-			DeviceEmail: "device@free.kindle.com",
+			Account:     testAccountID,
+			DeviceEmail: testKindleDevice,
 		},
 	}
 	sendsRepo := &testSendsRepo{}
@@ -1018,7 +1034,7 @@ func TestHandleBounce_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	err := svc.HandleBounce(context.Background(), "device@free.kindle.com", "bounce error")
+	err := svc.HandleBounce(context.Background(), testKindleDevice, "bounce error")
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -1052,7 +1068,7 @@ func TestIsEmailBouncing_True(t *testing.T) {
 	repo := &testArticlesRepo{}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account: "account-1",
+			Account: testAccountID,
 			BouncedEmails: map[string]model.BounceInfo{
 				testEmail: {Timestamp: time.Now(), Error: "bounce"},
 			},
@@ -1071,7 +1087,7 @@ func TestIsEmailBouncing_True(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	bouncing, err := svc.IsEmailBouncing(context.Background(), "account-1", testEmail)
+	bouncing, err := svc.IsEmailBouncing(context.Background(), testAccountID, testEmail)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -1086,8 +1102,8 @@ func TestIsEmailBouncing_False(t *testing.T) {
 	repo := &testArticlesRepo{}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account:     "account-1",
-			DeviceEmail: "device@free.kindle.com",
+			Account:     testAccountID,
+			DeviceEmail: testKindleDevice,
 			BouncedEmails: map[string]model.BounceInfo{
 				"other@free.kindle.com": {},
 			},
@@ -1106,7 +1122,7 @@ func TestIsEmailBouncing_False(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	bouncing, err := svc.IsEmailBouncing(context.Background(), "account-1", "device@free.kindle.com")
+	bouncing, err := svc.IsEmailBouncing(context.Background(), testAccountID, testKindleDevice)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -1121,7 +1137,7 @@ func TestGetAccountIDByDeviceEmail_Success(t *testing.T) {
 	repo := &testArticlesRepo{}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account: "account-1",
+			Account: testAccountID,
 		},
 	}
 	sendsRepo := &testSendsRepo{}
@@ -1143,7 +1159,7 @@ func TestGetAccountIDByDeviceEmail_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if accountID != "account-1" {
+	if accountID != testAccountID {
 		t.Errorf("expected account ID 'account-1', got '%s'", accountID)
 	}
 }
@@ -1184,14 +1200,14 @@ var _ repository.SendsRepository = (*testSendsRepo)(nil)
 func TestNewDependenciesFromConfig_WithMailjetAndAWS(t *testing.T) {
 	cfg := &config.Config{
 		EmailProvider:    consts.EmailBackendMailjet,
-		MailjetAPIKey:    "test-api-key",
-		MailjetAPISecret: "test-secret",
-		SenderEmail:      "sender@example.com",
+		MailjetAPIKey:    testMailjetKey,
+		MailjetAPISecret: testMailjetSec,
+		SenderEmail:      testSenderEmail,
 		AWSConfig:        &aws.Config{},
-		ArticlesTable:    "articles-table",
-		UserProfileTable: "profiles-table",
-		SendsTable:       "sends-table",
-		BrowserlessKey:   "browserless-key",
+		ArticlesTable:    testArticlesTbl,
+		UserProfileTable: testProfilesTbl,
+		SendsTable:       testSendsTbl,
+		BrowserlessKey:   testBrowserless,
 	}
 
 	deps := NewDependenciesFromConfig(cfg)
@@ -1225,7 +1241,7 @@ func TestNewDependenciesFromConfig_WithMailjetAndAWS(t *testing.T) {
 func TestNewDependenciesFromConfig_NoMailjetNoAWS(t *testing.T) {
 	cfg := &config.Config{
 		EmailProvider:  "unknown",
-		BrowserlessKey: "browserless-key",
+		BrowserlessKey: testBrowserless,
 	}
 
 	deps := NewDependenciesFromConfig(cfg)
@@ -1251,7 +1267,7 @@ func TestNewDependenciesFromConfig_WithSQLite(t *testing.T) {
 	cfg := &config.Config{
 		StorageBackend: consts.StorageBackendSQLite,
 		SQLitePath:     "/tmp/test.db",
-		BrowserlessKey: "browserless-key",
+		BrowserlessKey: testBrowserless,
 	}
 
 	deps := NewDependenciesFromConfig(cfg)
@@ -1288,14 +1304,14 @@ func TestNewDependenciesFromConfig_WithSQLite(t *testing.T) {
 func TestNewFromConfig(t *testing.T) {
 	cfg := &config.Config{
 		EmailProvider:    consts.EmailBackendMailjet,
-		MailjetAPIKey:    "test-api-key",
-		MailjetAPISecret: "test-secret",
-		SenderEmail:      "sender@example.com",
+		MailjetAPIKey:    testMailjetKey,
+		MailjetAPISecret: testMailjetSec,
+		SenderEmail:      testSenderEmail,
 		AWSConfig:        &aws.Config{},
-		ArticlesTable:    "articles-table",
-		UserProfileTable: "profiles-table",
-		SendsTable:       "sends-table",
-		BrowserlessKey:   "browserless-key",
+		ArticlesTable:    testArticlesTbl,
+		UserProfileTable: testProfilesTbl,
+		SendsTable:       testSendsTbl,
+		BrowserlessKey:   testBrowserless,
 	}
 
 	svc := NewFromConfig(cfg)
@@ -1339,7 +1355,7 @@ func TestCreateSendRecordSetsTimestamp(t *testing.T) {
 	mockRepo := &testSendsRepoTracking{}
 
 	cfg := &config.Config{
-		SenderEmail:   "test@example.com",
+		SenderEmail:   testSenderCom,
 		EmailProvider: consts.EmailBackendMailjet,
 	}
 	svc := New(&Dependencies{
@@ -1354,16 +1370,16 @@ func TestCreateSendRecordSetsTimestamp(t *testing.T) {
 		Config:          cfg,
 	})
 
-	err := svc.createSendRecord(ctx, "account-123", "article-456", "Test Article", "device@test.com")
+	err := svc.createSendRecord(ctx, "account-123", "article-456", testArticleTitle, "device@test.com")
 	require.NoError(t, err)
 	require.Len(t, mockRepo.createdSends, 1, "should have created one send record")
 
 	created := mockRepo.createdSends[0]
 	assert.Equal(t, "account-123", created.Account)
 	assert.Equal(t, "article-456", created.ArticleID)
-	assert.Equal(t, "Test Article", created.Title)
+	assert.Equal(t, testArticleTitle, created.Title)
 	assert.Equal(t, "device@test.com", created.DestEmail)
-	assert.Equal(t, "test@example.com", created.SenderEmail)
+	assert.Equal(t, testSenderCom, created.SenderEmail)
 	assert.Equal(t, "mailjet", created.Provider)
 
 	assert.NotEqual(t, time.Time{}, created.SentAt, "SentAt should not be zero value")
@@ -1544,7 +1560,7 @@ func TestParseHTML_Success(t *testing.T) {
 
 	fetched := &content.FetchedContent{
 		HTML: &testReadCloser{data: []byte("<html><body><h1>Test</h1></body></html>")},
-		URL:  &url.URL{Scheme: "https", Host: "example.com"},
+		URL:  &url.URL{Scheme: testSchemeHTTPS, Host: testExampleHost},
 		Type: content.FetcherTypeGo,
 	}
 
@@ -1572,7 +1588,7 @@ func TestParseHTML_Error(t *testing.T) {
 
 	fetched := &content.FetchedContent{
 		HTML: &testReadCloser{data: []byte("invalid html")},
-		URL:  &url.URL{Scheme: "https", Host: "example.com"},
+		URL:  &url.URL{Scheme: testSchemeHTTPS, Host: testExampleHost},
 		Type: content.FetcherTypeGo,
 	}
 
@@ -1599,7 +1615,7 @@ func TestClean_Success(t *testing.T) {
 
 	doc := &html.Node{
 		Type: html.ElementNode,
-		Data: "html",
+		Data: testHTMLData,
 		FirstChild: &html.Node{
 			Type: html.ElementNode,
 			Data: "body",
@@ -1641,7 +1657,7 @@ func TestClean_Error(t *testing.T) {
 
 	doc := &html.Node{
 		Type: html.ElementNode,
-		Data: "html",
+		Data: testHTMLData,
 	}
 
 	testURL, _ := url.Parse("https://example.com")
@@ -1655,7 +1671,7 @@ func TestClean_Error(t *testing.T) {
 func TestGetArticle_Success(t *testing.T) {
 	repo := &testArticlesRepo{
 		articles: []*model.Article{
-			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+			{Account: testAccountID, ID: testArticle1ID, Title: testArticleTitle},
 		},
 	}
 	profileRepo := &testUserProfileRepo{}
@@ -1672,11 +1688,11 @@ func TestGetArticle_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	article, err := svc.GetArticle(context.Background(), "account-1", "article-1")
+	article, err := svc.GetArticle(context.Background(), testAccountID, testArticle1ID)
 
 	require.NoError(t, err)
 	assert.NotNil(t, article)
-	assert.Equal(t, "article-1", article.ID)
+	assert.Equal(t, testArticle1ID, article.ID)
 }
 
 func TestGetArticle_Error(t *testing.T) {
@@ -1695,7 +1711,7 @@ func TestGetArticle_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	_, err := svc.GetArticle(context.Background(), "account-1", "article-1")
+	_, err := svc.GetArticle(context.Background(), testAccountID, testArticle1ID)
 
 	require.Error(t, err)
 }
@@ -1703,7 +1719,7 @@ func TestGetArticle_Error(t *testing.T) {
 func TestGetArticlesMetadata_Success(t *testing.T) {
 	repo := &testArticlesRepo{
 		articles: []*model.Article{
-			{Account: "account-1", ID: "article-1", Title: "Test Article", CreatedAt: time.Now()},
+			{Account: testAccountID, ID: testArticle1ID, Title: testArticleTitle, CreatedAt: time.Now()},
 		},
 	}
 	profileRepo := &testUserProfileRepo{}
@@ -1720,7 +1736,7 @@ func TestGetArticlesMetadata_Success(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	result, err := svc.GetArticlesMetadata(context.Background(), "account-1", 1, 10, nil)
+	result, err := svc.GetArticlesMetadata(context.Background(), testAccountID, 1, 10, nil)
 
 	require.NoError(t, err)
 	assert.NotNil(t, result)
@@ -1743,7 +1759,7 @@ func TestGetArticlesMetadata_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	_, err := svc.GetArticlesMetadata(context.Background(), "account-1", 1, 10, nil)
+	_, err := svc.GetArticlesMetadata(context.Background(), testAccountID, 1, 10, nil)
 
 	require.Error(t, err)
 }
@@ -1751,7 +1767,7 @@ func TestGetArticlesMetadata_Error(t *testing.T) {
 func TestDeleteArticle_Success(t *testing.T) {
 	repo := &testArticlesRepo{
 		articles: []*model.Article{
-			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+			{Account: testAccountID, ID: testArticle1ID, Title: testArticleTitle},
 		},
 	}
 	profileRepo := &testUserProfileRepo{}
@@ -1770,7 +1786,7 @@ func TestDeleteArticle_Success(t *testing.T) {
 		ArticleTagsRepo: articleTagsRepo,
 	})
 
-	result, err := svc.DeleteArticle(context.Background(), "account-1", "article-1")
+	result, err := svc.DeleteArticle(context.Background(), testAccountID, testArticle1ID)
 
 	require.NoError(t, err)
 	assert.NotNil(t, result)
@@ -1780,7 +1796,7 @@ func TestDeleteArticle_Success(t *testing.T) {
 func TestDeleteArticle_Error(t *testing.T) {
 	repo := &testArticlesRepo{
 		articles: []*model.Article{
-			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+			{Account: testAccountID, ID: testArticle1ID, Title: testArticleTitle},
 		},
 		deleteErr: errors.New("delete error"),
 	}
@@ -1798,7 +1814,7 @@ func TestDeleteArticle_Error(t *testing.T) {
 		SendsRepo:       sendsRepo,
 	})
 
-	_, err := svc.DeleteArticle(context.Background(), "account-1", "article-1")
+	_, err := svc.DeleteArticle(context.Background(), testAccountID, testArticle1ID)
 
 	require.Error(t, err)
 }
@@ -1806,12 +1822,12 @@ func TestDeleteArticle_Error(t *testing.T) {
 func TestSendArticleByID_EmailSendFailure(t *testing.T) {
 	repo := &testArticlesRepo{
 		articles: []*model.Article{
-			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+			{Account: testAccountID, ID: testArticle1ID, Title: testArticleTitle},
 		},
 	}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account:     "account-1",
+			Account:     testAccountID,
 			DeviceEmail: testEmail,
 			AutoSend:    true,
 		},
@@ -1820,7 +1836,7 @@ func TestSendArticleByID_EmailSendFailure(t *testing.T) {
 
 	sender := &errorSenderMock{}
 	cfg := &config.Config{
-		SenderEmail:   "test@example.com",
+		SenderEmail:   testSenderCom,
 		EmailProvider: consts.EmailBackendMailjet,
 	}
 	svc := New(&Dependencies{
@@ -1835,7 +1851,7 @@ func TestSendArticleByID_EmailSendFailure(t *testing.T) {
 		Config:          cfg,
 	})
 
-	_, err := svc.SendArticleByID(context.Background(), "account-1", "article-1")
+	_, err := svc.SendArticleByID(context.Background(), testAccountID, testArticle1ID)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "send error")
@@ -1844,12 +1860,12 @@ func TestSendArticleByID_EmailSendFailure(t *testing.T) {
 func TestSendArticleByID_CreateSendRecordError(t *testing.T) {
 	repo := &testArticlesRepo{
 		articles: []*model.Article{
-			{Account: "account-1", ID: "article-1", Title: "Test Article"},
+			{Account: testAccountID, ID: testArticle1ID, Title: testArticleTitle},
 		},
 	}
 	profileRepo := &testUserProfileRepo{
 		profile: &model.UserProfile{
-			Account:     "account-1",
+			Account:     testAccountID,
 			DeviceEmail: testEmail,
 			AutoSend:    true,
 		},
@@ -1857,7 +1873,7 @@ func TestSendArticleByID_CreateSendRecordError(t *testing.T) {
 	sendsRepo := &testSendsRepo{createErr: errors.New("create error")}
 
 	cfg := &config.Config{
-		SenderEmail:   "test@example.com",
+		SenderEmail:   testSenderCom,
 		EmailProvider: consts.EmailBackendMailjet,
 	}
 	svc := New(&Dependencies{
@@ -1872,7 +1888,7 @@ func TestSendArticleByID_CreateSendRecordError(t *testing.T) {
 		Config:          cfg,
 	})
 
-	_, err := svc.SendArticleByID(context.Background(), "account-1", "article-1")
+	_, err := svc.SendArticleByID(context.Background(), testAccountID, testArticle1ID)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to create send record")
@@ -1884,7 +1900,7 @@ func TestUpdateSendRecordOnFailure_WithSendsRepo(t *testing.T) {
 	sendsRepo := &testSendsRepo{}
 
 	cfg := &config.Config{
-		SenderEmail:   "test@example.com",
+		SenderEmail:   testSenderCom,
 		EmailProvider: consts.EmailBackendMailjet,
 	}
 	svc := New(&Dependencies{
@@ -1899,7 +1915,7 @@ func TestUpdateSendRecordOnFailure_WithSendsRepo(t *testing.T) {
 		Config:          cfg,
 	})
 
-	err := svc.updateSendRecordOnFailure(context.Background(), "account-1", "article-1", errors.New("send failed"))
+	err := svc.updateSendRecordOnFailure(context.Background(), testAccountID, testArticle1ID, errors.New("send failed"))
 
 	require.NoError(t, err)
 }
@@ -1909,7 +1925,7 @@ func TestUpdateSendRecordOnFailure_WithoutSendsRepo(t *testing.T) {
 	profileRepo := &testUserProfileRepo{}
 
 	cfg := &config.Config{
-		SenderEmail:   "test@example.com",
+		SenderEmail:   testSenderCom,
 		EmailProvider: consts.EmailBackendMailjet,
 	}
 	svc := New(&Dependencies{
@@ -1924,7 +1940,7 @@ func TestUpdateSendRecordOnFailure_WithoutSendsRepo(t *testing.T) {
 		Config:          cfg,
 	})
 
-	err := svc.updateSendRecordOnFailure(context.Background(), "account-1", "article-1", errors.New("send failed"))
+	err := svc.updateSendRecordOnFailure(context.Background(), testAccountID, testArticle1ID, errors.New("send failed"))
 
 	require.NoError(t, err)
 }
@@ -1935,7 +1951,7 @@ func TestUpdateSendRecordOnSuccess_WithSendsRepo(t *testing.T) {
 	sendsRepo := &testSendsRepo{}
 
 	cfg := &config.Config{
-		SenderEmail:   "test@example.com",
+		SenderEmail:   testSenderCom,
 		EmailProvider: consts.EmailBackendMailjet,
 	}
 	svc := New(&Dependencies{
@@ -1950,7 +1966,7 @@ func TestUpdateSendRecordOnSuccess_WithSendsRepo(t *testing.T) {
 		Config:          cfg,
 	})
 
-	err := svc.updateSendRecordOnSuccess(context.Background(), "account-1", "article-1", "msg-123")
+	err := svc.updateSendRecordOnSuccess(context.Background(), testAccountID, testArticle1ID, "msg-123")
 
 	require.NoError(t, err)
 }
@@ -1960,7 +1976,7 @@ func TestUpdateSendRecordOnSuccess_WithoutSendsRepo(t *testing.T) {
 	profileRepo := &testUserProfileRepo{}
 
 	cfg := &config.Config{
-		SenderEmail:   "test@example.com",
+		SenderEmail:   testSenderCom,
 		EmailProvider: consts.EmailBackendMailjet,
 	}
 	svc := New(&Dependencies{
@@ -1975,7 +1991,7 @@ func TestUpdateSendRecordOnSuccess_WithoutSendsRepo(t *testing.T) {
 		Config:          cfg,
 	})
 
-	err := svc.updateSendRecordOnSuccess(context.Background(), "account-1", "article-1", "msg-123")
+	err := svc.updateSendRecordOnSuccess(context.Background(), testAccountID, testArticle1ID, "msg-123")
 
 	require.NoError(t, err)
 }

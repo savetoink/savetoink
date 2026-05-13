@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	authHeader       = "Authorization"
-	authHeaderPrefix = "Bearer "
-	adminAccountID   = "admin"
+	authHeader         = "Authorization"
+	authHeaderPrefix   = "Bearer "
+	adminAccountID     = "admin"
+	errMsgUnauthorized = "unauthorized"
 )
 
 // NewAccountIDMiddleware returns authentication middleware based on the configured auth backend.
@@ -52,7 +53,7 @@ func EnsureAutheticatedMiddleware(next http.Handler) http.Handler {
 		accountID := auth.GetAccountIDFromCtx(r.Context())
 		if accountID == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: "unauthorized"})
+			_ = json.NewEncoder(w).Encode(model.ErrorResponse{Error: errMsgUnauthorized})
 			return
 		}
 

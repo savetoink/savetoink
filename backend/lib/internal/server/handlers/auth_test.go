@@ -45,6 +45,21 @@ const (
 	httpsScheme             = "https://"
 	testAuth0TokenURL       = "https://test.auth0.com/oauth/token"
 	testPasetoKey           = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=" //nolint:gosec // test key
+	testRedirectURI         = "http://localhost/callback"
+	testHeaderPayload       = "header.payload"
+	testBadIDToken          = "header.!!!notbase64!!!.signature"
+	testAuth0Domain         = "test.auth0.com"
+	testAuth0ClientID       = "test-client-id"
+	testAuth0Audience       = "test-audience"
+	testInvalidMissing      = "invalid format - missing parts"
+	testInvalidTooMany      = "invalid format - too many parts"
+	testInvalidBase64       = "invalid base64 in payload"
+	testInvalidJSON         = "invalid json in payload"
+	testAuth0Subject        = "auth0|123"
+	testInvalidAuthCode     = "Invalid authorization code"
+	testAccessTokenVal      = "test-access-token"
+	testNameEmptyEmail      = "empty email claim"
+	testInvalidToken        = "invalid.token"
 )
 
 type MockService struct {
@@ -185,15 +200,15 @@ var _ service.Interface = (*MockService)(nil)
 func TestAuthTokenExchange_MissingCode(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       "test.auth0.com",
-		Auth0ClientID:     "test-client-id",
+		Auth0Domain:       testAuth0Domain,
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, nil, http.DefaultClient, nil, nil)
 
 	body := types.AuthTokenExchangeRequest{
-		RedirectURI: "http://localhost/callback",
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -210,10 +225,10 @@ func TestAuthTokenExchange_MissingCode(t *testing.T) {
 func TestAuthTokenExchange_MissingRedirectURI(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       "test.auth0.com",
-		Auth0ClientID:     "test-client-id",
+		Auth0Domain:       testAuth0Domain,
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, nil, http.DefaultClient, nil, nil)
 
@@ -235,10 +250,10 @@ func TestAuthTokenExchange_MissingRedirectURI(t *testing.T) {
 func TestAuthTokenExchange_InvalidJSON(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       "test.auth0.com",
-		Auth0ClientID:     "test-client-id",
+		Auth0Domain:       testAuth0Domain,
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, nil, http.DefaultClient, nil, nil)
 
@@ -269,8 +284,8 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken:     "test-access-token",
-			TokenType:       "Bearer",
+			AccessToken:     testAccessTokenVal,
+			TokenType:       tokenTypeBearer,
 			AccessExpiresIn: 3600,
 		})
 	}))
@@ -285,16 +300,16 @@ func TestAuthTokenExchange_ExplicitGrantType(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
-		Auth0ClientID:     "test-client-id",
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, nil, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
-		RedirectURI: "http://localhost/callback",
-		GrantType:   "authorization_code",
+		RedirectURI: testRedirectURI,
+		GrantType:   grantTypeAuthCode,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -322,25 +337,25 @@ func TestExtractEmailFromIDToken(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "invalid format - missing parts",
-			idToken: "header.payload",
+			name:    testInvalidMissing,
+			idToken: testHeaderPayload,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid format - too many parts",
+			name:    testInvalidTooMany,
 			idToken: testInvalidIDTokenParts,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid base64 in payload",
-			idToken: "header.!!!notbase64!!!.signature",
+			name:    testInvalidBase64,
+			idToken: testBadIDToken,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid json in payload",
+			name:    testInvalidJSON,
 			idToken: "header." + base64Encode(`not valid json`) + ".signature",
 			want:    "",
 			wantErr: true,
@@ -352,43 +367,43 @@ func TestExtractEmailFromIDToken(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "empty email claim",
+			name:    testNameEmptyEmail,
 			idToken: "header." + base64Encode(`{"email":""}`) + ".signature",
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid format - missing parts",
-			idToken: "header.payload",
+			name:    testInvalidMissing,
+			idToken: testHeaderPayload,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid format - too many parts",
+			name:    testInvalidTooMany,
 			idToken: testInvalidIDTokenParts,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid base64 in payload",
-			idToken: "header.!!!notbase64!!!.signature",
+			name:    testInvalidBase64,
+			idToken: testBadIDToken,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid json in payload",
+			name:    testInvalidJSON,
 			idToken: "header." + base64Encode(`not valid json`) + ".signature",
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid format - too many parts",
+			name:    testInvalidTooMany,
 			idToken: testInvalidIDTokenParts,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "empty email claim",
+			name:    testNameEmptyEmail,
 			idToken: "header." + base64Encode(`{"email":""}`) + ".signature",
 			want:    "",
 			wantErr: true,
@@ -423,25 +438,25 @@ func TestGetSubjectFromIDToken(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "invalid format - missing parts",
-			idToken: "header.payload",
+			name:    testInvalidMissing,
+			idToken: testHeaderPayload,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid format - too many parts",
+			name:    testInvalidTooMany,
 			idToken: testInvalidIDTokenParts,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid base64 in payload",
-			idToken: "header.!!!notbase64!!!.signature",
+			name:    testInvalidBase64,
+			idToken: testBadIDToken,
 			want:    "",
 			wantErr: true,
 		},
 		{
-			name:    "invalid json in payload",
+			name:    testInvalidJSON,
 			idToken: "header." + base64Encode(`not valid json`) + ".signature",
 			want:    "",
 			wantErr: true,
@@ -485,7 +500,7 @@ func TestHandleAuth0Error(t *testing.T) {
 			name:        "error with description",
 			body:        []byte(`{"error":"invalid_grant","error_description":"Invalid authorization code"}`),
 			wantErr:     true,
-			errContains: "Invalid authorization code",
+			errContains: testInvalidAuthCode,
 		},
 		{
 			name:        "error without description",
@@ -542,21 +557,21 @@ func TestStoreUserEmail(t *testing.T) {
 			name:        "valid service and token",
 			service:     &MockService{setUserEmailErr: nil},
 			accessToken: "header." + base64Encode(`{"sub":"auth0|test123"}`) + ".signature",
-			email:       "test@example.com",
+			email:       testEmail,
 			wantErr:     false,
 		},
 		{
 			name:        "service returns error",
 			service:     &MockService{setUserEmailErr: errors.New("service error")},
 			accessToken: "header." + base64Encode(`{"sub":"auth0|test123"}`) + ".signature",
-			email:       "test@example.com",
+			email:       testEmail,
 			wantErr:     true,
 		},
 		{
 			name:        "invalid access token format",
 			service:     &MockService{},
-			accessToken: "invalid.token",
-			email:       "test@example.com",
+			accessToken: testInvalidToken,
+			email:       testEmail,
 			wantErr:     true,
 		},
 	}
@@ -584,7 +599,7 @@ func TestAuthTokenExchange_Auth0Error(t *testing.T) {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error":             "invalid_grant",
-			"error_description": "Invalid authorization code",
+			"error_description": testInvalidAuthCode,
 		})
 	}))
 	defer server.Close()
@@ -598,15 +613,15 @@ func TestAuthTokenExchange_Auth0Error(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
-		Auth0ClientID:     "test-client-id",
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, nil, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
-		RedirectURI: "http://localhost/callback",
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -647,7 +662,7 @@ func TestAuthTokenExchange_WithIDToken(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
 			AccessToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
 			IDToken:         "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
-			TokenType:       "Bearer",
+			TokenType:       tokenTypeBearer,
 			AccessExpiresIn: 3600,
 		})
 	}))
@@ -662,15 +677,15 @@ func TestAuthTokenExchange_WithIDToken(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
-		Auth0ClientID:     "test-client-id",
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, mockService, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
-		RedirectURI: "http://localhost/callback",
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -708,9 +723,9 @@ func TestAuthTokenExchange_InvalidIDToken(t *testing.T) {
 		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
-			AccessToken:     "test-access-token",
-			IDToken:         "invalid.token",
-			TokenType:       "Bearer",
+			AccessToken:     testAccessTokenVal,
+			IDToken:         testInvalidToken,
+			TokenType:       tokenTypeBearer,
 			AccessExpiresIn: 3600,
 		})
 	}))
@@ -725,15 +740,15 @@ func TestAuthTokenExchange_InvalidIDToken(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
-		Auth0ClientID:     "test-client-id",
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, mockService, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
-		RedirectURI: "http://localhost/callback",
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -767,7 +782,7 @@ func TestAuthTokenExchange_ServiceError(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(types.AuthTokenExchangeResponse{ //nolint:gosec // test mock token, not a real secret
 			AccessToken:     "header." + base64.RawURLEncoding.EncodeToString([]byte(testAccessTokenPayload)) + ".signature",
 			IDToken:         "header." + base64.RawURLEncoding.EncodeToString([]byte(testIDTokenPayload)) + ".signature",
-			TokenType:       "Bearer",
+			TokenType:       tokenTypeBearer,
 			AccessExpiresIn: 3600,
 		})
 	}))
@@ -782,15 +797,15 @@ func TestAuthTokenExchange_ServiceError(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
-		Auth0ClientID:     "test-client-id",
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, mockService, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
-		RedirectURI: "http://localhost/callback",
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -830,15 +845,15 @@ func TestAuthTokenExchange_Auth0InvalidJSON(t *testing.T) { //nolint:dupl // tes
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
-		Auth0ClientID:     "test-client-id",
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, nil, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
-		RedirectURI: "http://localhost/callback",
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -869,15 +884,15 @@ func TestAuthTokenExchange_Auth0SuccessInvalidJSON(t *testing.T) { //nolint:dupl
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
 		Auth0Domain:       strings.TrimPrefix(parsedURL.Host, httpsScheme),
-		Auth0ClientID:     "test-client-id",
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	h := New(cfg, nil, client, nil, newTestPasetoKeyStore(t))
 
 	body := types.AuthTokenExchangeRequest{
 		Code:        testCode,
-		RedirectURI: "http://localhost/callback",
+		RedirectURI: testRedirectURI,
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/v1/auth/token", bytes.NewReader(bodyBytes))
@@ -893,8 +908,8 @@ func TestAuthTokenExchange_Auth0SuccessInvalidJSON(t *testing.T) { //nolint:dupl
 
 func TestBuildTokenRequest(t *testing.T) {
 	cfg := &config.Config{
-		Auth0Domain:       "test.auth0.com",
-		Auth0ClientID:     "test-client-id",
+		Auth0Domain:       testAuth0Domain,
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
 	}
 	h := &Handlers{
@@ -903,8 +918,8 @@ func TestBuildTokenRequest(t *testing.T) {
 
 	req := types.AuthTokenExchangeRequest{
 		Code:        testCode,
-		RedirectURI: "http://localhost/callback",
-		GrantType:   "authorization_code",
+		RedirectURI: testRedirectURI,
+		GrantType:   grantTypeAuthCode,
 	}
 
 	httpReq := h.buildTokenRequest(req)
@@ -943,8 +958,8 @@ func TestBuildTokenRequest(t *testing.T) {
 
 func TestBuildTokenRequest_DefaultGrantType(t *testing.T) {
 	cfg := &config.Config{
-		Auth0Domain:       "test.auth0.com",
-		Auth0ClientID:     "test-client-id",
+		Auth0Domain:       testAuth0Domain,
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
 	}
 	h := &Handlers{
@@ -953,7 +968,7 @@ func TestBuildTokenRequest_DefaultGrantType(t *testing.T) {
 
 	req := types.AuthTokenExchangeRequest{
 		Code:        testCode,
-		RedirectURI: "http://localhost/callback",
+		RedirectURI: testRedirectURI,
 		GrantType:   "",
 	}
 
@@ -990,18 +1005,18 @@ func newTestPasetoKeyStore(t *testing.T) *paseto.KeyStore {
 func TestHandleAuthRefresh(t *testing.T) {
 	cfg := &config.Config{
 		AuthBackend:       consts.AuthBackendAuth0,
-		Auth0Domain:       "test.auth0.com",
-		Auth0ClientID:     "test-client-id",
+		Auth0Domain:       testAuth0Domain,
+		Auth0ClientID:     testAuth0ClientID,
 		Auth0ClientSecret: testClientSecret,
-		Auth0Audience:     "test-audience",
+		Auth0Audience:     testAuth0Audience,
 	}
 	ks := newTestPasetoKeyStore(t)
 	h := New(cfg, nil, http.DefaultClient, nil, ks)
 
 	t.Run("valid refresh token returns new pair", func(t *testing.T) {
 		pair, err := ks.GenerateTokenPair(paseto.TokenClaims{
-			Subject: "auth0|123",
-			Email:   "user@example.com",
+			Subject: testAuth0Subject,
+			Email:   testUserEmail,
 		})
 		require.NoError(t, err)
 
@@ -1017,7 +1032,7 @@ func TestHandleAuthRefresh(t *testing.T) {
 		var resp types.AuthTokenExchangeResponse
 		err = json.Unmarshal(w.Body.Bytes(), &resp)
 		require.NoError(t, err)
-		assert.Equal(t, "Bearer", resp.TokenType)
+		assert.Equal(t, tokenTypeBearer, resp.TokenType)
 		assert.Equal(t, int(consts.DefaultAccessTTL.Seconds()), resp.AccessExpiresIn)
 		assert.Equal(t, int(consts.DefaultRefreshTTL.Seconds()), resp.RefreshExpiresIn)
 		assert.True(t, strings.HasPrefix(resp.AccessToken, "v4.local."))
@@ -1049,8 +1064,8 @@ func TestHandleAuthRefresh(t *testing.T) {
 
 	t.Run("access token used as refresh returns 401", func(t *testing.T) {
 		pair, err := ks.GenerateTokenPair(paseto.TokenClaims{
-			Subject: "auth0|123",
-			Email:   "user@example.com",
+			Subject: testAuth0Subject,
+			Email:   testUserEmail,
 		})
 		require.NoError(t, err)
 

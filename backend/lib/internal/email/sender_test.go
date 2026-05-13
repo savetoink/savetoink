@@ -12,6 +12,12 @@ const (
 	testEmailBody   = "email body"
 	testSubject     = "Test Subject"
 	testArticleEpub = "Test Article.epub"
+
+	testSaveToInkArticleTitle = "[Save to Ink] Article Title"
+	testEmptyTitle            = "empty title"
+	testUserKindleEmail       = "user@kindle.com"
+	testSavetoInkURL          = "https://saveto.ink"
+	testDefaultArticleEpub    = "article.epub"
 )
 
 func TestBuildSubject(t *testing.T) {
@@ -23,12 +29,12 @@ func TestBuildSubject(t *testing.T) {
 		{
 			name:         "article title",
 			articleTitle: "Article Title",
-			expected:     "[Save to Ink] Article Title",
+			expected:     testSaveToInkArticleTitle,
 		},
 		{
 			name:         "title with leading/trailing spaces",
 			articleTitle: "  Article Title  ",
-			expected:     "[Save to Ink] Article Title",
+			expected:     testSaveToInkArticleTitle,
 		},
 		{
 			name: "long title",
@@ -37,7 +43,7 @@ func TestBuildSubject(t *testing.T) {
 			expected: "[Save to Ink] This is a very long article title that definitely exceeds the maximum length limit and",
 		},
 		{
-			name:     "empty title",
+			name:     testEmptyTitle,
 			expected: "[Save to Ink] Document",
 		},
 	}
@@ -62,8 +68,8 @@ func TestNewRequest(t *testing.T) {
 		{
 			name:      "valid request with all fields",
 			epubData:  io.NopCloser(strings.NewReader("epub content")),
-			destEmail: "user@kindle.com",
-			appURL:    "https://saveto.ink",
+			destEmail: testUserKindleEmail,
+			appURL:    testSavetoInkURL,
 		},
 		{
 			name:      "request with empty epub data",
@@ -74,8 +80,8 @@ func TestNewRequest(t *testing.T) {
 		{
 			name:      "request with large epub data",
 			epubData:  io.NopCloser(strings.NewReader(strings.Repeat("x", 1024*1024))),
-			destEmail: "user@kindle.com",
-			appURL:    "https://saveto.ink",
+			destEmail: testUserKindleEmail,
+			appURL:    testSavetoInkURL,
 		},
 	}
 
@@ -237,9 +243,9 @@ func TestSanitizeFilename(t *testing.T) {
 			expected: "Test Article's title.epub",
 		},
 		{
-			name:     "empty title",
+			name:     testEmptyTitle,
 			title:    "",
-			expected: "article.epub",
+			expected: testDefaultArticleEpub,
 		},
 		{
 			name: "title longer than 90 chars",
@@ -250,7 +256,7 @@ func TestSanitizeFilename(t *testing.T) {
 		{
 			name:     "title with only special characters",
 			title:    "!!!***###",
-			expected: "article.epub",
+			expected: testDefaultArticleEpub,
 		},
 		{
 			name:     "title with consecutive special chars",

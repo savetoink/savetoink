@@ -8,12 +8,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	testDifferentError = "different error"
-	testSomeOtherError = "some other error"
-	testCustomError    = "custom error"
-	testNilError       = "nil error"
-	wrappedErrorFmt    = "context: %w"
+var (
+	testDifferentError   = "different error"
+	testSomeOtherError   = "some other error"
+	testCustomError      = "custom error"
+	testNilError         = "nil error"
+	testWrappedNotFound  = "wrapped ErrNotFound"
+	testErrNotFound      = "ErrNotFound"
+	testErrInvalid       = "ErrInvalid"
+	testErrUnauthorized  = "ErrUnauthorized"
+	testErrConflict      = "ErrConflict"
+	testErrQuotaExceeded = "ErrQuotaExceeded"
+	wrappedErrorFmt      = "context: %w"
 )
 
 func TestError_Constants(t *testing.T) {
@@ -22,11 +28,11 @@ func TestError_Constants(t *testing.T) {
 		value    error
 		expected string
 	}{
-		{"ErrNotFound", ErrNotFound, "not found"},
-		{"ErrInvalid", ErrInvalid, "invalid input"},
-		{"ErrUnauthorized", ErrUnauthorized, "unauthorized"},
-		{"ErrConflict", ErrConflict, "conflict"},
-		{"ErrQuotaExceeded", ErrQuotaExceeded, "quota exceeded"},
+		{testErrNotFound, ErrNotFound, "not found"},
+		{testErrInvalid, ErrInvalid, "invalid input"},
+		{testErrUnauthorized, ErrUnauthorized, "unauthorized"},
+		{testErrConflict, ErrConflict, "conflict"},
+		{testErrQuotaExceeded, ErrQuotaExceeded, "quota exceeded"},
 	}
 
 	for _, tt := range tests {
@@ -49,7 +55,7 @@ func TestIsNotFound(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:     "wrapped ErrNotFound",
+			name:     testWrappedNotFound,
 			err:      fmt.Errorf(wrappedErrorFmt, ErrNotFound),
 			expected: true,
 		},
@@ -253,7 +259,7 @@ func TestIsFunctions_Table(t *testing.T) {
 		expectQuotaExceed bool
 	}{
 		{
-			name:              "ErrNotFound",
+			name:              testErrNotFound,
 			err:               ErrNotFound,
 			expectNotFound:    true,
 			expectInvalid:     false,
@@ -262,7 +268,7 @@ func TestIsFunctions_Table(t *testing.T) {
 			expectQuotaExceed: false,
 		},
 		{
-			name:              "ErrInvalid",
+			name:              testErrInvalid,
 			err:               ErrInvalid,
 			expectNotFound:    false,
 			expectInvalid:     true,
@@ -271,7 +277,7 @@ func TestIsFunctions_Table(t *testing.T) {
 			expectQuotaExceed: false,
 		},
 		{
-			name:              "ErrUnauthorized",
+			name:              testErrUnauthorized,
 			err:               ErrUnauthorized,
 			expectNotFound:    false,
 			expectInvalid:     false,
@@ -280,7 +286,7 @@ func TestIsFunctions_Table(t *testing.T) {
 			expectQuotaExceed: false,
 		},
 		{
-			name:              "ErrConflict",
+			name:              testErrConflict,
 			err:               ErrConflict,
 			expectNotFound:    false,
 			expectInvalid:     false,
@@ -289,7 +295,7 @@ func TestIsFunctions_Table(t *testing.T) {
 			expectQuotaExceed: false,
 		},
 		{
-			name:              "ErrQuotaExceeded",
+			name:              testErrQuotaExceeded,
 			err:               ErrQuotaExceeded,
 			expectNotFound:    false,
 			expectInvalid:     false,
@@ -316,7 +322,7 @@ func TestIsFunctions_Table(t *testing.T) {
 			expectQuotaExceed: false,
 		},
 		{
-			name:              "wrapped ErrNotFound",
+			name:              testWrappedNotFound,
 			err:               fmt.Errorf("wrapped: %w", ErrNotFound),
 			expectNotFound:    true,
 			expectInvalid:     false,

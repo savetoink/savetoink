@@ -10,6 +10,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testArticleURL  = "https://example.com/article"
+	testFullResp    = "full response"
+	testTestAccount = "test-account"
+	testQueued      = "queued"
+	testUserEmail   = "user@example.com"
+	testDeviceEmail = "device@example.com"
+
+	testID             = "test-id"
+	testNameMinimalRes = "minimal response"
+	testStatusProcess  = "processing"
+	testNameFullReq    = "full request"
+	testCodeValue      = "test-code"
+	testNameMinimalReq = "minimal request"
+	testAccessToken    = "access-token"
+	testTokenType      = "Bearer"
+	testNameNoSends    = "no sends"
+
+	testDeviceReqJSONAutoTrue  = `{"device_email":"device@example.com","auto_send":true}`
+	testDeviceReqJSONAutoFalse = `{"device_email":"device@example.com","auto_send":false}`
+)
+
 func TestArticleRequest_JSONSerialization(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -19,7 +41,7 @@ func TestArticleRequest_JSONSerialization(t *testing.T) {
 		{
 			name: "with send on complete",
 			req: ArticleRequest{
-				URL:            "https://example.com/article",
+				URL:            testArticleURL,
 				SendOnComplete: true,
 			},
 			wantJSON: `{"url":"https://example.com/article","send_on_complete":true}`,
@@ -27,22 +49,15 @@ func TestArticleRequest_JSONSerialization(t *testing.T) {
 		{
 			name: "without send on complete",
 			req: ArticleRequest{
-				URL:            "https://example.com/article",
+				URL:            testArticleURL,
 				SendOnComplete: false,
-			},
-			wantJSON: `{"url":"https://example.com/article","send_on_complete":false}`,
-		},
-		{
-			name: "minimal request",
-			req: ArticleRequest{
-				URL: "https://example.com/article",
 			},
 			wantJSON: `{"url":"https://example.com/article","send_on_complete":false}`,
 		},
 		{
 			name: "with tags",
 			req: ArticleRequest{
-				URL:  "https://example.com/article",
+				URL:  testArticleURL,
 				Tags: []string{"tech", "programming"},
 			},
 			wantJSON: `{"url":"https://example.com/article","send_on_complete":false,"tags":["tech","programming"]}`,
@@ -72,17 +87,17 @@ func TestArticleResponse_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "full response",
+			name: testFullResp,
 			resp: ArticleResponse{
-				ID:  "test-id",
-				URL: "https://example.com/article",
+				ID:  testID,
+				URL: testArticleURL,
 			},
 			wantJSON: `{"id":"test-id","url":"https://example.com/article"}`,
 		},
 		{
-			name: "minimal response",
+			name: testNameMinimalRes,
 			resp: ArticleResponse{
-				ID: "test-id",
+				ID: testID,
 			},
 			wantJSON: `{"id":"test-id","url":""}`,
 		},
@@ -142,17 +157,17 @@ func TestListArticlesResponse_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "full response",
+			name: testFullResp,
 			resp: ListArticlesResponse{
 				Articles: []*model.Article{
 					{
-						Account:   "test-account",
+						Account:   testTestAccount,
 						ID:        "article-1",
 						URL:       "https://example.com/article1",
 						CreatedAt: time.Time{},
 					},
 					{
-						Account:   "test-account",
+						Account:   testTestAccount,
 						ID:        "article-2",
 						URL:       "https://example.com/article2",
 						CreatedAt: time.Time{},
@@ -283,12 +298,12 @@ func TestSendArticleResponse_JSONSerialization(t *testing.T) {
 	}{
 		{
 			name:     "success",
-			resp:     SendArticleResponse{Status: "queued"},
+			resp:     SendArticleResponse{Status: testQueued},
 			wantJSON: `{"status":"queued"}`,
 		},
 		{
-			name:     "processing",
-			resp:     SendArticleResponse{Status: "processing"},
+			name:     testStatusProcess,
+			resp:     SendArticleResponse{Status: testStatusProcess},
 			wantJSON: `{"status":"processing"}`,
 		},
 	}
@@ -316,7 +331,7 @@ func TestSendArticleResponseWithCount_JSONSerialization(t *testing.T) {
 		{
 			name: "successful send",
 			resp: SendArticleResponseWithCount{
-				Status:     "queued",
+				Status:     testQueued,
 				SendsCount: 5,
 			},
 			wantJSON: `{"status":"queued","sends_count":5}`,
@@ -324,7 +339,7 @@ func TestSendArticleResponseWithCount_JSONSerialization(t *testing.T) {
 		{
 			name: "first send",
 			resp: SendArticleResponseWithCount{
-				Status:     "queued",
+				Status:     testQueued,
 				SendsCount: 1,
 			},
 			wantJSON: `{"status":"queued","sends_count":1}`,
@@ -353,9 +368,9 @@ func TestAuthTokenExchangeRequest_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "full request",
+			name: testNameFullReq,
 			req: AuthTokenExchangeRequest{
-				Code:        "test-code",
+				Code:        testCodeValue,
 				RedirectURI: "https://example.com/callback",
 				GrantType:   "authorization_code",
 			},
@@ -363,9 +378,9 @@ func TestAuthTokenExchangeRequest_JSONSerialization(t *testing.T) {
 				`"grant_type":"authorization_code"}`,
 		},
 		{
-			name: "minimal request",
+			name: testNameMinimalReq,
 			req: AuthTokenExchangeRequest{
-				Code: "test-code",
+				Code: testCodeValue,
 			},
 			wantJSON: `{"code":"test-code","redirect_uri":"","grant_type":""}`,
 		},
@@ -394,13 +409,13 @@ func TestAuthTokenExchangeResponse_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "full response",
+			name: testFullResp,
 			resp: AuthTokenExchangeResponse{
-				AccessToken:      "access-token",
+				AccessToken:      testAccessToken,
 				RefreshToken:     "refresh-token",
 				IDToken:          "id-token",
-				Email:            "user@example.com",
-				TokenType:        "Bearer",
+				Email:            testUserEmail,
+				TokenType:        testTokenType,
 				AccessExpiresIn:  3600,
 				RefreshExpiresIn: 2592000,
 			},
@@ -409,10 +424,10 @@ func TestAuthTokenExchangeResponse_JSONSerialization(t *testing.T) {
 				`"token_type":"Bearer","access_expires_in":3600,"refresh_expires_in":2592000}`,
 		},
 		{
-			name: "minimal response",
+			name: testNameMinimalRes,
 			resp: AuthTokenExchangeResponse{
-				AccessToken:     "access-token",
-				TokenType:       "Bearer",
+				AccessToken:     testAccessToken,
+				TokenType:       testTokenType,
 				AccessExpiresIn: 3600,
 			},
 			wantJSON: `{"access_token":"access-token","token_type":"Bearer","access_expires_in":3600}`,
@@ -446,19 +461,19 @@ func TestDeviceRequest_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "full request",
+			name: testNameFullReq,
 			req: DeviceRequest{
-				DeviceEmail: "device@example.com",
+				DeviceEmail: testDeviceEmail,
 				AutoSend:    true,
 			},
-			wantJSON: `{"device_email":"device@example.com","auto_send":true}`,
+			wantJSON: testDeviceReqJSONAutoTrue,
 		},
 		{
-			name: "minimal request",
+			name: testNameMinimalReq,
 			req: DeviceRequest{
-				DeviceEmail: "device@example.com",
+				DeviceEmail: testDeviceEmail,
 			},
-			wantJSON: `{"device_email":"device@example.com","auto_send":false}`,
+			wantJSON: testDeviceReqJSONAutoFalse,
 		},
 	}
 
@@ -486,18 +501,18 @@ func TestDeviceResponse_JSONSerialization(t *testing.T) {
 		{
 			name: "with auto send enabled",
 			resp: DeviceResponse{
-				DeviceEmail: "device@example.com",
+				DeviceEmail: testDeviceEmail,
 				AutoSend:    true,
 			},
-			wantJSON: `{"device_email":"device@example.com","auto_send":true}`,
+			wantJSON: testDeviceReqJSONAutoTrue,
 		},
 		{
 			name: "without auto send",
 			resp: DeviceResponse{
-				DeviceEmail: "device@example.com",
+				DeviceEmail: testDeviceEmail,
 				AutoSend:    false,
 			},
-			wantJSON: `{"device_email":"device@example.com","auto_send":false}`,
+			wantJSON: testDeviceReqJSONAutoFalse,
 		},
 	}
 
@@ -525,9 +540,9 @@ func TestUserProfileResponse_JSONSerialization(t *testing.T) {
 		{
 			name: "full profile",
 			resp: UserProfileResponse{
-				Account:     "test-account",
-				Email:       "user@example.com",
-				DeviceEmail: "device@example.com",
+				Account:     testTestAccount,
+				Email:       testUserEmail,
+				DeviceEmail: testDeviceEmail,
 				AutoSend:    true,
 			},
 			wantJSON: `{"account":"test-account","email":"user@example.com",` +
@@ -536,8 +551,8 @@ func TestUserProfileResponse_JSONSerialization(t *testing.T) {
 		{
 			name: "minimal profile",
 			resp: UserProfileResponse{
-				Account: "test-account",
-				Email:   "user@example.com",
+				Account: testTestAccount,
+				Email:   testUserEmail,
 			},
 			wantJSON: `{"account":"test-account","email":"user@example.com",` +
 				`"device_email":"","auto_send":false}`,
@@ -568,7 +583,7 @@ func TestSendsResponse_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "full response",
+			name: testFullResp,
 			resp: SendsResponse{
 				TotalSends:        5,
 				CurrentSends:      3,
@@ -580,7 +595,7 @@ func TestSendsResponse_JSONSerialization(t *testing.T) {
 				`"period_days":30,"remaining_sends":7}`,
 		},
 		{
-			name: "no sends",
+			name: testNameNoSends,
 			resp: SendsResponse{
 				TotalSends:        0,
 				CurrentSends:      0,
@@ -623,7 +638,7 @@ func TestSendsResponseNoLimits_JSONSerialization(t *testing.T) {
 			wantJSON: `{"total_sends":5}`,
 		},
 		{
-			name:     "no sends",
+			name:     testNameNoSends,
 			resp:     SendsResponseNoLimits{TotalSends: 0},
 			wantJSON: `{"total_sends":0}`,
 		},

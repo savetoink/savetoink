@@ -250,6 +250,7 @@ const (
 	logKeyBounceTimestamp = "bounce_timestamp"
 	logKeyProcessedCount  = "processed_count"
 	logKeyFailedCount     = "failed_count"
+	testWebhookSecret     = "correct-secret"
 )
 
 func TestExtractErrorMessage(t *testing.T) {
@@ -330,7 +331,7 @@ func TestVerifyMailjetSecret(t *testing.T) {
 
 	t.Run("returns error when secret query param doesn't match", func(t *testing.T) {
 		cfg := &config.Config{
-			MailjetWebhookSecret: "correct-secret",
+			MailjetWebhookSecret: testWebhookSecret,
 		}
 		h := New(cfg, &webhookMockService{}, http.DefaultClient, nil, nil)
 
@@ -343,7 +344,7 @@ func TestVerifyMailjetSecret(t *testing.T) {
 
 	t.Run("returns nil when secret is valid and matches", func(t *testing.T) {
 		cfg := &config.Config{
-			MailjetWebhookSecret: "correct-secret",
+			MailjetWebhookSecret: testWebhookSecret,
 		}
 		h := New(cfg, &webhookMockService{}, http.DefaultClient, nil, nil)
 
@@ -363,7 +364,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "bounce error", "comment", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "bounce error", "comment", true, 1234567890),
 		}
 
 		err := h.processBounceEvents(req, events)
@@ -371,7 +372,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, svc.handleBounceCalled)
 		assert.Len(t, svc.handleBounceEmails, 1)
-		assert.Equal(t, "test@example.com", svc.handleBounceEmails[0])
+		assert.Equal(t, testEmail, svc.handleBounceEmails[0])
 		assert.Equal(t, "bounce error", svc.handleBounceErrorMessages[0])
 	})
 
@@ -405,14 +406,14 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "bounce error", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "bounce error", "", true, 1234567890),
 		}
 
 		err := h.processBounceEvents(req, events)
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "handle bounce failed")
-		assert.Contains(t, err.Error(), "test@example.com")
+		assert.Contains(t, err.Error(), testEmail)
 	})
 
 	t.Run("handles events with non-bounce event type", func(t *testing.T) {
@@ -423,7 +424,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "open", "", "", false, 1234567890),
+			createMailjetEvent(testEmail, "open", "", "", false, 1234567890),
 		}
 
 		err := h.processBounceEvents(req, events)
@@ -480,7 +481,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "error", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "error", "", true, 1234567890),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -488,7 +489,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
-			if a.Key == logKeyBouncedEmail && a.Value.String() == "test@example.com" {
+			if a.Key == logKeyBouncedEmail && a.Value.String() == testEmail {
 				found = true
 			}
 			return !found
@@ -498,7 +499,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("logs account_id attribute when GetAccountIDByDeviceEmail succeeds", func(t *testing.T) {
 		svc := &webhookMockService{
-			getAccountIDByDeviceEmail: "account-123",
+			getAccountIDByDeviceEmail: testAccountID,
 		}
 		h := New(newWebhookTestConfig(), svc, http.DefaultClient, nil, nil)
 
@@ -506,7 +507,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "error", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "error", "", true, 1234567890),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -514,7 +515,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		logRecord := logging.GetLogRecord(ctx)
 		var found bool
 		logRecord.Attrs(func(a slog.Attr) bool {
-			if a.Key == logKeyAccountID && a.Value.String() == "account-123" {
+			if a.Key == logKeyAccountID && a.Value.String() == testAccountID {
 				found = true
 			}
 			return !found
@@ -532,7 +533,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "error", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "error", "", true, 1234567890),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -556,7 +557,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "bounce error message", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "bounce error message", "", true, 1234567890),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -580,7 +581,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "", "", true, 1234567890),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -604,7 +605,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "", "", true, 1234567890),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -628,7 +629,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "", "", false, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "", "", false, 1234567890),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -653,7 +654,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		timestamp := int64(1234567890)
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "", "", true, timestamp),
+			createMailjetEvent(testEmail, "bounce", "", "", true, timestamp),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -679,7 +680,7 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "", "", true, 0),
+			createMailjetEvent(testEmail, "bounce", "", "", true, 0),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -707,7 +708,7 @@ func TestProcessBounceEvents(t *testing.T) {
 			createMailjetEvent("valid2@example.com", "bounce", "error2", "", false, 1234567891),
 			createMailjetEvent("valid3@example.com", "bounce", "error3", "", true, 1234567892),
 			createMailjetEvent("", "bounce", "error", "", true, 1234567893),
-			createMailjetEvent("test@example.com", "open", "", "", false, 1234567894),
+			createMailjetEvent(testEmail, "open", "", "", false, 1234567894),
 		}
 
 		_ = h.processBounceEvents(req, events)
@@ -750,14 +751,14 @@ func TestProcessBounceEvents(t *testing.T) {
 
 	t.Run("handles all optional event fields populated", func(t *testing.T) {
 		svc := &webhookMockService{
-			getAccountIDByDeviceEmail: "account-123",
+			getAccountIDByDeviceEmail: testAccountID,
 		}
 		h := New(newWebhookTestConfig(), svc, http.DefaultClient, nil, nil)
 
 		ctx := newWebhookTestContext()
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
-		event := createMailjetEvent("test@example.com", "bounce", "error message", "comment", true, 1234567890)
+		event := createMailjetEvent(testEmail, "bounce", "error message", "comment", true, 1234567890)
 		event.MessageID = 123456
 		event.CustomID = "custom-123"
 		event.Payload = "payload-data"
@@ -781,8 +782,8 @@ func TestProcessBounceEvents(t *testing.T) {
 		req := httptest.NewRequestWithContext(ctx, "POST", "/test", http.NoBody)
 
 		event := mailjetEvent{
-			Event: "bounce",
-			Email: "test@example.com",
+			Event: mailjetEventBounce,
+			Email: testEmail,
 		}
 
 		events := []mailjetEvent{event}
@@ -791,7 +792,7 @@ func TestProcessBounceEvents(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.True(t, svc.handleBounceCalled)
-		assert.Equal(t, "bounce", svc.handleBounceErrorMessages[0])
+		assert.Equal(t, mailjetEventBounce, svc.handleBounceErrorMessages[0])
 	})
 
 	t.Run("handles empty events array", func(t *testing.T) {
@@ -816,7 +817,7 @@ func TestHandleMailjetWebhook(t *testing.T) {
 		h := newWebhookTestHandlers(newWebhookTestConfig(), svc)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "error", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "error", "", true, 1234567890),
 		}
 		body := createMailjetEventJSON(events)
 		req := createWebhookRequest(body, "test-webhook-secret")
@@ -854,7 +855,7 @@ func TestHandleMailjetWebhook(t *testing.T) {
 		h := newWebhookTestHandlers(newWebhookTestConfig(), svc)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "error", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "error", "", true, 1234567890),
 		}
 		body := createMailjetEventJSON(events)
 		req := createWebhookRequest(body, "")
@@ -875,7 +876,7 @@ func TestHandleMailjetWebhook(t *testing.T) {
 		h := newWebhookTestHandlers(newWebhookTestConfig(), svc)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "error", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "error", "", true, 1234567890),
 		}
 		body := createMailjetEventJSON(events)
 		req := createWebhookRequest(body, "wrong-secret")
@@ -940,7 +941,7 @@ func TestHandleMailjetWebhook(t *testing.T) {
 		h := newWebhookTestHandlers(newWebhookTestConfig(), svc)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "error", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "error", "", true, 1234567890),
 		}
 		body := createMailjetEventJSON(events)
 		req := createWebhookRequest(body, "test-webhook-secret")
@@ -961,7 +962,7 @@ func TestHandleMailjetWebhook(t *testing.T) {
 		h := newWebhookTestHandlers(newWebhookTestConfig(), svc)
 
 		events := []mailjetEvent{
-			createMailjetEvent("test@example.com", "bounce", "error", "", true, 1234567890),
+			createMailjetEvent(testEmail, "bounce", "error", "", true, 1234567890),
 		}
 		body := createMailjetEventJSON(events)
 		req := createWebhookRequest(body, "test-webhook-secret")
@@ -1023,7 +1024,7 @@ func TestHandleMailjetWebhook(t *testing.T) {
 
 		events := []mailjetEvent{
 			createMailjetEvent("", "bounce", "", "", true, 0),
-			createMailjetEvent("test@example.com", "open", "", "", false, 0),
+			createMailjetEvent(testEmail, "open", "", "", false, 0),
 		}
 		body := createMailjetEventJSON(events)
 		req := createWebhookRequest(body, "test-webhook-secret")

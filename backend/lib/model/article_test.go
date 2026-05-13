@@ -11,7 +11,20 @@ import (
 )
 
 const (
-	testArticleURL = "https://example.com/article"
+	testArticleURL      = "https://example.com/article"
+	testArticleTitle    = "Test Article"
+	testArticleContent  = "Test content"
+	testArticleAuthor   = "Test Author"
+	testArticleSite     = "Test Site"
+	testArticleDomain   = "example.com"
+	testArticleExcerpt  = "Test excerpt"
+	testArticleImage    = "https://example.com/image.jpg"
+	testArticleLang     = "en"
+	testAccount         = "test-account"
+	testID              = "test-id"
+	testContentTypeHTML = "text/html"
+	testNameFullArticle = "full article"
+	testNameMinArticle  = "minimal article"
 )
 
 func TestArticle_JSONSerialization(t *testing.T) {
@@ -21,21 +34,21 @@ func TestArticle_JSONSerialization(t *testing.T) {
 		wantJSON string
 	}{
 		{
-			name: "full article",
+			name: testNameFullArticle,
 			article: Article{
-				Account:            "test-account",
-				ID:                 "test-id",
+				Account:            testAccount,
+				ID:                 testID,
 				URL:                testArticleURL,
 				CreatedAt:          time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-				Title:              "Test Article",
-				Content:            "Test content",
-				Author:             "Test Author",
-				SiteName:           "Test Site",
-				SourceDomain:       "example.com",
-				Excerpt:            "Test excerpt",
-				ImageURL:           "https://example.com/image.jpg",
-				ContentType:        "text/html",
-				Language:           "en",
+				Title:              testArticleTitle,
+				Content:            testArticleContent,
+				Author:             testArticleAuthor,
+				SiteName:           testArticleSite,
+				SourceDomain:       testArticleDomain,
+				Excerpt:            testArticleExcerpt,
+				ImageURL:           testArticleImage,
+				ContentType:        testContentTypeHTML,
+				Language:           testArticleLang,
 				Error:              "",
 				WordCount:          100,
 				ReadingTimeMinutes: 1,
@@ -53,8 +66,8 @@ func TestArticle_JSONSerialization(t *testing.T) {
 		{
 			name: "article with tags only",
 			article: Article{
-				Account:   "test-account",
-				ID:        "test-id",
+				Account:   testAccount,
+				ID:        testID,
 				URL:       testArticleURL,
 				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 				Tags:      []string{"programming"},
@@ -63,10 +76,10 @@ func TestArticle_JSONSerialization(t *testing.T) {
 				`"createdAt":"2024-03-15T10:30:00Z","tags":["programming"]}`,
 		},
 		{
-			name: "minimal article",
+			name: testNameMinArticle,
 			article: Article{
-				Account:   "test-account",
-				ID:        "test-id",
+				Account:   testAccount,
+				ID:        testID,
 				URL:       testArticleURL,
 				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 			},
@@ -76,8 +89,8 @@ func TestArticle_JSONSerialization(t *testing.T) {
 		{
 			name: "article with nil PublishedAt",
 			article: Article{
-				Account:   "test-account",
-				ID:        "test-id",
+				Account:   testAccount,
+				ID:        testID,
 				URL:       testArticleURL,
 				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 				Title:     "Test",
@@ -110,21 +123,21 @@ func TestArticle_DynamoDBAttributeMapping(t *testing.T) {
 		article Article
 	}{
 		{
-			name: "full article",
+			name: testNameFullArticle,
 			article: Article{
-				Account:            "test-account",
-				ID:                 "test-id",
+				Account:            testAccount,
+				ID:                 testID,
 				URL:                testArticleURL,
 				CreatedAt:          time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
-				Title:              "Test Article",
-				Content:            "Test content",
-				Author:             "Test Author",
-				SiteName:           "Test Site",
-				SourceDomain:       "example.com",
-				Excerpt:            "Test excerpt",
-				ImageURL:           "https://example.com/image.jpg",
-				ContentType:        "text/html",
-				Language:           "en",
+				Title:              testArticleTitle,
+				Content:            testArticleContent,
+				Author:             testArticleAuthor,
+				SiteName:           testArticleSite,
+				SourceDomain:       testArticleDomain,
+				Excerpt:            testArticleExcerpt,
+				ImageURL:           testArticleImage,
+				ContentType:        testContentTypeHTML,
+				Language:           testArticleLang,
 				Error:              "",
 				WordCount:          100,
 				ReadingTimeMinutes: 1,
@@ -133,10 +146,10 @@ func TestArticle_DynamoDBAttributeMapping(t *testing.T) {
 			},
 		},
 		{
-			name: "minimal article",
+			name: testNameMinArticle,
 			article: Article{
-				Account:   "test-account",
-				ID:        "test-id",
+				Account:   testAccount,
+				ID:        testID,
 				URL:       testArticleURL,
 				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 			},
@@ -144,8 +157,8 @@ func TestArticle_DynamoDBAttributeMapping(t *testing.T) {
 		{
 			name: "article with error",
 			article: Article{
-				Account:   "test-account",
-				ID:        "test-id",
+				Account:   testAccount,
+				ID:        testID,
 				URL:       testArticleURL,
 				CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 				Error:     "failed to fetch content",
@@ -194,9 +207,9 @@ func TestArticle_DynamoDBAttributeMapping(t *testing.T) {
 
 func TestArticle_EmptyFields(t *testing.T) {
 	article := Article{
-		Account:   "test-account",
-		ID:        "test-id",
-		URL:       "https://example.com/article",
+		Account:   testAccount,
+		ID:        testID,
+		URL:       testArticleURL,
 		CreatedAt: time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC),
 	}
 

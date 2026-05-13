@@ -35,12 +35,27 @@ import (
 
 const (
 	testArticleDeviceEmail = "device@kindle.com"
+	articleTestErrNotFound = "ErrNotFound"
+	testEmailMsgID         = "test-msg-id"
 )
 
 type mockProcessor struct {
 	startProcessingCalled bool
 	startProcessingEvent  *content.ProcessArticleEvent
 }
+
+const (
+	testArticleTitle = "Test Article"
+	testArticleID    = "article-123"
+	testArticleURL   = "https://example.com/article"
+	tagTech          = "tech"
+	tagProgramming   = "programming"
+	tagGolang        = "golang"
+	testMessageID    = "msg-123"
+	testOldTag       = "old-tag"
+	testNewTag1      = "new-tag-1"
+	testNewTag2      = "new-tag-2"
+)
 
 func (m *mockProcessor) StartProcessing(
 	_ context.Context,
@@ -142,7 +157,7 @@ func (m *articleMockService) SendArticle(
 	if epubData != nil {
 		_ = epubData.Close()
 	}
-	return &email.SendEmailResponse{MessageID: "test-msg-id"}, nil
+	return &email.SendEmailResponse{MessageID: testEmailMsgID}, nil
 }
 
 func (m *articleMockService) SendArticleByID(
@@ -153,11 +168,11 @@ func (m *articleMockService) SendArticleByID(
 	return &servicetypes.SendArticleResult{
 		Article: &model.Article{
 			ID:    articleID,
-			URL:   "https://example.com/article",
-			Title: "Test Article",
+			URL:   testArticleURL,
+			Title: testArticleTitle,
 		},
 		DeviceEmail: testArticleDeviceEmail,
-		EmailResp:   &email.SendEmailResponse{MessageID: "test-msg-id"},
+		EmailResp:   &email.SendEmailResponse{MessageID: testEmailMsgID},
 	}, nil
 }
 
@@ -166,9 +181,9 @@ func (m *articleMockService) CreateArticle(ctx context.Context, u *url.URL, acco
 		return m.createArticleFunc(ctx, u, accountID)
 	}
 	return &model.Article{
-		ID:    "article-123",
-		URL:   "https://example.com/article",
-		Title: "Test Article",
+		ID:    testArticleID,
+		URL:   testArticleURL,
+		Title: testArticleTitle,
 	}, nil
 }
 
@@ -182,8 +197,8 @@ func (m *articleMockService) GetArticle(ctx context.Context, accountID, articleI
 	}
 	return &model.Article{
 		ID:    articleID,
-		URL:   "https://example.com/article",
-		Title: "Test Article",
+		URL:   testArticleURL,
+		Title: testArticleTitle,
 	}, nil
 }
 
@@ -281,14 +296,14 @@ func (m *articleMockService) GetArticleTags(ctx context.Context, accountID, arti
 	if m.getTagsFunc != nil {
 		return m.getTagsFunc(ctx, accountID, articleID)
 	}
-	return []string{"tech", "programming"}, nil
+	return []string{tagTech, tagProgramming}, nil
 }
 
 func (m *articleMockService) GetAllTagsForAccount(ctx context.Context, accountID string) ([]string, error) {
 	if m.getAllTagsFunc != nil {
 		return m.getAllTagsFunc(ctx, accountID)
 	}
-	return []string{"tech", "programming", "golang"}, nil
+	return []string{tagTech, tagProgramming, tagGolang}, nil
 }
 
 func (m *articleMockService) CountSendsByAccountDateRange(
@@ -333,9 +348,9 @@ func TestHandleCreateArticle_Success(t *testing.T) {
 	mockSvc := &articleMockService{
 		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				ID:    testArticleID,
+				URL:   testArticleURL,
+				Title: testArticleTitle,
 			}, nil
 		},
 	}
@@ -344,7 +359,7 @@ func TestHandleCreateArticle_Success(t *testing.T) {
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
 	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
-	body := types.ArticleRequest{URL: "https://example.com/article"}
+	body := types.ArticleRequest{URL: testArticleURL}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
@@ -358,13 +373,13 @@ func TestHandleCreateArticle_Success(t *testing.T) {
 	var resp types.ArticleResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Equal(t, "article-123", resp.ID)
-	assert.Equal(t, "https://example.com/article", resp.URL)
+	assert.Equal(t, testArticleID, resp.ID)
+	assert.Equal(t, testArticleURL, resp.URL)
 
 	assert.True(t, mockProc.startProcessingCalled)
 	assert.NotNil(t, mockProc.startProcessingEvent)
-	assert.Equal(t, "https://example.com/article", mockProc.startProcessingEvent.URL)
-	assert.Equal(t, "article-123", mockProc.startProcessingEvent.ArticleID)
+	assert.Equal(t, testArticleURL, mockProc.startProcessingEvent.URL)
+	assert.Equal(t, testArticleID, mockProc.startProcessingEvent.ArticleID)
 	assert.Equal(t, "account-123", mockProc.startProcessingEvent.AccountID)
 }
 
@@ -372,9 +387,9 @@ func TestHandleCreateArticle_SendOnComplete(t *testing.T) {
 	mockSvc := &articleMockService{
 		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				ID:    testArticleID,
+				URL:   testArticleURL,
+				Title: testArticleTitle,
 			}, nil
 		},
 		getUserDeviceEmailFunc: func(_ context.Context, _ string) (string, bool, error) {
@@ -392,7 +407,7 @@ func TestHandleCreateArticle_SendOnComplete(t *testing.T) {
 	}
 	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
-	body := types.ArticleRequest{URL: "https://example.com/article", SendOnComplete: true}
+	body := types.ArticleRequest{URL: testArticleURL, SendOnComplete: true}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
@@ -406,13 +421,13 @@ func TestHandleCreateArticle_SendOnComplete(t *testing.T) {
 	var resp types.ArticleResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Equal(t, "article-123", resp.ID)
-	assert.Equal(t, "https://example.com/article", resp.URL)
+	assert.Equal(t, testArticleID, resp.ID)
+	assert.Equal(t, testArticleURL, resp.URL)
 
 	assert.True(t, mockProc.startProcessingCalled)
 	assert.NotNil(t, mockProc.startProcessingEvent)
-	assert.Equal(t, "https://example.com/article", mockProc.startProcessingEvent.URL)
-	assert.Equal(t, "article-123", mockProc.startProcessingEvent.ArticleID)
+	assert.Equal(t, testArticleURL, mockProc.startProcessingEvent.URL)
+	assert.Equal(t, testArticleID, mockProc.startProcessingEvent.ArticleID)
 	assert.Equal(t, "account-123", mockProc.startProcessingEvent.AccountID)
 	assert.True(t, mockProc.startProcessingEvent.SendOnComplete)
 }
@@ -476,7 +491,7 @@ func TestHandleCreateArticle_ServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           articleTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
@@ -496,7 +511,7 @@ func TestHandleCreateArticle_ServiceError(t *testing.T) {
 			expectedStatus: http.StatusConflict,
 		},
 		{
-			name:           "generic error",
+			name:           genericErrorMessage,
 			serviceErr:     errors.New("some error"),
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -514,7 +529,7 @@ func TestHandleCreateArticle_ServiceError(t *testing.T) {
 			cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
 			h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
-			body := types.ArticleRequest{URL: "https://example.com/article"}
+			body := types.ArticleRequest{URL: testArticleURL}
 			bodyBytes, _ := json.Marshal(body)
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"POST", "/v1/articles", bytes.NewReader(bodyBytes))
@@ -533,9 +548,9 @@ func TestHandleCreateArticle_DBError(t *testing.T) {
 	mockSvc := &articleMockService{
 		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				ID:    testArticleID,
+				URL:   testArticleURL,
+				Title: testArticleTitle,
 			}, nil
 		},
 	}
@@ -544,7 +559,7 @@ func TestHandleCreateArticle_DBError(t *testing.T) {
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
 	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
-	body := types.ArticleRequest{URL: "https://example.com/article"}
+	body := types.ArticleRequest{URL: testArticleURL}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
@@ -711,12 +726,12 @@ func TestHandleGetArticles_ServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           articleTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "generic error",
+			name:           genericErrorMessage,
 			serviceErr:     errors.New("some error"),
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -978,8 +993,8 @@ func TestHandleGetArticle_Success(t *testing.T) {
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
 				ID:    articleID,
-				Title: "Test Article",
-				URL:   "https://example.com/article",
+				Title: testArticleTitle,
+				URL:   testArticleURL,
 			}, nil
 		},
 	}
@@ -992,7 +1007,7 @@ func TestHandleGetArticle_Success(t *testing.T) {
 		"/v1/articles/article-123",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1003,8 +1018,8 @@ func TestHandleGetArticle_Success(t *testing.T) {
 	var resp model.Article
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Equal(t, "article-123", resp.ID)
-	assert.Equal(t, "Test Article", resp.Title)
+	assert.Equal(t, testArticleID, resp.ID)
+	assert.Equal(t, testArticleTitle, resp.Title)
 }
 
 func TestHandleGetArticle_NotFound(t *testing.T) {
@@ -1022,7 +1037,7 @@ func TestHandleGetArticle_NotFound(t *testing.T) {
 		"/v1/articles/article-123",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1046,7 +1061,7 @@ func TestHandleDeleteArticle_Success(t *testing.T) {
 		"/v1/articles/article-123",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1067,12 +1082,12 @@ func TestHandleDeleteArticle_ServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           articleTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "generic error",
+			name:           genericErrorMessage,
 			serviceErr:     errors.New("some error"),
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -1094,7 +1109,7 @@ func TestHandleDeleteArticle_ServiceError(t *testing.T) {
 				"/v1/articles/article-123",
 				nil)
 			rctx := chi.NewRouteContext()
-			rctx.URLParams.Add("id", "article-123")
+			rctx.URLParams.Add("id", testArticleID)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 			w := httptest.NewRecorder()
 
@@ -1120,7 +1135,7 @@ func TestHandleToggleFavorite_Success(t *testing.T) {
 		"/v1/articles/article-123/favorite",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1141,12 +1156,12 @@ func TestHandleToggleFavorite_ServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           articleTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "generic error",
+			name:           genericErrorMessage,
 			serviceErr:     errors.New("some error"),
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -1168,7 +1183,7 @@ func TestHandleToggleFavorite_ServiceError(t *testing.T) {
 				"/v1/articles/article-123/favorite",
 				nil)
 			rctx := chi.NewRouteContext()
-			rctx.URLParams.Add("id", "article-123")
+			rctx.URLParams.Add("id", testArticleID)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 			w := httptest.NewRecorder()
 
@@ -1184,7 +1199,7 @@ func TestHandleSendArticle_Success(t *testing.T) {
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
 				ID:    articleID,
-				Title: "Test Article",
+				Title: testArticleTitle,
 			}, nil
 		},
 		generateEPUBFunc: func(_ *model.Article) (io.ReadCloser, error) {
@@ -1194,7 +1209,7 @@ func TestHandleSendArticle_Success(t *testing.T) {
 			return testArticleDeviceEmail, false, nil
 		},
 		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
-			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
+			return &email.SendEmailResponse{MessageID: testMessageID}, nil
 		},
 	}
 
@@ -1206,7 +1221,7 @@ func TestHandleSendArticle_Success(t *testing.T) {
 		"/v1/articles/article-123/send",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1225,7 +1240,7 @@ func TestHandleSendArticle_WithSendsCount(t *testing.T) {
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
 				ID:    articleID,
-				Title: "Test Article",
+				Title: testArticleTitle,
 			}, nil
 		},
 		generateEPUBFunc: func(_ *model.Article) (io.ReadCloser, error) {
@@ -1235,7 +1250,7 @@ func TestHandleSendArticle_WithSendsCount(t *testing.T) {
 			return testArticleDeviceEmail, false, nil
 		},
 		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
-			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
+			return &email.SendEmailResponse{MessageID: testMessageID}, nil
 		},
 		countSendsFunc: func(_ context.Context, _ string, _, _ time.Time) (int, error) {
 			return 5, nil
@@ -1251,7 +1266,7 @@ func TestHandleSendArticle_WithSendsCount(t *testing.T) {
 	ctx := newArticleTestContextWithAccount()
 	req := httptest.NewRequestWithContext(ctx, "POST", "/v1/articles/article-123/send", nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1270,9 +1285,9 @@ func TestHandleCreateArticle_SendOnCompleteWithoutEmailBackend(t *testing.T) {
 	mockSvc := &articleMockService{
 		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				ID:    testArticleID,
+				URL:   testArticleURL,
+				Title: testArticleTitle,
 			}, nil
 		},
 	}
@@ -1281,7 +1296,7 @@ func TestHandleCreateArticle_SendOnCompleteWithoutEmailBackend(t *testing.T) {
 	cfg := &config.Config{EmailProvider: ""}
 	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
-	body := types.ArticleRequest{URL: "https://example.com/article", SendOnComplete: true}
+	body := types.ArticleRequest{URL: testArticleURL, SendOnComplete: true}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles", bytes.NewReader(bodyBytes))
@@ -1315,7 +1330,7 @@ func TestHandleSendArticle_ArticleNotFound(t *testing.T) {
 		"/v1/articles/article-123/send",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1339,7 +1354,7 @@ func TestHandleSendArticle_GenerateEPUBError(t *testing.T) {
 		"/v1/articles/article-123/send",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1363,7 +1378,7 @@ func TestHandleSendArticle_GetDeviceEmailError(t *testing.T) {
 		"/v1/articles/article-123/send",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1387,7 +1402,7 @@ func TestHandleSendArticle_NoDeviceEmail(t *testing.T) {
 		"/v1/articles/article-123/send",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1416,7 +1431,7 @@ func TestHandleSendArticle_SendArticleError(t *testing.T) {
 		"/v1/articles/article-123/send",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1430,7 +1445,7 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 		getArticleFunc: func(_ context.Context, _, articleID string) (*model.Article, error) {
 			return &model.Article{
 				ID:    articleID,
-				Title: "Test Article",
+				Title: testArticleTitle,
 			}, nil
 		},
 		generateEPUBFunc: func(_ *model.Article) (io.ReadCloser, error) {
@@ -1440,7 +1455,7 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 			return testArticleDeviceEmail, false, nil
 		},
 		sendArticleFunc: func(_ context.Context, _ string, _ io.ReadCloser, _ string) (*email.SendEmailResponse, error) {
-			return &email.SendEmailResponse{MessageID: "msg-123"}, nil
+			return &email.SendEmailResponse{MessageID: testMessageID}, nil
 		},
 		dbError: errors.New("database error"),
 	}
@@ -1453,7 +1468,7 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 		"/v1/articles/article-123/send",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1467,24 +1482,24 @@ func TestHandleSendArticle_DBError(t *testing.T) {
 func TestHandleAddTags_Success(t *testing.T) {
 	mockSvc := &articleMockService{
 		addTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
-			assert.ElementsMatch(t, []string{"tech", "programming"}, tags)
+			assert.ElementsMatch(t, []string{tagTech, tagProgramming}, tags)
 			return nil
 		},
 		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
-			return []string{"programming", "tech", "old-tag"}, nil
+			return []string{tagProgramming, tagTech, testOldTag}, nil
 		},
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
 	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
-	body := types.TagsRequest{Tags: []string{"tech", "programming"}}
+	body := types.TagsRequest{Tags: []string{tagTech, tagProgramming}}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "POST", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1495,7 +1510,7 @@ func TestHandleAddTags_Success(t *testing.T) {
 	var resp types.TagsResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"programming", "tech", "old-tag"}, resp.Tags)
+	assert.ElementsMatch(t, []string{tagProgramming, tagTech, testOldTag}, resp.Tags)
 }
 
 func TestHandleAddTags_InvalidTags(t *testing.T) {
@@ -1520,7 +1535,7 @@ func TestHandleAddTags_InvalidTags(t *testing.T) {
 		newArticleTestContextWithAccount(), "POST", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1560,7 +1575,7 @@ func TestHandleAddTags_TooManyTags(t *testing.T) {
 		newArticleTestContextWithAccount(), "POST", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1577,24 +1592,24 @@ func TestHandleAddTags_TooManyTags(t *testing.T) {
 func TestHandleSetTags_Success(t *testing.T) {
 	mockSvc := &articleMockService{
 		setTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
-			assert.ElementsMatch(t, []string{"new-tag-1", "new-tag-2"}, tags)
+			assert.ElementsMatch(t, []string{testNewTag1, testNewTag2}, tags)
 			return nil
 		},
 		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
-			return []string{"new-tag-1", "new-tag-2"}, nil
+			return []string{testNewTag1, testNewTag2}, nil
 		},
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
 	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
-	body := types.TagsRequest{Tags: []string{"new-tag-1", "new-tag-2"}}
+	body := types.TagsRequest{Tags: []string{testNewTag1, testNewTag2}}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "PUT", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1605,7 +1620,7 @@ func TestHandleSetTags_Success(t *testing.T) {
 	var resp types.TagsResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"new-tag-1", "new-tag-2"}, resp.Tags)
+	assert.ElementsMatch(t, []string{testNewTag1, testNewTag2}, resp.Tags)
 }
 
 func TestHandleSetTags_EmptyTags(t *testing.T) {
@@ -1628,7 +1643,7 @@ func TestHandleSetTags_EmptyTags(t *testing.T) {
 		newArticleTestContextWithAccount(), "PUT", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1645,7 +1660,7 @@ func TestHandleSetTags_EmptyTags(t *testing.T) {
 func TestHandleGetTags_Success(t *testing.T) {
 	mockSvc := &articleMockService{
 		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
-			return []string{"programming", "tech"}, nil
+			return []string{tagProgramming, tagTech}, nil
 		},
 	}
 
@@ -1657,7 +1672,7 @@ func TestHandleGetTags_Success(t *testing.T) {
 		"/v1/articles/article-123/tags",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1669,8 +1684,8 @@ func TestHandleGetTags_Success(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(resp.Tags))
-	assert.Contains(t, resp.Tags, "programming")
-	assert.Contains(t, resp.Tags, "tech")
+	assert.Contains(t, resp.Tags, tagProgramming)
+	assert.Contains(t, resp.Tags, tagTech)
 }
 
 func TestHandleGetTags_Empty(t *testing.T) {
@@ -1688,7 +1703,7 @@ func TestHandleGetTags_Empty(t *testing.T) {
 		"/v1/articles/article-123/tags",
 		nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1709,12 +1724,12 @@ func TestHandleGetTags_ServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "ErrNotFound",
+			name:           articleTestErrNotFound,
 			serviceErr:     apperrors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "generic error",
+			name:           genericErrorMessage,
 			serviceErr:     errors.New("some error"),
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -1734,7 +1749,7 @@ func TestHandleGetTags_ServiceError(t *testing.T) {
 			req := httptest.NewRequestWithContext(newArticleTestContextWithAccount(),
 				"GET", "/v1/articles/article-123/tags", nil)
 			rctx := chi.NewRouteContext()
-			rctx.URLParams.Add("id", "article-123")
+			rctx.URLParams.Add("id", testArticleID)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 			w := httptest.NewRecorder()
 
@@ -1748,24 +1763,24 @@ func TestHandleGetTags_ServiceError(t *testing.T) {
 func TestHandleRemoveTags_Success(t *testing.T) {
 	mockSvc := &articleMockService{
 		removeTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
-			assert.ElementsMatch(t, []string{"old-tag"}, tags)
+			assert.ElementsMatch(t, []string{testOldTag}, tags)
 			return nil
 		},
 		getTagsFunc: func(_ context.Context, _, _ string) ([]string, error) {
-			return []string{"programming", "tech"}, nil
+			return []string{tagProgramming, tagTech}, nil
 		},
 	}
 
 	cfg := &config.Config{EmailProvider: consts.EmailBackendMailjet}
 	h := New(cfg, mockSvc, http.DefaultClient, nil, nil)
 
-	body := types.TagsRequest{Tags: []string{"old-tag"}}
+	body := types.TagsRequest{Tags: []string{testOldTag}}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
 		newArticleTestContextWithAccount(), "DELETE", "/v1/articles/article-123/tags", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "article-123")
+	rctx.URLParams.Add("id", testArticleID)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	w := httptest.NewRecorder()
 
@@ -1776,13 +1791,13 @@ func TestHandleRemoveTags_Success(t *testing.T) {
 	var resp types.TagsResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"programming", "tech"}, resp.Tags)
+	assert.ElementsMatch(t, []string{tagProgramming, tagTech}, resp.Tags)
 }
 
 func TestHandleGetAllTags_Success(t *testing.T) {
 	mockSvc := &articleMockService{
 		getAllTagsFunc: func(_ context.Context, _ string) ([]string, error) {
-			return []string{"golang", "programming", "tech"}, nil
+			return []string{tagGolang, tagProgramming, tagTech}, nil
 		},
 	}
 
@@ -1803,9 +1818,9 @@ func TestHandleGetAllTags_Success(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, 3, len(resp.Tags))
-	assert.Contains(t, resp.Tags, "golang")
-	assert.Contains(t, resp.Tags, "programming")
-	assert.Contains(t, resp.Tags, "tech")
+	assert.Contains(t, resp.Tags, tagGolang)
+	assert.Contains(t, resp.Tags, tagProgramming)
+	assert.Contains(t, resp.Tags, tagTech)
 }
 
 func TestHandleGetAllTags_Empty(t *testing.T) {
@@ -1841,7 +1856,7 @@ func TestHandleGetAllTags_ServiceError(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "generic error",
+			name:           genericErrorMessage,
 			serviceErr:     errors.New("some error"),
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -1872,13 +1887,13 @@ func TestHandleCreateArticle_WithTags(t *testing.T) {
 	mockSvc := &articleMockService{
 		createArticleFunc: func(_ context.Context, _ *url.URL, _ string) (*model.Article, error) {
 			return &model.Article{
-				ID:    "article-123",
-				URL:   "https://example.com/article",
-				Title: "Test Article",
+				ID:    testArticleID,
+				URL:   testArticleURL,
+				Title: testArticleTitle,
 			}, nil
 		},
 		setTagsFunc: func(_ context.Context, _, _ string, tags []string) error {
-			assert.ElementsMatch(t, []string{"tech", "programming"}, tags)
+			assert.ElementsMatch(t, []string{tagTech, tagProgramming}, tags)
 			return nil
 		},
 	}
@@ -1888,8 +1903,8 @@ func TestHandleCreateArticle_WithTags(t *testing.T) {
 	h := New(cfg, mockSvc, http.DefaultClient, mockProc, nil)
 
 	body := types.ArticleRequest{
-		URL:  "https://example.com/article",
-		Tags: []string{"tech", "programming"},
+		URL:  testArticleURL,
+		Tags: []string{tagTech, tagProgramming},
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req := httptest.NewRequestWithContext(
@@ -1904,7 +1919,7 @@ func TestHandleCreateArticle_WithTags(t *testing.T) {
 	var resp types.ArticleResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Equal(t, "article-123", resp.ID)
+	assert.Equal(t, testArticleID, resp.ID)
 
 	assert.True(t, mockProc.startProcessingCalled)
 }
