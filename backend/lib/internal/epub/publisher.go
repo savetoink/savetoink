@@ -4,6 +4,7 @@ package epub
 import (
 	"bytes"
 	_ "embed"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"strings"
@@ -45,6 +46,17 @@ func NewPublisher(opts ...PublisherOption) *Publisher {
 		opt(p)
 	}
 	return p
+}
+
+// addStylesheet embeds the default CSS stylesheet into the EPUB and returns
+// the relative path to the CSS file for use in sections.
+func addStylesheet(e *epub.Epub) (string, error) {
+	dataURL := "data:text/css;base64," + base64.StdEncoding.EncodeToString([]byte(consts.EPUBStylesheet))
+	cssPath, err := e.AddCSS(dataURL, consts.EPUBStylesheetFilename)
+	if err != nil {
+		return "", fmt.Errorf("failed to add CSS stylesheet: %w", err)
+	}
+	return cssPath, nil
 }
 
 func buildMetadataHeader(article *model.Article) string {
@@ -107,9 +119,14 @@ func (p *Publisher) GenerateEPUB(article *model.Article) (io.ReadCloser, error) 
 		e.SetLang("en")
 	}
 
+	cssPath, err := addStylesheet(e)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add stylesheet: %w", err)
+	}
+
 	articleContent := buildMetadataHeader(article) + article.Content
 
-	_, err = e.AddSection(articleContent, consts.DefaultChapterTitle, consts.DefaultChapterFilename, "")
+	_, err = e.AddSection(articleContent, consts.DefaultChapterTitle, consts.DefaultChapterFilename, cssPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add chapter: %w", err)
 	}

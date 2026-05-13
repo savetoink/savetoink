@@ -1,6 +1,8 @@
 package epub
 
 import (
+	"archive/zip"
+	"bytes"
 	"io"
 	"strings"
 	"testing"
@@ -609,5 +611,231 @@ func TestBuildMetadataHeader_HtmlStructure(t *testing.T) {
 		if !strings.Contains(result, tag) {
 			t.Errorf("buildMetadataHeader() expected %q in HTML structure, got %q", tag, result)
 		}
+	}
+}
+
+// extractXHTMLContent reads an EPUB from raw bytes and returns the content
+// of the chapter XHTML file as a string.
+func extractXHTMLContent(t *testing.T, epubData []byte) string {
+	t.Helper()
+	r, err := zip.NewReader(bytes.NewReader(epubData), int64(len(epubData)))
+	if err != nil {
+		t.Fatalf("failed to open epub as zip: %v", err)
+	}
+	for _, f := range r.File {
+		if strings.HasSuffix(f.Name, "chapter1.xhtml") {
+			rc, err := f.Open()
+			if err != nil {
+				t.Fatalf("failed to open chapter: %v", err)
+			}
+			defer func() { _ = rc.Close() }()
+			data, err := io.ReadAll(rc)
+			if err != nil {
+				t.Fatalf("failed to read chapter: %v", err)
+			}
+			return string(data)
+		}
+	}
+	t.Fatal("chapter1.xhtml not found in epub")
+	return ""
+}
+
+// extractCSSContent reads an EPUB from raw bytes and returns the content
+// of the CSS stylesheet file as a string.
+func extractCSSContent(t *testing.T, epubData []byte) string {
+	t.Helper()
+	r, err := zip.NewReader(bytes.NewReader(epubData), int64(len(epubData)))
+	if err != nil {
+		t.Fatalf("failed to open epub as zip: %v", err)
+	}
+	for _, f := range r.File {
+		if strings.HasSuffix(f.Name, ".css") {
+			rc, err := f.Open()
+			if err != nil {
+				t.Fatalf("failed to open css: %v", err)
+			}
+			defer func() { _ = rc.Close() }()
+			data, err := io.ReadAll(rc)
+			if err != nil {
+				t.Fatalf("failed to read css: %v", err)
+			}
+			return string(data)
+		}
+	}
+	t.Fatal("css file not found in epub")
+	return ""
+}
+
+func TestGenerate_EPUBContainsStylesheet(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	article := &model.Article{
+		Title:   "Test Article",
+		Content: "<p>This is test content</p>",
+	}
+
+	epubReader, err := pub.GenerateEPUB(article)
+	if err != nil {
+		t.Fatalf("GenerateEPUB() unexpected error = %v", err)
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data: %v", err)
+	}
+
+	css := extractCSSContent(t, data)
+
+	if !strings.Contains(css, "white-space: pre-wrap") {
+		t.Error("EPUB CSS should contain white-space: pre-wrap for code blocks")
+	}
+	if !strings.Contains(css, "font-family: monospace") {
+		t.Error("EPUB CSS should contain font-family: monospace for code blocks")
+	}
+	if !strings.Contains(css, "pre {") {
+		t.Error("EPUB CSS should contain pre selector")
+	}
+	if !strings.Contains(css, "code {") {
+		t.Error("EPUB CSS should contain code selector")
+	}
+}
+
+func TestGenerate_ChapterReferencesStylesheet(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	article := &model.Article{
+		Title:   "Test Article",
+		Content: "<p>This is test content</p>",
+	}
+
+	epubReader, err := pub.GenerateEPUB(article)
+	if err != nil {
+		t.Fatalf("GenerateEPUB() unexpected error = %v", err)
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data: %v", err)
+	}
+
+	xhtml := extractXHTMLContent(t, data)
+
+	if !strings.Contains(xhtml, `rel="stylesheet"`) {
+		t.Error("Chapter XHTML should reference a stylesheet")
+	}
+	if !strings.Contains(xhtml, `type="text/css"`) {
+		t.Error("Chapter XHTML stylesheet link should specify text/css type")
+	}
+	if !strings.Contains(xhtml, "styles.css") {
+		t.Error("Chapter XHTML should reference styles.css")
+	}
+}
+
+func TestGenerate_CodeBlockPreservesIndentation(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	codeContent := `<pre><code>func main() {
+    fmt.Println("Hello, World!")
+    if true {
+        for i := 0; i < 10; i++ {
+            fmt.Println(i)
+        }
+    }
+}</code></pre>`
+	article := &model.Article{
+		Title:   "Test Article",
+		Content: codeContent,
+	}
+
+	epubReader, err := pub.GenerateEPUB(article)
+	if err != nil {
+		t.Fatalf("GenerateEPUB() unexpected error = %v", err)
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data: %v", err)
+	}
+
+	xhtml := extractXHTMLContent(t, data)
+
+	// Verify the indented code is preserved in the XHTML
+	if !strings.Contains(xhtml, "    fmt.Println") {
+		t.Errorf("Code block should preserve indentation, got XHTML:\n%s", xhtml)
+	}
+	if !strings.Contains(xhtml, "        for i := 0") {
+		t.Errorf("Code block should preserve nested indentation, got XHTML:\n%s", xhtml)
+	}
+}
+
+func TestGenerate_InlineCodeStyled(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	article := &model.Article{
+		Title:   "Test Article",
+		Content: "<p>Use the <code>fmt.Println()</code> function.</p>",
+	}
+
+	epubReader, err := pub.GenerateEPUB(article)
+	if err != nil {
+		t.Fatalf("GenerateEPUB() unexpected error = %v", err)
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data: %v", err)
+	}
+
+	css := extractCSSContent(t, data)
+
+	if !strings.Contains(css, "p code, li code") {
+		t.Error("EPUB CSS should contain inline code selector (p code, li code)")
+	}
+	if !strings.Contains(css, "background-color") {
+		t.Error("EPUB CSS inline code style should specify background-color")
+	}
+}
+
+func TestGenerate_MixedContentWithCode(t *testing.T) {
+	pub := NewPublisher(WithMemoryStorage())
+	article := &model.Article{
+		Title:   "Code Article",
+		Author:  "Dev Author",
+		Content: "<p>Here is a code example:</p>\n<pre><code>func hello() {\n    return \"world\"\n}</code></pre>\n<p>End.</p>",
+	}
+
+	epubReader, err := pub.GenerateEPUB(article)
+	if err != nil {
+		t.Fatalf("GenerateEPUB() unexpected error = %v", err)
+	}
+	defer func() { _ = epubReader.Close() }()
+
+	data, err := io.ReadAll(epubReader)
+	if err != nil {
+		t.Fatalf("Failed to read epub data: %v", err)
+	}
+
+	xhtml := extractXHTMLContent(t, data)
+	css := extractCSSContent(t, data)
+
+	// Verify content is present
+	if !strings.Contains(xhtml, "Here is a code example") {
+		t.Error("XHTML should contain article text")
+	}
+	if !strings.Contains(xhtml, "    return") {
+		t.Error("XHTML should preserve code indentation")
+	}
+
+	// Verify CSS is embedded
+	if !strings.Contains(css, "pre {") {
+		t.Error("CSS should style pre elements")
+	}
+	if !strings.Contains(css, "code {") {
+		t.Error("CSS should style code elements")
+	}
+
+	// Verify stylesheet is referenced from chapter
+	if !strings.Contains(xhtml, `rel="stylesheet"`) {
+		t.Error("Chapter should reference the stylesheet")
 	}
 }
