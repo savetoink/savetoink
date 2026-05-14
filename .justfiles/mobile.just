@@ -1,4 +1,4 @@
-ios_device := 'BB814B76-09C2-4269-8ACF-930040C43EFD'
+ios_device := 'FCD8B8B7-D4A0-4647-B5DB-DA59B49BC8FC'
 
 [working-directory('frontend/mobile')]
 mobile:

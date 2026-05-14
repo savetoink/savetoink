@@ -10,6 +10,13 @@ const config: CapacitorConfig = {
       appGroupId: "group.ink.saveto.app",
     },
   },
+  experimental: {
+    ios: {
+      spm: {
+        swiftToolsVersion: "6.2",
+      },
+    },
+  },
 };
 
 export default config;
