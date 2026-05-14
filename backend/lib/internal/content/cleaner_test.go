@@ -10,6 +10,7 @@ import (
 	"github.com/go-shiori/dom"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/html"
 )
 
 const testHelloWorldContent = "Hello world"
@@ -212,6 +213,66 @@ func TestCountWords(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestWrapStandaloneCodeBlocks(t *testing.T) {
+	parseBody := func(t *testing.T, htmlContent string) *html.Node {
+		t.Helper()
+		doc, err := dom.Parse(strings.NewReader(htmlContent))
+		require.NoError(t, err)
+		body := dom.QuerySelector(doc, "body")
+		require.NotNil(t, body)
+		return body
+	}
+
+	t.Run("wraps standalone code in pre tags", func(t *testing.T) {
+		body := parseBody(t, `<h1>Title</h1><p>Text</p><code>line 1
+line 2</code><p>More text</p>`)
+
+		wrapStandaloneCodeBlocks(body)
+
+		result := dom.InnerHTML(body)
+		assert.Contains(t, result, "<pre><code>")
+		assert.Contains(t, result, "line 1\nline 2")
+	})
+
+	t.Run("does not wrap code inside paragraphs", func(t *testing.T) {
+		body := parseBody(t, `<p>Use <code>fmt.Println()</code> here</p>`)
+
+		wrapStandaloneCodeBlocks(body)
+
+		result := dom.InnerHTML(body)
+		assert.Contains(t, result, "<p>")
+		assert.Contains(t, result, "<code>fmt.Println()</code>")
+		assert.NotContains(t, result, "<pre><code>")
+	})
+
+	t.Run("handles nil content node", func(t *testing.T) {
+		wrapStandaloneCodeBlocks(nil)
+	})
+
+	t.Run("wraps multiple standalone code blocks", func(t *testing.T) {
+		body := parseBody(t, `<code>block1
+line2</code><p>text</p><code>block2
+line2</code>`)
+
+		wrapStandaloneCodeBlocks(body)
+
+		result := dom.InnerHTML(body)
+		assert.Equal(t, 2, strings.Count(result, "<pre><code>"))
+	})
+
+	t.Run("preserves code block content with indentation", func(t *testing.T) {
+		body := parseBody(t, `<code>func main() {
+    fmt.Println("hello")
+}</code>`)
+
+		wrapStandaloneCodeBlocks(body)
+
+		result := dom.InnerHTML(body)
+		assert.Contains(t, result, "<pre><code>")
+		assert.Contains(t, result, "    fmt.Println")
+	})
 }
 
 func TestToTimePtr(t *testing.T) {

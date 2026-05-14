@@ -56,6 +56,7 @@ func (c *TrafilaturaCleaner) Clean(_ context.Context, doc *html.Node, u *url.URL
 }
 
 func (c *TrafilaturaCleaner) buildArticle(result *trafilatura.ExtractResult, doc *html.Node) *model.Article {
+	wrapStandaloneCodeBlocks(result.ContentNode)
 	contentHTML := dom.InnerHTML(result.ContentNode)
 	plainText := stripHTML(contentHTML)
 	wordCount := countWords(plainText)
@@ -125,6 +126,30 @@ func cleanTitle(fullTitle string) string {
 	}
 
 	return articleTitle
+}
+
+// wrapStandaloneCodeBlocks finds <code> elements that are direct children of the
+// content root (not inside <p> or other block elements) and wraps them in <pre> tags.
+// Trafilatura converts <pre><code> blocks to standalone <code> blocks, losing the
+// <pre> wrapper needed for whitespace preservation in e-readers.
+func wrapStandaloneCodeBlocks(contentNode *html.Node) {
+	if contentNode == nil {
+		return
+	}
+
+	var codeNodes []*html.Node
+	for child := contentNode.FirstChild; child != nil; child = child.NextSibling {
+		if child.Type == html.ElementNode && dom.TagName(child) == "code" {
+			codeNodes = append(codeNodes, child)
+		}
+	}
+
+	for _, codeNode := range codeNodes {
+		preNode := dom.CreateElement("pre")
+		contentNode.InsertBefore(preNode, codeNode)
+		contentNode.RemoveChild(codeNode)
+		preNode.AppendChild(codeNode)
+	}
 }
 
 func toTimePtr(t time.Time) *time.Time {
