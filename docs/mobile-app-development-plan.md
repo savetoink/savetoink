@@ -123,7 +123,7 @@ export default defineConfig({
 });
 ```
 
-**`AppDelegate.swift`** — Native share handler:
+**`AppDelegate.swift`** — Native share handler + cold-start redirect:
 ```swift
 import UIKit
 import Capacitor
@@ -132,17 +132,27 @@ import Capacitor
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    private var didHandleInitialRedirect = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         return true
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+        // App was opened via URL scheme — intent is already handled, skip initial redirect
+        didHandleInitialRedirect = true
         if url.scheme == "savetoink" {
             handleSharedContent()
             return true
         }
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
+    }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        // On cold start (tap app icon), redirect to APP_URL immediately
+        guard !didHandleInitialRedirect else { return }
+        didHandleInitialRedirect = true
+        openSafari(path: "")
     }
 
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {

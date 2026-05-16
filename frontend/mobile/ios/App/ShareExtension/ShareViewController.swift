@@ -69,23 +69,28 @@ class ShareViewController: UIViewController {
             let urlString = "\(self.APP_URL_SCHEME)://share"
             print("[ShareExtension] Attempting to open: \(urlString)")
             if let url = URL(string: urlString) {
-                self.openURL(url)
+                self.openApp(url)
+            } else {
+                self.exit()
             }
-            self.exit()
         }
     }
 
-    private func openURL(_ url: URL) {
+    private func openApp(_ url: URL) {
         var responder: UIResponder? = self
-        while responder != nil {
+        while let next = responder?.next {
+            responder = next
             if let app = responder as? UIApplication {
                 print("[ShareExtension] Found UIApplication via responder chain")
-                app.perform(#selector(UIApplication.openURL(_:)), with: url)
+                app.open(url, options: [:]) { [weak self] success in
+                    print("[ShareExtension] Open URL \(success ? "succeeded" : "failed")")
+                    self?.exit()
+                }
                 return
             }
-            responder = responder?.next
         }
         print("[ShareExtension] ERROR: Could not find UIApplication in responder chain")
+        exit()
     }
 
     private func exit() {
