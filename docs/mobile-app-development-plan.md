@@ -9,7 +9,7 @@ A minimal native app shell built with [CapacitorJS](https://capacitorjs.com/) th
 
 No WebView, no embedded UI, no session management. The app is a thin bridge between the OS share sheet and the existing webapp.
 
-All share handling is done in **pure native Swift** code — the Capacitor JS layer is intentionally empty. The native `AppDelegate` intercepts the custom URL scheme and opens Safari directly.
+All share handling is done in **pure native Swift** code — the Capacitor JS layer is intentionally empty. The native `SceneDelegate` handles the custom URL scheme and opens Safari directly.
 
 ## Goals
 
@@ -35,7 +35,7 @@ User shares URL from any app
   → OS share sheet shows "Save to Ink"
   → ShareExtension saves URL to App Group UserDefaults
   → ShareExtension opens main app via savetoink://share
-  → AppDelegate intercepts savetoink:// URL scheme
+  → SceneDelegate intercepts savetoink:// URL scheme
   → Reads shared URL from App Group UserDefaults
   → Opens system browser at <APP_URL>/new?url=<shared_url>
 ```
@@ -64,7 +64,8 @@ frontend/mobile/
 │   └── App/
 │       ├── App.xcodeproj/
 │       ├── App/
-│       │   ├── AppDelegate.swift       # Handles savetoink://share, opens Safari
+│       │   ├── AppDelegate.swift       # App lifecycle, scene configuration
+│       │   ├── SceneDelegate.swift     # Handles savetoink://share, opens Safari
 │       │   ├── App.entitlements        # App Group: group.ink.saveto.app
 │       │   ├── Info.plist              # URL scheme: savetoink, APP_URL build setting
 │       │   ├── Assets.xcassets/
@@ -84,7 +85,7 @@ frontend/mobile/
 **`src/index.ts`** — Intentionally empty; share handling is entirely native:
 ```typescript
 // Capacitor requires webDir to contain an index.html with a JS entry point.
-// Since share handling is done entirely in native code (AppDelegate.swift),
+// Since share handling is done entirely in native code (SceneDelegate.swift),
 // this file is intentionally empty.
 ```
 
@@ -123,7 +124,7 @@ export default defineConfig({
 });
 ```
 
-**`AppDelegate.swift`** — Native share handler + cold-start redirect:
+**`AppDelegate.swift`** — App lifecycle and scene configuration (UIScene lifecycle):
 ```swift
 import UIKit
 import Capacitor
@@ -131,71 +132,77 @@ import Capacitor
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    var window: UIWindow?
-    private var didHandleInitialRedirect = false
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         return true
     }
 
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        // App was opened via URL scheme — intent is already handled, skip initial redirect
-        didHandleInitialRedirect = true
-        if url.scheme == "savetoink" {
-            handleSharedContent()
-            return true
-        }
-        return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 
-    func applicationDidBecomeActive(_ application: UIApplication) {
+    func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {
+    }
+}
+```
+
+**`SceneDelegate.swift`** — URL scheme handling and cold-start redirect:
+```swift
+import UIKit
+
+class SceneDelegate: UIResponder, UISceneDelegate {
+
+    var window: UIWindow?
+    private var didHandleInitialRedirect = false
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        // Handle URL if app was launched via URL scheme (e.g. savetoink://share)
+        if let urlContext = connectionOptions.urlContexts.first {
+            didHandleInitialRedirect = true
+            handleURL(urlContext.url)
+        }
+    }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        // Handle URL when app is already running
+        didHandleInitialRedirect = true
+        if let urlContext = URLContexts.first {
+            handleURL(urlContext.url)
+        }
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
         // On cold start (tap app icon), redirect to APP_URL immediately
         guard !didHandleInitialRedirect else { return }
         didHandleInitialRedirect = true
         openSafari(path: "")
     }
 
-    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-        return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
-    }
-
-    private func handleSharedContent() {
-        let appGroup = "group.ink.saveto.app"
-        let userDefaults = UserDefaults(suiteName: appGroup)
-
-        guard let shareData = userDefaults?.dictionary(forKey: "share-target-data"),
-              let texts = shareData["texts"] as? [String],
-              let sharedUrl = texts.first,
-              sharedUrl.hasPrefix("http") else {
-            print("[App] No valid shared URL found, opening webapp home")
-            openSafari(path: "")
-            return
-        }
-
-        userDefaults?.removeObject(forKey: "share-target-data")
-
-        let encoded = sharedUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? sharedUrl
-        openSafari(path: "/new?url=\(encoded)")
-    }
-
-    private func openSafari(path: String) {
-        guard let appUrl = Bundle.main.object(forInfoDictionaryKey: "APP_URL") as? String,
-              !appUrl.isEmpty else {
-            print("[App] ERROR: APP_URL not configured in Info.plist")
-            return
-        }
-        let fullUrl = "\(appUrl)\(path)"
-        guard let url = URL(string: fullUrl) else {
-            print("[App] ERROR: Invalid URL: \(fullUrl)")
-            return
-        }
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)
-    }
+    // MARK: - Share handling
+    // handleSharedContent() and openSafari(path:) — same logic as before
 }
 ```
 
-**`Info.plist` (App)** — Custom URL scheme and `APP_URL` build setting:
+**`Info.plist` (App)** — Scene manifest, custom URL scheme, and `APP_URL` build setting:
 ```xml
+<key>UIApplicationSceneManifest</key>
+<dict>
+    <key>UIApplicationSupportsMultipleScenes</key>
+    <false/>
+    <key>UISceneConfigurations</key>
+    <dict>
+        <key>UIWindowSceneSessionRoleApplication</key>
+        <array>
+            <dict>
+                <key>UISceneConfigurationName</key>
+                <string>Default Configuration</string>
+                <key>UISceneDelegateClassName</key>
+                <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+                <key>UISceneStoryboardFile</key>
+                <string>Main</string>
+            </dict>
+        </array>
+    </dict>
+</dict>
 <key>CFBundleURLTypes</key>
 <array>
     <dict>
@@ -239,11 +246,63 @@ Note: No `@capgo/capacitor-share-target` or `@capacitor/browser` — all share h
 ### 2.2 URL Scheme
 - ✅ `App/Info.plist` — `CFBundleURLSchemes` → `savetoink`
 - Share extension opens main app via `savetoink://share`
-- AppDelegate intercepts `savetoink://` scheme, reads UserDefaults, opens Safari
+- SceneDelegate intercepts `savetoink://` scheme, reads UserDefaults, opens Safari
 
 ### 2.3 APP_URL Build Setting
 - ✅ `App/Info.plist` — `APP_URL` key set to `$(APP_URL)` (Xcode build setting)
 - Must be configured per-environment (e.g., dev/staging/production URLs)
+
+#### How APP_URL is injected
+
+The app uses a **three-step pipeline** with no Vite involvement at runtime:
+
+```
+project.pbxproj (build setting)     debug.xcconfig
+  APP_URL = "https://..."            CAPACITOR_DEBUG = true
+         │                                    │
+         └──────────┬─────────────────────────┘
+                    ▼  $(VAR) substitution at build time
+              Info.plist (in .app bundle)
+                APP_URL → "https://..."
+                CAPACITOR_DEBUG → "true"
+                    │
+                    ▼  Bundle.main.object(forInfoDictionaryKey:)
+              SceneDelegate.swift (runtime)
+```
+
+1. **Xcode build setting** (`project.pbxproj`) — `APP_URL` is defined as a user-defined build setting
+2. **Info.plist** — references it via `$(APP_URL)` substitution; Xcode resolves it at build time
+3. **SceneDelegate.swift** — reads it at runtime via `Bundle.main.object(forInfoDictionaryKey: "APP_URL")`
+
+#### Recommended: `.xcconfig` files per environment
+
+Currently `APP_URL` is hardcoded in `project.pbxproj` for both Debug and Release. The recommended approach is to move it into `.xcconfig` files so CI/CD can override it per-environment without modifying `pbxproj`:
+
+**`debug.xcconfig`** (already exists for `CAPACITOR_DEBUG`):
+```
+CAPACITOR_DEBUG = true
+APP_URL = https://app.dev.saveto.ink
+```
+
+**`release.xcconfig`** (create for production):
+```
+APP_URL = https://app.saveto.ink
+```
+
+Then assign them in Xcode: **Project → Info → Configurations** — set each build configuration to use its respective `.xcconfig` file as the `baseConfigurationReference`.
+
+For CI/CD, a pre-build script can replace placeholder values in the `.xcconfig` files with actual environment variables:
+```bash
+#!/bin/bash
+# Example: inject APP_URL from CI env var into the xcconfig
+sed -i '' "s/APP_URL = .*/APP_URL = ${APP_URL}/" "$PROJECT_DIR/frontend/mobile/ios/debug.xcconfig"
+```
+
+**References:**
+- [Adding a build configuration file to your project](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project) — Apple's official `.xcconfig` docs
+- [Customizing the build schemes for a project](https://developer.apple.com/documentation/xcode/customizing-the-build-schemes-for-a-project) — Scheme-level env vars for debugging
+- [Let's Set Up Your iOS Environments](https://thoughtbot.com/blog/let-s-setup-your-ios-environments) — comprehensive `.xcconfig` per-environment walkthrough
+- [Securely Manage iOS App Data with .xcconfig and CI/CD](https://povio.com/blog/securely-manage-sensitive-data-with-xcconfig-files-and-ci-cd-injection) — CI/CD injection pattern
 
 ### 2.4 Share Extension
 - ✅ `ShareExtension/ShareViewController.swift` — extracts URLs/text, saves to App Group UserDefaults, opens main app via custom URL scheme
@@ -266,7 +325,8 @@ cd frontend/mobile
 bun run build
 bunx cap sync ios
 bunx cap open ios
-# In Xcode: set APP_URL build setting (e.g., https://your-app-url) in the scheme
+# In Xcode: APP_URL is read from the .xcconfig file assigned to the active build configuration
+# To override locally, edit debug.xcconfig or set APP_URL in the scheme's environment variables
 # Run on simulator/device from Xcode
 ```
 
