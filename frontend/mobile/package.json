@@ -20,10 +20,8 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
-    "@capacitor/browser": "^8.0.3",
     "@capacitor/cli": "^8.2.0",
     "@capacitor/core": "^8.2.0",
-    "@capacitor/ios": "^8.2.0",
-    "@capgo/capacitor-share-target": "^8.0.22"
+    "@capacitor/ios": "^8.2.0"
   }
 }

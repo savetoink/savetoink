@@ -5,11 +5,6 @@ const config: CapacitorConfig = {
   appName: "Save to Ink",
   webDir: "dist",
   loggingBehavior: "debug",
-  plugins: {
-    CapacitorShareTarget: {
-      appGroupId: "group.ink.saveto.app",
-    },
-  },
   experimental: {
     ios: {
       spm: {
