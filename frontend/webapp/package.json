@@ -49,7 +49,7 @@
 	},
 	"dependencies": {
 		"@savetoink/shared": "workspace:*",
-		"@sentry/sveltekit": "^10.52.0",
+		"@sentry/sveltekit": "^10.53.1",
 		"temporal-polyfill": "^0.3.2"
 	}
 }
