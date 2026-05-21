@@ -1264,9 +1264,10 @@ func TestNewDependenciesFromConfig_NoMailjetNoAWS(t *testing.T) {
 }
 
 func TestNewDependenciesFromConfig_WithSQLite(t *testing.T) {
+	tmpDir := t.TempDir()
 	cfg := &config.Config{
 		StorageBackend: consts.StorageBackendSQLite,
-		SQLitePath:     "/tmp/test.db",
+		SQLitePath:     filepath.Join(tmpDir, "test.db"),
 		BrowserlessKey: testBrowserless,
 	}
 
