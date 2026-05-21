@@ -7,6 +7,9 @@
 		sends && 'current_sends' in sends && 'max_sends_per_period' in sends
 	);
 	const totalSends = $derived(sends?.total_sends ?? 0);
+	const quota = $derived(
+		sends && hasQuotaInfo && 'current_sends' in sends ? (sends as SendsResponse) : undefined
+	);
 </script>
 
 <section>
@@ -15,8 +18,7 @@
 	{#if sends}
 		<p>Total sends (all time): <strong>{totalSends}</strong></p>
 
-		{#if hasQuotaInfo && 'current_sends' in sends}
-			{@const quota = sends as SendsResponse}
+		{#if quota}
 			<article>
 				<header>
 					<h3>Quota information</h3>
