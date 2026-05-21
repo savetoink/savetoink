@@ -51,7 +51,7 @@ frontend/mobile/
 ├── capacitor.config.ts        # App config (appId: ink.saveto.app), SPM setup
 ├── index.html                 # Entry HTML (thin wrapper, src/index.ts is empty)
 ├── package.json               # Capacitor 8.x deps, no share/browser plugins
-├── vite.config.ts             # Minimal build config, no env injection
+├── vite.config.ts             # Minimal build config, no env injection (APP_URL via .xcconfig)
 ├── icon-targets.csv            # Icon generation targets
 ├── tsconfig.json
 ├── public/                    # App icons
@@ -110,7 +110,7 @@ const config: CapacitorConfig = {
 export default config;
 ```
 
-**`vite.config.ts`** — Minimal build config; no `PUBLIC_APP_URL` injection (URL comes from Xcode build settings):
+**`vite.config.ts`** — Minimal build config; no `PUBLIC_APP_URL` injection (URL comes from `.xcconfig` files via Xcode build settings):
 ```typescript
 import { defineConfig } from "vite";
 
@@ -257,51 +257,48 @@ Note: No `@capgo/capacitor-share-target` or `@capacitor/browser` — all share h
 The app uses a **three-step pipeline** with no Vite involvement at runtime:
 
 ```
-project.pbxproj (build setting)     debug.xcconfig
-  APP_URL = "https://..."            CAPACITOR_DEBUG = true
-         │                                    │
-         └──────────┬─────────────────────────┘
-                    ▼  $(VAR) substitution at build time
+project.pbxproj (baseConfigurationReference)
+  Debug  → debug.xcconfig   APP_URL = http://localhost:5173
+  Release → release.xcconfig  APP_URL = https://app.saveto.ink
+                    │
+                    ▼  $(APP_URL) substitution at build time
               Info.plist (in .app bundle)
-                APP_URL → "https://..."
-                CAPACITOR_DEBUG → "true"
+                APP_URL → resolved value
                     │
                     ▼  Bundle.main.object(forInfoDictionaryKey:)
               SceneDelegate.swift (runtime)
 ```
 
-1. **Xcode build setting** (`project.pbxproj`) — `APP_URL` is defined as a user-defined build setting
-2. **Info.plist** — references it via `$(APP_URL)` substitution; Xcode resolves it at build time
-3. **SceneDelegate.swift** — reads it at runtime via `Bundle.main.object(forInfoDictionaryKey: "APP_URL")`
+1. **`.xcconfig` file** (`debug.xcconfig` or `release.xcconfig`) — `APP_URL` is defined per build configuration
+2. **`project.pbxproj`** — each `XCBuildConfiguration` has a `baseConfigurationReference` pointing to its `.xcconfig`
+3. **Info.plist** — references it via `$(APP_URL)` substitution; Xcode resolves it at build time
+4. **SceneDelegate.swift** — reads it at runtime via `Bundle.main.object(forInfoDictionaryKey: "APP_URL")`
 
-#### Recommended: `.xcconfig` files per environment
+#### `.xcconfig` files per environment
 
-Currently `APP_URL` is hardcoded in `project.pbxproj` for both Debug and Release. The recommended approach is to move it into `.xcconfig` files so CI/CD can override it per-environment without modifying `pbxproj`:
+`APP_URL` is defined in `.xcconfig` files — one per build configuration — not hardcoded in `project.pbxproj`. This allows CI/CD to override it per-environment without modifying the Xcode project.
 
-**`debug.xcconfig`** (already exists for `CAPACITOR_DEBUG`):
+**`debug.xcconfig`** (local development):
 ```
 CAPACITOR_DEBUG = true
-APP_URL = https://app.dev.saveto.ink
+APP_URL = http://localhost:5173
 ```
 
-**`release.xcconfig`** (create for production):
+**`release.xcconfig`** (production):
 ```
 APP_URL = https://app.saveto.ink
 ```
 
-Then assign them in Xcode: **Project → Info → Configurations** — set each build configuration to use its respective `.xcconfig` file as the `baseConfigurationReference`.
+Each is assigned as `baseConfigurationReference` in `project.pbxproj`:
+- **Debug** configuration → `debug.xcconfig`
+- **Release** configuration → `release.xcconfig`
 
-For CI/CD, a pre-build script can replace placeholder values in the `.xcconfig` files with actual environment variables:
-```bash
-#!/bin/bash
-# Example: inject APP_URL from CI env var into the xcconfig
-sed -i '' "s/APP_URL = .*/APP_URL = ${APP_URL}/" "$PROJECT_DIR/frontend/mobile/ios/debug.xcconfig"
-```
+The `just build-mobile` recipe can inject `PUBLIC_APP_URL` from the root `.env` files into the active `.xcconfig` before building.
 
 **References:**
 - [Adding a build configuration file to your project](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project) — Apple's official `.xcconfig` docs
 - [Customizing the build schemes for a project](https://developer.apple.com/documentation/xcode/customizing-the-build-schemes-for-a-project) — Scheme-level env vars for debugging
-- [Let's Set Up Your iOS Environments](https://thoughtbot.com/blog/let-s-setup-your-ios-environments) — comprehensive `.xcconfig` per-environment walkthrough
+- [Let's Set Up Your iOS Environments](https://thoughtbot.com/blog/lets-setup-your-ios-environments) — comprehensive `.xcconfig` per-environment walkthrough
 - [Securely Manage iOS App Data with .xcconfig and CI/CD](https://povio.com/blog/securely-manage-sensitive-data-with-xcconfig-files-and-ci-cd-injection) — CI/CD injection pattern
 
 ### 2.4 Share Extension
