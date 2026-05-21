@@ -33,7 +33,7 @@ const (
 	DynamoDBDeviceEmailIndex = "DeviceEmailIndex"
 
 	// SqliteInitTimeout is the timeout for initializing the SQLite database.
-	SqliteInitTimeout = time.Second
+	SqliteInitTimeout = 5 * time.Second
 
 	// SQLitePathDefault is the default path to the SQLite database file.
 	SQLitePathDefault = "savetoink.db"
