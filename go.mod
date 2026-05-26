@@ -16,7 +16,7 @@ require (
 	github.com/aws/smithy-go v1.25.1
 	github.com/getsentry/sentry-go v0.46.2
 	github.com/getsentry/sentry-go/slog v0.46.2
-	github.com/go-chi/chi/v5 v5.2.5
+	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c
 	github.com/go-shiori/go-epub v1.2.1
 	github.com/google/uuid v1.6.0
