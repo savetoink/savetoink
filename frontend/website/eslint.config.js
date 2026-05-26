@@ -1,6 +1,6 @@
 import prettier from 'eslint-config-prettier';
 import path from 'node:path';
-import { includeIgnoreFile } from '@eslint/compat';
+import { includeIgnoreFile } from 'eslint/config';
 import js from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
