@@ -33,7 +33,7 @@
 		"eslint-plugin-svelte": "^3.17.1",
 		"globals": "^17.6.0",
 		"happy-dom": "^20.9.0",
-		"node-addon-api": "^8.7.0",
+		"node-addon-api": "^8.8.0",
 		"node-gyp": "^12.3.0",
 		"playwright": "^1.60.0",
 		"prettier": "^3.8.3",
