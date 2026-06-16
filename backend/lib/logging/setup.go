@@ -38,7 +38,7 @@ func SetupLogging(cfg *config.Config) {
 		Environment:      cfg.SentryEnvironment,
 		SampleRate:       cfg.SentrySampleRate,
 		AttachStacktrace: true,
-		EnableLogs:       true,
+		DisableLogs:      false,
 		Transport: &sentry.HTTPSyncTransport{
 			Timeout: sentryTimeout,
 		},
