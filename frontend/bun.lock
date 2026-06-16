@@ -7,7 +7,7 @@
     },
     "extension": {
       "name": "savetoink",
-      "version": "0.34.5-dev+21051630.06cdb9a",
+      "version": "0.34.5-dev+16061328.7149b0f",
       "dependencies": {
         "@savetoink/shared": "workspace:*",
       },
@@ -26,7 +26,7 @@
     },
     "shared": {
       "name": "@savetoink/shared",
-      "version": "0.34.5-dev+21051630.06cdb9a",
+      "version": "0.34.5-dev+16061328.7149b0f",
       "dependencies": {
         "@picocss/pico": "^2.1.1",
         "temporal-polyfill": "^0.3.2",
@@ -34,7 +34,7 @@
     },
     "webapp": {
       "name": "webapp",
-      "version": "0.34.5-dev+21051630.06cdb9a",
+      "version": "0.34.5-dev+16061328.7149b0f",
       "dependencies": {
         "@savetoink/shared": "workspace:*",
         "@sentry/sveltekit": "^10.58.0",
@@ -73,7 +73,7 @@
     },
     "website": {
       "name": "savetoink-website",
-      "version": "0.34.5-dev+21051630.06cdb9a",
+      "version": "0.34.5-dev+16061328.7149b0f",
       "dependencies": {
         "@astrojs/sitemap": "3.7.3",
         "@savetoink/shared": "workspace:*",
