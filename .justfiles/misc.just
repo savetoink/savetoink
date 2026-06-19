@@ -17,6 +17,12 @@ generate-icons-website:
 generate-icons-extension:
     @bun run icons:generate
 
+[working-directory("frontend/mobile")]
+generate-icons-mobile:
+    @bun run icons:generate
+    @bun run build
+    @bun cap sync
+
 # Generate TypeScript types from OpenAPI specification
 gen-api-types:
     @bunx openapi-typescript backend/lib/internal/server/handlers/openapi.yaml -o frontend/shared/src/types/api-generated.ts

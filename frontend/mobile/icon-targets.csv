@@ -1,0 +1,9 @@
+type,path,size
+png,public/icon.png,1024
+png,public/splash.png,2732
+png,public/favicon.ico,48
+png,public/android-icon-mdpi.png,48
+png,public/android-icon-hdpi.png,72
+png,public/android-icon-xhdpi.png,96
+png,public/android-icon-xxhdpi.png,144
+png,public/android-icon-xxxhdpi.png,192

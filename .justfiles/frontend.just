@@ -10,6 +10,10 @@ install-website-deps:
 install-extension-deps:
     bun install
 
+[working-directory("frontend/mobile")]
+install-mobile-deps:
+    bun install
+
 [working-directory("frontend/shared")]
-install-frontend-deps: install-webapp-deps install-website-deps install-extension-deps
+install-frontend-deps: install-webapp-deps install-website-deps install-extension-deps install-mobile-deps
     bun install
