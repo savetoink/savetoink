@@ -1,5 +1,6 @@
 upgrade-go-deps:
-    go get -u all
+    go get -u ./...
+    go mod tidy
 
 [working-directory('frontend/shared')]
 upgrade-shared-deps:
