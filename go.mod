@@ -30,7 +30,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/dynamodb v0.43.0
 	golang.org/x/net v0.56.0
 	golang.org/x/sync v0.21.0
-	modernc.org/sqlite v1.52.0
+	modernc.org/sqlite v1.53.0
 )
 
 require (
