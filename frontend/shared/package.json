@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@picocss/pico": "^2.1.1",
-    "temporal-polyfill": "^1.0.1"
+    "temporal-polyfill": "^1.0.2"
   },
   "exports": {
     ".": "./src/index.ts",
