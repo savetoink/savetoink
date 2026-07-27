@@ -18,7 +18,7 @@
 		"astro": "^6.4.8"
 	},
 	"devDependencies": {
-		"@astrojs/check": "^0.9.9",
+		"@astrojs/check": "^0.9.10",
 		"@eslint/compat": "^2.1.0",
 		"@eslint/js": "^10.0.1",
 		"eslint": "^10.5.0",
